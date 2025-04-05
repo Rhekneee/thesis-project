@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const authMiddleware = {
     // Session check to verify if the user is authenticated
     verifySession: (req, res, next) => {
@@ -21,3 +22,11 @@ const authMiddleware = {
   // ✅ Export both functions
   module.exports = authMiddleware;
       
+=======
+module.exports = (req, res, next) => {
+    if (!req.session.user) {
+        return res.status(401).json({ message: "Unauthorized! Please log in first." });
+    }
+    next(); // User is authenticated, continue to the next function
+};
+>>>>>>> 85f9240 (Initial commit)

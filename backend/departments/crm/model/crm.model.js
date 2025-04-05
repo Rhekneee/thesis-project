@@ -1,14 +1,23 @@
 const db = require("../../../db");
+<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 
 const CRMModel = {
     // Check if the applicant's email already exists in the database
     checkVisitRequestEmail: async (email) => {
         const query = "SELECT COUNT(*) AS count FROM site_visit_requests WHERE email = ?";
+=======
+
+const CRMModel = {
+    // 🔹 Check if an applicant email already exists
+    checkApplicantEmail: async (email) => {
+        const query = "SELECT COUNT(*) AS count FROM applications WHERE email = ?";
+>>>>>>> 85f9240 (Initial commit)
         const [rows] = await db.execute(query, [email]);
         return rows[0].count > 0;
     },
 
+<<<<<<< HEAD
     // Developers: list all developer accounts
     getAllDevelopers: async () => {
         const query = `
@@ -48,17 +57,34 @@ const CRMModel = {
     },
 
     // Get all applications from the database
+=======
+    // 🔹 Store application
+    storeApplication: async (data) => {
+        const query = `
+            INSERT INTO applications (full_name, email, phone, address, resume, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'Pending', NOW())`;
+        await db.execute(query, [data.full_name, data.email, data.phone, data.address, data.resume]); // Change 'resume_path' to 'resume'
+    },
+
+
+    // 🔹 Get all applications
+>>>>>>> 85f9240 (Initial commit)
     getAllApplications: async () => {
         const query = "SELECT * FROM applications";
         const [rows] = await db.execute(query);
         return rows;
     },
 
+<<<<<<< HEAD
     // Get a specific application by its ID
+=======
+    // 🔹 Get application by ID
+>>>>>>> 85f9240 (Initial commit)
     getApplicationById: async (id) => {
         const query = "SELECT * FROM applications WHERE id = ?";
         const [rows] = await db.execute(query, [id]);
         return rows[0] || null;
+<<<<<<< HEAD
     },
 
     // Store applicant data into the database
@@ -723,6 +749,8 @@ const CRMModel = {
             assigned_inquiries: parseInt(result.assigned_inquiries) || 0,
             pending_inquiries: parseInt(result.pending_inquiries) || 0
         };
+=======
+>>>>>>> 85f9240 (Initial commit)
     }
 };
 
