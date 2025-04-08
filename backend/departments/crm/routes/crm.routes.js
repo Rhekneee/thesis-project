@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 <<<<<<< HEAD
+<<<<<<< HEAD
 const path = require('path');
 const fs = require('fs');
 // Import the correct controller and multer upload handler
@@ -150,10 +151,15 @@ router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoor
 // Developers (Clients page)
 router.get('/api/developers', CRMController.getAllDevelopers);
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 const { CRMController, upload } = require("../controller/crm.controller");
 
 // 🔹 Resume Upload Route
 router.post("/upload", upload.single("resume"), CRMController.uploadResume);
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
 
 module.exports = router;

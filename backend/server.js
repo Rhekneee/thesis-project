@@ -1,11 +1,15 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 require('dotenv').config();
 =======
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
+<<<<<<< HEAD
 <<<<<<< HEAD
 const MySQLStore = require("express-mysql-session")(session);
 const path = require('path');
@@ -199,6 +203,8 @@ app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) return res.status(500).json({ message: "Logout failed." });
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 const path = require('path');
 
 const authRoutes = require('./routes/auth.routes');
@@ -279,11 +285,15 @@ app.get('/logout', (req, res) => {
             console.error("❌ Logout error:", err);
             return res.status(500).json({ message: "Logout failed." });
         }
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
         res.redirect("/");
     });
 });
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Start Server
 const PORT = process.env.PORT || 4000;
@@ -294,4 +304,9 @@ app.listen(PORT, () => {
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 >>>>>>> 85f9240 (Initial commit)
+=======
+// 🔹 Start Server
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+>>>>>>> aa1bb20 (Initial commit)
 });

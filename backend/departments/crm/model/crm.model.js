@@ -1,5 +1,6 @@
 const db = require("../../../db");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 
 const CRMModel = {
@@ -7,16 +8,22 @@ const CRMModel = {
     checkVisitRequestEmail: async (email) => {
         const query = "SELECT COUNT(*) AS count FROM site_visit_requests WHERE email = ?";
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 
 const CRMModel = {
     // 🔹 Check if an applicant email already exists
     checkApplicantEmail: async (email) => {
         const query = "SELECT COUNT(*) AS count FROM applications WHERE email = ?";
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
         const [rows] = await db.execute(query, [email]);
         return rows[0].count > 0;
     },
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // Developers: list all developer accounts
     getAllDevelopers: async () => {
@@ -58,6 +65,8 @@ const CRMModel = {
 
     // Get all applications from the database
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
     // 🔹 Store application
     storeApplication: async (data) => {
         const query = `
@@ -68,7 +77,10 @@ const CRMModel = {
 
 
     // 🔹 Get all applications
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
     getAllApplications: async () => {
         const query = "SELECT * FROM applications";
         const [rows] = await db.execute(query);
@@ -76,14 +88,19 @@ const CRMModel = {
     },
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Get a specific application by its ID
 =======
     // 🔹 Get application by ID
 >>>>>>> 85f9240 (Initial commit)
+=======
+    // 🔹 Get application by ID
+>>>>>>> aa1bb20 (Initial commit)
     getApplicationById: async (id) => {
         const query = "SELECT * FROM applications WHERE id = ?";
         const [rows] = await db.execute(query, [id]);
         return rows[0] || null;
+<<<<<<< HEAD
 <<<<<<< HEAD
     },
 
@@ -751,6 +768,8 @@ const CRMModel = {
         };
 =======
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
     }
 };
 

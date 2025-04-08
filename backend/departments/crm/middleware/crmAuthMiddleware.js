@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 const verifySession = (req, res, next) => {
     if (!req.session || !req.session.user) {
         return res.status(401).json({ error: "Unauthorized: Please log in." });
@@ -14,6 +15,8 @@ const verifySession = (req, res, next) => {
 
 module.exports = verifySession;
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 const crmAuthMiddleware = {
     verifySession: (req, res, next) => {
         if (!req.session || !req.session.user) {
@@ -24,4 +27,7 @@ const crmAuthMiddleware = {
 };
 
 module.exports = crmAuthMiddleware;
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)

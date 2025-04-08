@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
     const express = require('express');
     const router = express.Router();
     const { HRController, constructionWorkerUpload } = require('../controller/hr.controller.js');
@@ -483,6 +484,8 @@
 
     module.exports = router;
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 const express = require('express');
 const router = express.Router();
 const HRController = require('../controller/hr.controller.js');  // Ensure this path is correct
@@ -503,4 +506,7 @@ router.post("/check-in", authMiddleware.verifySession, (req, res, next) => {
 router.get("/today/:employeeId", authMiddleware.verifySession, HRController.getTodayAttendance);
 
 module.exports = router;
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)

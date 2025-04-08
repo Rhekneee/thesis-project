@@ -1,15 +1,19 @@
 const authMiddleware = {
   verifySession: (req, res, next) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
 
       
 =======
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
       if (!req.session || !req.session.user) {
           return res.status(401).json({ message: "Unauthorized: Please log in" });
       }
       req.user = req.session.user;
       next();
+<<<<<<< HEAD
 <<<<<<< HEAD
   },
 
@@ -69,5 +73,10 @@ const HRModel = require('../model/hr.model');
 };
 
 >>>>>>> 85f9240 (Initial commit)
+=======
+  }
+};
+
+>>>>>>> aa1bb20 (Initial commit)
 // ✅ Fix the export to match the import in routes
 module.exports = authMiddleware;

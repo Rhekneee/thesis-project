@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 const CRMModel = require("../model/crm.model");
 const multer = require("multer");
 const path = require("path");
@@ -29,12 +30,24 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, "../../../uploads/resume/")); 
 >>>>>>> 85f9240 (Initial commit)
+=======
+const CRMModel = require("../model/crm.model");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = "C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/resume";
+        console.log("📁 Uploading to:", uploadPath);
+        cb(null, uploadPath);
+>>>>>>> aa1bb20 (Initial commit)
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // 📎 Multer middleware for file filtering and upload
 const upload = multer({
@@ -370,12 +383,19 @@ const upload = multer({ storage });
 const CRMController = {
     // 🔹 Handle resume upload and save application
 >>>>>>> 85f9240 (Initial commit)
+=======
+
+const upload = multer({ storage });
+
+const CRMController = {
+>>>>>>> aa1bb20 (Initial commit)
     uploadResume: async (req, res) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ error: "No file uploaded" });
             }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
             const { firstname, lastname, middleinitial, email, phone, age, birthdate } = req.body;
             console.log("Received HR data:", { firstname, lastname, middleinitial, email, phone, age, birthdate });
@@ -395,10 +415,17 @@ const CRMController = {
 
             // 🔥 Check if email already exists
 >>>>>>> 85f9240 (Initial commit)
+=======
+            const { full_name, email, phone, address } = req.body;
+            const resumeFileName = req.file.filename;
+
+            // Check if email already exists
+>>>>>>> aa1bb20 (Initial commit)
             const emailExists = await CRMModel.checkApplicantEmail(email);
             if (emailExists) {
                 return res.status(400).json({ error: "Applicant with this email already exists" });
             }
+<<<<<<< HEAD
 <<<<<<< HEAD
             */
 
@@ -416,10 +443,15 @@ const CRMController = {
 
             // 🔹 Save application to database
 >>>>>>> 85f9240 (Initial commit)
+=======
+
+            // Save application to database
+>>>>>>> aa1bb20 (Initial commit)
             await CRMModel.storeApplication({
                 full_name,
                 email,
                 phone,
+<<<<<<< HEAD
 <<<<<<< HEAD
                 resume: resumeFileName,
                 age,
@@ -430,11 +462,16 @@ const CRMController = {
                 address,
                 resume: resumeFileName  // Change 'resume_path' to 'resume'
 >>>>>>> 85f9240 (Initial commit)
+=======
+                address,
+                resume: resumeFileName
+>>>>>>> aa1bb20 (Initial commit)
             });
 
             res.status(201).json({ message: "Application submitted successfully!" });
 
         } catch (error) {
+<<<<<<< HEAD
 <<<<<<< HEAD
             console.error("Error uploading resume:", error);
             res.status(500).json({ error: `Failed to upload resume: ${error.message}` });
@@ -1332,10 +1369,15 @@ const CRMController = {
             console.error("❌ Error uploading resume:", error);
             res.status(500).json({ error: "Failed to upload resume" });
 >>>>>>> 85f9240 (Initial commit)
+=======
+            console.error(" Error uploading resume:", error);
+            res.status(500).json({ error: "Failed to upload resume" });
+>>>>>>> aa1bb20 (Initial commit)
         }
     }
 };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 module.exports = { 
     CRMController, 
@@ -1348,3 +1390,6 @@ module.exports = {
 =======
 module.exports = { CRMController, upload };
 >>>>>>> 85f9240 (Initial commit)
+=======
+module.exports = { CRMController, upload };
+>>>>>>> aa1bb20 (Initial commit)

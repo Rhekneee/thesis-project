@@ -1,5 +1,6 @@
 const db = require("../../../db");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 const QRCode = require('qrcode');
 const fs = require('fs');
@@ -183,17 +184,23 @@ const HRModel = {
         const query = "SELECT * FROM roles WHERE id = ?";
         const [result] = await db.query(query, [roleId]);
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 
 const HRModel = {
     // 🔹 Get permission by ID
     getPermissionById: async (permissionId) => {
         const query = "SELECT * FROM permission WHERE id = ?";
         const [result] = await db.query(query, [permissionId]);
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
         return result.length > 0 ? result[0] : null;
     },
 
     // 🔹 Create a new user with username included
+<<<<<<< HEAD
 <<<<<<< HEAD
     createUser: async (email, role_id, username) => {
         console.log("🔹 Creating user with:", { email, role_id, username });
@@ -382,6 +389,8 @@ const HRModel = {
             throw new Error("Failed to complete onboarding: " + (error.sqlMessage || error.message));
         }
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
     createUser: async (email, permission_id, full_name) => {
         console.log("🔹 Permission being passed to createUser:", permission_id, "Type:", typeof permission_id);
 
@@ -401,7 +410,10 @@ const HRModel = {
         console.log("✅ New user created with ID:", result.insertId);
         
         return result.insertId;
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
     },
 
     // 🔹 Get user ID by email
@@ -430,6 +442,7 @@ const HRModel = {
             const employeeQuery = `
                 INSERT INTO employees 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 (employee_id, user_id, email, role_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
@@ -440,6 +453,8 @@ const HRModel = {
                 employeeData.email,
                 employeeData.role_id,
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
                 (user_id, email, permission_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
@@ -448,7 +463,10 @@ const HRModel = {
                 employeeData.user_id,
                 employeeData.email,
                 employeeData.permission_id,
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
                 employeeData.full_name,
                 employeeData.contact,
                 employeeData.address,
@@ -458,10 +476,14 @@ const HRModel = {
                 employeeData.emergency_contact_name,
                 employeeData.emergency_contact_relationship,
 <<<<<<< HEAD
+<<<<<<< HEAD
                 employeeData.emergency_contact_phone
 =======
                 employeeData.emergency_contact_phone,
 >>>>>>> 85f9240 (Initial commit)
+=======
+                employeeData.emergency_contact_phone,
+>>>>>>> aa1bb20 (Initial commit)
             ];
     
             const [employeeResult] = await connection.query(employeeQuery, employeeValues);
@@ -480,6 +502,7 @@ const HRModel = {
         }
     },
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // 🔹 Get last inserted employee to determine the next ID (e.g., 2025-1007)
     getLastEmployeeId: async () => {
@@ -535,10 +558,33 @@ const HRModel = {
 >>>>>>> 85f9240 (Initial commit)
         }
     },
+=======
+    // 🔹 Fetch all employees
+    getAllEmployees: async () => {
+        const query = `
+            SELECT 
+                e.*, 
+                p.role_name 
+            FROM 
+                employees e
+            LEFT JOIN 
+                permission p ON e.permission_id = p.id
+        `;
+        const [employees] = await db.query(query);
+        return employees.map(employee => ({
+            ...employee,
+            birthday: employee.birthday
+                ? new Date(employee.birthday).toISOString().split('T')[0]
+                : null
+        }));
+    },
+            
+>>>>>>> aa1bb20 (Initial commit)
 
     // 🔹 Get employee by ID (Added this function for updates)
     getEmployeeById: async (employeeId) => {
         try {
+<<<<<<< HEAD
 <<<<<<< HEAD
             const query = `
                 SELECT 
@@ -568,6 +614,9 @@ const HRModel = {
 =======
             const query = "SELECT * FROM employees WHERE id = ?";
 >>>>>>> 85f9240 (Initial commit)
+=======
+            const query = "SELECT * FROM employees WHERE id = ?";
+>>>>>>> aa1bb20 (Initial commit)
             const [rows] = await db.query(query, [employeeId]);
             if (rows.length > 0) {
                 let employee = rows[0];
@@ -583,6 +632,7 @@ const HRModel = {
         }
     },
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // 🔹 Get all permissions with salary and position information (excluding supplier and developer)
     getAllRoles: async () => {
@@ -713,6 +763,8 @@ const HRModel = {
     
     
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
     // 🔹 Get all permissions
     getAllPermissions: async () => {
         try {
@@ -724,7 +776,10 @@ const HRModel = {
             throw error;
         }
     },
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
     
     // 🔹 Check if employee email already exists
     checkEmployeeEmailExists: async (email) => {
@@ -738,6 +793,7 @@ const HRModel = {
         try {
             console.log(`🔹 Attempting to update Employee ID: ${employeeId}`);
 <<<<<<< HEAD
+<<<<<<< HEAD
         
             const {
                 email, full_name, contact, address, birthday,
@@ -746,6 +802,8 @@ const HRModel = {
             } = employeeData;            
         
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
             console.log("🔹 Received Employee Data:", employeeData);
     
             const {
@@ -754,13 +812,17 @@ const HRModel = {
                 emergency_contact_relationship, emergency_contact_phone, permission_id
             } = employeeData;
     
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
             // 🔥 Validate if employee exists before updating
             const existingEmployee = await HRModel.getEmployeeById(employeeId);
             if (!existingEmployee) {
                 console.log("❌ Employee not found in the database.");
                 throw new Error("Employee not found.");
             }
+<<<<<<< HEAD
 <<<<<<< HEAD
         
             // Update the employee details
@@ -908,6 +970,8 @@ const HRModel = {
         } catch (error) {
             console.error('❌ Error in checkRequestApproval:', error);
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
     
             const query = `
                 UPDATE employees 
@@ -935,11 +999,15 @@ const HRModel = {
     
         } catch (error) {
             console.error("❌ Error updating employee:", error.message);
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
             throw error;
         }
     },
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // Check if already checked in
     alreadyCheckedIn: async (userId, date) => {
@@ -6201,6 +6269,8 @@ const HRModel = {
     }
   }
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
     recordAttendance: async (employeeId, latitude, longitude) => {
         return db.query(
             "INSERT INTO attendance (employee_id, latitude, longitude, status) VALUES (?, ?, ?, 'Present')",
@@ -6234,7 +6304,10 @@ const HRModel = {
     },
 
 
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
 };
 
 module.exports = HRModel;

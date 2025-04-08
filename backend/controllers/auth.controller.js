@@ -1,5 +1,6 @@
 const db = require("../db");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 
 // Helper function to authenticate employee
@@ -64,6 +65,8 @@ const getPermissionsForRole = async (role_id) => {
     const [permissions] = await db.query(SQL_COMMAND, [role_id]);
     return permissions.map(permission => permission.permission_name);
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
 
 // Helper function to authenticate user
 const authenticateUser = async (email, password) => {
@@ -81,12 +84,16 @@ const authenticateUser = async (email, password) => {
     }
 
     return users[0];
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
 };
 
 // Login function
 exports.login = async (req, res) => {
     try {
+<<<<<<< HEAD
 <<<<<<< HEAD
         const { employee_id, password } = req.body;
 
@@ -309,6 +316,8 @@ exports.login = async (req, res) => {
 };
 
 =======
+=======
+>>>>>>> aa1bb20 (Initial commit)
         const { email, password } = req.body;
 
         // Fetch user details along with the role_name from the permission table
@@ -355,7 +364,10 @@ exports.login = async (req, res) => {
 };
 
 
+<<<<<<< HEAD
 >>>>>>> 85f9240 (Initial commit)
+=======
+>>>>>>> aa1bb20 (Initial commit)
 // Logout function
 exports.logout = (req, res) => {
     req.session.destroy((err) => {
@@ -363,6 +375,7 @@ exports.logout = (req, res) => {
             console.error("❌ Logout error:", err);
             return res.status(500).json({ message: "Logout failed." });
         }
+<<<<<<< HEAD
 <<<<<<< HEAD
         res.redirect("/");  // Redirect to login page after logout
     });
@@ -448,3 +461,8 @@ exports.getCurrentUser = async (req, res) => {
     });
 };
 >>>>>>> 85f9240 (Initial commit)
+=======
+        res.redirect("/");
+    });
+};
+>>>>>>> aa1bb20 (Initial commit)

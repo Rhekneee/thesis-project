@@ -123,7 +123,11 @@ const HRController = {
     },
     updateEmployee: async (req, res) => {
         try {
+<<<<<<< HEAD
             const employeeId = req.params.id;
+=======
+            const employeeId = req.body.employeeId;
+>>>>>>> aa1bb20 (Initial commit)
             console.log(`🔹 Updating Employee ID: ${employeeId}`);
 
             if (!req.session || !req.session.user) {
