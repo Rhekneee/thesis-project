@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <style>
+/* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    display: flex;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 250px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    left: 0x; /* Adds space on the left */
+    top: 0px; /* Adds space on the top */
+    bottom: 0px; /* Adds space at the bottom */
+}
+
+.sidebar h2 {
+    text-align: center;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 10px 0;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    border-radius: 5px; /* Rounded buttons */
+}
+
+.sidebar ul li a:hover {
+    background: #34495e;
+}
+
+/* Main Content Layout */
+.content {
+    margin-left: 280px; /* Leaves space for the sidebar */
+    padding: 20px;
+    width: calc(100% - 300px);
+}
+
+/* Form Styling */
+form {
+    max-width: 600px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+/* Form Group Styling */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input, select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+/* Buttons Styling */
+button {
+    background: #28a745;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    width: 100%;
+}
+
+button:hover {
+    background: #218838;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #007bff;
+    color: white;
+}
+
+/* Select Box Styling */
+select {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+option {
+    background-color: white !important;
+    color: black !important;
+}
+
+/* Load Employees Button */
+#loadEmployees {
+    background: #007bff;
+}
+
+#loadEmployees:hover {
+    background: #0056b3;
+}
+
+/* Ensures the Edit Employee Form is hidden by default */
+#editEmployeeForm {
+    display: none;
+}
+
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Manager Panel</h2>
+        <ul>
+            <li><a href="#" onclick="showSection('employeeManagement')">Employee Management</a></li>
+            <li><a href="#" onclick="showSection('attendanceMonitoring')">Attendance Monitoring</a></li>
+            <li><a href="#" onclick="showSection('resumeSubmission')">Resume Submission</a></li>
+        </ul>
+    </div>
+    <h1>HR Dashboard</h1>
+    <div class="content" id="employeeManagement">
+    <h2>Add New Employee</h2>
+    <form id="employeeForm">
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="email" placeholder="Enter email" required>
+        </div>
+
+        <div class="form-group">
+            <label>Full Name:</label>
+            <input type="text" name="full_name" placeholder="Enter full name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Contact #:</label>
+            <input type="text" name="contact" placeholder="Enter contact number" required>
+        </div>
+
+        <div class="form-group">
+            <label>Address:</label>
+            <input type="text" name="address" placeholder="Enter address" required>
+        </div>
+
+        <div class="form-group">
+            <label>Birthday:</label>
+            <input type="date" name="birthday" required>
+        </div>
+
+        <div class="form-group">
+            <label>Employment Status:</label>
+            <select name="employment_status" required>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Educational Background:</label>
+            <input type="text" name="educational_background" placeholder="Enter education details" required>
+        </div>
+
+        <h3>Emergency Contact</h3>
+
+        <div class="form-group">
+            <label>Name:</label>
+            <input type="text" name="emergency_contact_name" placeholder="Enter contact name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Relationship:</label>
+            <input type="text" name="emergency_contact_relationship" placeholder="Enter relationship" required>
+        </div>
+
+        <div class="form-group">
+            <label>Phone:</label>
+            <input type="text" name="emergency_contact_phone" placeholder="Enter phone number" required>
+        </div>
+
+        <h3>Permissions</h3>
+        <div class="form-group">
+            <label>Permission:</label>
+            <select name="permission_id" id="permissionSelect" required>
+                <!-- Permissions will be loaded dynamically -->
+            </select>
+        </div>
+
+        <button type="submit">Add Employee</button>
+    </form>
+
+    <h2>Employee List</h2>
+    <button id="loadEmployees">Load Employees</button>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Full Name</th>
+                <th>Contact</th>
+                <th>Address</th>
+                <th>Birthday</th>
+                <th>Employment Status</th>
+                <th>Education</th>
+                <th>Emergency Contact</th>
+                <th>Permission</th>
+            </tr>
+        </thead>
+        <tbody id="employeeTableBody">
+            <!-- Employee rows will be added dynamically -->
+        </tbody>
+    </table>
+    <h2>Edit Employee</h2>
+    <form id="editEmployeeForm" style="display: none;">
+        <input type="hidden" name="edit_employee_id">
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="edit_email" required>
+        </div>
+
+        <div class="form-group">
+            <label>Full Name:</label>
+            <input type="text" name="edit_full_name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Contact #:</label>
+            <input type="text" name="edit_contact" required>
+        </div>
+
+        <div class="form-group">
+            <label>Address:</label>
+            <input type="text" name="edit_address" required>
+        </div>
+
+        <div class="form-group">
+            <label>Birthday:</label>
+            <input type="date" name="edit_birthday" required>
+        </div>
+
+        <div class="form-group">
+            <label>Employment Status:</label>
+            <select name="edit_employment_status" required>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="editPermissionSelect">Permission</label>
+            <select id="editPermissionSelect" name="edit_permission">
+                <option value="">Loading...</option> <!-- Placeholder while fetching -->
+            </select>
+
+        </div>
+
+        <button id="updateEmployee">Update Employee</button>
+    </form>
+    </div>
+
+    <div class="content" id="attendanceMonitoring" style="display: none;">
+        <button id="checkLocation">Check Location</button>
+        <button id="checkIn" disabled>Check In</button>
+        <p id="status">Click "Check Location" to verify.</p>    
+    
+        <h3>Today's Attendance</h3>
+        <table id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Status</th>
+                    <th>Check-In Time</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceBody">
+                <tr>
+                    <td colspan="5">No records found</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content" id="resumeSubmission" style="display: none;">
+        <h2>Resume Submission</h2>
+        <!-- Content for Resume Submission -->
+    </div>
+    <script>
+        const API_URL = "http://localhost:4000/hr";
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.content');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+
+            const activeSection = document.getElementById(sectionId);
+            activeSection.style.display = 'block';
+        }
+
+        // Default to show Employee Management on page load
+        window.onload = function() {
+            showSection('employeeManagement');
+        }
+
+        async function loadPermissions() {
+            try {
+                console.log("Fetching permissions..."); // Debug
+                const response = await fetch(`${API_URL}/permissions`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const permissions = await response.json();
+                console.log("Permissions data received:", permissions); // ✅ Log response
+
+                const permissionSelect = document.getElementById("permissionSelect");
+                permissionSelect.innerHTML = '<option value="">Select Permission</option>';
+
+                if (!Array.isArray(permissions) || permissions.length === 0) {
+                    console.warn("No permissions found or invalid format.");
+                    return; // Exit if empty
+                }
+
+                permissions.forEach(permission => {
+                    const option = document.createElement("option");
+                    option.value = permission.id; 
+                    option.textContent = permission.role_name; 
+                    permissionSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading permissions:", error);
+                alert("Error loading permissions.");
+            }
+        }
+
+
+        async function addEmployee(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const employeeData = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch(`${API_URL}/employees`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(employeeData)
+                });
+
+                if (response.ok) {
+                    alert("Employee added successfully!");
+                    event.target.reset();
+                    loadEmployees();
+                } else {
+                    alert("Failed to add employee.");
+                }
+            } catch (error) {
+                alert("Error adding employee.");
+            }
+        }
+
+        async function loadEmployees() {
+            try {
+                const response = await fetch(`${API_URL}/employees`);
+                const employees = await response.json();
+                const employeeTableBody = document.getElementById("employeeTableBody");
+                employeeTableBody.innerHTML = "";
+                
+                employees.forEach(emp => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${emp.employee_id}</td>
+                        <td>${emp.email}</td>
+                        <td>${emp.full_name}</td>
+                        <td>${emp.contact}</td>
+                        <td>${emp.address}</td>
+                        <td>${emp.birthday}</td>
+                        <td>${emp.employment_status}</td>
+                        <td>${emp.educational_background}</td>
+                        <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
+                        <td>${emp.role_name || "N/A"}</td> <!-- Display permission -->
+                    `;
+                    row.addEventListener("click", () => populateEditForm(emp));
+                    employeeTableBody.appendChild(row);
+                });
+            } catch (error) {
+                alert("Error loading employees.");
+            }
+        }
+
+        document.getElementById("employeeForm").addEventListener("submit", addEmployee);
+        document.getElementById("loadEmployees").addEventListener("click", loadEmployees);
+
+        loadPermissions(); // ✅ Fetch permissions on page load
+
+
+        async function populateEditForm(employee) {
+        document.getElementById("editEmployeeForm").style.display = "block";
+
+        document.querySelector("input[name='edit_employee_id']").value = employee.id;
+        document.querySelector("input[name='edit_email']").value = employee.email;
+        document.querySelector("input[name='edit_full_name']").value = employee.full_name;
+        document.querySelector("input[name='edit_contact']").value = employee.contact;
+        document.querySelector("input[name='edit_address']").value = employee.address;
+        document.querySelector("input[name='edit_birthday']").value = employee.birthday;
+        document.querySelector("select[name='edit_employment_status']").value = employee.employment_status;
+
+        // 🛠 Load permissions first
+        await loadEditPermissions();
+
+        // ✅ Now that options are loaded, select the one for this employee
+        document.querySelector("select[name='edit_permission_id']").value = employee.permission_id;
+    }
+
+
+    async function loadEditPermissions() {
+    const select = document.getElementById("editPermissionSelect");
+    try {
+        const response = await fetch("/hr/permissions");
+        const permissions = await response.json();
+
+        // Clear current options
+        select.innerHTML = "";
+
+        permissions.forEach((perm) => {
+            const option = document.createElement("option");
+            option.value = perm.id;
+            option.textContent = perm.role_name;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Failed to load permissions:", err);
+        select.innerHTML = '<option disabled selected>Error loading roles</option>';
+    }
+}
+
+async function updateEmployee() {
+    console.log("✅ Update button clicked!");
+
+    const employeeId = document.getElementById("editEmployeeId").value;
+    const fullName = document.getElementById("editFullName").value;
+    const contact = document.getElementById("editContact").value;
+    const address = document.getElementById("editAddress").value;
+    const birthday = document.getElementById("editBirthday").value;
+    const employmentStatus = document.getElementById("editEmploymentStatus").value;
+    const educationalBackground = document.getElementById("editEducationalBackground").value;
+    const emergencyContactName = document.getElementById("editEmergencyContactName").value;
+    const emergencyContactRelationship = document.getElementById("editEmergencyContactRelationship").value;
+    const emergencyContactPhone = document.getElementById("editEmergencyContactPhone").value;
+    const permissionId = document.getElementById("editPermissionSelect").value;
+
+    console.log("🚀 Sending update request with data:", {
+        employeeId, fullName, contact, address, birthday, employmentStatus, 
+        educationalBackground, emergencyContactName, emergencyContactRelationship, 
+        emergencyContactPhone, permissionId
+    });
+
+    try {
+        const response = await fetch(`${API_URL}/employees/${employeeId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                full_name: fullName,
+                contact,
+                address,
+                birthday,
+                employment_status: employmentStatus,
+                educational_background: educationalBackground,
+                emergency_contact_name: emergencyContactName,
+                emergency_contact_relationship: emergencyContactRelationship,
+                emergency_contact_phone: emergencyContactPhone,
+                permission_id: permissionId
+            })
+        });
+
+        const result = await response.json();
+        console.log("✅ Update Success:", result);
+
+        if (response.ok) {
+            alert("Employee updated successfully!");
+            loadEmployees(); // Refresh the employee list
+        } else {
+            alert(`❌ Failed to update employee: ${result.error || result.message}`);
+        }
+    } catch (error) {
+        console.error("❌ Update Failed:", error);
+        alert("An error occurred while updating.");
+    }
+}
+
+
+//attendance monitoring
+        const officeLat = 14.3435377;
+        const officeLng = 120.9796345;
+        const allowedRadius = 500;
+
+        document.getElementById("checkLocation").addEventListener("click", function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        const distance = getDistance(officeLat, officeLng, userLat, userLng);
+
+                        if (distance <= allowedRadius) {
+                            document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
+                            document.getElementById("checkIn").disabled = false;
+                        } else {
+                            document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
+                            document.getElementById("checkIn").disabled = true;
+                        }
+                    },
+                    function(error) {
+                        document.getElementById("status").textContent = "⚠️ Location access denied!";
+                    }
+                );
+            } else {
+                document.getElementById("status").textContent = "❌ Geolocation is not supported by this browser.";
+            }
+        });
+
+        document.getElementById("checkIn").addEventListener("click", function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+
+                    try {
+                        const response = await fetch("/check-in", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ latitude: userLat, longitude: userLng })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            document.getElementById("status").textContent = "✅ Check-in successful!";
+                            loadAttendanceData();
+                        } else {
+                            document.getElementById("status").textContent = "❌ Error: " + data.error;
+                        }
+                    } catch (error) {
+                        document.getElementById("status").textContent = "❌ Failed to check in!";
+                    }
+                });
+            }
+        });
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const φ1 = (lat1 * Math.PI) / 180;
+            const φ2 = (lat2 * Math.PI) / 180;
+            const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+            const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        async function loadAttendanceData() {
+            try {
+                const response = await fetch(`/today/${123}`); 
+                const data = await response.json();
+
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = ""; 
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5">No records found</td></tr>`;
+                    return;
+                }
+
+                data.forEach(record => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${record.employee_id}</td>
+                        <td>${record.latitude}</td>
+                        <td>${record.longitude}</td>
+                        <td>${record.status}</td>
+                        <td>${record.check_in_time}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("❌ Failed to load attendance data:", error);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadAttendanceData);
+    </script>
+
+</body>
+</html>
