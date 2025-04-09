@@ -429,7 +429,7 @@ option {
                 employees.forEach(emp => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${emp.id}</td>
+                        <td>${emp.employee_id}</td>
                         <td>${emp.email}</td>
                         <td>${emp.full_name}</td>
                         <td>${emp.contact}</td>
@@ -438,7 +438,7 @@ option {
                         <td>${emp.employment_status}</td>
                         <td>${emp.educational_background}</td>
                         <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
-                        <td>${emp.permission_name || "N/A"}</td> <!-- Display permission -->
+                        <td>${emp.role_name || "N/A"}</td> <!-- Display permission -->
                     `;
                     row.addEventListener("click", () => populateEditForm(emp));
                     employeeTableBody.appendChild(row);
@@ -455,7 +455,7 @@ option {
 
 
         async function populateEditForm(employee) {
-        document.getElementById("editEmployeeForm").style.display = "block"; // Show form
+        document.getElementById("editEmployeeForm").style.display = "block";
 
         document.querySelector("input[name='edit_employee_id']").value = employee.id;
         document.querySelector("input[name='edit_email']").value = employee.email;
@@ -464,13 +464,37 @@ option {
         document.querySelector("input[name='edit_address']").value = employee.address;
         document.querySelector("input[name='edit_birthday']").value = employee.birthday;
         document.querySelector("select[name='edit_employment_status']").value = employee.employment_status;
-        
-        // Update permissions dropdown
-        document.querySelector("select[name='edit_permission_id']").value = employee.permission_id;
 
-        await loadEditPermissions(employee.permission_id);
+        // 🛠 Load permissions first
+        await loadEditPermissions();
+
+        // ✅ Now that options are loaded, select the one for this employee
+        document.querySelector("select[name='edit_permission_id']").value = employee.permission_id;
     }
-    async function updateEmployee() {
+
+
+    async function loadEditPermissions() {
+    const select = document.getElementById("editPermissionSelect");
+    try {
+        const response = await fetch("/hr/permissions");
+        const permissions = await response.json();
+
+        // Clear current options
+        select.innerHTML = "";
+
+        permissions.forEach((perm) => {
+            const option = document.createElement("option");
+            option.value = perm.id;
+            option.textContent = perm.role_name;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Failed to load permissions:", err);
+        select.innerHTML = '<option disabled selected>Error loading roles</option>';
+    }
+}
+
+async function updateEmployee() {
     console.log("✅ Update button clicked!");
 
     const employeeId = document.getElementById("editEmployeeId").value;
@@ -492,32 +516,37 @@ option {
     });
 
     try {
-        const response = await fetch(`${API_URL}/updateEmployee`, {
-            method: "POST",
+        const response = await fetch(`${API_URL}/employees/${employeeId}`, {
+            method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                employeeId, full_name: fullName, contact, address, birthday,
-                employment_status: employmentStatus, educational_background: educationalBackground,
-                emergency_contact_name: emergencyContactName, emergency_contact_relationship: emergencyContactRelationship,
-                emergency_contact_phone: emergencyContactPhone, permission_id: permissionId
+                full_name: fullName,
+                contact,
+                address,
+                birthday,
+                employment_status: employmentStatus,
+                educational_background: educationalBackground,
+                emergency_contact_name: emergencyContactName,
+                emergency_contact_relationship: emergencyContactRelationship,
+                emergency_contact_phone: emergencyContactPhone,
+                permission_id: permissionId
             })
         });
 
         const result = await response.json();
         console.log("✅ Update Success:", result);
 
-        if (result.success) {
+        if (response.ok) {
             alert("Employee updated successfully!");
             loadEmployees(); // Refresh the employee list
         } else {
-            alert("❌ Failed to update employee.");
+            alert(`❌ Failed to update employee: ${result.error || result.message}`);
         }
     } catch (error) {
         console.error("❌ Update Failed:", error);
         alert("An error occurred while updating.");
     }
 }
-
 
 
 //attendance monitoring

@@ -92,18 +92,24 @@ const HRModel = {
 
     // 🔹 Fetch all employees
     getAllEmployees: async () => {
-        try {
-            const query = "SELECT * FROM employees";
-            const [employees] = await db.query(query);
-            return employees.map(employee => ({
-                ...employee,
-                birthday: employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null
-            }));
-        } catch (error) {
-            console.error("❌ Error fetching employees:", error);
-            throw error;
-        }
+        const query = `
+            SELECT 
+                e.*, 
+                p.role_name 
+            FROM 
+                employees e
+            LEFT JOIN 
+                permission p ON e.permission_id = p.id
+        `;
+        const [employees] = await db.query(query);
+        return employees.map(employee => ({
+            ...employee,
+            birthday: employee.birthday
+                ? new Date(employee.birthday).toISOString().split('T')[0]
+                : null
+        }));
     },
+            
 
     // 🔹 Get employee by ID (Added this function for updates)
     getEmployeeById: async (employeeId) => {
