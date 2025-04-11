@@ -3,7 +3,7 @@ const db = require("../../../db");
 const HRModel = {
     // 🔹 Get permission by ID
     getRoleById: async (roleId) => {
-        const query = "SELECT * FROM role WHERE id = ?";
+        const query = "SELECT * FROM roles WHERE id = ?";
         const [result] = await db.query(query, [roleId]);
         return result.length > 0 ? result[0] : null;
     },
@@ -91,26 +91,30 @@ const HRModel = {
         }
     },
 
-    // 🔹 Fetch all employees
-    getAllEmployees: async () => {
-        const query = `
-            SELECT 
-                e.*, 
-                r.role_name 
-            FROM 
-                employees e
-            LEFT JOIN 
-                role r ON e.role_id = r.id
-        `;
+// 🔹 Fetch all employees with role and department
+getAllEmployees: async () => {
+    const query = `
+        SELECT 
+            e.*, 
+            r.name AS role_name, 
+            d.name AS department_name
+        FROM 
+            employees e
+        JOIN 
+            roles r ON e.role_id = r.id
+        JOIN 
+            departments d ON r.department_id = d.id
+    `;
 
-        const [employees] = await db.query(query);
-        return employees.map(employee => ({
-            ...employee,
-            birthday: employee.birthday
-                ? new Date(employee.birthday).toISOString().split('T')[0]
-                : null
-        }));
-    },
+    const [employees] = await db.query(query);
+    return employees.map(employee => ({
+        ...employee,
+        birthday: employee.birthday
+            ? new Date(employee.birthday).toISOString().split('T')[0]
+            : null
+    }));
+},
+
             
 
     // 🔹 Get employee by ID (Added this function for updates)
@@ -136,13 +140,18 @@ const HRModel = {
     getAllRoles: async () => {
         try {
             const query = "SELECT id, name FROM roles";
+            console.log("🔹 [getAllRoles] Running query:", query);
+    
             const [roles] = await db.query(query);
+            console.log("🔹 [getAllRoles] Query result:", roles);
+    
             return roles;
         } catch (error) {
-            console.error("❌ Error fetching roles:", error);
+            console.error("❌ [getAllRoles] Error during role fetch:", error.message || error);
             throw error;
         }
     },
+    
     
     
     // 🔹 Check if employee email already exists

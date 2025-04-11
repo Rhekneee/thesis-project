@@ -2,74 +2,74 @@ const HRModel = require("../model/hr.model");
 
 const HRController = {
     // 🔹 Add a new employee (Manager Only)
-    addEmployee: async (req, res) => {
-        try {
-            console.log("🔹 Received Request Body:", req.body);
+        addEmployee: async (req, res) => {
+            try {
+                console.log("🔹 Received Request Body:", req.body);
 
-            if (!req.session?.user) {
-                return res.status(401).json({ error: "Unauthorized: No session found" });
+                if (!req.session?.user) {
+                    return res.status(401).json({ error: "Unauthorized: No session found" });
+                }
+
+                const role = req.session.user.role_name;
+                if (role !== "office_administrator") {
+                    return res.status(403).json({ error: "Forbidden: Only Admin Staff can add employees" });
+                }
+
+                const {
+                    email, full_name, contact, address, birthday,
+                    employment_status, educational_background, emergency_contact_name,
+                    emergency_contact_relationship, emergency_contact_phone, role_id 
+                } = req.body;            
+
+                if (!email || !full_name || !contact || !address || !birthday ||
+                    !employment_status || !educational_background || !emergency_contact_name ||
+                    !emergency_contact_relationship || !emergency_contact_phone || !role_id) {
+                    return res.status(400).json({ error: "Missing required fields" });
+                }
+
+                // 🔍 Email Check
+                const emailExists = await HRModel.checkEmployeeEmailExists(email);
+                if (emailExists) {
+                    return res.status(400).json({ error: "Employee with this email already exists" });
+                }
+
+                // 🔍 Permission Check
+                const roleExists = await HRModel.getRoleById(role_id);
+                if (!roleExists) {
+                    return res.status(400).json({ error: "Invalid role ID provided" });
+                }            
+
+                console.log("🔹 Valid Permission ID:", role_id);
+
+                let user_id = await HRModel.getUserIdByEmail(email);
+                if (!user_id) {
+                    console.log("🔹 Creating new user...");
+                    user_id = await HRModel.createUser(email, role_id, full_name);
+                }
+
+                const employeeData = {
+                    user_id,
+                    email,
+                    role_id: parseInt(role_id),
+                    full_name,
+                    contact,
+                    address,
+                    birthday,
+                    employment_status,
+                    educational_background,
+                    emergency_contact_name,
+                    emergency_contact_relationship,
+                    emergency_contact_phone
+                };
+
+                const result = await HRModel.addEmployee(employeeData);
+                res.status(201).json({ message: "Employee added successfully", ...result });
+
+            } catch (error) {
+                console.error("❌ Error adding employee:", error);
+                res.status(500).json({ message: "Failed to add employee" });
             }
-
-            const role = req.session.user.role_name;
-            if (role !== "office_administrator") {
-                return res.status(403).json({ error: "Forbidden: Only Admin Staff can add employees" });
-            }
-
-            const {
-                email, full_name, contact, address, birthday,
-                employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, role_id 
-            } = req.body;            
-
-            if (!email || !full_name || !contact || !address || !birthday ||
-                !employment_status || !educational_background || !emergency_contact_name ||
-                !emergency_contact_relationship || !emergency_contact_phone || !permission_id) {
-                return res.status(400).json({ error: "Missing required fields" });
-            }
-
-            // 🔍 Email Check
-            const emailExists = await HRModel.checkEmployeeEmailExists(email);
-            if (emailExists) {
-                return res.status(400).json({ error: "Employee with this email already exists" });
-            }
-
-            // 🔍 Permission Check
-            const roleExists = await HRModel.getRoleById(role_id);
-            if (!roleExists) {
-                return res.status(400).json({ error: "Invalid role ID provided" });
-            }            
-
-            console.log("🔹 Valid Permission ID:", permission_id);
-
-            let user_id = await HRModel.getUserIdByEmail(email);
-            if (!user_id) {
-                console.log("🔹 Creating new user...");
-                user_id = await HRModel.createUser(email, permission_id, full_name);
-            }
-
-            const employeeData = {
-                user_id,
-                email,
-                role_id: parseInt(role_id),
-                full_name,
-                contact,
-                address,
-                birthday,
-                employment_status,
-                educational_background,
-                emergency_contact_name,
-                emergency_contact_relationship,
-                emergency_contact_phone
-            };
-
-            const result = await HRModel.addEmployee(employeeData);
-            res.status(201).json({ message: "Employee added successfully", ...result });
-
-        } catch (error) {
-            console.error("❌ Error adding employee:", error);
-            res.status(500).json({ message: "Failed to add employee" });
-        }
-    },
+        },
 
     // 🔹 Get all employees
     getAllEmployees: async (req, res) => {
@@ -85,16 +85,23 @@ const HRController = {
     // 🔹 Get all permissions
     getRoles: async (req, res) => {
         try {
+            console.log("🔹 [getRoles] Request received. Fetching roles...");
+
             const roles = await HRModel.getAllRoles();
+            console.log("🔹 [getRoles] Fetched roles:", roles);
+
             if (!roles || roles.length === 0) {
+                console.warn("⚠️ [getRoles] No roles found in the system.");
                 return res.status(404).json({ error: "No roles found in the system" });
             }
+
             res.json(roles);
         } catch (error) {
-            console.error("❌ Error fetching roles:", error);
+            console.error("❌ [getRoles] Error fetching roles:", error.message || error);
             res.status(500).json({ error: "Failed to fetch roles" });
         }
     },
+
 
     // 🔹 Get employee details by ID
     getEmployeeDetails: async (req, res) => {
@@ -130,7 +137,7 @@ const HRController = {
             const {
                 email, full_name, contact, address, birthday,
                 employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, permission_id
+                emergency_contact_relationship, emergency_contact_phone, role_id
             } = req.body;
 
             const existing = await HRModel.getEmployeeById(employeeId);
@@ -149,7 +156,7 @@ const HRController = {
                 emergency_contact_name,
                 emergency_contact_relationship,
                 emergency_contact_phone,
-                permission_id
+                role_id
             });
 
             res.status(200).json({ message: "Employee updated successfully", employee: updatedEmployee });

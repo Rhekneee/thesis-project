@@ -237,7 +237,7 @@ option {
         <h3>Permissions</h3>
         <div class="form-group">
             <label>Permission:</label>
-            <select name="permission_id" id="permissionSelect" required>
+            <select name="role_id" id="roleSelect" required>
                 <!-- Permissions will be loaded dynamically -->
             </select>
         </div>
@@ -259,7 +259,7 @@ option {
                 <th>Employment Status</th>
                 <th>Education</th>
                 <th>Emergency Contact</th>
-                <th>Permission</th>
+                <th>Department</th>
             </tr>
         </thead>
         <tbody id="employeeTableBody">
@@ -348,19 +348,49 @@ option {
     <script>
        const API_URL = "http://localhost:4000/hr";
 
-// 🔹 Utility to show only the selected section
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(section => {
         section.style.display = 'none';
     });
-    document.getElementById(sectionId).style.display = 'block';
+
+    const section = document.getElementById(sectionId);
+    section.style.display = 'block';
+
+    if (sectionId === 'employeeManagement') {
+        if (userRole === 6) {
+            document.getElementById("employeeFormContainer").style.display = "block";
+        } else {
+            document.getElementById("employeeFormContainer").style.display = "none";
+        }
+    }
 }
 
-// 🔹 On load: Show default section & load initial data
-window.onload = () => {
-    showSection('employeeManagement');
-    loadRoles() 
+
+
+window.onload = async () => {
+    try {
+        const res = await fetch("http://localhost:4000/hr/check-session", {
+            credentials: "include", // 👈 make sure cookies are sent!
+        });
+
+        if (!res.ok) throw new Error();
+
+        const session = await res.json();
+
+        const roleId = session.user.role_id;
+        if (roleId === 6) {
+            showSection('employeeManagement');
+            loadRoles();
+        } else {
+            redirectToLogin();
+        }
+    } catch (err) {
+        console.error("❌ Session check failed:", err);
+        redirectToLogin();
+    }
 };
+
+
 
 async function loadRoles() {
     try {
@@ -383,7 +413,7 @@ async function loadRoles() {
         roles.forEach(role => {
             const option = document.createElement("option");
             option.value = role.id;
-            option.textContent = role.role_name;
+            option.textContent = role.name;
             roleSelect.appendChild(option);
         });
     } catch (error) {
@@ -429,17 +459,18 @@ async function loadEmployees() {
         employees.forEach(emp => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${emp.employee_id}</td>
-                <td>${emp.email}</td>
-                <td>${emp.full_name}</td>
-                <td>${emp.contact}</td>
-                <td>${emp.address}</td>
-                <td>${emp.birthday}</td>
-                <td>${emp.employment_status}</td>
-                <td>${emp.educational_background}</td>
-                <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
-                <td>${emp.role_name || "N/A"}</td>
-            `;
+            <td>${emp.employee_id}</td>
+            <td>${emp.email}</td>
+            <td>${emp.full_name}</td>
+            <td>${emp.contact}</td>
+            <td>${emp.address}</td>
+            <td>${emp.birthday}</td>
+            <td>${emp.employment_status}</td>
+            <td>${emp.educational_background}</td>
+            <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
+            <td>${emp.role_name || "N/A"} - ${emp.department_name || "N/A"}</td>
+        `;
+
             row.addEventListener("click", () => populateEditForm(emp));
             tableBody.appendChild(row);
         });
