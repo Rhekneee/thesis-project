@@ -52,7 +52,7 @@ app.get('/dashboard', (req, res) => {
 
     const roleDashboards = {
         owner: "owner_dashboard.html",
-        office_administrator: "manager_hr.html",
+        office_administrator: "hr_manager/manager_hr.html",
         liaison_officer: "manager_crm.html",
         finance_accounting: "manager_finance.html",
         general_foreman: "manager_manufacturing.html",
