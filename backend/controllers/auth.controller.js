@@ -3,9 +3,9 @@ const db = require("../db");
 // Helper function to authenticate user
 const authenticateUser = async (email, password) => {
     const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.role_id, permission.role_name 
+        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
         FROM users 
-        JOIN permission ON users.role_id = permission.id
+        JOIN roles ON users.role_id = roles.id
         WHERE users.email = ? AND users.password = ?;
     `;
 
@@ -18,18 +18,30 @@ const authenticateUser = async (email, password) => {
     return users[0];
 };
 
+// Function to fetch permissions based on role_id
+const getPermissionsForRole = async (role_id) => {
+    const SQL_COMMAND = `
+        SELECT permission_name 
+        FROM role_permission 
+        WHERE role_id = ?;
+    `;
+    
+    const [permissions] = await db.query(SQL_COMMAND, [role_id]);
+    return permissions.map(permission => permission.permission_name);
+};
+
 // Login function
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Fetch user details along with the role_name from the permission table
+        // Fetch user details along with the role_name from the roles table
         const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.permission_id, permission.role_name 
-        FROM users 
-        JOIN permission ON users.permission_id = permission.id
-        WHERE users.email = ? AND users.password = ?;
-    `;
+            SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
+            FROM users 
+            JOIN roles ON users.role_id = roles.id
+            WHERE users.email = ? AND users.password = ?;
+        `;
     
         const [users] = await db.query(SQL_COMMAND, [email, password]);
     
@@ -39,16 +51,22 @@ exports.login = async (req, res) => {
         }
     
         const user = users[0];
-        console.log(`✅ Login successful for ${user.role_name} (Permission ID: ${user.permission_id}): ${user.email}`);
+        console.log(`✅ Login successful for ${user.role_name} (Role ID: ${user.role_id}): ${user.email}`);
     
-        // Store user data in session
+        // Fetch the user's permissions based on role_id
+        const permissions = await getPermissionsForRole(user.role_id);
+        console.log(`Permissions for ${user.role_name}:`, permissions);
+
+        // Store user data and permissions in the session
         req.session.user = {
             id: user.id,
             email: user.email,
-            permission_id: user.permission_id,  // Use permission_id from users table
-            role_name: user.role_name,  // Use role_name from permission table
+            role_id: user.role_id,
+            role_name: user.role_name,
             created_at: user.created_at,
+            permissions: permissions, // Store permissions array in the session
         };
+        console.log("Session after login:", req.session.user);
 
         req.session.save((err) => {
             if (err) {
@@ -56,7 +74,7 @@ exports.login = async (req, res) => {
                 return res.status(500).json({ message: "Session error." });
             }
 
-            // Redirect to the dashboard
+            // Redirect to the dashboard after successful login
             res.redirect('/dashboard');
         });
 
@@ -74,6 +92,6 @@ exports.logout = (req, res) => {
             console.error("❌ Logout error:", err);
             return res.status(500).json({ message: "Logout failed." });
         }
-        res.redirect("/");
+        res.redirect("/");  // Redirect to login page after logout
     });
 };

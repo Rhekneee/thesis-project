@@ -2,33 +2,33 @@ const db = require("../../../db");
 
 const HRModel = {
     // 🔹 Get permission by ID
-    getPermissionById: async (permissionId) => {
-        const query = "SELECT * FROM permission WHERE id = ?";
-        const [result] = await db.query(query, [permissionId]);
+    getRoleById: async (roleId) => {
+        const query = "SELECT * FROM roles WHERE id = ?";
+        const [result] = await db.query(query, [roleId]);
         return result.length > 0 ? result[0] : null;
     },
 
     // 🔹 Create a new user with username included
-    createUser: async (email, permission_id, full_name) => {
-        console.log("🔹 Permission being passed to createUser:", permission_id, "Type:", typeof permission_id);
-
-        if (!permission_id) {
-            throw new Error("❌ Permission ID is required and cannot be null");
+    createUser: async (email, role_id, full_name) => {
+        console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
+    
+        if (!role_id) {
+            throw new Error("❌ Role ID is required and cannot be null");
         }
-
+    
         const defaultPassword = "default123"; 
-
-        // Include username in the insert query
+    
         const query = `
-            INSERT INTO users (email, username, permission_id, password) 
+            INSERT INTO users (email, username, role_id, password) 
             VALUES (?, ?, ?, ?)
         `;
-
-        const [result] = await db.query(query, [email, full_name, permission_id, defaultPassword]);
+    
+        const [result] = await db.query(query, [email, full_name, role_id, defaultPassword]);
         console.log("✅ New user created with ID:", result.insertId);
         
         return result.insertId;
     },
+    
 
     // 🔹 Get user ID by email
     getUserIdByEmail: async (email) => {
@@ -54,25 +54,26 @@ const HRModel = {
             await connection.beginTransaction();
     
             const employeeQuery = `
-                INSERT INTO employees 
-                (user_id, email, permission_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            `;
-    
-            const employeeValues = [
-                employeeData.user_id,
-                employeeData.email,
-                employeeData.permission_id,
-                employeeData.full_name,
-                employeeData.contact,
-                employeeData.address,
-                employeeData.birthday,
-                employeeData.employment_status,
-                employeeData.educational_background,
-                employeeData.emergency_contact_name,
-                employeeData.emergency_contact_relationship,
-                employeeData.emergency_contact_phone,
-            ];
+            INSERT INTO employees 
+            (user_id, email, role_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        `;
+
+        const employeeValues = [
+            employeeData.user_id,
+            employeeData.email,
+            employeeData.role_id,
+            employeeData.full_name,
+            employeeData.contact,
+            employeeData.address,
+            employeeData.birthday,
+            employeeData.employment_status,
+            employeeData.educational_background,
+            employeeData.emergency_contact_name,
+            employeeData.emergency_contact_relationship,
+            employeeData.emergency_contact_phone,
+        ];
+
     
             const [employeeResult] = await connection.query(employeeQuery, employeeValues);
     
@@ -90,25 +91,30 @@ const HRModel = {
         }
     },
 
-    // 🔹 Fetch all employees
-    getAllEmployees: async () => {
-        const query = `
-            SELECT 
-                e.*, 
-                p.role_name 
-            FROM 
-                employees e
-            LEFT JOIN 
-                permission p ON e.permission_id = p.id
-        `;
-        const [employees] = await db.query(query);
-        return employees.map(employee => ({
-            ...employee,
-            birthday: employee.birthday
-                ? new Date(employee.birthday).toISOString().split('T')[0]
-                : null
-        }));
-    },
+// 🔹 Fetch all employees with role and department
+getAllEmployees: async () => {
+    const query = `
+        SELECT 
+            e.*, 
+            r.name AS role_name, 
+            d.name AS department_name
+        FROM 
+            employees e
+        JOIN 
+            roles r ON e.role_id = r.id
+        JOIN 
+            departments d ON r.department_id = d.id
+    `;
+
+    const [employees] = await db.query(query);
+    return employees.map(employee => ({
+        ...employee,
+        birthday: employee.birthday
+            ? new Date(employee.birthday).toISOString().split('T')[0]
+            : null
+    }));
+},
+
             
 
     // 🔹 Get employee by ID (Added this function for updates)
@@ -131,16 +137,22 @@ const HRModel = {
     },
 
     // 🔹 Get all permissions
-    getAllPermissions: async () => {
+    getAllRoles: async () => {
         try {
-            const query = "SELECT id, role_name FROM permission";
-            const [permissions] = await db.query(query);
-            return permissions;
+            const query = "SELECT id, name FROM roles";
+            console.log("🔹 [getAllRoles] Running query:", query);
+    
+            const [roles] = await db.query(query);
+            console.log("🔹 [getAllRoles] Query result:", roles);
+    
+            return roles;
         } catch (error) {
-            console.error("❌ Error fetching permissions:", error);
+            console.error("❌ [getAllRoles] Error during role fetch:", error.message || error);
             throw error;
         }
     },
+    
+    
     
     // 🔹 Check if employee email already exists
     checkEmployeeEmailExists: async (email) => {
@@ -158,8 +170,8 @@ const HRModel = {
             const {
                 email, full_name, contact, address, birthday,
                 employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, permission_id
-            } = employeeData;
+                emergency_contact_relationship, emergency_contact_phone, role_id
+            } = employeeData;            
     
             // 🔥 Validate if employee exists before updating
             const existingEmployee = await HRModel.getEmployeeById(employeeId);
@@ -169,17 +181,17 @@ const HRModel = {
             }
     
             const query = `
-                UPDATE employees 
-                SET email = ?, full_name = ?, contact = ?, address = ?, birthday = ?, 
-                    employment_status = ?, educational_background = ?, emergency_contact_name = ?, 
-                    emergency_contact_relationship = ?, emergency_contact_phone = ?, permission_id = ? 
-                WHERE employee_id  = ?
-            `;
+            UPDATE employees 
+            SET email = ?, full_name = ?, contact = ?, address = ?, birthday = ?, 
+                employment_status = ?, educational_background = ?, emergency_contact_name = ?, 
+                emergency_contact_relationship = ?, emergency_contact_phone = ?, role_id = ? 
+            WHERE employee_id = ?
+        `;
     
             const [result] = await db.query(query, [
                 email, full_name, contact, address, birthday,
                 employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, permission_id, employeeId
+                emergency_contact_relationship, emergency_contact_phone, role_id, employeeId
             ]);
     
             console.log("✅ Update Query Result:", result);
