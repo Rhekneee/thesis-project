@@ -2,6 +2,7 @@
     const router = express.Router();
     const HRController = require('../controller/hr.controller.js');
     const authMiddleware = require('../middleware/hrAuthMiddleware.js');
+    const path = require('path');
 
     // 🔹 Employee Management
     router.get('/employees', authMiddleware.verifySession, HRController.getAllEmployees);         // Get all employees
@@ -23,6 +24,8 @@
             res.status(401).json({ error: "Unauthorized" });
         }
     });
-
+    router.get('/employee_management', authMiddleware.verifySession, (req, res) => {
+        res.sendFile(path.join(__dirname, "../../../../views/hr_manager/employee_management.html"));
+      });
 
     module.exports = router;

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <link rel="stylesheet" href="/css/layout.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>HR Panel</h2>
+        <ul>
+            <li><a href="/hr_manager/dashboard">Dashboard</a></li>
+            <li><a href="/hr_manager/employee_management">Employee Management</a></li>
+            <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+            <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+            <li><a href="/hr_manager/reports">Reports</a></li>
+            <li><a href="/hr_manager/employee_attendance">Attendance</a></li>
+            <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+            <li><a href="#">Logout</a></li>
+        </ul>
+    </div>
+    <h1>HR Dashboard</h1>
+ <!-- EMPLOYEE MANAGEMENT DIV -->
+<div id="employeeManagement" style="display: none;">
+    <h2>Employee Management</h2>
+
+    <!-- Add Employee Form -->
+    <div class="add-employee">
+        <h3>Add Employee</h3>
+        <form id="addEmployeeForm" class="form">
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="text" id="phone" placeholder="Phone" required>
+            <input type="text" id="department" placeholder="Department" required>
+            <input type="text" id="role" placeholder="Role" required>
+            <input type="text" id="educationalBackground" placeholder="Educational Background" required>
+            <input type="text" id="emergencyContactName" placeholder="Emergency Contact Name" required>
+            <input type="text" id="emergencyContactRelationship" placeholder="Emergency Contact Relationship" required>
+            <input type="text" id="emergencyContactPhone" placeholder="Emergency Contact Phone" required>
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
+    <!-- Employee Table -->
+    <div class="employee-table">
+        <h3>Employee List</h3>
+        <table id="employeeTable" class="table">
+            <thead>
+                <tr>
+                    <th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Role</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="employeeList"></tbody>
+        </table>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editEmployeeModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>Edit Employee</h3>
+            <form id="editEmployeeForm" class="form">
+                <input type="hidden" id="editEmployeeId">
+                <input type="text" id="editFullName" placeholder="Full Name" required>
+                <input type="email" id="editEmail" placeholder="Email" required>
+                <input type="text" id="editPhone" placeholder="Phone" required>
+                <input type="text" id="editDepartment" placeholder="Department" required>
+                <input type="text" id="editRole" placeholder="Role" required>
+                <input type="text" id="editEducationalBackground" placeholder="Educational Background" required>
+                <input type="text" id="editEmergencyContactName" placeholder="Emergency Contact Name" required>
+                <input type="text" id="editEmergencyContactRelationship" placeholder="Emergency Contact Relationship" required>
+                <input type="text" id="editEmergencyContactPhone" placeholder="Emergency Contact Phone" required>
+                <button type="submit">Save Changes</button>
+                <button type="button" onclick="closeEditModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <script>
+       const API_URL = "http://localhost:4000/hr_manager/employee_management";
+       const employeeList = document.getElementById("employeeList");
+
+document.getElementById("addEmployeeForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const newEmployee = {
+        id: Date.now(),
+        fullName: document.getElementById("fullName").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        department: document.getElementById("department").value,
+        role: document.getElementById("role").value,
+        educationalBackground: document.getElementById("educationalBackground").value,
+        emergencyContact: {
+            name: document.getElementById("emergencyContactName").value,
+            relationship: document.getElementById("emergencyContactRelationship").value,
+            phone: document.getElementById("emergencyContactPhone").value
+        }
+    };
+
+    addEmployeeToTable(newEmployee);
+    e.target.reset();
+});
+
+function addEmployeeToTable(emp) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td>${emp.fullName}</td>
+        <td>${emp.email}</td>
+        <td>${emp.phone}</td>
+        <td>${emp.department}</td>
+        <td>${emp.role}</td>
+        <td>
+            <button onclick='editEmployee(${JSON.stringify(emp)})'>Edit</button>
+            <button onclick='deleteEmployee(this)'>Delete</button>
+        </td>
+    `;
+    employeeList.appendChild(row);
+}
+
+function deleteEmployee(button) {
+    const row = button.closest("tr");
+    employeeList.removeChild(row);
+}
+
+function editEmployee(emp) {
+    document.getElementById("editEmployeeId").value = emp.id;
+    document.getElementById("editFullName").value = emp.fullName;
+    document.getElementById("editEmail").value = emp.email;
+    document.getElementById("editPhone").value = emp.phone;
+    document.getElementById("editDepartment").value = emp.department;
+    document.getElementById("editRole").value = emp.role;
+    document.getElementById("editEducationalBackground").value = emp.educationalBackground;
+    document.getElementById("editEmergencyContactName").value = emp.emergencyContact.name;
+    document.getElementById("editEmergencyContactRelationship").value = emp.emergencyContact.relationship;
+    document.getElementById("editEmergencyContactPhone").value = emp.emergencyContact.phone;
+
+    document.getElementById("editEmployeeModal").style.display = "block";
+}
+
+document.getElementById("editEmployeeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const id = document.getElementById("editEmployeeId").value;
+    alert("Changes saved for employee ID: " + id);
+    closeEditModal();
+});
+
+function closeEditModal() {
+    document.getElementById("editEmployeeModal").style.display = "none";
+}
+    </script>
+
+</body>
+</html>
