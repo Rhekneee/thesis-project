@@ -29,7 +29,8 @@ app.use(session({
   
 
 // Static Files
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public')));       // supports /css/style.css
+app.use('/public', express.static(path.join(__dirname, '..', 'public'))); // supports public/css/style.css
 app.use(express.static(path.join(__dirname, '..', 'views')));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
