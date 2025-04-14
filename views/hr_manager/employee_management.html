@@ -176,7 +176,13 @@
                     <option value="">Loading...</option>
                 </select>
             </div>
-        
+            <div id="confirmationModal" class="modal">
+                <div class="modal-content">
+                    <p>Are you sure you want to edit this employee?</p>
+                    <button id="confirmEdit">Yes</button>
+                    <button id="cancelEdit">No</button>
+                </div>
+            </div>
             <button id="editButton" type="button">Edit</button>
             <button id="updateEmployee" type="submit" style="display: none;">Update Employee</button>
         </form>
@@ -324,37 +330,39 @@ async function populateEditForm(employee) {
     document.getElementById("editEmergencyContactPhone").value = employee.emergency_contact_phone;
     document.getElementById("editRoleSelect").value = employee.role_id;
 
-    // Disable all form fields to prevent editing directly
     disableFormFields();
 
-    // Show the Edit button and hide the Update button
-    document.getElementById("editButton").style.display = "inline-block";  // Show the Edit button
-    document.getElementById("updateEmployee").style.display = "none";  // Hide the Update button
+    document.getElementById("editButton").style.display = "inline-block"; 
+    document.getElementById("updateEmployee").style.display = "none"; 
 
-    // When the "Edit" button is clicked, enable the fields for editing
     document.getElementById("editButton").onclick = () => {
-        enableFormFields();  // Enable the form fields
-        document.getElementById("updateEmployee").style.display = "inline-block";  // Show the Update button
-        document.getElementById("editButton").style.display = "none";  // Hide the Edit button
+        document.getElementById("confirmationModal").style.display = "block";
+    };
+
+    document.getElementById("confirmEdit").onclick = () => {
+        enableFormFields();
+        document.getElementById("updateEmployee").style.display = "inline-block";
+        document.getElementById("editButton").style.display = "none";
+        document.getElementById("confirmationModal").style.display = "none";
+    };
+
+    document.getElementById("cancelEdit").onclick = () => {
+        document.getElementById("confirmationModal").style.display = "none";
     };
 }
 
-
-// Function to enable form fields
 function enableFormFields() {
-    const formElements = document.getElementById("editEmployeeForm").elements;
-    for (let element of formElements) {
-        element.disabled = false;
-    }
+    const form = document.getElementById("editEmployeeForm");
+    const fields = form.querySelectorAll("input, select, textarea");
+    fields.forEach(field => field.disabled = false);
 }
 
-// Function to disable all form fields
 function disableFormFields() {
-    const formElements = document.getElementById("editEmployeeForm").elements;
-    for (let element of formElements) {
-        element.disabled = true;
-    }
+    const form = document.getElementById("editEmployeeForm");
+    const fields = form.querySelectorAll("input, select, textarea");
+    fields.forEach(field => field.disabled = true);
 }
+
 
 
 // 🔹 Update Employee
@@ -371,9 +379,12 @@ async function updateEmployee() {
         emergency_contact_name: document.getElementById("editEmergencyContactName").value,
         emergency_contact_relationship: document.getElementById("editEmergencyContactRelationship").value,
         emergency_contact_phone: document.getElementById("editEmergencyContactPhone").value,
-        permission_id: document.getElementById("editPermissionSelect").value
+        role_id: document.getElementById("editRoleSelect").value  // Use role_id here
     };
-
+    if (!data.full_name || !data.contact || !data.address || !data.birthday || !data.employment_status || !data.educational_background || !data.emergency_contact_name || !data.emergency_contact_relationship || !data.emergency_contact_phone || !data.role_id) {
+        alert("❌ All fields must be filled out.");
+        return;
+    }
     try {
         const res = await fetch(`${API_URL}/employees/${employeeId}`, {
             method: "PUT",
