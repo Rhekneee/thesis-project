@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: #f5f7fa;
+    }
+
+    .sidebar {
+      width: 200px;
+      background-color: #0052a5;
+      color: #fff;
+      padding: 20px 10px;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 15px;
+    }
+
+    .sidebar ul li a {
+      color: #ffffff;
+      text-decoration: none;
+      display: block;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: #003f7f;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      background-color: #e6f4fc;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    #daily_attendance {
+      margin-top: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    #daily_attendance h3 {
+      font-size: 1.5rem;
+      color: #0052a5;
+      margin-bottom: 15px;
+    }
+
+    #status {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    #checkLocation, #checkIn {
+      background-color: #0052a5;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-right: 10px;
+    }
+
+    #checkLocation:hover, #checkIn:hover {
+      background-color: #003f7f;
+    }
+
+    #checkIn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    #attendanceTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    #attendanceTable th {
+      background-color: #0052a5;
+      color: #ffffff;
+      padding: 10px;
+      text-align: center;
+    }
+
+    #attendanceTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      color: #333;
+    }
+
+    #attendanceTable tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    #attendanceTable tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    #attendanceTable td[colspan="5"] {
+      color: #999;
+      font-style: italic;
+    }
+
+    #logout-button {
+      background-color: #ff4d4d;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 20px;
+      transition: background-color 0.3s;
+    }
+
+    #logout-button:hover {
+      background-color: #e60000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>HR Panel</h2>
+    <ul>
+      <li><a href="hr_dashboard.html">Dashboard</a></li>
+      <li><a href="employee_management.html">Employee Management</a></li>
+      <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+      <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+      <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+      <li><a href="/hr_manager/reports">Reports</a></li>
+      <li><a href="#">Attendance</a></li>
+      <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+      <li><a href="#" id="logout-button">Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div id="daily_attendance">
+      <button id="checkLocation" aria-label="Check your location">Check Location</button>
+      <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
+      <p id="status">Click "Check Location" to verify.</p>    
+
+      <h3>Daily Attendance</h3>
+      <table id="attendanceTable">
+        <thead>
+    gg      <tr>
+            <th>Employee ID</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Status</th>
+            <th>Check-In Time</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceBody">
+          <tr>
+            <td colspan="5">No records found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const officeLat = 14.3435377;
+    const officeLng = 120.9796345;
+    const allowedRadius = 500;
+
+    document.getElementById("checkLocation").addEventListener("click", function () {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const distance = getDistance(officeLat, officeLng, userLat, userLng);
+
+            if (distance <= allowedRadius) {
+              document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
+              document.getElementById("checkIn").disabled = false;
+            } else {
+              document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
+              document.getElementById("checkIn").disabled = true;
+            }
+          },
+          function () {
+            document.getElementById("status").textContent = "⚠️ Location access denied!";
+          }
+        );
+      } else {
+        document.getElementById("status").textContent = "❌ Geolocation is not supported by this browser.";
+      }
+    });
+
+    document.getElementById("checkIn").addEventListener("click", function () {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async function (position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          try {
+            const response = await fetch("/check-in", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ latitude: userLat, longitude: userLng }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+              document.getElementById("status").textContent = "✅ Check-in successful!";
+              loadAttendanceData();
+            } else {
+              document.getElementById("status").textContent = "❌ Error: " + data.error;
+            }
+          } catch {
+            document.getElementById("status").textContent = "❌ Failed to check in!";
+          }
+        });
+      }
+    });
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = (lat1 * Math.PI) / 180;
+      const φ2 = (lat2 * Math.PI) / 180;
+      const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+      const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    async function loadAttendanceData() {
+      try {
+        const response = await fetch(`/today/${getEmployeeId()}`);
+        const data = await response.json();
+        const tbody = document.getElementById("attendanceBody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5">No records found</td></tr>`;
+          return;
+        }
+
+        data.forEach(record => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${record.employee_id}</td>
+            <td>${record.latitude}</td>
+            <td>${record.longitude}</td>
+            <td>${record.status}</td>
+            <td>${record.check_in_time}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("❌ Failed to load attendance data:", error);
+      }
+    }
+
+    function getEmployeeId() {
+      return 123; // Replace with actual logic if needed
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAttendanceData);
+
+    document.getElementById('logout-button').addEventListener('click', (event) => {
+      event.preventDefault();
+      if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/index.html";
+      }
+    });
+  </script>
+</body>
+</html>
