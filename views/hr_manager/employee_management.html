@@ -21,7 +21,7 @@
             <li><a href="#">Logout</a></li>
         </ul>
     </div>
-    <div class="content" id="employeeManagement">
+    <div class="content">
         <h2>Add New Employee</h2>
         <form id="employeeForm">
             <div class="form-group">
@@ -81,9 +81,8 @@
                 <input type="text" name="emergency_contact_phone" placeholder="Enter phone number" required>
             </div>
     
-            <h3>Permissions</h3>
+            <h3>Roles</h3>
             <div class="form-group">
-                <label>Permission:</label>
                 <select name="role_id" id="roleSelect" required>
                     <!-- Permissions will be loaded dynamically -->
                 </select>
@@ -115,57 +114,79 @@
         </table>
         <h2>Edit Employee</h2>
         <form id="editEmployeeForm" style="display: none;">
-            <input type="hidden" name="edit_employee_id">
-    
+            <input type="hidden" id="editEmployeeId" name="edit_employee_id">
+        
             <div class="form-group">
                 <label>Email:</label>
-                <input type="email" name="edit_email" required>
+                <input type="email" id="editEmail" name="edit_email" required disabled>
             </div>
-    
+        
             <div class="form-group">
                 <label>Full Name:</label>
-                <input type="text" name="edit_full_name" required>
+                <input type="text" id="editFullName" name="edit_full_name" required disabled>
             </div>
-    
+        
             <div class="form-group">
                 <label>Contact #:</label>
-                <input type="text" name="edit_contact" required>
+                <input type="text" id="editContact" name="edit_contact" required disabled>
             </div>
-    
+        
             <div class="form-group">
                 <label>Address:</label>
-                <input type="text" name="edit_address" required>
+                <input type="text" id="editAddress" name="edit_address" required disabled>
             </div>
-    
+        
             <div class="form-group">
                 <label>Birthday:</label>
-                <input type="date" name="edit_birthday" required>
+                <input type="date" id="editBirthday" name="edit_birthday" required disabled>
             </div>
-    
+        
             <div class="form-group">
                 <label>Employment Status:</label>
-                <select name="edit_employment_status" required>
+                <select id="editEmploymentStatus" name="edit_employment_status" required disabled>
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
                     <option value="Contract">Contract</option>
                     <option value="Intern">Intern</option>
                 </select>
             </div>
-    
             <div class="form-group">
-                <label for="editPermissionSelect">Permission</label>
-                <select id="editPermissionSelect" name="edit_permission">
-                    <option value="">Loading...</option> <!-- Placeholder while fetching -->
-                </select>
-    
+                <label>Educational Background:</label>
+                <input type="text" id="editEducationalBackground" name="edit_educational_background" required disabled>
             </div>
-    
-            <button id="updateEmployee">Update Employee</button>
+            
+            <div class="form-group">
+                <label>Emergency Contact Name:</label>
+                <input type="text" id="editEmergencyContactName" name="edit_emergency_contact_name" required disabled>
+            </div>
+            
+            <div class="form-group">
+                <label>Emergency Contact Relationship:</label>
+                <input type="text" id="editEmergencyContactRelationship" name="edit_emergency_contact_relationship" required disabled>
+            </div>
+            
+            <div class="form-group">
+                <label>Emergency Contact Phone:</label>
+                <input type="text" id="editEmergencyContactPhone" name="edit_emergency_contact_phone" required disabled>
+            </div>            
+        
+            <div class="form-group">
+                <label for="editRoleSelect">Role:</label>
+                <select id="editRoleSelect" name="edit_role" disabled>
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+        
+            <button id="editButton" type="button">Edit</button>
+            <button id="updateEmployee" type="submit" style="display: none;">Update Employee</button>
         </form>
+        
+
+        
         </div>
 
     <script>
-    const API_URL = "http://localhost:4000/hr_manager";
+    const API_URL = "http://localhost:4000/hr";
     const employeeList = document.getElementById("employeeList");
 // 🔹 Add Employee
 async function addEmployee(event) {
@@ -199,9 +220,17 @@ async function loadEmployees() {
         const res = await fetch(`${API_URL}/employees`);
         const employees = await res.json();
         const tableBody = document.getElementById("employeeTableBody");
+
+        // Clear existing rows
         tableBody.innerHTML = "";
 
+        // Check if employees data is being loaded correctly
+        console.log("Employees:", employees);
+
         employees.forEach(emp => {
+            // Log individual employee data to verify structure
+            console.log("Employee:", emp);
+
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${emp.employee_id}</td>
@@ -216,7 +245,13 @@ async function loadEmployees() {
                 <td>${emp.role_name || "N/A"} - ${emp.department_name || "N/A"}</td>
             `;
 
-            row.addEventListener("click", () => populateEditForm(emp));
+            // Add event listener to populate the edit form when the row is clicked
+            row.addEventListener("click", () => {
+                console.log("Employee clicked:", emp);  // Check employee data
+                populateEditForm(emp);  // Pass the clicked employee to populate the form
+            });
+
+            // Append the row to the table body
             tableBody.appendChild(row);
         });
     } catch (err) {
@@ -228,6 +263,7 @@ async function loadEmployees() {
 // 🔹 Load Roles (for add form)
 async function loadRoles() {
     try {
+        console.log("🟢 loadRoles() called");
         const response = await fetch(`${API_URL}/roles`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
@@ -247,9 +283,11 @@ async function loadRoles() {
     }
 }
 
+
+
 // 🔹 Load Roles (for edit form)
 async function loadEditRoles() {
-    const select = document.getElementById("editPermissionSelect");
+    const select = document.getElementById("editRoleSelect");
     try {
         const response = await fetch(`${API_URL}/roles`);
         const roles = await response.json();
@@ -267,11 +305,12 @@ async function loadEditRoles() {
     }
 }
 
-// 🔹 Populate Edit Form
+// 🔹 Populate Edit Form with Role Loading and Edit Button
 async function populateEditForm(employee) {
     document.getElementById("editEmployeeForm").style.display = "block";
-    await loadEditRoles();
+    await loadEditRoles();  // Load roles for the edit form
 
+    // Populate form fields with employee data
     document.getElementById("editEmployeeId").value = employee.id;
     document.getElementById("editEmail").value = employee.email;
     document.getElementById("editFullName").value = employee.full_name;
@@ -283,8 +322,40 @@ async function populateEditForm(employee) {
     document.getElementById("editEmergencyContactName").value = employee.emergency_contact_name;
     document.getElementById("editEmergencyContactRelationship").value = employee.emergency_contact_relationship;
     document.getElementById("editEmergencyContactPhone").value = employee.emergency_contact_phone;
-    document.getElementById("editPermissionSelect").value = employee.permission_id;
+    document.getElementById("editRoleSelect").value = employee.role_id;
+
+    // Disable all form fields to prevent editing directly
+    disableFormFields();
+
+    // Show the Edit button and hide the Update button
+    document.getElementById("editButton").style.display = "inline-block";  // Show the Edit button
+    document.getElementById("updateEmployee").style.display = "none";  // Hide the Update button
+
+    // When the "Edit" button is clicked, enable the fields for editing
+    document.getElementById("editButton").onclick = () => {
+        enableFormFields();  // Enable the form fields
+        document.getElementById("updateEmployee").style.display = "inline-block";  // Show the Update button
+        document.getElementById("editButton").style.display = "none";  // Hide the Edit button
+    };
 }
+
+
+// Function to enable form fields
+function enableFormFields() {
+    const formElements = document.getElementById("editEmployeeForm").elements;
+    for (let element of formElements) {
+        element.disabled = false;
+    }
+}
+
+// Function to disable all form fields
+function disableFormFields() {
+    const formElements = document.getElementById("editEmployeeForm").elements;
+    for (let element of formElements) {
+        element.disabled = true;
+    }
+}
+
 
 // 🔹 Update Employee
 async function updateEmployee() {
@@ -334,10 +405,10 @@ document.getElementById("editEmployeeForm").addEventListener("submit", e => {
 
 
 
-    window.onload = async () => {
+window.onload = async () => {
     try {
         const res = await fetch("http://localhost:4000/hr/check-session", {
-            credentials: "include", // 👈 make sure cookies are sent!
+            credentials: "include",
         });
 
         if (!res.ok) throw new Error();
@@ -346,7 +417,6 @@ document.getElementById("editEmployeeForm").addEventListener("submit", e => {
 
         const roleId = session.user.role_id;
         if (roleId === 6) {
-            showSection('employeeManagement');
             loadRoles();
         } else {
             redirectToLogin();
@@ -356,6 +426,8 @@ document.getElementById("editEmployeeForm").addEventListener("submit", e => {
         redirectToLogin();
     }
 };
+
+
     </script>
 </body>
 </html>
