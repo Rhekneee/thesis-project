@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Management</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: #f5f7fa;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 220px;
+      background-color: #0052a5;
+      color: #fff;
+      padding: 20px 10px;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 15px;
+    }
+
+    .sidebar ul li a {
+      color: #ffffff;
+      text-decoration: none;
+      display: block;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: #003f7f;
+    }
+
+    .main-content {
+      margin-left: 220px;
+      flex-grow: 1;
+      background-color: #e6f4fc;
+      padding: 30px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .employee-list {
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #0052a5;
+      color: #fff;
+    }
+
+    tr:hover {
+      background-color: #f0f8ff;
+    }
+
+    .add-btn {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+
+    .add-btn:hover {
+      background-color: #0056b3;
+    }
+
+    #logout-button {
+      background-color: #ff4d4d;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-align: center;
+      display: block;
+    }
+
+    #logout-button:hover {
+      background-color: #e60000;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .modal-content input,
+    .modal-content select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    .modal-content button {
+      padding: 10px 15px;
+      background-color: #0052a5;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .modal-content button:hover {
+      background-color: #003f7f;
+    }
+
+    .close {
+      float: right;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#searchInput {
+    width: 50%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#add-employee-btn {
+    background-color: #0052a5;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#add-employee-btn:hover {
+    background-color: #003f7f;
+}
+    
+        .employee-list h2 {
+        margin-bottom: 10px;
+        }
+    
+        .view-btn, .edit-btn {
+        background-color: #007bff;
+        color: #fff;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+    
+        .view-btn:hover, .edit-btn:hover {
+        background-color: #0056b3;
+        }
+    
+        /* Responsive Design */
+        @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            position: relative;
+            height: auto;
+        }
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+        }
+        }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>HR Panel</h2>
+    <ul>
+      <li><a href="hr_dashboard.html">Dashboard</a></li>
+      <li><a href="#">Employee Management</a></li>
+      <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+      <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+      <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+      <li><a href="/hr_manager/reports">Reports</a></li>
+      <li><a href="attendance.html">Attendance</a></li>
+      <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+      <li><a href="#" id="logout-button">Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <h1>Employee Management</h1>
+
+
+<!-- 🔍 Search and ➕ Add Employee Button Layout -->
+<div class="top-bar">
+    <input type="text" id="searchInput" placeholder="Search employee..." />
+    <button id="add-employee-btn">+ Add Employee</button>
+</div>
+
+<!-- 👥 Employee Table -->
+<div class="employee-list">
+    <h2>Employee List</h2>
+    <table border="1" width="100%" id="employeeTable">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Department</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Sample row -->
+            <tr>
+                <td>101</td>
+                <td>John Doe</td>
+                <td>Software Engineer</td>
+                <td>IT</td>
+                <td>
+                    <button class="view-btn" data-id="101">View</button>
+                    <button class="edit-btn" data-id="101">Edit</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="employeeModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h3>Add New Employee</h3>
+      <input type="text" placeholder="Full Name" />
+      <input type="text" placeholder="Position" />
+      <input type="text" placeholder="Department" />
+      <input type="email" placeholder="Email Address" />
+      <input type="text" placeholder="Contact Number" />
+      <select>
+        <option value="">Select Employment Type</option>
+        <option>Full-time</option>
+        <option>Part-time</option>
+        <option>Contractual</option>
+      </select>
+      <button>Submit</button>
+    </div>
+  </div>
+    <!-- View Modal -->
+<div class="modal" id="viewModal">
+    <div class="modal-content">
+      <span class="close" id="closeViewModal">&times;</span>
+      <h3>View Employee</h3>
+      <input type="text" value="John Doe" readonly />
+      <input type="text" value="Software Engineer" readonly />
+      <input type="text" value="IT" readonly />
+      <input type="email" value="john@example.com" readonly />
+      <input type="text" value="09123456789" readonly />
+      <input type="text" value="Full-time" readonly />
+    </div>
+  </div>
+  
+  <!-- Edit Modal -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <span class="close" id="closeEditModal">&times;</span>
+      <h3>Edit Employee</h3>
+      <input type="text" value="John Doe" />
+      <input type="text" value="Software Engineer" />
+      <input type="text" value="IT" />
+      <input type="email" value="john@example.com" />
+      <input type="text" value="09123456789" />
+      <select>
+        <option selected>Full-time</option>
+        <option>Part-time</option>
+        <option>Contractual</option>
+      </select>
+      <button>Save Changes</button>
+    </div>
+  </div>
+  
+
+  <script>
+    const addModal = document.getElementById('employeeModal');
+    const viewModal = document.getElementById('viewModal');
+    const editModal = document.getElementById('editModal');
+  
+    // Add Modal
+    const addEmployeeBtn = document.getElementById('add-employee-btn');
+    const closeAddModal = document.getElementById('closeModal');
+  
+    addEmployeeBtn.addEventListener('click', () => {
+      addModal.style.display = 'block';
+    });
+    closeAddModal.addEventListener('click', () => {
+      addModal.style.display = 'none';
+    });
+  
+    // View Modal
+    const closeViewModal = document.getElementById('closeViewModal');
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        viewModal.style.display = 'block';
+      });
+    });
+    closeViewModal.addEventListener('click', () => {
+      viewModal.style.display = 'none';
+    });
+  
+    // Edit Modal
+    const closeEditModal = document.getElementById('closeEditModal');
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        editModal.style.display = 'block';
+      });
+    });
+    closeEditModal.addEventListener('click', () => {
+      editModal.style.display = 'none';
+    });
+  
+    // Close all modals by clicking outside or pressing ESC
+    window.addEventListener('click', (e) => {
+      if (e.target === addModal) addModal.style.display = 'none';
+      if (e.target === viewModal) viewModal.style.display = 'none';
+      if (e.target === editModal) editModal.style.display = 'none';
+    });
+  
+    window.addEventListener('keydown', (e) => {
+      if (e.key === "Escape") {
+        addModal.style.display = 'none';
+        viewModal.style.display = 'none';
+        editModal.style.display = 'none';
+      }
+    });
+  
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+      const filter = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#employeeTable tbody tr');
+  
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const position = row.cells[2].textContent.toLowerCase();
+        const department = row.cells[3].textContent.toLowerCase();
+        if (name.includes(filter) || position.includes(filter) || department.includes(filter)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  
+    // Placeholder for Add functionality
+    document.querySelector('#employeeModal .modal-content button').addEventListener('click', () => {
+      alert("Employee added successfully!");
+      addModal.style.display = "none";
+    });
+  
+    // Logout functionality
+    document.getElementById('logout-button').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/index.html";
+      }
+    });
+  </script>
+  
+  
+</body>
+</html>
