@@ -7,7 +7,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
-const htmlRoutes = require('./htmlRoutes'); // Import HTML routes
+const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
 const PORT = 4000;
@@ -44,7 +44,7 @@ htmlRoutes(app);
 
 // Default Route - Login
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'views', 'login.html'));
 });
 
 // Dashboard Route
