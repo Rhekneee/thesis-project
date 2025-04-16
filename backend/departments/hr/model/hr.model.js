@@ -120,7 +120,7 @@ getAllEmployees: async () => {
     // 🔹 Get employee by ID (Added this function for updates)
     getEmployeeById: async (employeeId) => {
         try {
-            const query = "SELECT * FROM employees WHERE id = ?";
+            const query = "SELECT * FROM employees WHERE employee_id = ?";
             const [rows] = await db.query(query, [employeeId]);
             if (rows.length > 0) {
                 let employee = rows[0];
@@ -140,10 +140,8 @@ getAllEmployees: async () => {
     getAllRoles: async () => {
         try {
             const query = "SELECT id, name FROM roles";
-            console.log("🔹 [getAllRoles] Running query:", query);
     
             const [roles] = await db.query(query);
-            console.log("🔹 [getAllRoles] Query result:", roles);
     
             return roles;
         } catch (error) {

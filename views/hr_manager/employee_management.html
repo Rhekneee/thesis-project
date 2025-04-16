@@ -179,8 +179,8 @@
             <div id="confirmationModal" class="modal">
                 <div class="modal-content">
                     <p>Are you sure you want to edit this employee?</p>
-                    <button id="confirmEdit">Yes</button>
-                    <button id="cancelEdit">No</button>
+                    <button id="confirmEdit" type="button">Yes</button>
+                    <button id="cancelEdit" type="button">No</button>
                 </div>
             </div>
             <button id="editButton" type="button">Edit</button>
@@ -253,8 +253,8 @@ async function loadEmployees() {
 
             // Add event listener to populate the edit form when the row is clicked
             row.addEventListener("click", () => {
-                console.log("Employee clicked:", emp);  // Check employee data
-                populateEditForm(emp);  // Pass the clicked employee to populate the form
+                console.log("Employee clicked:", emp);  
+                populateEditForm(emp); 
             });
 
             // Append the row to the table body
@@ -269,7 +269,6 @@ async function loadEmployees() {
 // 🔹 Load Roles (for add form)
 async function loadRoles() {
     try {
-        console.log("🟢 loadRoles() called");
         const response = await fetch(`${API_URL}/roles`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
@@ -313,11 +312,16 @@ async function loadEditRoles() {
 
 // 🔹 Populate Edit Form with Role Loading and Edit Button
 async function populateEditForm(employee) {
+    console.log("Employee passed to populateEditForm:", employee);  // 🔥 Log it here   
+    if (!employee) {
+        console.error("❌ employee object is undefined");
+        return;
+    }
     document.getElementById("editEmployeeForm").style.display = "block";
     await loadEditRoles();  // Load roles for the edit form
 
     // Populate form fields with employee data
-    document.getElementById("editEmployeeId").value = employee.id;
+    document.getElementById("editEmployeeId").value = employee.employee_id;
     document.getElementById("editEmail").value = employee.email;
     document.getElementById("editFullName").value = employee.full_name;
     document.getElementById("editContact").value = employee.contact;
@@ -338,13 +342,15 @@ async function populateEditForm(employee) {
     document.getElementById("editButton").onclick = () => {
         document.getElementById("confirmationModal").style.display = "block";
     };
+    
+    document.getElementById("confirmEdit").onclick = (e) => {
+    e.preventDefault();
+    enableFormFields();
+    document.getElementById("updateEmployee").style.display = "inline-block";
+    document.getElementById("editButton").style.display = "none";
+    document.getElementById("confirmationModal").style.display = "none";
+        };
 
-    document.getElementById("confirmEdit").onclick = () => {
-        enableFormFields();
-        document.getElementById("updateEmployee").style.display = "inline-block";
-        document.getElementById("editButton").style.display = "none";
-        document.getElementById("confirmationModal").style.display = "none";
-    };
 
     document.getElementById("cancelEdit").onclick = () => {
         document.getElementById("confirmationModal").style.display = "none";
@@ -368,8 +374,10 @@ function disableFormFields() {
 // 🔹 Update Employee
 async function updateEmployee() {
     const employeeId = document.getElementById("editEmployeeId").value;
+    console.log("Employee ID in updateEmployee:", employeeId);
 
     const data = {
+        email: document.getElementById("editEmail").value,
         full_name: document.getElementById("editFullName").value,
         contact: document.getElementById("editContact").value,
         address: document.getElementById("editAddress").value,
@@ -379,9 +387,9 @@ async function updateEmployee() {
         emergency_contact_name: document.getElementById("editEmergencyContactName").value,
         emergency_contact_relationship: document.getElementById("editEmergencyContactRelationship").value,
         emergency_contact_phone: document.getElementById("editEmergencyContactPhone").value,
-        role_id: document.getElementById("editRoleSelect").value  // Use role_id here
+        role_id: document.getElementById("editRoleSelect").value 
     };
-    if (!data.full_name || !data.contact || !data.address || !data.birthday || !data.employment_status || !data.educational_background || !data.emergency_contact_name || !data.emergency_contact_relationship || !data.emergency_contact_phone || !data.role_id) {
+    if ( !data.email||!data.full_name || !data.contact || !data.address || !data.birthday || !data.employment_status || !data.educational_background || !data.emergency_contact_name || !data.emergency_contact_relationship || !data.emergency_contact_phone || !data.role_id) {
         alert("❌ All fields must be filled out.");
         return;
     }

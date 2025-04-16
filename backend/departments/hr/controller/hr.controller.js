@@ -85,10 +85,9 @@ const HRController = {
     // 🔹 Get all permissions
     getRoles: async (req, res) => {
         try {
-            console.log("🔹 [getRoles] Request received. Fetching roles...");
+    
 
             const roles = await HRModel.getAllRoles();
-            console.log("🔹 [getRoles] Fetched roles:", roles);
 
             if (!roles || roles.length === 0) {
                 console.warn("⚠️ [getRoles] No roles found in the system.");
@@ -123,7 +122,7 @@ const HRController = {
     // 🔹 Update an existing employee (Manager Only)
     updateEmployee: async (req, res) => {
         try {
-            const employeeId = req.body.employeeId;
+            const employeeId = req.params.id;
 
             if (!req.session?.user) {
                 return res.status(401).json({ error: "Unauthorized: No session found" });
