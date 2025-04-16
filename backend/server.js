@@ -2,11 +2,14 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
+const MySQLStore = require("express-mysql-session")(session);
 const path = require('path');
+const db = require("./db");
 
 const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
+const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
 const PORT = 4000;
@@ -15,20 +18,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+const sessionStore = new MySQLStore({}, db);
 // Session Setup
 app.use(session({
     secret: 'your_secret_key',
     resave: false,
-    saveUninitialized: false, // <- important!
+    saveUninitialized: false,
+    store: sessionStore,
     cookie: {
-      secure: false,          // keep this false for localhost (or use env-based)
-      httpOnly: true
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 2
     }
-  }));
-  
+  }));  
 
 // Static Files
 app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'views')));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
@@ -36,9 +43,13 @@ app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use("/crm", crmRoutes);
 
+
+// Use HTML routes for HR Manager pages
+htmlRoutes(app);
+
 // Default Route - Login
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'views', 'login.html'));
 });
 
 // Dashboard Route
