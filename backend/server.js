@@ -2,7 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
+const MySQLStore = require("express-mysql-session")(session);
 const path = require('path');
+const db = require("./db");
 
 const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
@@ -16,17 +18,19 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+const sessionStore = new MySQLStore({}, db);
 // Session Setup
 app.use(session({
     secret: 'your_secret_key',
     resave: false,
-    saveUninitialized: false, // <- important!
+    saveUninitialized: false,
+    store: sessionStore,
     cookie: {
-      secure: false,          // keep this false for localhost (or use env-based)
-      httpOnly: true
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 2
     }
-  }));
-  
+  }));  
 
 // Static Files
 app.use(express.static(path.join(__dirname, '..', 'public')));
