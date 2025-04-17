@@ -90,10 +90,12 @@
     
             <button type="submit">Add Employee</button>
         </form>
-    
         <h2>Employee List</h2>
-        <button id="loadEmployees">Load Employees</button>
-        <table>
+        <button id="loadEmployees">Load Active Employees</button>
+        <button id="loadDeletedEmployees">Load Soft Deleted Employees</button>
+        <button id="loadAllEmployees">Load All Employees</button> <!-- Button to load all employees -->
+
+        <table id="employeeTable">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -106,41 +108,44 @@
                     <th>Education</th>
                     <th>Emergency Contact</th>
                     <th>Department</th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="employeeTableBody">
                 <!-- Employee rows will be added dynamically -->
             </tbody>
         </table>
+
         <h2>Edit Employee</h2>
         <form id="editEmployeeForm" style="display: none;">
             <input type="hidden" id="editEmployeeId" name="edit_employee_id">
-        
+            
             <div class="form-group">
                 <label>Email:</label>
                 <input type="email" id="editEmail" name="edit_email" required disabled>
             </div>
-        
+
             <div class="form-group">
                 <label>Full Name:</label>
                 <input type="text" id="editFullName" name="edit_full_name" required disabled>
             </div>
-        
+
             <div class="form-group">
                 <label>Contact #:</label>
                 <input type="text" id="editContact" name="edit_contact" required disabled>
             </div>
-        
+
             <div class="form-group">
                 <label>Address:</label>
                 <input type="text" id="editAddress" name="edit_address" required disabled>
             </div>
-        
+
             <div class="form-group">
                 <label>Birthday:</label>
                 <input type="date" id="editBirthday" name="edit_birthday" required disabled>
             </div>
-        
+
             <div class="form-group">
                 <label>Employment Status:</label>
                 <select id="editEmploymentStatus" name="edit_employment_status" required disabled>
@@ -150,6 +155,7 @@
                     <option value="Intern">Intern</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label>Educational Background:</label>
                 <input type="text" id="editEducationalBackground" name="edit_educational_background" required disabled>
@@ -169,13 +175,14 @@
                 <label>Emergency Contact Phone:</label>
                 <input type="text" id="editEmergencyContactPhone" name="edit_emergency_contact_phone" required disabled>
             </div>            
-        
+
             <div class="form-group">
                 <label for="editRoleSelect">Role:</label>
                 <select id="editRoleSelect" name="edit_role" disabled>
                     <option value="">Loading...</option>
                 </select>
             </div>
+
             <div id="confirmationModal" class="modal">
                 <div class="modal-content">
                     <p>Are you sure you want to edit this employee?</p>
@@ -183,8 +190,11 @@
                     <button id="cancelEdit" type="button">No</button>
                 </div>
             </div>
+
             <button id="editButton" type="button">Edit</button>
             <button id="updateEmployee" type="submit" style="display: none;">Update Employee</button>
+            <button type="button" id="archiveButton" style="display: none;">Archive/Delete</button> <!-- Soft delete -->
+            <button type="button" id="restoreButton" style="display: none;">Restore</button> <!-- Restore -->  
         </form>
         
 
@@ -194,6 +204,17 @@
     <script>
     const API_URL = "http://localhost:4000/hr";
     const employeeList = document.getElementById("employeeList");
+    // 🔹 Event Listeners
+    document.getElementById("employeeForm").addEventListener("submit", addEmployee);
+    document.getElementById("editEmployeeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    updateEmployee();
+    });
+    document.getElementById('loadEmployees').addEventListener('click', () => loadEmployees(false));
+    document.getElementById('loadDeletedEmployees').addEventListener('click', () => loadEmployees(true));
+    document.getElementById('loadAllEmployees').addEventListener('click', () => loadEmployees('all'));
+    
+
 // 🔹 Add Employee
 async function addEmployee(event) {
     event.preventDefault();
@@ -221,23 +242,19 @@ async function addEmployee(event) {
 }
 
 // 🔹 Load All Employees
-async function loadEmployees() {
+async function loadEmployees(filter) {
     try {
-        const res = await fetch(`${API_URL}/employees`);
-        const employees = await res.json();
-        const tableBody = document.getElementById("employeeTableBody");
+        let url = `${API_URL}/employees`;
+        if (filter === false) url += '?includeDeleted=false';
+        else if (filter === true || filter === 'all') url += '?includeDeleted=true';
 
-        // Clear existing rows
-        tableBody.innerHTML = "";
-
-        // Check if employees data is being loaded correctly
-        console.log("Employees:", employees);
+        const response = await fetch(url);
+        const employees = await response.json();
+        const tableBody = document.getElementById('employeeTableBody');
+        tableBody.innerHTML = '';
 
         employees.forEach(emp => {
-            // Log individual employee data to verify structure
-            console.log("Employee:", emp);
-
-            const row = document.createElement("tr");
+            const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${emp.employee_id}</td>
                 <td>${emp.email}</td>
@@ -247,24 +264,66 @@ async function loadEmployees() {
                 <td>${emp.birthday}</td>
                 <td>${emp.employment_status}</td>
                 <td>${emp.educational_background}</td>
-                <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
-                <td>${emp.role_name || "N/A"} - ${emp.department_name || "N/A"}</td>
-            `;
-
-            // Add event listener to populate the edit form when the row is clicked
-            row.addEventListener("click", () => {
-                console.log("Employee clicked:", emp);  
-                populateEditForm(emp); 
+                <td>${emp.emergency_contact_name}</td>
+                <td>${emp.department_name}</td>
+                <td>${emp.is_deleted ? 'Deleted' : 'Active'}</td>
+                <td>
+                    ${emp.is_deleted
+                        ? `<button class="restoreBtn" data-id="${emp.employee_id}">Restore</button>`
+                        : `<button class="archiveBtn" data-id="${emp.employee_id}">Archive</button>`}
+                </td>`;
+            
+                row.addEventListener('click', (e) => {
+                e.stopPropagation();  // Prevent row click from triggering the button actions
+                populateEditForm(emp); // Populate the form with employee data
             });
-
-            // Append the row to the table body
             tableBody.appendChild(row);
         });
+
+        document.querySelectorAll('.archiveBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();  // Prevent event bubbling to row click
+                console.log("Archive clicked", e.target.dataset.id);
+                confirmAction(e.target.dataset.id, true);
+            });
+        });
+
+        // Event listener for Archive buttons
+        document.querySelectorAll('.restoreBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();  // Prevent event bubbling to row click
+                console.log("Restore clicked", e.target.dataset.id);
+                confirmAction(e.target.dataset.id, false);
+            });
+        });
+
+
+
     } catch (err) {
-        console.error("Load Employees Error:", err);
-        alert("Error loading employees.");
+        console.error("❌ Failed to load employees:", err);
     }
 }
+
+function confirmAction(id, shouldDelete) {
+    document.getElementById('confirmationModal').style.display = 'block';
+
+    document.getElementById('confirmEdit').onclick = async () => {
+        const res = await fetch(`${API_URL}/employee/archive/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shouldDelete })
+        });
+        const result = await res.json();
+        alert(result.message);
+        loadEmployees('all');
+        document.getElementById('confirmationModal').style.display = 'none';
+    };
+
+    document.getElementById('cancelEdit').onclick = () => {
+        document.getElementById('confirmationModal').style.display = 'none';
+    };
+}
+
 
 // 🔹 Load Roles (for add form)
 async function loadRoles() {
@@ -414,13 +473,48 @@ async function updateEmployee() {
     }
 }
 
-// 🔹 Event Listeners
-document.getElementById("employeeForm").addEventListener("submit", addEmployee);
-document.getElementById("loadEmployees").addEventListener("click", loadEmployees);
-document.getElementById("editEmployeeForm").addEventListener("submit", e => {
-    e.preventDefault();
-    updateEmployee();
-});
+document.getElementById('archiveButton').addEventListener('click', function() {
+        const employeeId = document.getElementById('editEmployeeId').value;
+        const shouldDelete = true; // Set to true for soft delete
+
+        fetch(`/employee/archive/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ shouldDelete })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // Close modal and refresh employee list
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    // Restore button functionality
+    document.getElementById('restoreButton').addEventListener('click', function() {
+        const employeeId = document.getElementById('editEmployeeId').value;
+        const shouldDelete = false; // Set to false for restore
+
+        fetch(`/employee/archive/${employeeId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ shouldDelete })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // Close modal and refresh employee list
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
 
 
 
@@ -437,6 +531,7 @@ window.onload = async () => {
         const roleId = session.user.role_id;
         if (roleId === 6) {
             loadRoles();
+            loadEmployees('false'); // or 'false' depending on your default
         } else {
             redirectToLogin();
         }

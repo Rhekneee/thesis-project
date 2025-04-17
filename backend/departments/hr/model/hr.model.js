@@ -9,25 +9,59 @@ const HRModel = {
     },
 
     // 🔹 Create a new user with username included
-    createUser: async (email, role_id, full_name) => {
-        console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
-    
-        if (!role_id) {
-            throw new Error("❌ Role ID is required and cannot be null");
-        }
-    
-        const defaultPassword = "default123"; 
-    
-        const query = `
-            INSERT INTO users (email, username, role_id, password) 
-            VALUES (?, ?, ?, ?)
+    // 🔹 Create a new user with username included and permission_id auto-fetched from role
+createUser: async (email, role_id, full_name) => {
+    console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
+
+    if (!role_id) {
+        throw new Error("❌ Role ID is required and cannot be null");
+    }
+
+    const defaultPassword = "default123";
+
+    // 🧠 Step 1: Get permission_id from role_permission
+    let permission_id = null;
+    try {
+        const permissionQuery = `
+            SELECT permission_id 
+            FROM role_permission 
+            WHERE role_id = ? 
+            LIMIT 1
         `;
-    
-        const [result] = await db.query(query, [email, full_name, role_id, defaultPassword]);
-        console.log("✅ New user created with ID:", result.insertId);
-        
+        const [rows] = await db.query(permissionQuery, [role_id]);
+
+        if (rows.length > 0) {
+            permission_id = rows[0].permission_id;
+        }
+
+    } catch (error) {
+        console.error("❌ Error fetching permission_id:", error);
+        throw new Error("Failed to fetch permission_id for the role");
+    }
+
+    // 🧾 Step 2: Insert the user with permission_id
+    const userInsertQuery = `
+        INSERT INTO users (email, username, role_id, password, permission_id) 
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    try {
+        const [result] = await db.query(userInsertQuery, [
+            email,
+            full_name,
+            role_id,
+            defaultPassword,
+            permission_id
+        ]);
+
+        console.log(`✅ New user created with ID: ${result.insertId} (Permission ID: ${permission_id})`);
         return result.insertId;
-    },
+    } catch (error) {
+        console.error("❌ Error creating user:", error);
+        throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
+    }
+},
+
     
 
     // 🔹 Get user ID by email
@@ -91,9 +125,9 @@ const HRModel = {
         }
     },
 
-// 🔹 Fetch all employees with role and department
-getAllEmployees: async () => {
-    const query = `
+// 🔹 Get All Employees (Filtered by is_deleted flag)
+getAllEmployees: async (includeDeleted = true) => {
+    let query = `
         SELECT 
             e.*, 
             r.name AS role_name, 
@@ -105,15 +139,26 @@ getAllEmployees: async () => {
         JOIN 
             departments d ON r.department_id = d.id
     `;
+    
+    // Add the filter condition if needed
+    if (!includeDeleted) {
+        query += ` WHERE e.is_deleted = 0`; // Only active employees
+    }
 
-    const [employees] = await db.query(query);
-    return employees.map(employee => ({
-        ...employee,
-        birthday: employee.birthday
-            ? new Date(employee.birthday).toISOString().split('T')[0]
-            : null
-    }));
+    try {
+        const [employees] = await db.query(query);
+        return employees.map(employee => ({
+            ...employee,
+            birthday: employee.birthday
+                ? new Date(employee.birthday).toISOString().split('T')[0]
+                : null
+        }));
+    } catch (err) {
+        console.error("❌ Failed to fetch employees:", err);
+        throw err;
+    }
 },
+
 
             
 
@@ -163,50 +208,119 @@ getAllEmployees: async () => {
     updateEmployee: async (employeeId, employeeData) => {
         try {
             console.log(`🔹 Attempting to update Employee ID: ${employeeId}`);
-            console.log("🔹 Received Employee Data:", employeeData);
-    
+        
             const {
                 email, full_name, contact, address, birthday,
                 employment_status, educational_background, emergency_contact_name,
                 emergency_contact_relationship, emergency_contact_phone, role_id
             } = employeeData;            
-    
+        
             // 🔥 Validate if employee exists before updating
             const existingEmployee = await HRModel.getEmployeeById(employeeId);
             if (!existingEmployee) {
                 console.log("❌ Employee not found in the database.");
                 throw new Error("Employee not found.");
             }
-    
-            const query = `
-            UPDATE employees 
-            SET email = ?, full_name = ?, contact = ?, address = ?, birthday = ?, 
-                employment_status = ?, educational_background = ?, emergency_contact_name = ?, 
-                emergency_contact_relationship = ?, emergency_contact_phone = ?, role_id = ? 
-            WHERE employee_id = ?
-        `;
-    
-            const [result] = await db.query(query, [
+        
+            // Update the employee details
+            const employeeQuery = `
+                UPDATE employees 
+                SET email = ?, full_name = ?, contact = ?, address = ?, birthday = ?, 
+                    employment_status = ?, educational_background = ?, emergency_contact_name = ?, 
+                    emergency_contact_relationship = ?, emergency_contact_phone = ?, role_id = ? 
+                WHERE employee_id = ?
+            `;
+        
+            const [employeeResult] = await db.query(employeeQuery, [
                 email, full_name, contact, address, birthday,
                 employment_status, educational_background, emergency_contact_name,
                 emergency_contact_relationship, emergency_contact_phone, role_id, employeeId
             ]);
-    
-            console.log("✅ Update Query Result:", result);
-    
-            if (result.affectedRows === 0) {
+        
+            console.log("✅ Employee update result:", employeeResult);
+        
+            if (employeeResult.affectedRows === 0) {
                 console.log("❌ No rows were updated. Possible incorrect employee ID.");
                 throw new Error("Update failed. No changes were made.");
             }
-    
-            console.log("✅ Employee updated successfully.");
+        
+            // Also update the user's details (email, full_name, and role_id) in the users table
+            const userQuery = `
+            UPDATE users 
+            SET email = ?, username = ?, role_id = ? 
+            WHERE id = ?;
+        `;
+        
+        const [userResult] = await db.query(userQuery, [
+            email, full_name, role_id, existingEmployee.user_id
+        ]);
+        
+        
+            console.log("✅ User update result:", userResult);
+        
+            if (userResult.affectedRows === 0) {
+                console.log("❌ No rows were updated in the users table.");
+                throw new Error("User update failed.");
+            }
+        
+            console.log("✅ Employee and user updated successfully.");
             return HRModel.getEmployeeById(employeeId);
-    
+        
         } catch (error) {
-            console.error("❌ Error updating employee:", error.message);
+            console.error("❌ Error updating employee and user:", error.message);
             throw error;
         }
     },
+    
+
+
+    // 🔹 Soft delete or restore employee + linked user
+    softDeleteOrRestoreEmployee : async (employeeId, shouldDelete) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+    
+            // Get the user_id and current delete status from the employee table
+            const [rows] = await connection.query(
+                "SELECT user_id, is_deleted FROM employees WHERE employee_id = ?",
+                [employeeId]
+            );
+            if (rows.length === 0) throw new Error("Employee not found");
+    
+            const userId = rows[0].user_id;
+            const currentStatus = rows[0].is_deleted;
+    
+            // Prevent unnecessary updates if the employee is already in the requested state
+            if (currentStatus === shouldDelete) {
+                throw new Error(`Employee is already ${shouldDelete ? 'archived' : 'active'}`);
+            }
+    
+            // Update employees table based on the shouldDelete flag
+            await connection.query(
+                "UPDATE employees SET is_deleted = ? WHERE employee_id = ?",
+                [shouldDelete, employeeId]
+            );
+    
+            // Update users table based on the employee's new delete status
+            await connection.query(
+                "UPDATE users SET is_active = ? WHERE id = ?",
+                [!shouldDelete, userId]
+            );
+    
+            // Commit the transaction
+            await connection.commit();
+            connection.release();
+            return true;
+        } catch (error) {
+            // Rollback if anything goes wrong
+            await connection.rollback();
+            connection.release();
+            console.error("❌ Soft delete/restore failed:", error);
+            throw error;
+        }
+    },
+    
+
 
     recordAttendance: async (employeeId, latitude, longitude) => {
         return db.query(
