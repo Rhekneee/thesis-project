@@ -33,7 +33,7 @@ const htmlRoutes = (app) => {
   });
 
   app.get('/crm/developer', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'developer.html')); // Adjusted path
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'developers.html')); // Adjusted path
   });
 
   app.get('/crm/faqs', (req, res) => {
