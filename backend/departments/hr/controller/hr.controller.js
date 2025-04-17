@@ -74,13 +74,15 @@ const HRController = {
     // 🔹 Get all employees
     getAllEmployees: async (req, res) => {
         try {
-            const employees = await HRModel.getAllEmployees();
-            res.json(employees);
-        } catch (error) {
-            console.error("❌ Error fetching employees:", error);
-            res.status(500).json({ error: "Failed to fetch employees" });
+            const includeDeleted = req.query.includeDeleted === 'true';
+            const employees = await HRModel.getAllEmployees(includeDeleted);
+            res.status(200).json(employees);
+        } catch (err) {
+            console.error("❌ Fetching employees failed:", err);
+            res.status(500).json({ message: "Something went wrong", error: err.message });
         }
     },
+    
 
     // 🔹 Get all permissions
     getRoles: async (req, res) => {
@@ -165,6 +167,20 @@ const HRController = {
             res.status(500).json({ error: "Failed to update employee" });
         }
     },
+
+// 🔹 Archive (soft delete) employee
+softDeleteOrRestoreEmployee: async (req, res) => {
+    const { employeeId } = req.params;
+    const { shouldDelete } = req.body;
+
+    try {
+        await HRModel.softDeleteOrRestoreEmployee(employeeId, shouldDelete);  // <-- fixed here
+        res.status(200).json({ message: `Employee ${shouldDelete ? 'archived' : 'restored'} successfully` });
+    } catch (error) {
+        console.error("❌ Soft delete/restore error:", error);
+        res.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+},
 
     // 🔹 Record attendance (with lat/lng)
     checkInAttendance: async (req, res) => {
