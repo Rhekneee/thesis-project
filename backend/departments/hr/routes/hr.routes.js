@@ -11,6 +11,11 @@
 
     // 🔹 Permission Management
     router.get('/roles', authMiddleware.verifySession, HRController.getRoles);    // Get all roles/permissions
+    
+ // Route to handle soft delete or restore employee
+    router.put('/employee/archive/:employeeId', authMiddleware.verifySession, HRController.softDeleteOrRestoreEmployee);
+
+    
 
     // 🔹 Attendance Management
     router.post('/check-in', authMiddleware.verifySession, HRController.checkInAttendance);       // Employee check-in
