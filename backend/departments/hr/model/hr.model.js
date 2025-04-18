@@ -23,10 +23,11 @@ createUser: async (email, role_id, full_name) => {
     let permission_id = null;
     try {
         const permissionQuery = `
-            SELECT permission_id 
-            FROM role_permission 
+            SELECT id
+            FROM role_permission
             WHERE role_id = ? 
-            LIMIT 1
+            LIMIT 1;
+
         `;
         const [rows] = await db.query(permissionQuery, [role_id]);
 
@@ -41,8 +42,8 @@ createUser: async (email, role_id, full_name) => {
 
     // 🧾 Step 2: Insert the user with permission_id
     const userInsertQuery = `
-        INSERT INTO users (email, username, role_id, password, permission_id) 
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (email, username, role_id, password) 
+        VALUES (?, ?, ?, ?)
     `;
 
     try {
@@ -51,10 +52,8 @@ createUser: async (email, role_id, full_name) => {
             full_name,
             role_id,
             defaultPassword,
-            permission_id
         ]);
 
-        console.log(`✅ New user created with ID: ${result.insertId} (Permission ID: ${permission_id})`);
         return result.insertId;
     } catch (error) {
         console.error("❌ Error creating user:", error);
