@@ -9,13 +9,44 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, 'views', 'customer.html'));
   });
   
-  app.get('/hr/dashboard', (req, res) => {
+  app.get('/hr_manager/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'hr_manager', 'hr_dashboard.html'));
   });
 
   app.get('/hr_manager/employee_management', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_management.html'));
 });
+
+// Leave Requests Route
+app.get('/hr_manager/leave_request', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'leave_request.html'));
+});
+
+// Payroll Management Route
+app.get('/hr_manager/payroll', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'payroll_management.html'));
+});
+
+// Reports Route
+app.get('/hr_manager/reports', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'reports.html'));
+});
+
+// Attendance Route
+app.get('/hr_manager/attendance', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'attendance.html'));
+});
+
+// Recruitment Route
+app.get('/hr_manager/recruitment', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'recruitment.html'));
+});
+
+// Route for the Employee Attendance page
+app.get('/hr_employee/attendance', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_employee', 'Individual_attendance.html'));
+});
+
 
 // ====================
   // CRM Website Routes
