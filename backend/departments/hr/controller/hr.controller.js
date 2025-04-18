@@ -184,43 +184,56 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
     // 🔹 Record attendance (with lat/lng)
     checkInAttendance: async (req, res) => {
-        console.log("🔹 Check-in triggered");
-
         try {
-            if (!req.session?.user) {
-                return res.status(401).json({ error: "Unauthorized: No session found" });
+            const employeeId = req.params.id;
+            const { checkInTime } = req.body;
+            const date = new Date(checkInTime).toISOString().split('T')[0];
+    
+            // Log the inputs for debugging
+            console.log("Attempting to check in for employeeId:", employeeId);
+            console.log("Check-in time:", checkInTime);
+            console.log("Date:", date);
+    
+            const result = await HRModel.checkIn(employeeId, checkInTime, date);
+    
+            if (result) {
+                return res.status(200).json({ message: "Check-in recorded!" });
+            } else {
+                return res.status(400).json({ error: "Failed to record check-in" });
             }
-
-            const employeeId = req.session.user.employee_id;
-            const { latitude, longitude } = req.body;
-
-            if (!latitude || !longitude) {
-                return res.status(400).json({ error: "Missing coordinates for attendance" });
-            }
-
-            await HRModel.recordAttendance(employeeId, latitude, longitude);
-            res.status(200).json({ message: "Attendance recorded successfully" });
-
         } catch (error) {
             console.error("❌ Error during check-in:", error);
-            res.status(500).json({ error: "Failed to record attendance" });
+            return res.status(500).json({ error: "Failed to check in" });
+        }
+    },
+    
+
+    // 🔹 Check-out attendance for the employee
+    checkOutAttendance: async (req, res) => {
+        try {
+            const employeeId = req.params.id;  // Get employeeId from URL params
+            const { checkOutTime } = req.body;  // Check-out time passed in request body
+            const date = new Date(checkOutTime).toISOString().split('T')[0]; // Format the date as 'YYYY-MM-DD'
+
+            const result = await HRModel.checkOut(employeeId, checkOutTime, date);  // Call the model method
+            res.status(200).json({ message: 'Check-out recorded!', result });
+        } catch (err) {
+            console.error('❌ Check-out error:', err);
+            res.status(500).json({ error: 'Failed to check out' });
         }
     },
 
-    // 🔹 Get today's attendance
+    // 🔹 Get today's attendance for the employee
     getTodayAttendance: async (req, res) => {
         try {
-            const { employeeId } = req.params;
-            const attendance = await HRModel.getTodayAttendance(employeeId);
+            const employeeId = req.params.id;  // Get employeeId from URL params
+            const date = new Date().toISOString().split('T')[0]; // Today's date (YYYY-MM-DD)
 
-            if (!attendance) {
-                return res.status(404).json({ message: "No attendance record found for today." });
-            }
-
-            res.json(attendance);
-        } catch (error) {
-            console.error("❌ Error fetching today's attendance:", error);
-            res.status(500).json({ error: "Failed to fetch attendance" });
+            const attendance = await HRModel.getTodayAttendance(employeeId, date);  // Call the model method
+            res.status(200).json(attendance);  // Return the data
+        } catch (err) {
+            console.error('❌ Fetch attendance error:', err);
+            res.status(500).json({ error: 'Failed to fetch attendance' });
         }
     }
 };

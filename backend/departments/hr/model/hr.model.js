@@ -321,21 +321,50 @@ getAllEmployees: async (includeDeleted = true) => {
     
 
 
-    recordAttendance: async (employeeId, latitude, longitude) => {
-        return db.query(
-            "INSERT INTO attendance (employee_id, latitude, longitude, status) VALUES (?, ?, ?, 'Present')",
-            [employeeId, latitude, longitude]
-        );
-    },
-
-    // 🔹 Get today's attendance
-    getTodayAttendance: async (employeeId) => {
-        return db.query(
-            "SELECT * FROM attendance WHERE employee_id = ? AND DATE(check_in_time) = CURDATE()",
-            [employeeId]
-        ).then(results => results[0] || null);
+    // Insert or update check-in record
+    checkIn: async (employeeId, checkInTime, date) => {
+        // Convert ISO string to valid MySQL DATETIME format (YYYY-MM-DD HH:MM:SS)
+        const formattedCheckInTime = new Date(checkInTime).toISOString().slice(0, 19).replace("T", " ");  // '2025-04-18 11:03:02'
+    
+        const sql = `
+            INSERT INTO attendance (employee_id, date, check_in, status)
+            VALUES (?, ?, ?, 'Present')
+            ON DUPLICATE KEY UPDATE check_in = VALUES(check_in), status = 'Present'
+        `;
+        const [result] = await db.execute(sql, [employeeId, date, formattedCheckInTime]);
+        return result;
     },
     
+
+
+    // 🔹 Check-out attendance and calculate total and overtime hours
+    checkOut: async (employeeId, checkOutTime, date) => {
+        // Convert ISO string to valid MySQL DATETIME format (YYYY-MM-DD HH:MM:SS)
+        const formattedCheckOutTime = new Date(checkOutTime).toISOString().slice(0, 19).replace("T", " ");  // '2025-04-18 17:03:02'
+    
+        const sql = `
+            UPDATE attendance
+            SET check_out = ?, 
+                total_hours = TIMESTAMPDIFF(MINUTE, check_in, ?)/60,
+                overtime_hours = GREATEST(TIMESTAMPDIFF(MINUTE, check_in, ?)/60 - 8, 0)
+            WHERE employee_id = ? AND date = ?
+        `;
+        const [result] = await db.execute(sql, [
+            formattedCheckOutTime,
+            formattedCheckOutTime,
+            formattedCheckOutTime,
+            employeeId,
+            date
+        ]);
+        return result;
+    },    
+
+    // 🔹 Fetch today's attendance for the employee
+    getTodayAttendance: async (employeeId, date) => {
+        const sql = `SELECT * FROM attendance WHERE employee_id = ? AND date = ?`;
+        const [rows] = await db.execute(sql, [employeeId, date]);
+        return rows;
+    },
 
 
 

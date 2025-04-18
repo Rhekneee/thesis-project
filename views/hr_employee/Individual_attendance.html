@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+<style>
+     /* layout.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    background-color: #f5f7fa;
+}
+
+.sidebar {
+    width: 200px;
+    background-color: #0052a5;
+    color: #fff;
+    padding: 20px 10px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.sidebar ul li a:hover {
+    background-color: #003f7f;
+}
+
+.main-content {
+    flex-grow: 1;
+    background-color: #e6f4fc;
+    padding: 30px;
+}
+
+.main-content h1 {
+    margin-bottom: 20px;
+}
+
+/*Daily Attendance CSS*/
+  #attendanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#attendanceTable th, #attendanceTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+    /* Updated Daily Attendance CSS */
+    #daily_attendance {
+        margin-top: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    #daily_attendance h3 {
+        font-size: 1.5rem;
+        color: #0052a5;
+        margin-bottom: 15px;
+    }
+
+    #status {
+        font-size: 1rem;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    #checkLocation, #checkIn {
+        background-color: #0052a5;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+
+    #checkLocation:hover, #checkIn:hover {
+        background-color: #003f7f;
+    }
+
+    #checkIn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #attendanceTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    #attendanceTable th {
+        background-color: #0052a5;
+        color: #ffffff;
+        padding: 10px;
+        text-align: center;
+    }
+
+    #attendanceTable td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        color: #333;
+    }
+
+    #attendanceTable tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    #attendanceTable tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    #attendanceTable td[colspan="5"] {
+        color: #999;
+        font-style: italic;
+    }
+    /* Logout Button Styles */
+#logout-button {
+    background-color: #ff4d4d; 
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+#logout-button:hover {
+    background-color: #e60000; /* Darker red on hover */
+}
+</style>
+</head>
+<body>
+    <div class="content" id="daily_attendance">
+        <button id="checkLocation" aria-label="Check your location">Check Location</button>
+        <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
+        <button id="checkOut" aria-label="Check out of attendance">Check Out</button>
+        <p id="status">Click "Check Location" to verify.</p>
+
+        <h3>Today's Attendance</h3>
+        <table id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceBody">
+                <tr>
+                    <td colspan="4">No records found</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        window.onload = async () => {
+            const API_URL = "http://localhost:4000/hr";
+            const officeLat = 14.138224314445827;
+            const officeLng = 121.14827110523038;
+            const allowedRadius = 500; // meters
+
+            try {
+                const employeeId = await getEmployeeIdFromSession();
+                if (!employeeId) {
+                    alert("Employee ID is missing.");
+                    return;
+                }
+
+                loadAttendanceData(employeeId);
+
+                // Location check
+                document.getElementById("checkLocation").addEventListener("click", () => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+                                const distance = getDistance(officeLat, officeLng, userLat, userLng);
+
+                                if (distance <= allowedRadius) {
+                                    document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
+                                    document.getElementById("checkIn").disabled = false;
+                                } else {
+                                    document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
+                                    document.getElementById("checkIn").disabled = true;
+                                }
+                            },
+                            (error) => {
+                                document.getElementById("status").textContent = `⚠️ Location error: ${error.message}`;
+                            }
+                        );
+                    } else {
+                        document.getElementById("status").textContent = "❌ Geolocation not supported.";
+                    }
+                });
+
+                // Check-in button
+                document.getElementById("checkIn").addEventListener("click", async () => {
+                    const checkInTime = new Date().toISOString();
+                    try {
+                        const response = await fetch(`${API_URL}/check-in/${employeeId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ checkInTime })
+                        });
+
+                        const data = await response.json();
+                        document.getElementById("status").textContent = response.ok
+                            ? "✅ Check-in successful!"
+                            : `❌ Error: ${data.error}`;
+
+                        loadAttendanceData(employeeId);
+                    } catch (error) {
+                        console.error("Check-in error:", error);
+                        document.getElementById("status").textContent = "❌ Failed to check in.";
+                    }
+                });
+
+                // Check-out button
+                document.getElementById("checkOut").addEventListener("click", async () => {
+                    const checkOutTime = new Date().toISOString();
+                    try {
+                        const response = await fetch(`${API_URL}/check-out/${employeeId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ checkOutTime })
+                        });
+
+                        const data = await response.json();
+                        document.getElementById("status").textContent = response.ok
+                            ? "✅ Check-out successful!"
+                            : `❌ Error: ${data.error}`;
+
+                        loadAttendanceData(employeeId);
+                    } catch (error) {
+                        console.error("Check-out error:", error);
+                        document.getElementById("status").textContent = "❌ Failed to check out.";
+                    }
+                });
+            } catch (err) {
+                console.error("Error:", err);
+                alert("An error occurred while loading attendance data.");
+            }
+        };
+
+        // Function to fetch the employee ID from the session
+        async function getEmployeeIdFromSession() {
+    try {
+        const response = await fetch('http://localhost:4000/hr/check-session', {
+            credentials: 'include', // Make sure to send the session cookie
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch user ID');
+        }
+
+        const data = await response.json();
+        return data.user.id; // Return the user ID from the session
+    } catch (error) {
+        console.error('Error fetching employee ID:', error);
+        return null; // Return null in case of an error
+    }
+}
+
+
+        // Calculate distance between two points using the Haversine formula
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const toRad = (deg) => (deg * Math.PI) / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Returns distance in meters
+        }
+
+        // Function to load today's attendance data for the employee
+        async function loadAttendanceData(employeeId) {
+            const response = await fetch(`/hr/today/${employeeId}`);
+            const data = await response.json();
+            const tbody = document.getElementById("attendanceBody");
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
+                return;
+            }
+
+            const row = data[0];
+            tbody.innerHTML = `
+            <tr>
+                <td>${row.date}</td>
+                <td>${row.check_in ? formatTime(row.check_in) : "-"}</td>
+                <td>${row.check_out ? formatTime(row.check_out) : "-"}</td>
+                <td>${row.status || "-"}</td>
+            </tr>
+            `;
+        }
+
+        // Function to format time (ISO string to HH:mm format)
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+    </script>
+        
+</body>
+</html>
