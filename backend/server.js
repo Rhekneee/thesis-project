@@ -68,7 +68,8 @@ app.get('/dashboard', (req, res) => {
         'finance_accounting': 'manager_finance.html',
         'general_foreman': 'manager_manufacturing.html',
         'warehouse_supervisor': 'manager_supply_chain.html',
-        'corporate_secretary': 'manager_corporate_secretary.html'
+        'corporate_secretary': 'manager_corporate_secretary.html',
+        'admin_staff': '/hr_employee/attendance',
     };
 
     const userRole = req.session.user.role_name; // Get the role name from session
@@ -81,12 +82,18 @@ app.get('/dashboard', (req, res) => {
     }
 
     // Serve the corresponding dashboard
-    const dashboardPath = path.join(__dirname, '..', 'views', dashboardFile);
-    res.sendFile(dashboardPath, (err) => {
-        if (err) {
-            console.error(`❌ Dashboard file not found: ${dashboardFile}`);
-        }
-    });
+     if (dashboardFile.startsWith('/hr_employee')) {
+        // If it's a route (like /hr_employee/attendance), redirect
+        res.redirect(dashboardFile);  // Redirect to the corresponding route
+    } else {
+        // If it's an HTML file, serve the corresponding dashboard HTML file
+        const dashboardPath = path.join(__dirname, '..', 'views', dashboardFile);
+        res.sendFile(dashboardPath, (err) => {
+            if (err) {
+                console.error(`❌ Dashboard file not found: ${dashboardFile}`);
+            }
+        });
+    }
 });
 
 // Logout Route
