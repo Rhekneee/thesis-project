@@ -18,8 +18,14 @@
     
 
     // 🔹 Attendance Management
-    router.post('/check-in', authMiddleware.verifySession, HRController.checkInAttendance);       // Employee check-in
-    router.get('/today/:employeeId', authMiddleware.verifySession, HRController.getTodayAttendance); // Get today's attendance
+// 🔹 Check-in attendance for the employee
+    router.post('/check-in/:id', HRController.checkInAttendance);
+
+    // 🔹 Check-out attendance for the employee
+    router.post('/check-out/:id', HRController.checkOutAttendance);
+
+    // 🔹 Get today's attendance for the employee
+    router.get('/today/:id', HRController.getTodayAttendance);
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
