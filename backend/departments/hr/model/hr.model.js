@@ -9,59 +9,54 @@ const HRModel = {
     },
 
     // 🔹 Create a new user with username included
-    // 🔹 Create a new user with username included and permission_id auto-fetched from role
-createUser: async (email, role_id, full_name) => {
-    console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
+    createUser: async (email, role_id, full_name) => {
+        console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
 
-    if (!role_id) {
-        throw new Error("❌ Role ID is required and cannot be null");
-    }
-
-    const defaultPassword = "default123";
-
-    // 🧠 Step 1: Get permission_id from role_permission
-    let permission_id = null;
-    try {
-        const permissionQuery = `
-            SELECT id
-            FROM role_permission
-            WHERE role_id = ? 
-            LIMIT 1;
-
-        `;
-        const [rows] = await db.query(permissionQuery, [role_id]);
-
-        if (rows.length > 0) {
-            permission_id = rows[0].permission_id;
+        if (!role_id) {
+            throw new Error("❌ Role ID is required and cannot be null");
         }
 
-    } catch (error) {
-        console.error("❌ Error fetching permission_id:", error);
-        throw new Error("Failed to fetch permission_id for the role");
-    }
+        const defaultPassword = "default123";
 
-    // 🧾 Step 2: Insert the user with permission_id
-    const userInsertQuery = `
-        INSERT INTO users (email, username, role_id, password) 
-        VALUES (?, ?, ?, ?)
-    `;
+        // 🧠 Step 1: Get permission_id from role_permission
+        let permission_id = null;
+        try {
+            const permissionQuery = `
+                SELECT id
+                FROM role_permission
+                WHERE role_id = ? 
+                LIMIT 1;
+            `;
+            const [rows] = await db.query(permissionQuery, [role_id]);
 
-    try {
-        const [result] = await db.query(userInsertQuery, [
-            email,
-            full_name,
-            role_id,
-            defaultPassword,
-        ]);
+            if (rows.length > 0) {
+                permission_id = rows[0].permission_id;
+            }
+        } catch (error) {
+            console.error("❌ Error fetching permission_id:", error);
+            throw new Error("Failed to fetch permission_id for the role");
+        }
 
-        return result.insertId;
-    } catch (error) {
-        console.error("❌ Error creating user:", error);
-        throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
-    }
-},
+        // 🧾 Step 2: Insert the user with permission_id
+        const userInsertQuery = `
+            INSERT INTO users (email, username, role_id, password) 
+            VALUES (?, ?, ?, ?)
+        `;
 
-    
+        try {
+            const [result] = await db.query(userInsertQuery, [
+                email,
+                full_name,
+                role_id,
+                defaultPassword,
+            ]);
+
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error creating user:", error);
+            throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
+        }
+    },
 
     // 🔹 Get user ID by email
     getUserIdByEmail: async (email) => {
@@ -87,26 +82,26 @@ createUser: async (email, role_id, full_name) => {
             await connection.beginTransaction();
     
             const employeeQuery = `
-            INSERT INTO employees 
-            (user_id, email, role_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        `;
-
-        const employeeValues = [
-            employeeData.user_id,
-            employeeData.email,
-            employeeData.role_id,
-            employeeData.full_name,
-            employeeData.contact,
-            employeeData.address,
-            employeeData.birthday,
-            employeeData.employment_status,
-            employeeData.educational_background,
-            employeeData.emergency_contact_name,
-            employeeData.emergency_contact_relationship,
-            employeeData.emergency_contact_phone,
-        ];
-
+                INSERT INTO employees 
+                (employee_id, user_id, email, role_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            `;
+    
+            const employeeValues = [
+                employeeData.employee_id,
+                employeeData.user_id,
+                employeeData.email,
+                employeeData.role_id,
+                employeeData.full_name,
+                employeeData.contact,
+                employeeData.address,
+                employeeData.birthday,
+                employeeData.employment_status,
+                employeeData.educational_background,
+                employeeData.emergency_contact_name,
+                employeeData.emergency_contact_relationship,
+                employeeData.emergency_contact_phone
+            ];
     
             const [employeeResult] = await connection.query(employeeQuery, employeeValues);
     
@@ -124,61 +119,68 @@ createUser: async (email, role_id, full_name) => {
         }
     },
 
-// 🔹 Get All Employees (Filtered by is_deleted flag)
-getAllEmployees: async (includeDeleted = true) => {
-    let query = `
-        SELECT 
-            e.*, 
-            r.name AS role_name, 
-            d.name AS department_name
-        FROM 
-            employees e
-        JOIN 
-            roles r ON e.role_id = r.id
-        JOIN 
-            departments d ON r.department_id = d.id
-    `;
-    
-    // Add the filter condition if needed
-    if (!includeDeleted) {
-        query += ` WHERE e.is_deleted = 0`; // Only active employees
-    }
+    // 🔹 Get last inserted employee to determine the next ID (e.g., 2025-1007)
+    getLastEmployeeId: async () => {
+        const query = "SELECT employee_id FROM employees ORDER BY employee_id DESC LIMIT 1";
+        const [rows] = await db.query(query);
+        return rows.length > 0 ? rows[0] : null;
+    },
 
-    try {
-        const [employees] = await db.query(query);
-        return employees.map(employee => ({
-            ...employee,
-            birthday: employee.birthday
-                ? new Date(employee.birthday).toISOString().split('T')[0]
-                : null
-        }));
-    } catch (err) {
-        console.error("❌ Failed to fetch employees:", err);
-        throw err;
-    }
-},
+    // 🔹 Get all employees (filtered by is_deleted flag)
+    getAllEmployees: async (includeDeleted = true) => {
+        let query = `
+            SELECT 
+                e.*, 
+                r.name AS role_name, 
+                d.name AS department_name
+            FROM 
+                employees e
+            JOIN 
+                roles r ON e.role_id = r.id
+            JOIN 
+                departments d ON r.department_id = d.id
+        `;
+    
+        // Add the filter condition if needed
+        if (!includeDeleted) {
+            query += ` WHERE e.is_deleted = 0`; // Only active employees
+        }
+
+        try {
+            const [employees] = await db.query(query);
+            return employees.map(employee => ({
+                ...employee,
+                birthday: employee.birthday
+                    ? new Date(employee.birthday).toISOString().split('T')[0]
+                    : null
+            }));
+        } catch (err) {
+            console.error("❌ Failed to fetch employees:", err);
+            throw err;
+        }
+    },
 
 
             
 
     // 🔹 Get employee by ID (Added this function for updates)
-    getEmployeeById: async (employeeId) => {
-        try {
-            const query = "SELECT * FROM employees WHERE employee_id = ?";
-            const [rows] = await db.query(query, [employeeId]);
-            if (rows.length > 0) {
-                let employee = rows[0];
+        getEmployeeById: async (employeeId) => {
+            try {
+                const query = "SELECT * FROM employees WHERE employee_id = ?";
+                const [rows] = await db.query(query, [employeeId]);
+                if (rows.length > 0) {
+                    let employee = rows[0];
 
-                // Format birthday as 'YYYY-MM-DD'
-                employee.birthday = employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null;
-                return employee;
+                    // Format birthday as 'YYYY-MM-DD'
+                    employee.birthday = employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null;
+                    return employee;
+                }
+                return null;
+            } catch (error) {
+                console.error("❌ Error fetching employee by ID:", error);
+                throw error;
             }
-            return null;
-        } catch (error) {
-            console.error("❌ Error fetching employee by ID:", error);
-            throw error;
-        }
-    },
+        },
 
     // 🔹 Get all permissions
     getAllRoles: async () => {
