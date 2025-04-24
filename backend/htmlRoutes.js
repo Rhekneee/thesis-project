@@ -6,7 +6,7 @@ const htmlRoutes = (app) => {
   // HR Manager Routes
   // ====================
   app.get('/customer', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'customer.html'));
+    res.sendFile(path.join(__dirname, '..', 'views', 'customer.html'));
   });
   
   app.get('/hr_manager/dashboard', (req, res) => {
