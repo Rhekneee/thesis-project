@@ -17,6 +17,10 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_management.html'));
 });
 
+app.get('/hr_manager/employee_attendance', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_attendance.html'));
+});
+
 // Leave Requests Route
 app.get('/hr_manager/leave_request', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'leave_request.html'));

@@ -169,35 +169,34 @@ body {
 </style>
 </head>
 <body>
-    <div class="content" id="daily_attendance">
-        <button id="checkLocation" aria-label="Check your location">Check Location</button>
-        <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
-        <button id="checkOut" aria-label="Check out of attendance">Check Out</button>
-        <p id="status">Click "Check Location" to verify.</p>
-
-        <h3>Today's Attendance</h3>
-        <table id="attendanceTable">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Check-In</th>
-                    <th>Check-Out</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="attendanceBody">
-                <tr>
-                    <td colspan="4">No records found</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <script>
+        <div class="content" id="daily_attendance">
+            <button id="checkLocation" aria-label="Check your location">Check Location</button>
+            <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
+            <button id="checkOut" aria-label="Check out of attendance">Check Out</button>
+            <p id="status">Click "Check Location" to verify.</p>
+    
+            <h3>Today's Attendance</h3>
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td colspan="4">No records found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <script>
         window.onload = async () => {
             const API_URL = "http://localhost:4000/hr";
             const officeLat = 14.320467850051003;
-            const officeLng = 120.89765105270317;
+            const officeLng =  120.89765105270317;
             const allowedRadius = 500; // meters
 
             try {
@@ -237,6 +236,7 @@ body {
 
                 // Check-in button
                 document.getElementById("checkIn").addEventListener("click", async () => {
+                    console.log("Attempting check-in with employeeId:", employeeId);
                     const checkInTime = new Date().toISOString();
                     try {
                         const response = await fetch(`${API_URL}/check-in/${employeeId}`, {
@@ -248,7 +248,7 @@ body {
                         const data = await response.json();
                         document.getElementById("status").textContent = response.ok
                             ? "✅ Check-in successful!"
-                            : `❌ Error: ${data.error}`;
+                            : `❌ Error: ${data.error || 'Failed to check in.'}`;
 
                         loadAttendanceData(employeeId);
                     } catch (error) {
@@ -270,7 +270,7 @@ body {
                         const data = await response.json();
                         document.getElementById("status").textContent = response.ok
                             ? "✅ Check-out successful!"
-                            : `❌ Error: ${data.error}`;
+                            : `❌ Error: ${data.error || 'Failed to check out.'}`;
 
                         loadAttendanceData(employeeId);
                     } catch (error) {
@@ -346,7 +346,6 @@ body {
             const date = new Date(isoString);
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-    </script>
-        
+        </script>
 </body>
 </html>
