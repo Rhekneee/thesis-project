@@ -370,20 +370,24 @@ const HRModel = {
 
 
 
-    saveResume: async (employee_id, resume_path) => {
-        try {
-            const sql = `
-                INSERT INTO resumes (employee_id, resume_path, uploaded_at)
-                VALUES (?, ?, NOW())
-            `;
-            await pool.query(sql, [employee_id, resume_path]);
-            return true;
-        } catch (error) {
-            console.error("❌ Error saving resume to database:", error);
-            return false;
-        }
+    getApplicationsByStatus: async (status) => {
+        const query = "SELECT * FROM applications WHERE status = ?";
+        const [rows] = await db.execute(query, [status]);
+        return rows;
     },
 
+    // Update the application status (Pending, Ready for Interview, Accepted, Rejected)
+    updateApplicationStatus: async (id, status) => {
+        const query = "UPDATE applications SET status = ? WHERE id = ?";
+        await db.execute(query, [status, id]);
+    },
+
+    // Get application details by ID
+    getApplicationById: async (id) => {
+        const query = "SELECT * FROM applications WHERE id = ?";
+        const [rows] = await db.execute(query, [id]);
+        return rows[0] || null;
+    }
 
 };
 

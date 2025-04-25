@@ -1,3 +1,4 @@
+const nodemailer = require('nodemailer'); 
 const HRModel = require("../model/hr.model");
 
 const HRController = {
@@ -263,6 +264,69 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             console.error('❌ Fetch attendance error:', err);
             res.status(500).json({ error: 'Failed to fetch attendance' });
         }
+    },
+    getApplicationsByStatus: async (req, res) => {
+        const { status } = req.query;  // Get the status from query parameters
+        try {
+            const applications = await HRModel.getApplicationsByStatus(status);
+            res.json(applications);  // Send applications data as JSON
+        } catch (error) {
+            console.error("Error fetching applications:", error);
+            res.status(500).json({ error: "Error fetching applications" });
+        }
+    },
+
+    // Method to update application status (Pending, Ready for Interview, Accepted, Rejected)
+    updateApplicationStatus: async (req, res) => {
+        const { id, status } = req.body; // Get the ID and status from the request body
+        try {
+            // Validate the status value
+            if (!['Pending', 'Ready for Interview', 'Accepted', 'Rejected'].includes(status)) {
+                return res.status(400).json({ error: "Invalid status value" });
+            }
+
+            // Update the status in the database
+            await HRModel.updateApplicationStatus(id, status);
+
+            // Fetch the applicant's details using the ID
+            const application = await HRModel.getApplicationById(id);
+
+            // If the status is 'Ready for Interview', send an email notification
+            if (status === 'Ready for Interview') {
+                await sendEmailNotification(application.email, status);
+            }
+
+            res.status(200).json({ message: `Status updated to ${status}` });
+        } catch (error) {
+            console.error("Error updating application status:", error);
+            res.status(500).json({ error: "Error updating application status" });
+        }
+    }
+    
+};
+
+// Method to send an email notification to the applicant
+const sendEmailNotification = async (applicantEmail, status) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'reneemadel15@gmail.com',  // Replace with your email
+            pass: 'ldcp sknb lfuj kmlf',   // Replace with your email password
+        },
+    });
+
+    const mailOptions = {
+        from: 'reneemadel15@gmail.com',  // Replace with your email
+        to: applicantEmail,
+        subject: `Your application status has been updated to ${status}`,
+        text: `Hello, your application status has been updated to ${status}. Please check your profile for more details.`,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully');
+    } catch (error) {
+        console.error('Error sending email:', error);
     }
 };
 

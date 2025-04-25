@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+<style>
+     /* layout.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    background-color: #f5f7fa;
+}
+
+.sidebar {
+    width: 200px;
+    background-color: #0052a5;
+    color: #fff;
+    padding: 20px 10px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.sidebar ul li a:hover {
+    background-color: #003f7f;
+}
+
+.main-content {
+    flex-grow: 1;
+    background-color: #e6f4fc;
+    padding: 30px;
+}
+
+.main-content h1 {
+    margin-bottom: 20px;
+}
+
+/*Daily Attendance CSS*/
+  #attendanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#attendanceTable th, #attendanceTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+    /* Updated Daily Attendance CSS */
+    #daily_attendance {
+        margin-top: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    #daily_attendance h3 {
+        font-size: 1.5rem;
+        color: #0052a5;
+        margin-bottom: 15px;
+    }
+
+    #status {
+        font-size: 1rem;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    #checkLocation, #checkIn {
+        background-color: #0052a5;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+
+    #checkLocation:hover, #checkIn:hover {
+        background-color: #003f7f;
+    }
+
+    #checkIn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #attendanceTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    #attendanceTable th {
+        background-color: #0052a5;
+        color: #ffffff;
+        padding: 10px;
+        text-align: center;
+    }
+
+    #attendanceTable td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        color: #333;
+    }
+
+    #attendanceTable tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    #attendanceTable tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    #attendanceTable td[colspan="5"] {
+        color: #999;
+        font-style: italic;
+    }
+    /* Logout Button Styles */
+#logout-button {
+    background-color: #ff4d4d; 
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+#logout-button:hover {
+    background-color: #e60000; /* Darker red on hover */
+}
+</style>
+</head>
+<body>
+    
+        <div class="sidebar">
+            <h2>HR Panel</h2>
+            <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/hr_manager/employee_management">Employee Management</a></li>
+            <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+            <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+            <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+            <li><a href="/hr_manager/reports">Reports</a></li>
+            <li><a href="/hr_manager/attendance">Attendance</a></li>
+            <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+            <li><a href="#" id="logout-button">Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="table-container">
+            <h2>Applicant Resumes</h2>
+        
+            <!-- Buttons to filter by status -->
+            <div class="status-buttons">
+                <button onclick="loadApplications('Pending')">Pending</button>
+                <button onclick="loadApplications('Ready for Interview')">Ready for Interview</button>
+                <button onclick="loadApplications('Accepted')">Accepted</button>
+                <button onclick="loadApplications('Rejected')">Rejected</button>
+            </div>
+        
+            <!-- Table to show applicants -->
+            <table id="applications-table">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Middle Initial</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Age</th>
+                        <th>Birthdate</th>
+                        <th>Resume</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data rows will be dynamically populated here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <script>
+        // Fetch and display applications based on the status
+            async function loadApplications(status) {
+        try {
+            const response = await fetch(`/hr/getApplicationsByStatus?status=${status}`);  // Fetch applications using the correct path
+            const applications = await response.json();  // Parse the JSON response
+            const tableBody = document.querySelector('#applications-table tbody');
+            
+            // Clear the existing table rows
+            tableBody.innerHTML = '';
+
+            applications.forEach(app => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${app.full_name}</td>
+                    <td>${app.middleinitial}</td>
+                    <td>${app.email}</td>
+                    <td>${app.phone}</td>
+                    <td>${app.age}</td>
+                    <td>${app.birthdate}</td>
+                    <td><a href="/uploads/resume/${app.resume}" target="_blank">View Resume</a></td>
+                    <td>${app.status}</td>
+                    <td>
+                    ${app.status === 'Pending' ? `
+                        <button onclick="updateStatus(${app.id}, 'Ready for Interview')">Ready for Interview</button>
+                        <button onclick="updateStatus(${app.id}, 'Rejected')">Reject</button>
+                    ` : ''}
+                    ${app.status === 'Ready for Interview' ? `
+                        <button onclick="updateStatus(${app.id}, 'Accepted')">Accept</button>
+                        <button onclick="updateStatus(${app.id}, 'Rejected')">Reject</button>
+                    ` : ''}
+                    ${app.status === 'Accepted' || app.status === 'Rejected' ? `
+                        <button onclick="undoStatus(${app.id})">Undo</button>
+                    ` : ''}
+                </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Error fetching applications:", error);
+        }
+    }
+
+    // Update the status of an application
+    async function updateStatus(applicationId, status) {
+        try {
+            const response = await fetch('/hr/updateStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: applicationId, status: status })
+            });
+
+            const result = await response.json();
+            alert(result.message);  // Success or error message
+            loadApplications('Pending');  // Reload the Pending applications after update
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    }
+    async function undoStatus(applicationId) {
+    try {
+        const response = await fetch('/hr/updateStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: applicationId, status: 'Pending' })
+        });
+
+        const result = await response.json();
+        alert(result.message);  // Success or error message
+        loadApplications('Pending');  // Reload the Pending applications after undo
+    } catch (error) {
+        console.error("Error undoing status:", error);
+    }
+}
+
+    // Load the Pending applications by default
+    loadApplications('Pending');
+    </script>
+        
+        
+</body>
+</html>
