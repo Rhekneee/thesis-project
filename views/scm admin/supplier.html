@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/scm_style.css">
+  <script src="/public/js/app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+        <h1>SCM</h1>
+        <button id="toggleSidebar">☰</button>
+      </div>
+    <a href="index.html"><i class="bi bi-grid"></i><span>Dashboard</span></a>
+    <a href="inventory.html"><i class="bi bi-box"></i><span>Inventory</span></a>
+    <a href="supplier.html"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
+    <a href="transfer.html"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
+    <a href="requestmaterial.html"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
+    <a href="outside.html"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
+    <a href="contract.html"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
+    <a href="logout.html" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+         <button id="addSupplierBtn" class="add-item-btn">Add Supplier</button>
+        <input type="text" id="supplierSearch" class="search-bar1" placeholder="Search suppliers...">
+    </div>
+    <div class="card1">
+        <h2>Supplier Information</h2>
+
+        <table class="material-table supplier-table">
+            <thead>
+              <tr>
+                <th>Supplier Name</th>
+                <th>Business Type</th>
+                <th>Contact Name</th>
+                <th>Contact No.</th>
+                <th>View</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            
+            <tbody id="supplierBody">
+                <tr>
+                    <td>ABC Builders Co.</td>
+                    <td>Construction Materials</td>
+                    <td>John Doe</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td>Steel Solutions</td>
+                    <td>Metal Works</td>
+                    <td>Jane Smith</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Steel Solutions</td>
+                    <td>Metal Works</td>
+                    <td>Jane Smith</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Steel Solutions</td>
+                    <td>Metal Works</td>
+                    <td>Jane Smith</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Steel Solutions</td>
+                    <td>Metal Works</td>
+                    <td>Jane Smith</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Steel Solutions</td>
+                    <td>Metal Works</td>
+                    <td>Jane Smith</td>
+                    <td>09123456789</td>
+                    <td><button class="action-btn">View</button></td>
+                    <td>
+                      <button class="action-btn">Edit</button>
+                      <button class="action-btn">Delete</button>
+                    </td>
+                  </tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="supplierPagination">
+            <a href="#" class="page-arrow">&lt;</a>
+            <a href="#" class="page-number active">1</a>
+            <a href="#" class="page-number">2</a>
+            <a href="#" class="page-number">3</a>
+            <a href="#" class="page-number">4</a>
+            <span class="dots">...</span>
+            <a href="#" class="page-arrow">&gt;</a>
+          </div>
+        </div>
+          
+        
+         
+  </div>
+
+  <div id="addSupplierModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn">&times;</button>
+      <h2>Add Supplier</h2><br><br>
+      <form id="addSupplierForm">
+        <input type="text" id="supplierName" placeholder="Supplier Name" required />
+        <input type="text" id="businessType" placeholder="Business Type" required />
+        <input type="text" id="contactName" placeholder="Contact Name" required />
+        <input type="text" id="contactNumber" placeholder="Contact Number" required />
+        <input type="text" id="location" placeholder="Location" required />
+  
+        <!-- Centered Add button -->
+        <div style="display: flex; justify-content: center; width: 100%;">
+          <button type="submit" class="action-btn">Add</button>
+        </div>
+      </form>
+    </div>
+
+
+    
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+    const supplierRowsPerPage = 5;
+const supplierTableBody = document.getElementById("supplierBody");
+const supplierRows = Array.from(supplierTableBody?.querySelectorAll("tr") || []);
+const supplierPagination = document.getElementById("supplierPagination");
+
+function paginateSupplierTable() {
+  const totalPages = Math.ceil(supplierRows.length / supplierRowsPerPage);
+  let currentPage = 1;
+
+  function showPage(page) {
+    const start = (page - 1) * supplierRowsPerPage;
+    const end = start + supplierRowsPerPage;
+
+    supplierRows.forEach((row, index) => {
+      row.style.display = (index >= start && index < end) ? "" : "none";
+    });
+
+    updateSupplierPagination(page);
+  }
+
+  function updateSupplierPagination(current) {
+    supplierPagination.innerHTML = "";
+
+    // Prev Arrow
+    const prev = document.createElement("a");
+    prev.href = "#";
+    prev.className = "page-arrow";
+    prev.innerHTML = "&lt;";
+    prev.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+      }
+    });
+    supplierPagination.appendChild(prev);
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("a");
+      btn.href = "#";
+      btn.className = "page-number" + (i === current ? " active" : "");
+      btn.textContent = i;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        currentPage = i;
+        showPage(i);
+      });
+      supplierPagination.appendChild(btn);
+    }
+
+    // Next Arrow
+    const next = document.createElement("a");
+    next.href = "#";
+    next.className = "page-arrow";
+    next.innerHTML = "&gt;";
+    next.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+      }
+    });
+    supplierPagination.appendChild(next);
+  }
+
+  if (supplierRows.length) showPage(currentPage);
+}
+
+if (supplierTableBody) {
+  paginateSupplierTable();
+}
+});
+  </script>
+
+  
+</body>
+</html>

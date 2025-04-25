@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/scm_style.css">
+  <script src="/public/js/app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+        <h1>SCM</h1>
+        <button id="toggleSidebar">☰</button>
+      </div>
+    <a href="index.html"><i class="bi bi-grid"></i><span>Dashboard</span></a>
+    <a href="inventory.html"><i class="bi bi-box"></i><span>Inventory</span></a>
+    <a href="supplier.html"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
+    <a href="transfer.html"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
+    <a href="requestmaterial.html"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
+    <a href="outside.html"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
+    <a href="contract.html"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
+    <a href="logout.html" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+
+  </div>
+  <div class="main-content">
+    <div class="top-bar">
+        <button id="addItemBtn" class="add-item-btn">+ Add Purchase</button>
+      <input type="text" id="requestSearch" class="search-bar2" placeholder="Search requests...">
+    </div>
+    <div class="card">
+      <h2>Outside Purchase</h2>
+      
+      <table class="material-table request-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Cost</th>
+            <th>Site</th>
+            <th>Date</th>
+            <th>Reason</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="outsideBody">
+          <tr>
+            <td>REQ-001</td>
+            <td>Paint</td>
+            <td>100</td>
+            <td>5000</td>
+            <td>Site A</td>
+            <td>03/01/2025</td>
+            <td>Emergency</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+
+          <tr>
+            <td>REQ-002</td>
+            <td>Cement</td>
+            <td>100</td>
+            <td>1000</td>
+            <td>Site B</td>
+            <td>03/02/2025</td>
+            <td>Ewan</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>REQ-001</td>
+            <td>Paint</td>
+            <td>100</td>
+            <td>5000</td>
+            <td>Site A</td>
+            <td>03/01/2025</td>
+            <td>Emergency</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>REQ-001</td>
+            <td>Paint</td>
+            <td>100</td>
+            <td>5000</td>
+            <td>Site A</td>
+            <td>03/01/2025</td>
+            <td>Emergency</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>REQ-001</td>
+            <td>Paint</td>
+            <td>100</td>
+            <td>5000</td>
+            <td>Site A</td>
+            <td>03/01/2025</td>
+            <td>Emergency</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>REQ-001</td>
+            <td>Paint</td>
+            <td>100</td>
+            <td>5000</td>
+            <td>Site A</td>
+            <td>03/01/2025</td>
+            <td>Emergency</td>
+            <td>
+              <button class="action-btn">View</button>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <!-- You can add more sample rows here -->
+        </tbody>
+      </table>
+      <div class="pagination" id="outsidePagination">
+        <a href="#" class="page-arrow">&lt;</a>
+        <a href="#" class="page-number active">1</a>
+        <a href="#" class="page-number">2</a>
+        <a href="#" class="page-number">3</a>
+        <a href="#" class="page-number">4</a>
+        <span class="dots">...</span>
+        <a href="#" class="page-arrow">&gt;</a>
+      </div>
+    </div>
+    
+    
+     
+    
+  </div>
+  
+
+<!-- Modal -->
+<div id="addItemModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h2>Add Outside Purchase</h2><br><br>
+    <form id="addItemForm">
+      <input type="text" id="itemName" placeholder="Item Name" required />
+      <input type="number" id="itemQuantity" placeholder="Quantity" required />
+      <input type="number" id="itemCost" placeholder="Cost" required />
+      <input type="text" id="itemSite" placeholder="Site" required />
+      <input type="date" id="itemDate" required />
+      <input type="text" id="itemReason" placeholder="Reason" required />
+      
+      <div style="display: flex; justify-content: center; width: 100%;">
+        <button type="submit">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    /* Outside Purchase Pagination */
+    const outsideRowsPerPage = 5;
+    const outsideTableBody = document.getElementById("outsideBody");
+    const outsideRows = Array.from(outsideTableBody?.querySelectorAll("tr") || []);
+    const outsidePagination = document.getElementById("outsidePagination");
+  
+    function paginateOutsideTable() {
+      const totalPages = Math.ceil(outsideRows.length / outsideRowsPerPage);
+      let currentPage = 1;
+  
+      function showPage(page) {
+        const start = (page - 1) * outsideRowsPerPage;
+        const end = start + outsideRowsPerPage;
+  
+        outsideRows.forEach((row, index) => {
+          row.style.display = (index >= start && index < end) ? "" : "none";
+        });
+  
+        updateOutsidePagination(page);
+      }
+  
+      function updateOutsidePagination(current) {
+        outsidePagination.innerHTML = "";
+  
+        // Prev
+        const prev = document.createElement("a");
+        prev.href = "#";
+        prev.className = "page-arrow";
+        prev.innerHTML = "&lt;";
+        prev.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (currentPage > 1) {
+            currentPage--;
+            showPage(currentPage);
+          }
+        });
+        outsidePagination.appendChild(prev);
+  
+        // Page Numbers
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("a");
+          btn.href = "#";
+          btn.className = "page-number" + (i === current ? " active" : "");
+          btn.textContent = i;
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            currentPage = i;
+            showPage(i);
+          });
+          outsidePagination.appendChild(btn);
+        }
+  
+        // Next
+        const next = document.createElement("a");
+        next.href = "#";
+        next.className = "page-arrow";
+        next.innerHTML = "&gt;";
+        next.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (currentPage < totalPages) {
+            currentPage++;
+            showPage(currentPage);
+          }
+        });
+        outsidePagination.appendChild(next);
+      }
+  
+      if (outsideRows.length) showPage(currentPage);
+    }
+  
+    if (outsideTableBody) {
+      paginateOutsideTable();
+    }
+
+// Modal functionality
+const addItemBtn = document.getElementById("addItemBtn");
+const addItemModal = document.getElementById("addItemModal");
+const closeBtn = document.querySelector(".close-btn");
+
+if (addItemBtn && addItemModal && closeBtn) {
+  addItemBtn.addEventListener("click", () => {
+    addItemModal.style.display = "block";
+  });
+
+  closeBtn.addEventListener("click", () => {
+    addItemModal.style.display = "none";
+  });
+
+  window.addEventListener("click", (event) => {
+    if (event.target === addItemModal) {
+      addItemModal.style.display = "none";
+    }
+  });
+}
+
+
+
+
+
+  });
+
+
+
+
+  </script>
+  
+  
+
+ 
+</body>
+</html>
