@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+       /* Styling for the sidebar */
+       #sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none; /* Sidebar is hidden by default */
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        #sidebar ul li.logout {
+        margin-top: 350px; 
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+        background-color: #dc3545; /* Red background on hover */
+        color: white; /* Ensure the text stays white */
+        }
+        
+        
+        /* Other sidebar item hover effects */
+        #sidebar ul li a:hover {
+        background-color: #5a6268;
+        color: white;
+        }
+
+        #sidebar ul li.active a {
+        background-color: #007bff; /* Blue background for active link */
+        color: white; /* Ensure text is white */
+        }
+         
+    
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+        .kpi-card {
+            margin: 10px 0;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Admin Dashboard</h3>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="crm_admin.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item"><a href="daily_attendance.html"><i class="fas fa-calendar-check"></i> Attendance</a></li>
+                <li class="nav-item"><a href="agents.html"><i class="fas fa-users"></i> Agents</a></li>
+                <li class="nav-item"><a href="clients.html"><i class="fas fa-user-friends"></i> Clients</a></li>
+                <li class="nav-item"><a href="inquiries.html"><i class="fas fa-comment-dots"></i> Inquiries</a></li>
+                <!-- Properties Section with sub-options -->
+                <li>
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false" id="properties-toggle">
+                        <i class="fas fa-home"></i> Properties <i class="fas fa-chevron-down" id="chevron-icon"></i>
+                    </a>
+                    <ul class="collapse" id="properties">
+                        <li class="nav-item"><a href="property_list.html"><i class="fas fa-eye"></i> View Properties</a></li>
+                        <li class="nav-item"><a href="add_properties.html"><i class="fas fa-plus-circle"></i> Add New Property</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a href="transctions.html"><i class="fas fa-handshake"></i> Transactions</a></li>
+                <!-- Move Logout to bottom -->
+                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            
+        </div>
+        
+
+        <!-- Main content area -->
+        <div id="content">
+            <!-- Button to toggle sidebar with icon -->
+            <button class="btn" id="sidebar-toggle">
+                <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
+            </button>
+
+            <!-- ========== Dashboard Content ========== -->
+            <h2>Admin Dashboard</h2>
+            
+            <!-- KPI Cards -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card kpi-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Properties</h5>
+                            <p class="card-text">120</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card kpi-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Agents</h5>
+                            <p class="card-text">30</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card kpi-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Active Inquiries</h5>
+                            <p class="card-text">50</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card kpi-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Completed Transactions</h5>
+                            <p class="card-text">80</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-container">
+                <h4>Sales Performance</h4>
+                <canvas id="salesChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h4>Inquiries by Status</h4>
+                <canvas id="inquiriesChart"></canvas>
+            </div>
+
+            <!-- Top Performing Agents Chart -->
+            <div class="chart-container">
+                <h4>Top Performing Agents</h4>
+                <canvas id="agentsChart"></canvas>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript for toggling the sidebar visibility
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+            
+            // Toggle sidebar visibility
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '250px';  // Shift content to the right
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';  // No shift
+            }
+        });
+
+        // JavaScript for toggling the chevron icon rotation
+        document.getElementById('properties-toggle').addEventListener('click', function () {
+            var chevronIcon = document.getElementById('chevron-icon');
+            chevronIcon.classList.toggle('rotate');
+        });
+
+        // Sales Chart
+        var salesChart = new Chart(document.getElementById("salesChart"), {
+            type: 'line',
+            data: {
+                labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+                datasets: [{
+                    label: 'Sales ($)',
+                    data: [1200, 1900, 1500, 2500, 2100, 2900],
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            }
+        });
+
+        // Inquiries Status Chart
+        var inquiriesChart = new Chart(document.getElementById("inquiriesChart"), {
+            type: 'pie',
+            data: {
+                labels: ['New', 'Follow Up', 'Closed'],
+                datasets: [{
+                    label: 'Inquiries Status',
+                    data: [30, 15, 5],
+                    backgroundColor: ['#ffcc00', '#ff9900', '#00cc99'],
+                    hoverOffset: 4
+                }]
+            }
+        });
+
+        // Top Performing Agents Chart
+        var agentsChart = new Chart(document.getElementById("agentsChart"), {
+            type: 'bar',
+            data: {
+                labels: ['Agent A', 'Agent B', 'Agent C', 'Agent D'],
+                datasets: [{
+                    label: 'Deals Closed',
+                    data: [15, 20, 10, 18],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>
