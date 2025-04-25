@@ -188,145 +188,179 @@ body {
         <div class="content" id="daily_attendance">
             <button id="checkLocation" aria-label="Check your location">Check Location</button>
             <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
-            <p id="status">Click "Check Location" to verify.</p>    
-        
+            <button id="checkOut" aria-label="Check out of attendance">Check Out</button>
+            <p id="status">Click "Check Location" to verify.</p>
+    
             <h3>Today's Attendance</h3>
             <table id="attendanceTable">
                 <thead>
                     <tr>
-                        <th>Employee ID</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
                         <th>Status</th>
-                        <th>Check-In Time</th>
                     </tr>
                 </thead>
                 <tbody id="attendanceBody">
                     <tr>
-                        <td colspan="5">No records found</td>
+                        <td colspan="4">No records found</td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <script>
-            // Attendance Monitoring
-        const officeLat = 14.3435377;
-        const officeLng = 120.9796345;
-        const allowedRadius = 500;
+        window.onload = async () => {
+            const API_URL = "http://localhost:4000/hr";
+            const officeLat = 14.34348;
+            const officeLng = 120.97962;
+            const allowedRadius = 500; // meters
 
-        document.getElementById("checkLocation").addEventListener("click", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const userLat = position.coords.latitude;
-                        const userLng = position.coords.longitude;
-                        const distance = getDistance(officeLat, officeLng, userLat, userLng);
-
-                        if (distance <= allowedRadius) {
-                            document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
-                            document.getElementById("checkIn").disabled = false;
-                        } else {
-                            document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
-                            document.getElementById("checkIn").disabled = true;
-                        }
-                    },
-                    function(error) {
-                        document.getElementById("status").textContent = "⚠️ Location access denied!";
-                    }
-                );
-            } else {
-                document.getElementById("status").textContent = "❌ Geolocation is not supported by this browser.";
-            }
-        });
-
-        document.getElementById("checkIn").addEventListener("click", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-
-                    try {
-                        const response = await fetch("/check-in", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ latitude: userLat, longitude: userLng })
-                        });
-
-                        const data = await response.json();
-                        if (response.ok) {
-                            document.getElementById("status").textContent = "✅ Check-in successful!";
-                            loadAttendanceData();
-                        } else {
-                            document.getElementById("status").textContent = "❌ Error: " + data.error;
-                        }
-                    } catch (error) {
-                        document.getElementById("status").textContent = "❌ Failed to check in!";
-                    }
-                });
-            }
-        });
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const φ1 = (lat1 * Math.PI) / 180;
-            const φ2 = (lat2 * Math.PI) / 180;
-            const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-            const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
-
-        async function loadAttendanceData() {
             try {
-                const response = await fetch(`/today/${getEmployeeId()}`); 
-                const data = await response.json();
-
-                const tbody = document.getElementById("attendanceBody");
-                tbody.innerHTML = ""; 
-
-                if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5">No records found</td></tr>`;
+                const employeeId = await getEmployeeIdFromSession();
+                if (!employeeId) {
+                    alert("Employee ID is missing.");
                     return;
                 }
 
-                data.forEach(record => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${record.employee_id}</td>
-                        <td>${record.latitude}</td>
-                        <td>${record.longitude}</td>
-                        <td>${record.status}</td>
-                        <td>${record.check_in_time}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error("❌ Failed to load attendance data:", error);
-            }
-        }
+                loadAttendanceData(employeeId);
 
-        function getEmployeeId() {
-            // Replace this with logic to dynamically fetch the employee ID
-            return 123;
-        }
+                // Location check
+                document.getElementById("checkLocation").addEventListener("click", () => {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+                                const distance = getDistance(officeLat, officeLng, userLat, userLng);
 
-        document.addEventListener("DOMContentLoaded", loadAttendanceData);
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const logoutButton = document.getElementById('logout-button');
-                logoutButton.addEventListener('click', (event) => {
-                    event.preventDefault(); // Prevent default link behavior
-                    const confirmLogout = confirm("Are you sure you want to logout?");
-                    if (confirmLogout) {
-                        window.location.href = "/index.html"; // Redirect to login page
+                                if (distance <= allowedRadius) {
+                                    document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
+                                    document.getElementById("checkIn").disabled = false;
+                                } else {
+                                    document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
+                                    document.getElementById("checkIn").disabled = true;
+                                }
+                            },
+                            (error) => {
+                                document.getElementById("status").textContent = `⚠️ Location error: ${error.message}`;
+                            }
+                        );
+                    } else {
+                        document.getElementById("status").textContent = "❌ Geolocation not supported.";
                     }
                 });
-            });
+
+                // Check-in button
+                document.getElementById("checkIn").addEventListener("click", async () => {
+                    const checkInTime = new Date().toISOString();
+                    try {
+                        const response = await fetch(`${API_URL}/check-in/${employeeId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ checkInTime })
+                        });
+
+                        const data = await response.json();
+                        document.getElementById("status").textContent = response.ok
+                            ? "✅ Check-in successful!"
+                            : `❌ Error: ${data.error}`;
+
+                        loadAttendanceData(employeeId);
+                    } catch (error) {
+                        console.error("Check-in error:", error);
+                        document.getElementById("status").textContent = "❌ Failed to check in.";
+                    }
+                });
+
+                // Check-out button
+                document.getElementById("checkOut").addEventListener("click", async () => {
+                    const checkOutTime = new Date().toISOString();
+                    try {
+                        const response = await fetch(`${API_URL}/check-out/${employeeId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ checkOutTime })
+                        });
+
+                        const data = await response.json();
+                        document.getElementById("status").textContent = response.ok
+                            ? "✅ Check-out successful!"
+                            : `❌ Error: ${data.error}`;
+
+                        loadAttendanceData(employeeId);
+                    } catch (error) {
+                        console.error("Check-out error:", error);
+                        document.getElementById("status").textContent = "❌ Failed to check out.";
+                    }
+                });
+            } catch (err) {
+                console.error("Error:", err);
+                alert("An error occurred while loading attendance data.");
+            }
+        };
+
+        // Function to fetch the employee ID from the session
+        async function getEmployeeIdFromSession() {
+    try {
+        const response = await fetch('http://localhost:4000/hr/check-session', {
+            credentials: 'include', // Make sure to send the session cookie
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch user ID');
+        }
+
+        const data = await response.json();
+        return data.user.id; // Return the user ID from the session
+    } catch (error) {
+        console.error('Error fetching employee ID:', error);
+        return null; // Return null in case of an error
+    }
+}
+
+
+        // Calculate distance between two points using the Haversine formula
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const toRad = (deg) => (deg * Math.PI) / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Returns distance in meters
+        }
+
+        // Function to load today's attendance data for the employee
+        async function loadAttendanceData(employeeId) {
+            const response = await fetch(`/hr/today/${employeeId}`);
+            const data = await response.json();
+            const tbody = document.getElementById("attendanceBody");
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
+                return;
+            }
+
+            const row = data[0];
+            tbody.innerHTML = `
+            <tr>
+                <td>${row.date}</td>
+                <td>${row.check_in ? formatTime(row.check_in) : "-"}</td>
+                <td>${row.check_out ? formatTime(row.check_out) : "-"}</td>
+                <td>${row.status || "-"}</td>
+            </tr>
+            `;
+        }
+
+        // Function to format time (ISO string to HH:mm format)
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
         </script>
 </body>
 </html>
