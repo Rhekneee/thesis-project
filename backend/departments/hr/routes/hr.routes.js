@@ -35,5 +35,9 @@
         }
     });
 
+    router.get('/getApplicationsByStatus', HRController.getApplicationsByStatus);
 
+    // Route to update application status (POST method)
+    router.post('/updateStatus', HRController.updateApplicationStatus);
+    
     module.exports = router;
