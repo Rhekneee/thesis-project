@@ -323,52 +323,132 @@ const HRModel = {
     
 
 
-    // Insert or update check-in record
-    checkIn: async (employeeId, checkInTime, date) => {
-        // Convert ISO string to valid MySQL DATETIME format (YYYY-MM-DD HH:MM:SS)
-        const formattedCheckInTime = new Date(checkInTime).toISOString().slice(0, 19).replace("T", " ");  // '2025-04-18 11:03:02'
-    
-        const sql = `
-            INSERT INTO attendance (employee_id, date, check_in, status)
-            VALUES (?, ?, ?, 'Present')
-            ON DUPLICATE KEY UPDATE check_in = VALUES(check_in), status = 'Present'
+    adjustToPHT: (time) => {
+        const date = new Date(time);
+        // Adding 8 hours to convert to Philippine Time
+        date.setHours(date.getHours() + 8);
+        return date.toISOString().slice(0, 19).replace("T", " ");  // 'YYYY-MM-DD HH:MM:SS'
+    },
+
+    // Utility to get or create attendance_id for the day
+    getAttendanceIdForDay: async (date) => {
+        // Check if the attendance_id already exists for this date
+        const checkQuery = `
+            SELECT attendance_id FROM attendance WHERE date = ? LIMIT 1;
         `;
-        const [result] = await db.execute(sql, [employeeId, date, formattedCheckInTime]);
+        const [existingAttendance] = await db.execute(checkQuery, [date]);
+
+        if (existingAttendance.length > 0) {
+            // If it exists, return the current attendance_id
+            return existingAttendance[0].attendance_id;
+        }
+
+        // If no record exists for this date, we will create it when the first check-in happens
+        return null; // No attendance_id created yet
+    },
+
+    // Insert or update check-in record, but always create a new row
+    checkIn: async (employeeId, checkInTime, date) => {
+        let attendanceId = await HRModel.getAttendanceIdForDay(date);  // Get attendance_id for the date
+
+        const formattedCheckInTime = HRModel.adjustToPHT(checkInTime);
+
+        // Check if the employee has already checked in and checked out for the day
+        const checkInCheckQuery = `
+            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND check_out IS NOT NULL;
+        `;
+        const [existingRecord] = await db.execute(checkInCheckQuery, [employeeId, date]);
+
+        if (existingRecord.length > 0) {
+            // If the employee already checked in and checked out, prevent them from checking in again
+            return { error: "You have already checked in and checked out for today." };
+        }
+
+        // If no attendance_id exists, create it during the first check-in process
+        if (!attendanceId) {
+            console.log(`No attendance_id found for ${date}. Creating new attendance_id on check-in...`);
+
+            const insertQuery = `
+                INSERT INTO attendance (employee_id, date, check_in, status)
+                VALUES (?, ?, ?, 'Present');
+            `;
+            const [result] = await db.execute(insertQuery, [employeeId, date, formattedCheckInTime]);
+
+            // Get the newly created attendance_id for the check-in
+            attendanceId = result.insertId;
+            console.log(`New attendance_id created: ${attendanceId}`);
+        } else {
+            console.log(`Using existing attendance_id: ${attendanceId}`);
+        }
+
+        // Now insert the new check-in record for the employee, but let MySQL handle the attendance_id
+        const insertCheckInQuery = `
+            INSERT INTO attendance (employee_id, date, check_in, status, attendance_id)
+            VALUES (?, ?, ?, 'Present', ?)
+        `;
+        const [result] = await db.execute(insertCheckInQuery, [employeeId, date, formattedCheckInTime, attendanceId]);
+
+        console.log(`Check-in record inserted: ${result}`);
         return result;
     },
-    
 
-
-    // 🔹 Check-out attendance and calculate total and overtime hours
+    // Check-out attendance and calculate total and overtime hours with restriction
     checkOut: async (employeeId, checkOutTime, date) => {
-        // Convert ISO string to valid MySQL DATETIME format (YYYY-MM-DD HH:MM:SS)
-        const formattedCheckOutTime = new Date(checkOutTime).toISOString().slice(0, 19).replace("T", " ");  // '2025-04-18 17:03:02'
-    
+        const attendanceId = await HRModel.getAttendanceIdForDay(date);  // Get the attendance_id for the day
+
+        if (!attendanceId) {
+            // No attendance_id exists (meaning no one has checked in on this date)
+            throw new Error("You must check in first before checking out.");
+        }
+
+        // Check if the employee has already checked in today
+        const checkOutQuery = `
+            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND attendance_id = ?;
+        `;
+        const [existingCheckIn] = await db.execute(checkOutQuery, [employeeId, date, attendanceId]);
+
+        if (existingCheckIn.length === 0) {
+            // No check-in record exists for today with the corresponding attendance_id
+            throw new Error("You must check in first before checking out.");
+        }
+
+        // Check if the employee has already checked out today
+        const existingCheckOutQuery = `
+            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND check_out IS NOT NULL AND attendance_id = ?;
+        `;
+        const [existingCheckOut] = await db.execute(existingCheckOutQuery, [employeeId, date, attendanceId]);
+
+        if (existingCheckOut.length > 0) {
+            return { error: "You have already checked out today." };  // Specific error message for already checked out
+        }
+
+        // Adjust the check-out time to Philippine Time
+        const formattedCheckOutTime = HRModel.adjustToPHT(checkOutTime);
+
         const sql = `
             UPDATE attendance
             SET check_out = ?, 
                 total_hours = TIMESTAMPDIFF(MINUTE, check_in, ?)/60,
                 overtime_hours = GREATEST(TIMESTAMPDIFF(MINUTE, check_in, ?)/60 - 8, 0)
-            WHERE employee_id = ? AND date = ?
+            WHERE employee_id = ? AND date = ? AND attendance_id = ?
         `;
         const [result] = await db.execute(sql, [
             formattedCheckOutTime,
             formattedCheckOutTime,
             formattedCheckOutTime,
             employeeId,
-            date
+            date,
+            attendanceId
         ]);
         return result;
-    },    
+    },
 
-    // 🔹 Fetch today's attendance for the employee
+    // Fetch today's attendance for the employee
     getTodayAttendance: async (employeeId, date) => {
         const sql = `SELECT * FROM attendance WHERE employee_id = ? AND date = ?`;
         const [rows] = await db.execute(sql, [employeeId, date]);
         return rows;
     },
-
-
 
     getApplicationsByStatus: async (status) => {
         const query = "SELECT * FROM applications WHERE status = ?";
