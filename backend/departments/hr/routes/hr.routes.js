@@ -27,6 +27,12 @@
     // 🔹 Get today's attendance for the employee
     router.get('/today/:id', HRController.getTodayAttendance);
 
+// Routes for Early Out and Half-Day Requests
+    router.post('/early-out-request/:id', HRController.requestEarlyOutRequest); // Submit early out request
+    router.post('/half-day-request/:id', HRController.requestHalfDayRequest); // Submit half-day request
+    router.post('/approve-request/:id', HRController.approveRequest); // Approve or reject requests
+
+
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
             res.json({ user: req.session.user });

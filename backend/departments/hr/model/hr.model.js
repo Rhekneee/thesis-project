@@ -330,123 +330,122 @@ const HRModel = {
         return date.toISOString().slice(0, 19).replace("T", " ");  // 'YYYY-MM-DD HH:MM:SS'
     },
 
-    // Utility to get or create attendance_id for the day
-    getAttendanceIdForDay: async (date) => {
-        // Check if the attendance_id already exists for this date
-        const checkQuery = `
-            SELECT attendance_id FROM attendance WHERE date = ? LIMIT 1;
+    // Check if the employee has an approved early out or half-day request for the specified date
+    checkRequestApproval: async (userId, date) => {
+        const sql = `
+            SELECT * FROM attendance 
+            WHERE user_id = ? AND date = ? AND (early_leave_approved = TRUE OR half_day_approved = TRUE);
         `;
-        const [existingAttendance] = await db.execute(checkQuery, [date]);
+        const [request] = await db.execute(sql, [userId, date]);
 
-        if (existingAttendance.length > 0) {
-            // If it exists, return the current attendance_id
-            return existingAttendance[0].attendance_id;
-        }
-
-        // If no record exists for this date, we will create it when the first check-in happens
-        return null; // No attendance_id created yet
+        return request.length > 0 ? request[0] : null; // Return the request if approved or null if not
     },
 
     // Insert or update check-in record, but always create a new row
-    checkIn: async (employeeId, checkInTime, date) => {
-        let attendanceId = await HRModel.getAttendanceIdForDay(date);  // Get attendance_id for the date
-
+    checkIn: async (userId, checkInTime, date) => {
         const formattedCheckInTime = HRModel.adjustToPHT(checkInTime);
 
-        // Check if the employee has already checked in and checked out for the day
-        const checkInCheckQuery = `
-            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND check_out IS NOT NULL;
-        `;
-        const [existingRecord] = await db.execute(checkInCheckQuery, [employeeId, date]);
+        // Get the current hour (to check if it's between 9 AM and 6 PM)
+        const currentTime = new Date(checkInTime).getHours();
 
-        if (existingRecord.length > 0) {
-            // If the employee already checked in and checked out, prevent them from checking in again
-            return { error: "You have already checked in and checked out for today." };
+        // Check if the employee has an approved early out or half-day request for this date
+        const request = await HRModel.checkRequestApproval(userId, date);
+
+        if (currentTime < 9 && !request) {
+            // If it's before 9 AM and there's no approved request, don't allow check-in
+            return { error: "You can only check in after 9:00 AM or request early out/half day." };
         }
 
-        // If no attendance_id exists, create it during the first check-in process
-        if (!attendanceId) {
-            console.log(`No attendance_id found for ${date}. Creating new attendance_id on check-in...`);
-
-            const insertQuery = `
-                INSERT INTO attendance (employee_id, date, check_in, status)
-                VALUES (?, ?, ?, 'Present');
-            `;
-            const [result] = await db.execute(insertQuery, [employeeId, date, formattedCheckInTime]);
-
-            // Get the newly created attendance_id for the check-in
-            attendanceId = result.insertId;
-            console.log(`New attendance_id created: ${attendanceId}`);
-        } else {
-            console.log(`Using existing attendance_id: ${attendanceId}`);
-        }
-
-        // Now insert the new check-in record for the employee, but let MySQL handle the attendance_id
-        const insertCheckInQuery = `
-            INSERT INTO attendance (employee_id, date, check_in, status, attendance_id)
-            VALUES (?, ?, ?, 'Present', ?)
+        // If there's an approved early out or half-day request, allow the check-in
+        const insertQuery = `
+            INSERT INTO attendance (user_id, date, check_in, status)
+            VALUES (?, ?, ?, 'Present');
         `;
-        const [result] = await db.execute(insertCheckInQuery, [employeeId, date, formattedCheckInTime, attendanceId]);
+        const [result] = await db.execute(insertQuery, [userId, date, formattedCheckInTime]);
 
         console.log(`Check-in record inserted: ${result}`);
         return result;
     },
 
     // Check-out attendance and calculate total and overtime hours with restriction
-    checkOut: async (employeeId, checkOutTime, date) => {
-        const attendanceId = await HRModel.getAttendanceIdForDay(date);  // Get the attendance_id for the day
-
-        if (!attendanceId) {
-            // No attendance_id exists (meaning no one has checked in on this date)
-            throw new Error("You must check in first before checking out.");
-        }
-
-        // Check if the employee has already checked in today
-        const checkOutQuery = `
-            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND attendance_id = ?;
-        `;
-        const [existingCheckIn] = await db.execute(checkOutQuery, [employeeId, date, attendanceId]);
-
-        if (existingCheckIn.length === 0) {
-            // No check-in record exists for today with the corresponding attendance_id
-            throw new Error("You must check in first before checking out.");
-        }
-
-        // Check if the employee has already checked out today
-        const existingCheckOutQuery = `
-            SELECT * FROM attendance WHERE employee_id = ? AND date = ? AND check_out IS NOT NULL AND attendance_id = ?;
-        `;
-        const [existingCheckOut] = await db.execute(existingCheckOutQuery, [employeeId, date, attendanceId]);
-
-        if (existingCheckOut.length > 0) {
-            return { error: "You have already checked out today." };  // Specific error message for already checked out
-        }
-
-        // Adjust the check-out time to Philippine Time
+    checkOut: async (userId, checkOutTime, date) => {
         const formattedCheckOutTime = HRModel.adjustToPHT(checkOutTime);
+
+        // Get the current hour (to check if it's after 6 PM)
+        const currentTime = new Date(checkOutTime).getHours();
+
+        // Check if the employee has an approved early out or half-day request for this date
+        const request = await HRModel.checkRequestApproval(userId, date);
+
+        if (currentTime < 18 && !request) {
+            // If it's before 6 PM and there's no approved request, don't allow check-out
+            return { error: "You can only check out after 6:00 PM or request early out/half day." };
+        }
 
         const sql = `
             UPDATE attendance
             SET check_out = ?, 
                 total_hours = TIMESTAMPDIFF(MINUTE, check_in, ?)/60,
                 overtime_hours = GREATEST(TIMESTAMPDIFF(MINUTE, check_in, ?)/60 - 8, 0)
-            WHERE employee_id = ? AND date = ? AND attendance_id = ?
+            WHERE user_id = ? AND date = ?;
         `;
         const [result] = await db.execute(sql, [
             formattedCheckOutTime,
             formattedCheckOutTime,
             formattedCheckOutTime,
-            employeeId,
-            date,
-            attendanceId
+            userId,
+            date
         ]);
+        console.log(`Check-out record updated: ${result}`);
         return result;
     },
 
-    // Fetch today's attendance for the employee
-    getTodayAttendance: async (employeeId, date) => {
-        const sql = `SELECT * FROM attendance WHERE employee_id = ? AND date = ?`;
-        const [rows] = await db.execute(sql, [employeeId, date]);
+    // Handle early out request (submitting the request)
+    requestEarlyOut: async (userId, date, remarks) => {
+        const sql = `
+            UPDATE attendance
+            SET early_leave_request = TRUE, remarks = ?
+            WHERE user_id = ? AND date = ?;
+        `;
+        const [result] = await db.execute(sql, [remarks, userId, date]);
+
+        console.log(`Early leave request updated: ${result}`);
+        return result;
+    },
+
+    // Handle half-day request (submitting the request)
+    requestHalfDay: async (userId, date, remarks) => {
+        const sql = `
+            UPDATE attendance
+            SET half_day_request = TRUE, remarks = ?
+            WHERE user_id = ? AND date = ?;
+        `;
+        const [result] = await db.execute(sql, [remarks, userId, date]);
+
+        console.log(`Half-day request updated: ${result}`);
+        return result;
+    },
+
+    // HR approves or rejects early out or half-day request
+    approveRequest: async (userId, date, type, isApproved) => {
+        const status = isApproved ? (type === "earlyOut" ? 'Early Out' : 'Half Day') : 'Absent';
+        const column = type === "earlyOut" ? "early_leave_approved" : "half_day_approved";
+
+        const sql = `
+            UPDATE attendance
+            SET ${column} = ?, status = ?
+            WHERE user_id = ? AND date = ?;
+        `;
+        const [result] = await db.execute(sql, [isApproved, status, userId, date]);
+
+        console.log(`Request approval updated: ${result}`);
+        return result;
+    },
+
+    // Fetch today's attendance for the user
+    getTodayAttendance: async (userId, date) => {
+        const sql = `SELECT * FROM attendance WHERE user_id = ? AND date = ?`;
+        const [rows] = await db.execute(sql, [userId, date]);
         return rows;
     },
 
