@@ -214,55 +214,108 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // 🔹 Record attendance (with lat/lng)
     checkInAttendance: async (req, res) => {
         try {
-            const employeeId = req.params.id;
-            const { checkInTime } = req.body;
-            const date = new Date(checkInTime).toISOString().split('T')[0];
-    
-            // Log the inputs for debugging
-            console.log("Attempting to check in for employeeId:", employeeId);
-            console.log("Check-in time:", checkInTime);
-            console.log("Date:", date);
-    
-            const result = await HRModel.checkIn(employeeId, checkInTime, date);
-    
-            if (result) {
-                return res.status(200).json({ message: "Check-in recorded!" });
-            } else {
-                return res.status(400).json({ error: "Failed to record check-in" });
+            const userId = req.params.id;  // Get user_id from URL params
+            const { checkInTime } = req.body;  // Check-in time passed in request body
+            const date = new Date(checkInTime).toISOString().split('T')[0];  // Format the date as 'YYYY-MM-DD'
+
+            // Call the HRModel to check in the user
+            const result = await HRModel.checkIn(userId, checkInTime, date);
+
+            if (result.error) {
+                return res.status(400).json({ error: result.error });
             }
+            res.status(200).json({ message: 'Check-in successful!' });
         } catch (error) {
             console.error("❌ Error during check-in:", error);
             return res.status(500).json({ error: "Failed to check in" });
         }
     },
-    
 
-    // 🔹 Check-out attendance for the employee
+    // Check-out attendance for the user
     checkOutAttendance: async (req, res) => {
         try {
-            const employeeId = req.params.id;  // Get employeeId from URL params
+            const userId = req.params.id;  // Get user_id from URL params
             const { checkOutTime } = req.body;  // Check-out time passed in request body
-            const date = new Date(checkOutTime).toISOString().split('T')[0]; // Format the date as 'YYYY-MM-DD'
+            const date = new Date(checkOutTime).toISOString().split('T')[0];  // Format the date as 'YYYY-MM-DD'
 
-            const result = await HRModel.checkOut(employeeId, checkOutTime, date);  // Call the model method
-            res.status(200).json({ message: 'Check-out recorded!', result });
+            // Call the HRModel to check out the user
+            const result = await HRModel.checkOut(userId, checkOutTime, date);
+
+            if (result.error) {
+                return res.status(400).json({ error: result.error });
+            }
+
+            res.status(200).json({ message: 'Check-out successful!', result });
         } catch (err) {
-            console.error('❌ Check-out error:', err);
+            console.error("❌ Error during check-out:", err);
             res.status(500).json({ error: 'Failed to check out' });
         }
     },
 
-    // 🔹 Get today's attendance for the employee
+    // Fetch today's attendance for the user
     getTodayAttendance: async (req, res) => {
         try {
-            const employeeId = req.params.id;  // Get employeeId from URL params
-            const date = new Date().toISOString().split('T')[0]; // Today's date (YYYY-MM-DD)
+            const userId = req.params.id;  // Get user_id from URL params
+            const date = new Date().toISOString().split('T')[0];  // Get today's date (YYYY-MM-DD)
 
-            const attendance = await HRModel.getTodayAttendance(employeeId, date);  // Call the model method
-            res.status(200).json(attendance);  // Return the data
+            // Call the HRModel to fetch the user's attendance for today
+            const attendance = await HRModel.getTodayAttendance(userId, date);
+
+            res.status(200).json(attendance);  // Return the attendance data
         } catch (err) {
             console.error('❌ Fetch attendance error:', err);
             res.status(500).json({ error: 'Failed to fetch attendance' });
+        }
+    },
+
+    // Submit an early out request for the user
+    requestEarlyOutRequest: async (req, res) => {
+        try {
+            const userId = req.params.id;  // Get user_id from URL params
+            const { date, remarks } = req.body;  // Date and remarks passed in the request body
+
+            if (!remarks || !date) {
+                return res.status(400).json({ error: "Please provide both date and remarks for early out request." });
+            }
+
+            const result = await HRModel.requestEarlyOut(userId, date, remarks);
+            res.status(200).json({ message: 'Early out request submitted successfully' });
+        } catch (error) {
+            console.error("❌ Error submitting early out request:", error);
+            return res.status(500).json({ error: 'Failed to submit early out request' });
+        }
+    },
+
+    // Submit a half-day request for the user
+    requestHalfDayRequest: async (req, res) => {
+        try {
+            const userId = req.params.id;  // Get user_id from URL params
+            const { date, remarks } = req.body;  // Date and remarks passed in the request body
+
+            if (!remarks || !date) {
+                return res.status(400).json({ error: "Please provide both date and remarks for half-day request." });
+            }
+
+            const result = await HRModel.requestHalfDay(userId, date, remarks);
+            res.status(200).json({ message: 'Half day request submitted successfully' });
+        } catch (error) {
+            console.error("❌ Error submitting half day request:", error);
+            return res.status(500).json({ error: 'Failed to submit half day request' });
+        }
+    },
+
+    // Approve or reject the early out or half day request by HR
+    approveRequest: async (req, res) => {
+        try {
+            const { requestId, requestType, isApproved } = req.body;  // Get request details and approval status
+
+            // HR approves or rejects the request
+            const result = await HRModel.approveRequest(req.params.id, requestId, requestType, isApproved);
+
+            res.status(200).json({ message: 'Request approved/rejected successfully' });
+        } catch (error) {
+            console.error("❌ Error approving/rejecting request:", error);
+            res.status(500).json({ error: 'Failed to approve/reject request' });
         }
     },
     getApplicationsByStatus: async (req, res) => {

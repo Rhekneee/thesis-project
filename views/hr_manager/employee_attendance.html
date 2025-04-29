@@ -184,11 +184,172 @@ body {
             <li><a href="#" id="logout-button">Logout</a></li>
             </ul>
         </div>
-
+        <div class="content" id="employee_attendance">
+            <h3>Employee Attendance</h3>
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                        <th>Early Out Request</th>
+                        <th>Half Day Request</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    
+        <!-- Modal for Request Approval -->
+        <div id="approveRequestModal" style="display: none;">
+            <h3>Approve Request</h3>
+            <p id="requestDetails"></p>
+            <button id="approveRequestBtn">Approve</button>
+            <button id="rejectRequestBtn">Reject</button>
+            <button id="closeModalBtn">Close</button>
+        </div>
        
     
         <script>
-      
+        window.onload = async () => {
+            const API_URL = "http://localhost:4000/hr";
+            const employeeId = await getEmployeeIdFromSession()  // Assuming HR ID from session
+
+            if (!employeeId) {
+                alert("HR ID is missing.");
+                return;
+            }
+
+            loadEmployeeAttendanceData(employeeId);
+
+            // Function to load employee attendance data
+            async function loadEmployeeAttendanceData(employeeId) {
+                try {
+                    const response = await fetch(`${API_URL}/attendance/${employeeId}`);
+                    const data = await response.json();
+
+                    const tbody = document.getElementById("attendanceBody");
+                    tbody.innerHTML = ''; // Clear previous data
+
+                    // Check if there are any records to display
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8">No records found</td></tr>';
+                    }
+
+                    // Populate table with employee attendance and requests
+                    data.forEach(record => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${record.employee_id}</td>
+                            <td>${record.date}</td>
+                            <td>${record.check_in ? formatTime(record.check_in) : '-'}</td>
+                            <td>${record.check_out ? formatTime(record.check_out) : '-'}</td>
+                            <td>${record.status || '-'}</td>
+                            <td>${record.early_leave_request ? 'Pending' : '-'}</td>
+                            <td>${record.half_day_request ? 'Pending' : '-'}</td>
+                            <td>
+                                <button class="approveBtn" data-id="${record.id}" data-type="earlyOut">Approve Early Out</button>
+                                <button class="approveBtn" data-id="${record.id}" data-type="halfDay">Approve Half Day</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Attach event listeners to approve buttons
+                    const approveBtns = document.querySelectorAll('.approveBtn');
+                    approveBtns.forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const requestId = e.target.getAttribute('data-id');
+                            const requestType = e.target.getAttribute('data-type');
+                            showApproveModal(requestId, requestType);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Error loading employee attendance data:', error);
+                    alert('❌ Failed to load attendance data.');
+                }
+            }
+
+            // Function to format time (ISO string to HH:mm format)
+            function formatTime(isoString) {
+                const date = new Date(isoString);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            // Show the approve request modal
+            function showApproveModal(requestId, requestType) {
+                document.getElementById("approveRequestModal").style.display = "block";
+
+                const requestDetails = document.getElementById("requestDetails");
+                requestDetails.textContent = `Approve ${requestType === 'earlyOut' ? 'Early Out' : 'Half Day'} for Request ID: ${requestId}`;
+
+                const approveBtn = document.getElementById("approveRequestBtn");
+                const rejectBtn = document.getElementById("rejectRequestBtn");
+
+                approveBtn.onclick = async () => {
+                    await handleRequestApproval(requestId, requestType, true);
+                    closeModal();
+                };
+
+                rejectBtn.onclick = async () => {
+                    await handleRequestApproval(requestId, requestType, false);
+                    closeModal();
+                };
+            }
+
+            // Close the approve request modal
+            document.getElementById("closeModalBtn").onclick = closeModal;
+            function closeModal() {
+                document.getElementById("approveRequestModal").style.display = "none";
+            }
+
+            // Handle the request approval (approve or reject)
+            async function handleRequestApproval(requestId, requestType, isApproved) {
+                try {
+                    const response = await fetch(`${API_URL}/approve-request/${hrId}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ requestId, requestType, isApproved })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(`${isApproved ? 'Approved' : 'Rejected'} successfully!`);
+                        loadEmployeeAttendanceData(hrId);  // Refresh the attendance data
+                    } else {
+                        alert(`Error: ${data.error || 'Failed to approve/reject request.'}`);
+                    }
+                } catch (error) {
+                    console.error("Error approving/rejecting request:", error);
+                    alert("❌ Failed to approve/reject request.");
+                }
+            }
+        };
+
+        // Function to fetch HR ID from session
+        async function getEmployeeIdFromSession() {
+            try {
+                const response = await fetch('http://localhost:4000/hr/check-session', {
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch HR ID');
+                }
+
+                const data = await response.json();
+                return data.hrId; // Return the HR ID from the session
+            } catch (error) {
+                console.error('Error fetching HR ID:', error);
+                return null;
+            }
+        }
     </script>
         
         
