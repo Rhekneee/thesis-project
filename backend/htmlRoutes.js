@@ -33,7 +33,7 @@ app.get('/hr_manager/payroll', (req, res) => {
 
 // Reports Route
 app.get('/hr_manager/reports', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'reports.html'));
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'report.html'));
 });
 
 // Attendance Route
@@ -49,6 +49,10 @@ app.get('/hr_manager/recruitment', (req, res) => {
 // Route for the Employee Attendance page
 app.get('/hr_employee/attendance', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'hr_employee', 'Individual_attendance.html'));
+});
+
+app.get('/hr_manager/employee_list', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_list.html'));
 });
 
 
@@ -78,6 +82,81 @@ app.get('/hr_employee/attendance', (req, res) => {
   app.get('/crm/properties', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'properties.html')); // Adjusted path
   });
+  app.get('/crm/vtour', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'vtour.html')); // Adjusted path
+  });
+
+// ====================
+  // CRM admin Routes
+  // ====================
+
+  app.get('/crm/add_properties', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'add_properties.html')); // Adjusted path
+  });
+
+  app.get('/crm/agents', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'agents.html')); // Adjusted path
+  });
+
+  app.get('/crm/clients', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'clients.html')); // Adjusted path
+  });
+
+  app.get('/crm/crm_admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_admin.html')); // Adjusted path
+  });
+
+  app.get('/crm/attendance', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'daily_attendance.html')); // Adjusted path
+  });
+
+  app.get('/crm/edit_properties', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'edit_properties.html')); // Adjusted path
+  });
+  app.get('/crm/inquiries', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'inquiries.html')); // Adjusted path
+  });
+  app.get('/crm/property_list', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'property_list.html')); // Adjusted path
+  });
+  app.get('/crm/transactions', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'transactions.html')); // Adjusted path
+  });
+  
+  // ====================
+  // SCM admin Routes
+  // ====================
+
+  app.get('/scm/contract', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'contract.html')); // Adjusted path
+  });
+
+  app.get('/scm/inventory', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'inventory.html')); // Adjusted path
+  });
+
+  app.get('/scm/order', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'order.html')); // Adjusted path
+  });
+
+  app.get('/scm/scm_dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm_dashboard.html')); // Adjusted path
+  });
+
+  app.get('/scm/outside', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'outside.html')); // Adjusted path
+  });
+
+  app.get('/scm/requestmaterial', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'requestmaterial.html')); // Adjusted path
+  });
+  app.get('/scm/supplier', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
+  });
+  app.get('/scm/transfer', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'transfer.html')); // Adjusted path
+  });
+
 };
 
 module.exports = htmlRoutes;

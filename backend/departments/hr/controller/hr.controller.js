@@ -113,10 +113,10 @@ const HRController = {
     },
     
 
+
     // 🔹 Get all permissions
     getRoles: async (req, res) => {
         try {
-    
 
             const roles = await HRModel.getAllRoles();
 
@@ -150,6 +150,13 @@ const HRController = {
         }
     },
 
+
+    getAllPermissions: async () => {
+        const query = "SELECT * FROM permissions";  // Query to get all permissions
+        const [permissions] = await db.query(query);
+        return permissions;
+    },
+    
     // 🔹 Update an existing employee (Manager Only)
     updateEmployee: async (req, res) => {
         try {
@@ -212,110 +219,89 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 },
 
     // 🔹 Record attendance (with lat/lng)
+   
+    // Handle check-in
     checkInAttendance: async (req, res) => {
+        const userId = req.params.id;
+        const { date, checkInTime, userLat, userLng } = req.body;
+
         try {
-            const userId = req.params.id;  // Get user_id from URL params
-            const { checkInTime } = req.body;  // Check-in time passed in request body
-            const date = new Date(checkInTime).toISOString().split('T')[0];  // Format the date as 'YYYY-MM-DD'
-
-            // Call the HRModel to check in the user
-            const result = await HRModel.checkIn(userId, checkInTime, date);
-
+            const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
             if (result.error) {
                 return res.status(400).json({ error: result.error });
             }
-            res.status(200).json({ message: 'Check-in successful!' });
+            return res.status(200).json(result);
         } catch (error) {
-            console.error("❌ Error during check-in:", error);
-            return res.status(500).json({ error: "Failed to check in" });
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
 
-    // Check-out attendance for the user
+    // Handle check-out
     checkOutAttendance: async (req, res) => {
+        const userId = req.params.id;
+        const { date, checkOutTime } = req.body;
+
         try {
-            const userId = req.params.id;  // Get user_id from URL params
-            const { checkOutTime } = req.body;  // Check-out time passed in request body
-            const date = new Date(checkOutTime).toISOString().split('T')[0];  // Format the date as 'YYYY-MM-DD'
-
-            // Call the HRModel to check out the user
             const result = await HRModel.checkOut(userId, checkOutTime, date);
-
             if (result.error) {
                 return res.status(400).json({ error: result.error });
             }
-
-            res.status(200).json({ message: 'Check-out successful!', result });
-        } catch (err) {
-            console.error("❌ Error during check-out:", err);
-            res.status(500).json({ error: 'Failed to check out' });
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
 
-    // Fetch today's attendance for the user
+    // Get today's attendance for the employee
     getTodayAttendance: async (req, res) => {
+        const employeeId = req.params.id;  // Get employeeId from the route parameter
+        const date = new Date().toISOString().slice(0, 10);  // Get today's date in YYYY-MM-DD format
+
         try {
-            const userId = req.params.id;  // Get user_id from URL params
-            const date = new Date().toISOString().split('T')[0];  // Get today's date (YYYY-MM-DD)
-
-            // Call the HRModel to fetch the user's attendance for today
-            const attendance = await HRModel.getTodayAttendance(userId, date);
-
-            res.status(200).json(attendance);  // Return the attendance data
-        } catch (err) {
-            console.error('❌ Fetch attendance error:', err);
-            res.status(500).json({ error: 'Failed to fetch attendance' });
+            // Fetch today's attendance data for the employee
+            const attendance = await HRModel.getTodayAttendance(employeeId, date);
+            return res.status(200).json(attendance);  // Send the data as JSON
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+            return res.status(500).json({ error: 'Failed to fetch attendance data' });
         }
     },
-
-    // Submit an early out request for the user
+    // Request early out
     requestEarlyOutRequest: async (req, res) => {
+        const userId = req.params.id;
+        const { date, remarks } = req.body;
+
         try {
-            const userId = req.params.id;  // Get user_id from URL params
-            const { date, remarks } = req.body;  // Date and remarks passed in the request body
-
-            if (!remarks || !date) {
-                return res.status(400).json({ error: "Please provide both date and remarks for early out request." });
-            }
-
             const result = await HRModel.requestEarlyOut(userId, date, remarks);
-            res.status(200).json({ message: 'Early out request submitted successfully' });
+            return res.status(200).json({ success: true });
         } catch (error) {
-            console.error("❌ Error submitting early out request:", error);
-            return res.status(500).json({ error: 'Failed to submit early out request' });
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
 
-    // Submit a half-day request for the user
+    // Request half-day leave
     requestHalfDayRequest: async (req, res) => {
+        const userId = req.params.id;
+        const { date, remarks } = req.body;
+
         try {
-            const userId = req.params.id;  // Get user_id from URL params
-            const { date, remarks } = req.body;  // Date and remarks passed in the request body
-
-            if (!remarks || !date) {
-                return res.status(400).json({ error: "Please provide both date and remarks for half-day request." });
-            }
-
             const result = await HRModel.requestHalfDay(userId, date, remarks);
-            res.status(200).json({ message: 'Half day request submitted successfully' });
+            return res.status(200).json({ success: true });
         } catch (error) {
-            console.error("❌ Error submitting half day request:", error);
-            return res.status(500).json({ error: 'Failed to submit half day request' });
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
 
-    // Approve or reject the early out or half day request by HR
+    // Approve or reject early-out or half-day request
     approveRequest: async (req, res) => {
+        const userId = req.params.id;
+        const { date, type, isApproved } = req.body;
+
         try {
-            const { requestId, requestType, isApproved } = req.body;  // Get request details and approval status
-
-            // HR approves or rejects the request
-            const result = await HRModel.approveRequest(req.params.id, requestId, requestType, isApproved);
-
-            res.status(200).json({ message: 'Request approved/rejected successfully' });
+            const result = await HRModel.approveRequest(userId, date, type, isApproved);
+            return res.status(200).json({ success: true });
         } catch (error) {
-            console.error("❌ Error approving/rejecting request:", error);
-            res.status(500).json({ error: 'Failed to approve/reject request' });
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
     getApplicationsByStatus: async (req, res) => {

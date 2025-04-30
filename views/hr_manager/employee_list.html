@@ -108,47 +108,50 @@
       background-color: #0056b3;
     }
 
-    #logout-button {
-      background-color: #ff4d4d;
-      color: #fff;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 20px;
-      text-align: center;
-      display: block;
-    }
-
-    #logout-button:hover {
-      background-color: #e60000;
-    }
 
     /* Modal */
     .modal {
       display: none;
       position: fixed;
       z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%); /* Center the modal */
+      width: 90%;
+      max-width: 600px; /* Adjust modal width as needed */
       background-color: rgba(0, 0, 0, 0.5);
     }
 
     .modal-content {
       background-color: #fff;
-      margin: 10% auto;
       padding: 20px;
-      width: 400px;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 20px; /* Add space between the fields */
+      max-height: 80vh;
+      overflow-y: auto; /* Scrollable if content overflows */
     }
+
+
+
+    .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
     .modal-content input,
     .modal-content select {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
+      box-sizing: border-box;
+      border: 1px solid #ccc; /* Add border to inputs */
+      border-radius: 4px;
     }
+
 
     .modal-content button {
       padding: 10px 15px;
@@ -157,7 +160,11 @@
       border: none;
       cursor: pointer;
       border-radius: 4px;
+      grid-column: span 2; /* Ensure the button spans both columns */
     }
+    .modal-content h3 {
+    margin-top: 20px;
+  }
 
     .modal-content button:hover {
       background-color: #003f7f;
@@ -174,6 +181,17 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .modal-content {
+    width: 100%;
+    padding: 15px;
+  }
+  .modal-content input,
+  .modal-content select {
+    width: 100%;
+  }
 }
 
 #searchInput {
@@ -194,6 +212,48 @@
 }
 
 #add-employee-btn:hover {
+    background-color: #003f7f;
+}
+
+#loadAllEmployees{
+  background-color: #0052a5;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#loadAllEmployees:hover {
+    background-color: #003f7f;
+}
+
+#loadEmployees{
+  background-color: #0052a5;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#loadEmployees:hover {
+    background-color: #003f7f;
+}
+
+#loadDeletedEmployees {
+  background-color: #0052a5;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#loadDeletedEmployees:hover {
     background-color: #003f7f;
 }
     
@@ -232,195 +292,570 @@
   <div class="sidebar">
     <h2>HR Panel</h2>
     <ul>
-      <li><a href="hr_dashboard.html">Dashboard</a></li>
-      <li><a href="#">Employee Management</a></li>
-      <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
-      <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
-      <li><a href="/hr_manager/payroll">Payroll Management</a></li>
-      <li><a href="/hr_manager/reports">Reports</a></li>
-      <li><a href="attendance.html">Attendance</a></li>
-      <li><a href="/hr_manager/recruitment">Recruitment</a></li>
-      <li><a href="#" id="logout-button">Logout</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/hr_manager/employee_management">Employee Management</a></li>
+        <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+        <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+        <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+        <li><a href="/hr_manager/reports">Reports</a></li>
+        <li><a href="/hr_manager/attendance">Attendance</a></li>
+        <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+        <li><a href="/hr_manager/employee_ist">Employee Directory</a></li>
+        <li><a href="/logout" id="logout-button">Logout</a></li>
     </ul>
-  </div>
+</div>
+
 
   <div class="main-content">
     <h1>Employee Management</h1>
 
 
 <!-- 🔍 Search and ➕ Add Employee Button Layout -->
+<!-- 🔍 Search and ➕ Add Employee Button Layout -->
 <div class="top-bar">
-    <input type="text" id="searchInput" placeholder="Search employee..." />
-    <button id="add-employee-btn">+ Add Employee</button>
+  <input type="text" id="searchInput" placeholder="Search employee..." />
+  <button id="loadAllEmployees">All Employees</button>
+  <button id="loadEmployees">Active Employees</button>
+  <button id="loadDeletedEmployees">Archives</button>
+  <button id="add-employee-btn">+ Add Employee</button>
 </div>
 
 <!-- 👥 Employee Table -->
 <div class="employee-list">
-    <h2>Employee List</h2>
-    <table border="1" width="100%" id="employeeTable">
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Name</th>
-                <th>Position</th>
-                <th>Department</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Sample row -->
-            <tr>
-                <td>101</td>
-                <td>John Doe</td>
-                <td>Software Engineer</td>
-                <td>IT</td>
-                <td>
-                    <button class="view-btn" data-id="101">View</button>
-                    <button class="edit-btn" data-id="101">Edit</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+  <h2>Employee List</h2>
+  <table border="1" width="100%" id="employeeTable">
+      <thead>
+          <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th>Full Name</th>
+              <th>Contact</th>
+              <th>Address</th>
+              <th>Birthday</th>
+              <th>Employment Status</th>
+              <th>Education</th>
+              <th>Emergency Contact</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Action</th> <!-- Action Column for Edit and Archive -->
+          </tr>
+      </thead>
+      <tbody id="employeeTableBody">
+          <!-- Employee rows will be added dynamically -->
+      </tbody>
+  </table>
 </div>
 
-  </div>
-
-  <!-- Modal -->
-  <div class="modal" id="employeeModal">
-    <div class="modal-content">
+<!-- Modal for Adding Employee -->
+<div class="modal" id="employeeModal">
+  <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <h3>Add New Employee</h3>
-      <input type="text" placeholder="Full Name" />
-      <input type="text" placeholder="Position" />
-      <input type="text" placeholder="Department" />
-      <input type="email" placeholder="Email Address" />
-      <input type="text" placeholder="Contact Number" />
-      <select>
-        <option value="">Select Employment Type</option>
-        <option>Full-time</option>
-        <option>Part-time</option>
-        <option>Contractual</option>
-      </select>
-      <button>Submit</button>
-    </div>
+      <form id="employeeForm">
+          <div class="form-group">
+              <label>Email:</label>
+              <input type="email" name="email" placeholder="Enter email" required>
+          </div>
+
+          <div class="form-group">
+              <label>Full Name:</label>
+              <input type="text" name="full_name" placeholder="Enter full name" required>
+          </div>
+
+          <div class="form-group">
+              <label>Contact #:</label>
+              <input type="text" name="contact" placeholder="Enter contact number" required>
+          </div>
+
+          <div class="form-group">
+              <label>Address:</label>
+              <input type="text" name="address" placeholder="Enter address" required>
+          </div>
+
+          <div class="form-group">
+              <label>Birthday:</label>
+              <input type="date" name="birthday" required>
+          </div>
+
+          <div class="form-group">
+              <label>Employment Status:</label>
+              <select name="employment_status" required>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Intern">Intern</option>
+              </select>
+          </div>
+
+          <div class="form-group">
+              <label>Educational Background:</label>
+              <input type="text" name="educational_background" placeholder="Enter education details" required>
+          </div>
+
+          <h3>Emergency Contact</h3>
+
+          <div class="form-group">
+              <label>Name:</label>
+              <input type="text" name="emergency_contact_name" placeholder="Enter contact name" required>
+          </div>
+
+          <div class="form-group">
+              <label>Relationship:</label>
+              <input type="text" name="emergency_contact_relationship" placeholder="Enter relationship" required>
+          </div>
+
+          <div class="form-group">
+              <label>Phone:</label>
+              <input type="text" name="emergency_contact_phone" placeholder="Enter phone number" required>
+          </div>
+
+          <h3>Roles</h3>
+          <div class="form-group">
+              <select name="role_id" id="roleSelect" required>
+                  <!-- Permissions will be loaded dynamically -->
+              </select>
+          </div>
+
+          <button type="submit">Add Employee</button>
+      </form>
   </div>
-    <!-- View Modal -->
-<div class="modal" id="viewModal">
-    <div class="modal-content">
-      <span class="close" id="closeViewModal">&times;</span>
-      <h3>View Employee</h3>
-      <input type="text" value="John Doe" readonly />
-      <input type="text" value="Software Engineer" readonly />
-      <input type="text" value="IT" readonly />
-      <input type="email" value="john@example.com" readonly />
-      <input type="text" value="09123456789" readonly />
-      <input type="text" value="Full-time" readonly />
-    </div>
+</div>
+
+<!-- Confirmation Modal for Archive/Restore Action -->
+<div class="modal" id="confirmationModal">
+  <div class="modal-content">
+      <p>Are you sure you want to archive/restore this employee?</p>
+      <button id="confirmEdit" type="button">Yes</button>
+      <button id="cancelEdit" type="button">No</button>
   </div>
-  
-  <!-- Edit Modal -->
-  <div class="modal" id="editModal">
-    <div class="modal-content">
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
       <span class="close" id="closeEditModal">&times;</span>
       <h3>Edit Employee</h3>
-      <input type="text" value="John Doe" />
-      <input type="text" value="Software Engineer" />
-      <input type="text" value="IT" />
-      <input type="email" value="john@example.com" />
-      <input type="text" value="09123456789" />
-      <select>
-        <option selected>Full-time</option>
-        <option>Part-time</option>
-        <option>Contractual</option>
-      </select>
-      <button>Save Changes</button>
-    </div>
+      <form id="editEmployeeForm">
+          <input type="hidden" id="editEmployeeId" name="edit_employee_id">
+
+          <div class="form-group">
+              <label>Email:</label>
+              <input type="email" id="editEmail" name="edit_email" required>
+          </div>
+
+          <div class="form-group">
+              <label>Full Name:</label>
+              <input type="text" id="editFullName" name="edit_full_name" required>
+          </div>
+
+          <div class="form-group">
+              <label>Contact #:</label>
+              <input type="text" id="editContact" name="edit_contact" required>
+          </div>
+
+          <div class="form-group">
+              <label>Address:</label>
+              <input type="text" id="editAddress" name="edit_address" required>
+          </div>
+
+          <div class="form-group">
+              <label>Birthday:</label>
+              <input type="date" id="editBirthday" name="edit_birthday" required>
+          </div>
+
+          <div class="form-group">
+              <label>Employment Status:</label>
+              <select id="editEmploymentStatus" name="edit_employment_status" required>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Intern">Intern</option>
+              </select>
+          </div>
+
+          <div class="form-group">
+              <label>Educational Background:</label>
+              <input type="text" id="editEducationalBackground" name="edit_educational_background" required>
+          </div>
+
+          <div class="form-group">
+              <label>Emergency Contact Name:</label>
+              <input type="text" id="editEmergencyContactName" name="edit_emergency_contact_name" required>
+          </div>
+
+          <div class="form-group">
+              <label>Emergency Contact Relationship:</label>
+              <input type="text" id="editEmergencyContactRelationship" name="edit_emergency_contact_relationship" required>
+          </div>
+
+          <div class="form-group">
+              <label>Emergency Contact Phone:</label>
+              <input type="text" id="editEmergencyContactPhone" name="edit_emergency_contact_phone" required>
+          </div>
+
+          <div class="form-group">
+              <label>Role:</label>
+              <select id="editRoleSelect" name="edit_role" required>
+                  <!-- Roles will be dynamically loaded here -->
+              </select>
+          </div>
+
+          <button type="submit" id="updateEmployee" style="display:none;">Update Employee</button>
+          <button type="button" id="editButton">Edit</button>
+          <button type="button" id="archiveButton" style="display:none;">Archive/Delete</button> <!-- Soft delete -->
+          <button type="button" id="restoreButton" style="display:none;">Restore</button> <!-- Restore -->
+      </form>
   </div>
+</div>
   
 
   <script>
-    const addModal = document.getElementById('employeeModal');
-    const viewModal = document.getElementById('viewModal');
-    const editModal = document.getElementById('editModal');
-  
-    // Add Modal
-    const addEmployeeBtn = document.getElementById('add-employee-btn');
-    const closeAddModal = document.getElementById('closeModal');
-  
-    addEmployeeBtn.addEventListener('click', () => {
-      addModal.style.display = 'block';
-    });
-    closeAddModal.addEventListener('click', () => {
-      addModal.style.display = 'none';
-    });
-  
-    // View Modal
-    const closeViewModal = document.getElementById('closeViewModal');
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        viewModal.style.display = 'block';
-      });
-    });
-    closeViewModal.addEventListener('click', () => {
-      viewModal.style.display = 'none';
-    });
-  
-    // Edit Modal
-    const closeEditModal = document.getElementById('closeEditModal');
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        editModal.style.display = 'block';
-      });
-    });
-    closeEditModal.addEventListener('click', () => {
-      editModal.style.display = 'none';
-    });
-  
-    // Close all modals by clicking outside or pressing ESC
-    window.addEventListener('click', (e) => {
-      if (e.target === addModal) addModal.style.display = 'none';
-      if (e.target === viewModal) viewModal.style.display = 'none';
-      if (e.target === editModal) editModal.style.display = 'none';
-    });
-  
-    window.addEventListener('keydown', (e) => {
-      if (e.key === "Escape") {
-        addModal.style.display = 'none';
-        viewModal.style.display = 'none';
-        editModal.style.display = 'none';
-      }
-    });
-  
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function () {
-      const filter = this.value.toLowerCase();
-      const rows = document.querySelectorAll('#employeeTable tbody tr');
-  
-      rows.forEach(row => {
-        const name = row.cells[1].textContent.toLowerCase();
-        const position = row.cells[2].textContent.toLowerCase();
-        const department = row.cells[3].textContent.toLowerCase();
-        if (name.includes(filter) || position.includes(filter) || department.includes(filter)) {
-          row.style.display = '';
+
+// API URL for communication with the backend
+const API_URL = "http://localhost:4000/hr";
+
+// Element to load employees
+const employeeList = document.getElementById("employeeList");
+
+
+// Add Employee Modal
+const addModal = document.getElementById('employeeModal');
+const addEmployeeBtn = document.getElementById('add-employee-btn');
+const closeAddModal = document.getElementById('closeModal');
+
+// Show the modal when "Add Employee" button is clicked
+addEmployeeBtn.addEventListener('click', () => {
+    addModal.style.display = 'block'; // Show modal
+});
+
+// Close the modal when "Close" button inside modal is clicked
+closeAddModal.addEventListener('click', () => {
+    addModal.style.display = 'none'; // Hide modal
+});
+
+// Close modal when clicking outside of it (optional for better UX)
+window.addEventListener('click', (e) => {
+    if (e.target === addModal) {
+        addModal.style.display = 'none'; // Close modal if clicked outside
+    }
+});
+
+
+// 🔹 Event Listeners for Filtering Employee Data
+document.getElementById("loadEmployees").addEventListener("click", () => loadEmployees(false));  // Only active employees
+document.getElementById("loadDeletedEmployees").addEventListener("click", () => loadEmployees(true));  // Include deleted employees
+document.getElementById("loadAllEmployees").addEventListener("click", () => loadEmployees("all"));  // All employees
+
+// 🔹 Window Onload Function for Session Check and Employee Loading
+window.onload = async () => {
+    try {
+        const res = await fetch("http://localhost:4000/hr/check-session", {
+            credentials: "include",
+        });
+
+        if (!res.ok) throw new Error();
+
+        const session = await res.json();
+
+        const roleId = session.user.role_id;
+        if (roleId === 6) {
+            loadRoles(); // Load roles for the HR
+            loadEmployees('false'); // Load only active employees
         } else {
-          row.style.display = 'none';
+            redirectToLogin(); // Redirect to login if not HR
         }
-      });
+    } catch (err) {
+        console.error("❌ Session check failed:", err);
+        redirectToLogin(); // Handle errors if session check fails
+    }
+};
+
+// 🔹 Load Employees
+// 🔹 Load Employees
+async function loadEmployees(filter) {
+    try {
+        let url = `${API_URL}/employees`;
+        if (filter === false) url += "?includeDeleted=false";  // Show only active employees
+        else if (filter === true || filter === "all") url += "?includeDeleted=true";  // Show both active and archived
+
+        const response = await fetch(url);
+        const employees = await response.json();
+        const tableBody = document.getElementById("employeeTableBody");
+        tableBody.innerHTML = "";  // Clear existing table rows
+
+        employees.forEach((emp) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${emp.employee_id}</td>
+                <td>${emp.email}</td>
+                <td>${emp.full_name}</td>
+                <td>${emp.contact}</td>
+                <td>${emp.address}</td>
+                <td>${emp.birthday}</td>
+                <td>${emp.employment_status}</td>
+                <td>${emp.educational_background}</td>
+                <td>${emp.emergency_contact_name}</td>
+                <td>${emp.department_name}</td>
+                <td>${emp.is_deleted ? 'Archived' : 'Active'}</td>
+                <td>
+                    ${emp.is_deleted
+                        ? `<button class="restoreBtn" data-id="${emp.employee_id}">Restore</button>`
+                        : `<button class="archiveBtn" data-id="${emp.employee_id}">Archive</button>`}
+                    <button class="editBtn" data-id="${emp.employee_id}">Edit</button>
+                </td>`;
+
+            // Append the row to the table body
+            tableBody.appendChild(row);
+        });
+
+        // Now add event listeners after rows are populated
+        addEmployeeActionListeners();
+    } catch (err) {
+        console.error("❌ Failed to load employees:", err);
+    }
+}
+
+// 🔹 Add Event Listeners for Employee Actions (Edit, Archive, Restore)
+function addEmployeeActionListeners() {
+    // Archive Button
+    document.querySelectorAll('.archiveBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();  // Prevent event bubbling to row click
+            confirmAction(e.target.dataset.id, true);  // Archive this employee
+        });
     });
-  
-    // Placeholder for Add functionality
-    document.querySelector('#employeeModal .modal-content button').addEventListener('click', () => {
-      alert("Employee added successfully!");
-      addModal.style.display = "none";
+
+    // Restore Button
+    document.querySelectorAll('.restoreBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();  // Prevent event bubbling to row click
+            confirmAction(e.target.dataset.id, false);  // Restore this employee
+        });
     });
-  
-    // Logout functionality
-    document.getElementById('logout-button').addEventListener('click', (e) => {
-      e.preventDefault();
-      if (confirm("Are you sure you want to logout?")) {
-        window.location.href = "/index.html";
-      }
+
+    // Edit Button
+    document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const employeeId = e.target.dataset.id;
+            // Find the corresponding employee data and populate the form
+            const employee = findEmployeeById(employeeId);  // Assume you have a function to find employee data
+            populateEditForm(employee);  // Populate the edit form with employee data
+        });
     });
+}
+
+function confirmAction(employeeId, shouldDelete) {
+    // Show the confirmation modal
+    document.getElementById("confirmationModal").style.display = "block";
+
+    // Confirm Action (Archive/Restore)
+    document.getElementById("confirmEdit").onclick = async () => {
+        try {
+            // Send a PUT request to archive or restore the employee
+            const response = await fetch(`/employee/archive/${employeeId}`,  {  // This matches the correct backend route
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shouldDelete })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message);  // Show the success message
+                loadEmployees("all");  // Refresh the employee list
+            } else {
+                alert(`❌ Error: ${result.message}`);  // Show error message
+            }
+
+            // Close the confirmation modal after action
+            document.getElementById("confirmationModal").style.display = "none";
+        } catch (error) {
+            console.error("❌ Soft delete/restore error:", error);
+            alert("Something went wrong!");
+            document.getElementById("confirmationModal").style.display = "none";  // Close the modal on error
+        }
+    };
+
+    // Cancel Action (Hide the confirmation modal)
+    document.getElementById("cancelEdit").onclick = () => {
+        document.getElementById("confirmationModal").style.display = "none";
+    };
+}
+
+
+// 🔹 Populate Edit Form with Employee Data
+async function populateEditForm(employee) {
+  if (!employee) {
+    console.error("❌ Employee data not found.");
+    return;
+  }
+
+  document.getElementById("editEmployeeForm").style.display = "block";
+  await loadEditRoles();  // Load roles for the edit form
+
+  // Populate form fields with employee data
+  document.getElementById("editEmployeeId").value = employee.employee_id;
+  document.getElementById("editEmail").value = employee.email;
+  document.getElementById("editFullName").value = employee.full_name;
+  document.getElementById("editContact").value = employee.contact;
+  document.getElementById("editAddress").value = employee.address;
+  document.getElementById("editBirthday").value = employee.birthday;
+  document.getElementById("editEmploymentStatus").value = employee.employment_status;
+  document.getElementById("editEducationalBackground").value = employee.educational_background;
+  document.getElementById("editEmergencyContactName").value = employee.emergency_contact_name;
+  document.getElementById("editEmergencyContactRelationship").value = employee.emergency_contact_relationship;
+  document.getElementById("editEmergencyContactPhone").value = employee.emergency_contact_phone;
+  document.getElementById("editRoleSelect").value = employee.role_id;
+
+  disableFormFields();
+
+  document.getElementById("editButton").style.display = "inline-block";
+  document.getElementById("updateEmployee").style.display = "none";
+
+  document.getElementById("editButton").onclick = () => {
+    document.getElementById("confirmationModal").style.display = "block";  // Confirm before editing
+  };
+
+  document.getElementById("confirmEdit").onclick = (e) => {
+    e.preventDefault();
+    enableFormFields();
+    document.getElementById("updateEmployee").style.display = "inline-block";
+    document.getElementById("editButton").style.display = "none";
+    document.getElementById("confirmationModal").style.display = "none";
+  };
+
+  document.getElementById("cancelEdit").onclick = () => {
+    document.getElementById("confirmationModal").style.display = "none";
+  };
+}
+
+// Enable/Disable Form Fields
+function enableFormFields() {
+  const form = document.getElementById("editEmployeeForm");
+  const fields = form.querySelectorAll("input, select, textarea");
+  fields.forEach((field) => (field.disabled = false));
+}
+
+function disableFormFields() {
+  const form = document.getElementById("editEmployeeForm");
+  const fields = form.querySelectorAll("input, select, textarea");
+  fields.forEach((field) => (field.disabled = true));
+}
+
+// 🔹 Update Employee
+async function updateEmployee() {
+  const employeeId = document.getElementById("editEmployeeId").value;
+
+  const data = {
+    email: document.getElementById("editEmail").value,
+    full_name: document.getElementById("editFullName").value,
+    contact: document.getElementById("editContact").value,
+    address: document.getElementById("editAddress").value,
+    birthday: document.getElementById("editBirthday").value,
+    employment_status: document.getElementById("editEmploymentStatus").value,
+    educational_background: document.getElementById("editEducationalBackground").value,
+    emergency_contact_name: document.getElementById("editEmergencyContactName").value,
+    emergency_contact_relationship: document.getElementById("editEmergencyContactRelationship").value,
+    emergency_contact_phone: document.getElementById("editEmergencyContactPhone").value,
+    role_id: document.getElementById("editRoleSelect").value,
+  };
+  if (
+    !data.email ||
+    !data.full_name ||
+    !data.contact ||
+    !data.address ||
+    !data.birthday ||
+    !data.employment_status ||
+    !data.educational_background ||
+    !data.emergency_contact_name ||
+    !data.emergency_contact_relationship ||
+    !data.emergency_contact_phone ||
+    !data.role_id
+  ) {
+    alert("❌ All fields must be filled out.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/employees/${employeeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      alert("✅ Employee updated!");
+      loadEmployees();
+    } else {
+      alert(`❌ Update failed: ${result.error || result.message}`);
+    }
+  } catch (err) {
+    console.error("Update Error:", err);
+    alert("An error occurred while updating.");
+  }
+}
+
+// 🔹 Load Edit Roles (for the edit form)
+async function loadEditRoles() {
+  const select = document.getElementById("editRoleSelect");
+  try {
+    const response = await fetch(`${API_URL}/roles`);
+    const roles = await response.json();
+
+    select.innerHTML = "<option value=''>Select Role</option>";
+    roles.forEach((role) => {
+      const option = document.createElement("option");
+      option.value = role.id;
+      option.textContent = role.name;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    console.error("Failed to load roles:", err);
+    select.innerHTML = "<option disabled selected>Error loading roles</option>";
+  } 
+}
+// Load available roles for employee creation and editing
+async function loadRoles() {
+    try {
+        const response = await fetch(`${API_URL}/roles`);
+        const roles = await response.json();
+        const roleSelect = document.getElementById("roleSelect");
+        roleSelect.innerHTML = '<option value="">Select Role</option>';
+
+        roles.forEach(role => {
+            const option = document.createElement("option");
+            option.value = role.id;
+            option.textContent = role.name;
+            roleSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error loading roles:", error);
+        alert("Error loading roles.");
+    }
+}
+
+// Fetching the employee data based on ID
+async function findEmployeeById(employeeId) {
+    try {
+        const response = await fetch(`${API_URL}/employees/${employeeId}`);
+        const employee = await response.json();
+
+        if (!response.ok) {
+            throw new Error("Employee not found");
+        }
+
+        return employee;  // Return the employee data
+    } catch (error) {
+        console.error("❌ Error fetching employee:", error);
+        alert("Failed to fetch employee details.");
+    }
+}
+
+
+
   </script>
   
   
