@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Static Virtual Tour</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+  
+    /* Container for the panorama viewer */
+    .panorama-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh; /* Full viewport height */
+      padding: 10px;
+    }
+  
+    /* Styling the panorama viewer */
+    #panorama {
+      width: 100%;
+      max-width: 1000px; /* Max width for large screens */
+      height: 500px; /* Set height for the viewer */
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      background-color: #000; /* Black background for the panorama */
+      background-image: url('/images/mdb.jpg'); /* Loading image */
+      background-position: center; /* Center the image */
+      background-repeat: no-repeat; /* No repeat */
+    }
+  
+    /* Styling for the header */
+    h1 {
+      position: absolute;
+      top: 50px; /* 50px down from the top of the page */
+      left: 50%;  /* 50% from the left edge of the page */
+      transform: translateX(-50%); /* Center it horizontally */
+      font-size: 32px;
+      color: #333;
+    }
+  
+    /* For smaller screens, reduce the panorama size */
+    @media screen and (max-width: 768px) {
+      #panorama {
+        height: 300px; /* Adjust height on small screens */
+      }
+    }
+  
+  </style>
+  
+</head>
+<body>
+    <h1>Virtual Tour</h1>
+  
+    <div class="panorama-container">
+      <div id="panorama"></div>
+    </div>
+  
+    <script>
+      pannellum.viewer('panorama', {
+        "default": {
+          "firstScene": "room1", // Start with Room 1
+          "sceneFadeDuration": 1000, // Scene transition duration
+        },
+
+        "scenes": {
+          "room1": {
+            "title": "Room 1",
+            "type": "equirectangular",
+            "panorama": "/image/room1.jpg",
+            "hotSpots": [
+              {
+                "pitch": 0,
+                "yaw": 165, // Position of the hotspot on Room 1 image
+                "type": "scene",
+                "text": "Go to Room 2", // Text for the hotspot
+                "sceneId": "room2" // Target scene when clicked
+              }
+            ]
+          },
+          "room2": {
+            "title": "Room 2",
+            "type": "equirectangular",
+            "panorama": "/image/room2.jpeg", // Image for Room 2 from public/images
+            "hotSpots": [
+              {
+                "pitch": 0,
+                "yaw": -100, // Position of the hotspot on Room 2 image
+                "type": "scene",
+                "text": "Back to Room 1", // Text for the hotspot
+                "sceneId": "room1" // Target scene when clicked
+              }
+            ]
+          }
+        }
+      });
+    </script>
+</body>
+</html>

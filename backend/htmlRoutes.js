@@ -33,7 +33,7 @@ app.get('/hr_manager/payroll', (req, res) => {
 
 // Reports Route
 app.get('/hr_manager/reports', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'reports.html'));
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'report.html'));
 });
 
 // Attendance Route
@@ -49,6 +49,10 @@ app.get('/hr_manager/recruitment', (req, res) => {
 // Route for the Employee Attendance page
 app.get('/hr_employee/attendance', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'hr_employee', 'Individual_attendance.html'));
+});
+
+app.get('/hr_manager/employee_list', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_list.html'));
 });
 
 
@@ -77,6 +81,9 @@ app.get('/hr_employee/attendance', (req, res) => {
 
   app.get('/crm/properties', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'properties.html')); // Adjusted path
+  });
+  app.get('/crm/vtour', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'vtour.html')); // Adjusted path
   });
 };
 
