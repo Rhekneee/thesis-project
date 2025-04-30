@@ -4,63 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance</title>
+    <link rel="stylesheet" href="/css/layout.css">
 <style>
-     /* layout.css */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    height: 100vh;
-    background-color: #f5f7fa;
-}
-
-.sidebar {
-    width: 200px;
-    background-color: #0052a5;
-    color: #fff;
-    padding: 20px 10px;
-}
-
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.sidebar ul {
-    list-style: none;
-}
-
-.sidebar ul li {
-    margin-bottom: 15px;
-}
-
-.sidebar ul li a {
-    color: #ffffff;
-    text-decoration: none;
-    display: block;
-    padding: 8px;
-    border-radius: 4px;
-}
-
-.sidebar ul li a:hover {
-    background-color: #003f7f;
-}
-
-.main-content {
-    flex-grow: 1;
-    background-color: #e6f4fc;
-    padding: 30px;
-}
-
-.main-content h1 {
-    margin-bottom: 20px;
-}
 
 /*Daily Attendance CSS*/
   #attendanceTable {
@@ -170,9 +116,9 @@ body {
 </head>
 <body>
     
-        <div class="sidebar">
-            <h2>HR Panel</h2>
-            <ul>
+    <div class="sidebar">
+        <h2>HR Panel</h2>
+        <ul>
             <li><a href="/dashboard">Dashboard</a></li>
             <li><a href="/hr_manager/employee_management">Employee Management</a></li>
             <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
@@ -181,278 +127,278 @@ body {
             <li><a href="/hr_manager/reports">Reports</a></li>
             <li><a href="/hr_manager/attendance">Attendance</a></li>
             <li><a href="/hr_manager/recruitment">Recruitment</a></li>
-            <li><a href="#" id="logout-button">Logout</a></li>
-            </ul>
-        </div>
+            <li><a href="/hr_manager/employee_list">Employee Directory</a></li>
+            <li><a href="/logout" id="logout-button">Logout</a></li>
+        </ul>
+    </div>
+
 
         <div class="content" id="daily_attendance">
-            <button id="checkLocation" aria-label="Check your location">Check Location</button>
-            <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
-            <button id="checkOut" aria-label="Check out of attendance">Check Out</button>
-            <button id="requestEarlyOut" style="display: none;" aria-label="Request Early Out">Request Early Out</button>
-            <button id="requestHalfDay" style="display: none;" aria-label="Request Half Day">Request Half Day</button>
-            <p id="status">Click "Check Location" to verify.</p>
-    
-            <h3>Today's Attendance</h3>
-            <table id="attendanceTable">
-                <thead>
+            <div class="card">
+              <h2>Daily Attendance</h2>
+          
+              <p id="status">🔄 Waiting for location check...</p>
+          
+              <div class="attendance-actions">
+                <button id="checkIn">✅ Check In</button>
+                <button id="checkOut">🚪 Check Out</button>
+              </div>
+          
+              <div class="requests">
+                <h3>Request:</h3>
+                <form id="requestForm">
+                  <label>
+                    <input type="radio" name="requestType" value="earlyOut" />
+                    Early Leave
+                  </label>
+                  <label>
+                    <input type="radio" name="requestType" value="halfDay" />
+                    Half Day
+                  </label>
+                  <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
+                  <button type="submit">Submit Request</button>
+                </form>
+                <p id="requestStatus"></p>
+              </div>
+          
+              <div class="today-table">
+                <h3>Today's Attendance</h3>
+                <table>
+                  <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Check-In</th>
-                        <th>Check-Out</th>
-                        <th>Status</th>
+                      <th>Date</th>
+                      <th>Check In</th>
+                      <th>Check Out</th>
+                      <th>Status</th>
                     </tr>
-                </thead>
-                <tbody id="attendanceBody">
-                    <tr>
-                        <td colspan="4">No records found</td>
-                    </tr>
-                </tbody>
-            </table>
-    
-            <!-- Static Section for Early Out Request -->
-            <div id="earlyOutSection" style="display: none;">
-                <h3>Request Early Out</h3>
-                <textarea id="remarks" placeholder="Enter reason for early leave"></textarea>
-                <button id="submitEarlyOutRequest">Submit Early Out Request</button>
-                <button id="cancelEarlyOutRequest">Cancel Request</button>
+                  </thead>
+                  <tbody id="attendanceBody">
+                    <tr><td colspan="4">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-    
-            <!-- Static Section for Half Day Request -->
-            <div id="halfDaySection" style="display: none;">
-                <h3>Request Half Day</h3>
-                <textarea id="halfDayRemarks" placeholder="Enter reason for half day"></textarea>
-                <button id="submitHalfDayRequest">Submit Half Day Request</button>
-                <button id="cancelHalfDayRequest">Cancel Request</button>
-            </div>
-        </div>
-    
-        <script>
-            window.onload = async () => {
-                const API_URL = "http://localhost:4000/hr";
-                const officeLat = 14.364277187613206;
-                const officeLng = 120.92761115020912;
-                const allowedRadius = 500; // meters
-    
-                try {
-                    const employeeId = await getEmployeeIdFromSession();
-                    if (!employeeId) {
-                        alert("Employee ID is missing.");
-                        return;
-                    }
-    
-                    loadAttendanceData(employeeId);
-    
-                    // Location check
-                    document.getElementById("checkLocation").addEventListener("click", () => {
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                (position) => {
-                                    const userLat = position.coords.latitude;
-                                    const userLng = position.coords.longitude;
-                                    const distance = getDistance(officeLat, officeLng, userLat, userLng);
-    
-                                    if (distance <= allowedRadius) {
-                                        document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
-                                        document.getElementById("checkIn").disabled = false;
-                                    } else {
-                                        document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
-                                        document.getElementById("checkIn").disabled = true;
-                                    }
-                                },
-                                (error) => {
-                                    document.getElementById("status").textContent = `⚠️ Location error: ${error.message}`;
-                                }
-                            );
-                        } else {
-                            document.getElementById("status").textContent = "❌ Geolocation not supported.";
-                        }
+          </div>
+          
+          <script>
+          // Function to get user location (latitude and longitude)
+          function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
+          
+          // Function to get the user ID from session (via API)
+          async function getUserId() {
+    try {
+        const employeeId = await getEmployeeIdFromSession();
+        if (!employeeId) {
+            alert("HR ID is missing.");
+            return;
+        }
+        return employeeId;
+    } catch (error) {
+        console.error('Error fetching HR ID:', error);
+        return null;
+    }
+}
+
+// Function to fetch HR ID from session
+async function getEmployeeIdFromSession() {
+    try {
+        const response = await fetch('http://localhost:4000/hr/check-session', {
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch HR ID');
+        }
+
+        const data = await response.json();
+        return data.user.id;  // Return the HR ID from session
+    } catch (error) {
+        console.error('Error fetching HR ID:', error);
+        return null;
+    }
+}
+
+          
+          // Check-in functionality
+          const checkInButton = document.getElementById("checkIn");
+checkInButton.addEventListener('click', async () => {
+    const userId = await getUserId();  // Get the employee ID dynamically
+    if (!userId) return;  // Exit if no user ID
+
+    // Get the user's location
+    const userLocation = await getUserLocation();  // Get the user's latitude and longitude
+    const date = new Date().toISOString().slice(0, 10);  // Get today's date
+    const checkInTime = new Date().toISOString();  // Get current check-in time
+
+    console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
+
+    // Send the check-in request to the backend
+    const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            userId,
+            date,
+            checkInTime,
+            userLat: userLocation.lat,
+            userLng: userLocation.lng,
+        }),
+    });
+
+    const result = await response.json();
+    const statusParagraph = document.getElementById("status");
+    if (result.error) {
+        statusParagraph.textContent = result.error;  // Show any errors
+    } else {
+        statusParagraph.textContent = result.message;  // Show success message
+        loadEmployeeAttendanceData(userId);  // Reload attendance data
+    }
+});
+          
+          // Check-out functionality
+          const checkOutButton = document.getElementById("checkOut");
+checkOutButton.addEventListener('click', async () => {
+    const userId = await getUserId();  // Get the employee ID dynamically
+    if (!userId) return;  // Exit if no user ID
+
+    const date = new Date().toISOString().slice(0, 10);  // Get today's date
+    const checkOutTime = new Date().toISOString();  // Get current check-out time
+
+    console.log("Sending check-out request with:", userId, date, checkOutTime);
+
+    // Send the check-out request to the backend
+    const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, checkOutTime, date }),
+    });
+
+    const result = await response.json();
+    const statusParagraph = document.getElementById("status");
+    if (result.error) {
+        statusParagraph.textContent = result.error;  // Show any errors
+    } else {
+        statusParagraph.textContent = result.message;  // Show success message
+        loadEmployeeAttendanceData(userId);  // Reload attendance data
+    }
+});
+
+          // Handle attendance requests (early leave/half day)
+          const requestForm = document.getElementById("requestForm");
+          requestForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const userId = await getUserId();
+              if (!userId) return;  // Return if no user ID
+          
+              const date = new Date().toISOString().slice(0, 10);
+              const requestType = document.querySelector('input[name="requestType"]:checked').value;
+              const remarks = document.getElementById("remarks").value;
+          
+              const response = await fetch(`/${requestType}-request/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, date, remarks }),
+              });
+          
+              const result = await response.json();
+              const requestStatusParagraph = document.getElementById("requestStatus");
+              if (result.success) {
+                  requestStatusParagraph.textContent = "Request submitted successfully.";
+              } else {
+                  requestStatusParagraph.textContent = "Failed to submit request.";
+              }
+          });
+          
+          // Load today's attendance from the database
+          // Function to load today's attendance data
+          async function loadEmployeeAttendanceData(employeeId) {
+    try {
+        const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
+        const data = await response.json();
+
+        const tbody = document.getElementById("attendanceBody");
+        tbody.innerHTML = '';  // Clear previous data
+
+        // Check if there are any records to display
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No records found</td></tr>';
+        }
+
+        // Populate table with employee attendance and requests
+        data.forEach(record => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${record.date}</td>
+                <td>${record.check_in ? formatTime(record.check_in) : '-'}</td>
+                <td>${record.check_out ? formatTime(record.check_out) : '-'}</td>
+                <td>${record.status || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading attendance data:', error);
+        const tbody = document.getElementById("attendanceBody");
+        tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+    }
+}
+
+function formatTime(time) {
+    const date = new Date(time);
+    return `${date.getHours()}:${date.getMinutes()}`;
+}
+function getUserLocation() {
+    return new Promise((resolve, reject) => {
+        document.getElementById("status").textContent = "🔄 Waiting for location check...";  // Update status while waiting for location
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log("Location fetched:", position.coords.latitude, position.coords.longitude);  // Log the location
+                    document.getElementById("status").textContent = "✅ Location fetched.";  // Update status when location is fetched
+                    resolve({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
                     });
-    
-                    // Check-in button
-                    document.getElementById("checkIn").addEventListener("click", async () => {
-                        const checkInTime = new Date().toISOString();
-                        try {
-                            const response = await fetch(`${API_URL}/check-in/${employeeId}`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ checkInTime })
-                            });
-    
-                            const data = await response.json();
-                            document.getElementById("status").textContent = response.ok
-                                ? "✅ Check-in successful!"
-                                : `❌ Error: ${data.error || 'Failed to check in.'}`;
-    
-                            loadAttendanceData(employeeId);
-                        } catch (error) {
-                            console.error("Check-in error:", error);
-                            document.getElementById("status").textContent = "❌ Failed to check in.";
-                        }
-                    });
-    
-                    // Check-out button
-                    document.getElementById("checkOut").addEventListener("click", async () => {
-                        const checkOutTime = new Date().toISOString();
-                        const currentTime = new Date();
-                        const endTime = new Date();
-                        endTime.setHours(18, 0, 0, 0);  // 6:00 PM
-    
-                        // Check if it's before 6:00 PM
-                        if (currentTime < endTime) {
-                            document.getElementById("requestEarlyOut").style.display = "block";
-                            document.getElementById("requestHalfDay").style.display = "block";
-                        } else {
-                            // Proceed with check-out normally
-                            try {
-                                const response = await fetch(`${API_URL}/check-out/${employeeId}`, {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ checkOutTime })
-                                });
-    
-                                const data = await response.json();
-                                document.getElementById("status").textContent = response.ok
-                                    ? "✅ Check-out successful!"
-                                    : `❌ Error: ${data.error || 'Failed to check out.'}`;
-    
-                                loadAttendanceData(employeeId);
-                            } catch (error) {
-                                console.error("Check-out error:", error);
-                                document.getElementById("status").textContent = "❌ Failed to check out.";
-                            }
-                        }
-                    });
-    
-                    // Handle Early Out Request
-                    document.getElementById("submitEarlyOutRequest").addEventListener("click", async () => {
-                        const remarks = document.getElementById("remarks").value;
-                        if (!remarks) {
-                            alert("Please provide a reason for early leave.");
-                            return;
-                        }
-    
-                        try {
-                            const response = await fetch(`${API_URL}/early-out-request/${employeeId}`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ remarks })
-                            });
-    
-                            const data = await response.json();
-                            if (response.ok) {
-                                alert("Your early out request has been submitted.");
-                                document.getElementById("earlyOutSection").style.display = "none"; // Close early out section
-                            } else {
-                                alert(`Error: ${data.error || 'Failed to submit request.'}`);
-                            }
-                        } catch (error) {
-                            console.error("Error submitting early out request:", error);
-                            alert("❌ Failed to submit early out request.");
-                        }
-                    });
-    
-                    // Handle Half Day Request
-                    document.getElementById("submitHalfDayRequest").addEventListener("click", async () => {
-                        const remarks = document.getElementById("halfDayRemarks").value;
-                        if (!remarks) {
-                            alert("Please provide a reason for half day.");
-                            return;
-                        }
-    
-                        try {
-                            const response = await fetch(`${API_URL}/half-day-request/${employeeId}`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ remarks })
-                            });
-    
-                            const data = await response.json();
-                            if (response.ok) {
-                                alert("Your half day request has been submitted.");
-                                document.getElementById("halfDaySection").style.display = "none"; // Close half day section
-                            } else {
-                                alert(`Error: ${data.error || 'Failed to submit request.'}`);
-                            }
-                        } catch (error) {
-                            console.error("Error submitting half day request:", error);
-                            alert("❌ Failed to submit half day request.");
-                        }
-                    });
-    
-                    // Cancel Early Out Request
-                    document.getElementById("cancelEarlyOutRequest").addEventListener("click", () => {
-                        document.getElementById("earlyOutSection").style.display = "none"; // Close early out section
-                    });
-    
-                    // Cancel Half Day Request
-                    document.getElementById("cancelHalfDayRequest").addEventListener("click", () => {
-                        document.getElementById("halfDaySection").style.display = "none"; // Close half day section
-                    });
-    
-                } catch (err) {
-                    console.error("Error:", err);
-                    alert("An error occurred while loading attendance data.");
+                },
+                (error) => {
+                    console.error("Error fetching location:", error);  // Log any errors
+                    document.getElementById("status").textContent = "❌ Error fetching location.";  // Update status on error
+                    reject("Unable to retrieve your location.");
                 }
-            };
-    
-            async function getEmployeeIdFromSession() {
-                try {
-                    const response = await fetch('http://localhost:4000/hr/check-session', {
-                        credentials: 'include',
-                    });
-    
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch user ID');
-                    }
-    
-                    const data = await response.json();
-                    return data.user.id;
-                } catch (error) {
-                    console.error('Error fetching employee ID:', error);
-                    return null;
-                }
-            }
-    
-            function getDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371e3; // Earth radius in meters
-                const toRad = (deg) => (deg * Math.PI) / 180;
-                const dLat = toRad(lat2 - lat1);
-                const dLon = toRad(lon2 - lon1);
-                const a =
-                    Math.sin(dLat / 2) ** 2 +
-                    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                    Math.sin(dLon / 2) ** 2;
-    
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                return R * c; // Returns distance in meters
-            }
-    
-            async function loadAttendanceData(employeeId) {
-                const response = await fetch(`/hr/today/${employeeId}`);
-                const data = await response.json();
-                const tbody = document.getElementById("attendanceBody");
-    
-                if (!Array.isArray(data) || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
-                    return;
-                }
-    
-                const row = data[0];
-                tbody.innerHTML = `
-                    <tr>
-                        <td>${row.date}</td>
-                        <td>${row.check_in ? formatTime(row.check_in) : "-"}</td>
-                        <td>${row.check_out ? formatTime(row.check_out) : "-"}</td>
-                        <td>${row.status || "-"}</td>
-                    </tr>
-                `;
-            }
-    
-            function formatTime(isoString) {
-                const date = new Date(isoString);
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            }
-        </script>
+            );
+        } else {
+            document.getElementById("status").textContent = "❌ Geolocation is not supported.";  // Update status if geolocation is not supported
+            reject("Geolocation is not supported by this browser.");
+        }
+    });
+}
+
+
+// On page load, fetch the employee ID and load attendance data
+window.onload = async () => {
+    const employeeId = await getUserId();  // Get the employee ID dynamically
+    if (employeeId) {
+        loadEmployeeAttendanceData(employeeId);  // Load the attendance data for the employee
+    }
+};
+          </script>
 </body>
 </html>
