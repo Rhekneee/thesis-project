@@ -28,8 +28,8 @@
     router.get('/today/:id', HRController.getTodayAttendance);
 
 // Routes for Early Out and Half-Day Requests
-    router.post('/early-out-request/:id', HRController.requestEarlyOutRequest);  // Submit early out request
-    router.post('/half-day-request/:id', HRController.requestHalfDayRequest);    // Submit half-day request
+    router.post('/earlyOut-request/:id', HRController.requestEarlyOutRequest); // Submit early out request
+    router.post('/halfDay-request/:id', HRController.requestHalfDayRequest);    // Submit half-day request
     router.post('/approve-request/:id', HRController.approveRequest);  // Approve or reject requests
 
 

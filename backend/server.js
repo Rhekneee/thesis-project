@@ -64,10 +64,8 @@ app.get('/dashboard', (req, res) => {
     const roleDashboards = {
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr_manager/hr_dashboard.html',
-        'liaison_officer': 'manager_crm.html',
         'finance_accounting': 'manager_finance.html',
         'general_foreman': 'manager_manufacturing.html',
-        'warehouse_supervisor': 'manager_supply_chain.html',
         'corporate_secretary': 'manager_corporate_secretary.html',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
