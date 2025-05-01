@@ -241,10 +241,13 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     checkOutAttendance: async (req, res) => {
         const userId = req.params.id;
         const { date, checkOutTime } = req.body;
+        console.log("Received Check-out Request:", { userId, date, checkOutTime });
 
         try {
             const result = await HRModel.checkOut(userId, checkOutTime, date);
+            console.log("HRModel Result:", result);
             if (result.error) {
+                console.error("Error from HRModel:", result.error);  // Log error from model
                 return res.status(400).json({ error: result.error });
             }
             return res.status(200).json(result);
@@ -297,6 +300,22 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.json({ success: true, message: "Early-out request submitted successfully." });
         } catch (error) {
             console.error('Error submitting early-out request:', error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    },
+
+    requestOvertimeRequest: async (req, res) => {
+        const userId = req.params.id;  // Get userId from the URL parameter
+        const { date, remarks } = req.body;  // Get date and remarks from the request body
+    
+        console.log("Received Overtime Request:", { userId, date, remarks });  // Log the data for debugging
+    
+        try {
+            // Call HRModel to process the overtime request
+            const result = await HRModel.requestOvertime(userId, date, remarks);
+            res.json({ success: true, message: "Overtime request submitted successfully." });
+        } catch (error) {
+            console.error('Error submitting overtime request:', error);
             res.status(500).json({ error: "Internal Server Error" });
         }
     },
