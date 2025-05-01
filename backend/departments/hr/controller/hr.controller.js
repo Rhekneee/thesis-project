@@ -228,22 +228,26 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         try {
             const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
             if (result.error) {
-                return res.status(400).json({ error: result.error });
+                return res.status(400).json({ error: result.error });  // Send error back if validation fails
             }
-            return res.status(200).json(result);
+            return res.status(200).json(result);  // Successful check-in response
         } catch (error) {
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
 
+
     // Handle check-out
     checkOutAttendance: async (req, res) => {
         const userId = req.params.id;
         const { date, checkOutTime } = req.body;
+        console.log("Received Check-out Request:", { userId, date, checkOutTime });
 
         try {
             const result = await HRModel.checkOut(userId, checkOutTime, date);
+            console.log("HRModel Result:", result);
             if (result.error) {
+                console.error("Error from HRModel:", result.error);  // Log error from model
                 return res.status(400).json({ error: result.error });
             }
             return res.status(200).json(result);
@@ -267,43 +271,69 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
     // Request early out
-    requestEarlyOutRequest: async (req, res) => {
-        const userId = req.params.id;
-        const { date, remarks } = req.body;
-
-        try {
-            const result = await HRModel.requestEarlyOut(userId, date, remarks);
-            return res.status(200).json({ success: true });
-        } catch (error) {
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
-    },
-
-    // Request half-day leave
     requestHalfDayRequest: async (req, res) => {
-        const userId = req.params.id;
-        const { date, remarks } = req.body;
+        const userId = req.params.id;  // Get userId from the URL parameter
+        const { date, remarks } = req.body;  // Get date and remarks from the request body
+    
+        console.log("Received Half-Day Request:", { userId, date, remarks });
+    
+        try {
+            const result = await HRModel.requestHalfDay(userId, date, remarks);  // Use 'date' instead of 'requestDate'
+            res.json({ success: true, message: "Half-day request submitted successfully." });
+        } catch (error) {
+            console.error('Error submitting half-day request:', error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    },
+    
+
+    // Handle Early-Out Request Submission
+    requestEarlyOutRequest: async (req, res) => {
+        const userId = req.params.id;  // Get userId from the URL parameter
+        const { date, remarks } = req.body;  // Get date and remarks from the request body
+
+        console.log("Received Early-Out Request:", { userId, date, remarks });  // Log the data for debugging
 
         try {
-            const result = await HRModel.requestHalfDay(userId, date, remarks);
-            return res.status(200).json({ success: true });
+            // Call HRModel to process the early-out request
+            const result = await HRModel.requestEarlyOut(userId, date, remarks);
+            res.json({ success: true, message: "Early-out request submitted successfully." });
         } catch (error) {
-            return res.status(500).json({ error: 'Internal Server Error' });
+            console.error('Error submitting early-out request:', error);
+            res.status(500).json({ error: "Internal Server Error" });
         }
     },
 
-    // Approve or reject early-out or half-day request
+    requestOvertimeRequest: async (req, res) => {
+        const userId = req.params.id;  // Get userId from the URL parameter
+        const { date, remarks } = req.body;  // Get date and remarks from the request body
+    
+        console.log("Received Overtime Request:", { userId, date, remarks });  // Log the data for debugging
+    
+        try {
+            // Call HRModel to process the overtime request
+            const result = await HRModel.requestOvertime(userId, date, remarks);
+            res.json({ success: true, message: "Overtime request submitted successfully." });
+        } catch (error) {
+            console.error('Error submitting overtime request:', error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    },
+
+    // Handle Approving or Rejecting Requests (Early-out or Half-day)
     approveRequest: async (req, res) => {
-        const userId = req.params.id;
-        const { date, type, isApproved } = req.body;
+        const userId = req.params.id;  // Get userId from the URL parameter
+        const { date, type, isApproved } = req.body;  // Get date, request type (early-out or half-day), and approval status from the request body
 
         try {
             const result = await HRModel.approveRequest(userId, date, type, isApproved);
-            return res.status(200).json({ success: true });
+            res.json({ success: true, message: `${type} request has been ${isApproved ? 'approved' : 'rejected'}.` });
         } catch (error) {
-            return res.status(500).json({ error: 'Internal Server Error' });
+            console.error('Error approving request:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
         }
     },
+
     getApplicationsByStatus: async (req, res) => {
         const { status } = req.query;  // Get the status from query parameters
         try {
