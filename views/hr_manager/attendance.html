@@ -147,17 +147,28 @@
               <div class="requests">
                 <h3>Request:</h3>
                 <form id="requestForm">
-                  <label>
-                    <input type="radio" name="requestType" value="earlyOut" />
-                    Early Leave
-                  </label>
-                  <label>
-                    <input type="radio" name="requestType" value="halfDay" />
-                    Half Day
-                  </label>
-                  <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
-                  <button type="submit">Submit Request</button>
+                    <label>
+                        <input type="radio" name="requestType" value="earlyOut" />
+                        Early Leave
+                    </label>
+                    <label>
+                        <input type="radio" name="requestType" value="halfDay" />
+                        Half Day
+                    </label>
+                    <label>
+                        <input type="radio" name="requestType" value="overtime" />
+                        Overtime
+                    </label>
+                    <!-- Add a Date Picker for selecting the date -->
+                    <label>
+                        Select Date:
+                        <input type="date" id="requestDate" name="requestDate" required />
+                    </label>
+                
+                    <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
+                    <button type="submit">Submit Request</button>
                 </form>
+                
                 <p id="requestStatus"></p>
               </div>
           
@@ -201,78 +212,79 @@
                   }
               });
           }
-          
+
           // Function to get the user ID from session (via API)
           async function getUserId() {
-    try {
-        const employeeId = await getEmployeeIdFromSession();
-        if (!employeeId) {
-            alert("HR ID is missing.");
-            return;
-        }
-        return employeeId;
-    } catch (error) {
-        console.error('Error fetching HR ID:', error);
-        return null;
-    }
-}
+              try {
+                  const employeeId = await getEmployeeIdFromSession();
+                  if (!employeeId) {
+                      alert("HR ID is missing.");
+                      return;
+                  }
+                  return employeeId;
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
 
-// Function to fetch HR ID from session
-async function getEmployeeIdFromSession() {
-    try {
-        const response = await fetch('http://localhost:4000/hr/check-session', {
-            credentials: 'include',
-        });
+          // Function to fetch HR ID from session
+          async function getEmployeeIdFromSession() {
+              try {
+                  const response = await fetch('http://localhost:4000/hr/check-session', {
+                      credentials: 'include',
+                  });
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch HR ID');
-        }
+                  if (!response.ok) {
+                      throw new Error('Failed to fetch HR ID');
+                  }
 
-        const data = await response.json();
-        return data.user.id;  // Return the HR ID from session
-    } catch (error) {
-        console.error('Error fetching HR ID:', error);
-        return null;
-    }
-}
+                  const data = await response.json();
+                  return data.user.id; // Return the HR ID from session
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
 
-          
           // Check-in functionality
           const checkInButton = document.getElementById("checkIn");
-checkInButton.addEventListener('click', async () => {
-    const userId = await getUserId();  // Get the employee ID dynamically
-    if (!userId) return;  // Exit if no user ID
+          checkInButton.addEventListener('click', async () => {
+              const userId = await getUserId(); // Get the employee ID dynamically
+              if (!userId) return; // Exit if no user ID
 
-    // Get the user's location
-    const userLocation = await getUserLocation();  // Get the user's latitude and longitude
-    const date = new Date().toISOString().slice(0, 10);  // Get today's date
-    const checkInTime = new Date().toISOString();  // Get current check-in time
+              // Get the user's location
+              const userLocation = await getUserLocation(); // Get the user's latitude and longitude
+              const date = new Date().toISOString().slice(0, 10); // Get today's date
+              const checkInTime = new Date().toISOString(); // Get current check-in time
 
-    console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
+              console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
 
-    // Send the check-in request to the backend
-    const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            userId,
-            date,
-            checkInTime,
-            userLat: userLocation.lat,
-            userLng: userLocation.lng,
-        }),
-    });
+              // Send the check-in request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId,
+                      date,
+                      checkInTime,
+                      userLat: userLocation.lat,
+                      userLng: userLocation.lng,
+                  }),
+              });
 
-    const result = await response.json();
-    const statusParagraph = document.getElementById("status");
-    if (result.error) {
-        statusParagraph.textContent = result.error;  // Show any errors
-    } else {
-        statusParagraph.textContent = result.message;  // Show success message
-        loadEmployeeAttendanceData(userId);  // Reload attendance data
-    }
-});
-          
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
+
+              // Handle response error or success
+              if (result.error) {
+                  statusParagraph.textContent = result.error; // Show error message if any
+              } else {
+                  statusParagraph.textContent = result.message; // Show success message
+                  loadEmployeeAttendanceData(userId); // Reload attendance data
+              }
+          });
+
           // Check-out functionality
           const checkOutButton = document.getElementById("checkOut");
 checkOutButton.addEventListener('click', async () => {
@@ -300,36 +312,58 @@ checkOutButton.addEventListener('click', async () => {
         loadEmployeeAttendanceData(userId);  // Reload attendance data
     }
 });
-
           // Handle attendance requests (early leave/half day)
-          const requestForm = document.getElementById("requestForm");
-          requestForm.addEventListener('submit', async (e) => {
-              e.preventDefault();
-              const userId = await getUserId();
-              if (!userId) return;  // Return if no user ID
-          
-              const date = new Date().toISOString().slice(0, 10);
-              const requestType = document.querySelector('input[name="requestType"]:checked').value;
-              const remarks = document.getElementById("remarks").value;
-          
-              const response = await fetch(`/${requestType}-request/${userId}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, date, remarks }),
-              });
-          
-              const result = await response.json();
-              const requestStatusParagraph = document.getElementById("requestStatus");
-              if (result.success) {
-                  requestStatusParagraph.textContent = "Request submitted successfully.";
-              } else {
-                  requestStatusParagraph.textContent = "Failed to submit request.";
-              }
-          });
-          
+          document.addEventListener("DOMContentLoaded", function () {
+    const requestForm = document.getElementById("requestForm");
+    requestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const userId = await getUserId();  // Retrieve user ID dynamically
+        if (!userId) return;
+
+        // Get the request date and check if the input field exists
+        const requestDateElement = document.getElementById("requestDate");
+        if (!requestDateElement) {
+            console.error("Request date input field not found!");
+            return;  // Exit early if the input field doesn't exist
+        }
+
+        const date = requestDateElement.value;  // Get the date selected by the user
+        const remarks = document.getElementById("remarks").value;
+
+        if (!date || !remarks) {
+            alert("Please provide both the date and remarks.");
+            return;
+        }
+
+        const requestType = document.querySelector('input[name="requestType"]:checked').value;
+
+        try {
+            const response = await fetch(`http://localhost:4000/hr/${requestType}-request/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, date, remarks }),
+            });
+
+            const result = await response.json();
+            const requestStatusParagraph = document.getElementById("requestStatus");
+            if (result.success) {
+                requestStatusParagraph.textContent = `${requestType.charAt(0).toUpperCase() + requestType.slice(1)} request submitted successfully.`;
+            } else {
+                requestStatusParagraph.textContent = "Failed to submit request.";
+            }
+        } catch (error) {
+            console.error('Error submitting request:', error);
+            const requestStatusParagraph = document.getElementById("requestStatus");
+            requestStatusParagraph.textContent = "An error occurred while submitting your request.";
+        }
+    });
+});
+
+ 
+
           // Load today's attendance from the database
-          // Function to load today's attendance data
-          async function loadEmployeeAttendanceData(employeeId) {
+async function loadEmployeeAttendanceData(employeeId) {
     try {
         const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
         const data = await response.json();
@@ -347,8 +381,8 @@ checkOutButton.addEventListener('click', async () => {
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${record.date}</td>
-                <td>${record.check_in ? formatTime(record.check_in) : '-'}</td>
-                <td>${record.check_out ? formatTime(record.check_out) : '-'}</td>
+                <td>${record.check_in || '-'}</td>  <!-- Directly display the check_in time -->
+                <td>${record.check_out || '-'}</td> <!-- Directly display the check_out time -->
                 <td>${record.status || '-'}</td>
             `;
             tbody.appendChild(row);
@@ -360,45 +394,41 @@ checkOutButton.addEventListener('click', async () => {
     }
 }
 
-function formatTime(time) {
-    const date = new Date(time);
-    return `${date.getHours()}:${date.getMinutes()}`;
-}
-function getUserLocation() {
-    return new Promise((resolve, reject) => {
-        document.getElementById("status").textContent = "🔄 Waiting for location check...";  // Update status while waiting for location
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    console.log("Location fetched:", position.coords.latitude, position.coords.longitude);  // Log the location
-                    document.getElementById("status").textContent = "✅ Location fetched.";  // Update status when location is fetched
-                    resolve({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    });
-                },
-                (error) => {
-                    console.error("Error fetching location:", error);  // Log any errors
-                    document.getElementById("status").textContent = "❌ Error fetching location.";  // Update status on error
-                    reject("Unable to retrieve your location.");
-                }
-            );
-        } else {
-            document.getElementById("status").textContent = "❌ Geolocation is not supported.";  // Update status if geolocation is not supported
-            reject("Geolocation is not supported by this browser.");
-        }
-    });
-}
+          function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  document.getElementById("status").textContent = "🔄 Waiting for location check..."; // Update status while waiting for location
 
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              console.log("Location fetched:", position.coords.latitude, position.coords.longitude); // Log the location
+                              document.getElementById("status").textContent = "✅ Location fetched."; // Update status when location is fetched
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              console.error("Error fetching location:", error); // Log any errors
+                              document.getElementById("status").textContent = "❌ Error fetching location."; // Update status on error
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      document.getElementById("status").textContent = "❌ Geolocation is not supported."; // Update status if geolocation is not supported
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
 
-// On page load, fetch the employee ID and load attendance data
-window.onload = async () => {
-    const employeeId = await getUserId();  // Get the employee ID dynamically
-    if (employeeId) {
-        loadEmployeeAttendanceData(employeeId);  // Load the attendance data for the employee
-    }
-};
+          // On page load, fetch the employee ID and load attendance data
+          window.onload = async () => {
+              const employeeId = await getUserId(); // Get the employee ID dynamically
+              if (employeeId) {
+                  loadEmployeeAttendanceData(employeeId); // Load the attendance data for the employee
+              }
+          };
           </script>
 </body>
 </html>
