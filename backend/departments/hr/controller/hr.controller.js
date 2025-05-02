@@ -256,20 +256,6 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
 
-    // Get today's attendance for the employee
-    getTodayAttendance: async (req, res) => {
-        const employeeId = req.params.id;  // Get employeeId from the route parameter
-        const date = new Date().toISOString().slice(0, 10);  // Get today's date in YYYY-MM-DD format
-
-        try {
-            // Fetch today's attendance data for the employee
-            const attendance = await HRModel.getTodayAttendance(employeeId, date);
-            return res.status(200).json(attendance);  // Send the data as JSON
-        } catch (error) {
-            console.error('Error fetching attendance:', error);
-            return res.status(500).json({ error: 'Failed to fetch attendance data' });
-        }
-    },
     // Request early out
     requestHalfDayRequest: async (req, res) => {
         const userId = req.params.id;  // Get userId from the URL parameter
@@ -333,6 +319,31 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     },
+
+    getTodayAttendance: async (req, res) => {
+        const employeeId = req.params.id;  // Get employeeId from the route parameter
+        const date = new Date().toISOString().slice(0, 10);  // Get today's date in YYYY-MM-DD format
+
+        try {
+            // Fetch today's attendance data for the employee
+            const attendance = await HRModel.getTodayAttendance(employeeId, date);
+            return res.status(200).json(attendance);  // Send the data as JSON
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+            return res.status(500).json({ error: 'Failed to fetch attendance data' });
+        }
+    },
+    getAttendanceByUserId: async (req, res) => {
+        const { userId } = req.params;
+    
+        try {
+          const attendance = await HRModel.getAttendanceHistory(userId);
+          res.status(200).json({ attendance });
+        } catch (error) {
+          console.error("Error fetching attendance:", error);
+          res.status(500).json({ error: "Failed to load attendance history." });
+        }
+      },
 
     getApplicationsByStatus: async (req, res) => {
         const { status } = req.query;  // Get the status from query parameters

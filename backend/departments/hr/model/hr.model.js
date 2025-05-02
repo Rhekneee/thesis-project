@@ -410,9 +410,13 @@ const HRModel = {
             else if (hourPHT >= 12 && hourPHT < 18) {
                 status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
             }
-        } else if (!request && hourPHT === 9 && minutesPHT > 0 && minutesPHT <= 10) {
+        } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))){
             // If no half-day request and check-in is between 9:00 AM and 9:10 AM, mark as "Late"
             status = "Late";
+        }
+        else if (!request && hourPHT === 9 && minutesPHT >= 0 && minutesPHT <= 10) {
+            // If no half-day request and check-in is between 9:00 AM and 9:10 AM, mark as "Present"
+            status = "Present";
         }
 
         // Format the check-in time to 'HH:MM:SS' for the TIME field in the database
@@ -444,8 +448,8 @@ checkOut: async (userId, checkOutTime, date) => {
             [userId, date]
         );
 
-        if (!checkInRecord || !checkInRecord[0].check_in) {
-            return { error: "You must check in first." };  // Error if the user hasn't checked in yet
+        if (!checkInRecord || checkInRecord.length === 0 || !checkInRecord[0].check_in) {
+            return { error: "You must check in first." };
         }
 
         // 2. Convert check-out time to Philippine Time (PHT)
@@ -458,7 +462,7 @@ checkOut: async (userId, checkOutTime, date) => {
         const checkOutFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
 
         // 4. Check if an early-out request is approved for this date
-        const request = await HRModel.checkRequestApproval(userId, date);  // Check if early-out request is approved
+        const request = await HRModel.checkRequestApproval(userId, date, "earlyOut"); 
 
         let status = "Present";  // Default status for employees without any requests
 
@@ -643,6 +647,17 @@ checkOut: async (userId, checkOutTime, date) => {
             throw error;
         }
     },
+
+    getAttendanceHistory: async (userId) => {
+        const sql = `
+          SELECT date, check_in, check_out, status, total_hours, overtime_hours 
+          FROM attendance 
+          WHERE user_id = ? 
+          ORDER BY date DESC
+        `;
+        const [rows] = await db.execute(sql, [userId]);
+        return rows;
+      },
 
     getApplicationsByStatus: async (status) => {
         const query = "SELECT * FROM applications WHERE status = ?";

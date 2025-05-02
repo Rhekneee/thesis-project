@@ -37,9 +37,12 @@
     }
 
     #status {
-        font-size: 1rem;
-        margin-bottom: 15px;
-        color: #333;
+    margin-top: 20px;
+    font-style: italic;
+    color: #888;
+    display: block;
+    z-index: 10;
+    position: relative;
     }
 
     #checkLocation, #checkIn {
@@ -132,19 +135,18 @@
         </ul>
     </div>
 
+    <div class="content" id="daily_attendance">
+        <div class="card">
+            <h2>Daily Attendance</h2>
 
-        <div class="content" id="daily_attendance">
-            <div class="card">
-              <h2>Daily Attendance</h2>
-          
-              <p id="status">🔄 Waiting for location check...</p>
-          
-              <div class="attendance-actions">
+            <p id="status">🔄 Waiting for location check...</p>
+
+            <div class="attendance-actions">
                 <button id="checkIn">✅ Check In</button>
                 <button id="checkOut">🚪 Check Out</button>
-              </div>
-          
-              <div class="requests">
+            </div>
+
+            <div class="requests">
                 <h3>Request:</h3>
                 <form id="requestForm">
                     <label>
@@ -164,32 +166,51 @@
                         Select Date:
                         <input type="date" id="requestDate" name="requestDate" required />
                     </label>
-                
+
                     <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
                     <button type="submit">Submit Request</button>
                 </form>
-                
+
                 <p id="requestStatus"></p>
-              </div>
-          
-              <div class="today-table">
+            </div>
+
+            <div class="today-table">
                 <h3>Today's Attendance</h3>
                 <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Check In</th>
-                      <th>Check Out</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="attendanceBody">
-                    <tr><td colspan="4">Loading...</td></tr>
-                  </tbody>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
                 </table>
-              </div>
             </div>
-          </div>
+        </div>
+        <h2>Attendance History</h2>
+
+        <p id="historyStatus">Loading attendance history...</p>  <!-- Separate for history status -->
+
+        <table id="attendanceHistory" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Status</th>
+                    <th>Total Hours</th>
+                    <th>Overtime Hours</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceHistoryBody">
+                <!-- Filled dynamically -->
+            </tbody>
+        </table>
+    </div>
           
           <script>
           // Function to get user location (latitude and longitude)
@@ -287,113 +308,146 @@
 
           // Check-out functionality
           const checkOutButton = document.getElementById("checkOut");
-checkOutButton.addEventListener('click', async () => {
-    const userId = await getUserId();  // Get the employee ID dynamically
-    if (!userId) return;  // Exit if no user ID
+          checkOutButton.addEventListener('click', async () => {
+              const userId = await getUserId();  // Get the employee ID dynamically
+              if (!userId) return;  // Exit if no user ID
 
-    const date = new Date().toISOString().slice(0, 10);  // Get today's date
-    const checkOutTime = new Date().toISOString();  // Get current check-out time
+              const date = new Date().toISOString().slice(0, 10);  // Get today's date
+              const checkOutTime = new Date().toISOString();  // Get current check-out time
 
-    console.log("Sending check-out request with:", userId, date, checkOutTime);
+              console.log("Sending check-out request with:", userId, date, checkOutTime);
 
-    // Send the check-out request to the backend
-    const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, checkOutTime, date }),
-    });
+              // Send the check-out request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, checkOutTime, date }),
+              });
 
-    const result = await response.json();
-    const statusParagraph = document.getElementById("status");
-    if (result.error) {
-        statusParagraph.textContent = result.error;  // Show any errors
-    } else {
-        statusParagraph.textContent = result.message;  // Show success message
-        loadEmployeeAttendanceData(userId);  // Reload attendance data
-    }
-});
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
+              if (result.error) {
+                  statusParagraph.textContent = result.error;  // Show any errors
+              } else {
+                  statusParagraph.textContent = result.message;  // Show success message
+                  loadEmployeeAttendanceData(userId);  // Reload attendance data
+              }
+          });
+
           // Handle attendance requests (early leave/half day)
           document.addEventListener("DOMContentLoaded", function () {
-    const requestForm = document.getElementById("requestForm");
-    requestForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+              const requestForm = document.getElementById("requestForm");
+              requestForm.addEventListener('submit', async (e) => {
+                  e.preventDefault();
 
-        const userId = await getUserId();  // Retrieve user ID dynamically
-        if (!userId) return;
+                  const userId = await getUserId();  // Retrieve user ID dynamically
+                  if (!userId) return;
 
-        // Get the request date and check if the input field exists
-        const requestDateElement = document.getElementById("requestDate");
-        if (!requestDateElement) {
-            console.error("Request date input field not found!");
-            return;  // Exit early if the input field doesn't exist
-        }
+                  // Get the request date and check if the input field exists
+                  const requestDateElement = document.getElementById("requestDate");
+                  if (!requestDateElement) {
+                      console.error("Request date input field not found!");
+                      return;  // Exit early if the input field doesn't exist
+                  }
 
-        const date = requestDateElement.value;  // Get the date selected by the user
-        const remarks = document.getElementById("remarks").value;
+                  const date = requestDateElement.value;  // Get the date selected by the user
+                  const remarks = document.getElementById("remarks").value;
 
-        if (!date || !remarks) {
-            alert("Please provide both the date and remarks.");
-            return;
-        }
+                  if (!date || !remarks) {
+                      alert("Please provide both the date and remarks.");
+                      return;
+                  }
 
-        const requestType = document.querySelector('input[name="requestType"]:checked').value;
+                  const requestType = document.querySelector('input[name="requestType"]:checked').value;
 
-        try {
-            const response = await fetch(`http://localhost:4000/hr/${requestType}-request/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, date, remarks }),
-            });
+                  try {
+                      const response = await fetch(`http://localhost:4000/hr/${requestType}-request/${userId}`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId, date, remarks }),
+                      });
 
-            const result = await response.json();
-            const requestStatusParagraph = document.getElementById("requestStatus");
-            if (result.success) {
-                requestStatusParagraph.textContent = `${requestType.charAt(0).toUpperCase() + requestType.slice(1)} request submitted successfully.`;
-            } else {
-                requestStatusParagraph.textContent = "Failed to submit request.";
-            }
-        } catch (error) {
-            console.error('Error submitting request:', error);
-            const requestStatusParagraph = document.getElementById("requestStatus");
-            requestStatusParagraph.textContent = "An error occurred while submitting your request.";
-        }
-    });
-});
-
- 
+                      const result = await response.json();
+                      const requestStatusParagraph = document.getElementById("requestStatus");
+                      if (result.success) {
+                          requestStatusParagraph.textContent = `${requestType.charAt(0).toUpperCase() + requestType.slice(1)} request submitted successfully.`;
+                      } else {
+                          requestStatusParagraph.textContent = "Failed to submit request.";
+                      }
+                  } catch (error) {
+                      console.error('Error submitting request:', error);
+                      const requestStatusParagraph = document.getElementById("requestStatus");
+                      requestStatusParagraph.textContent = "An error occurred while submitting your request.";
+                  }
+              });
+          });
 
           // Load today's attendance from the database
-async function loadEmployeeAttendanceData(employeeId) {
-    try {
-        const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
-        const data = await response.json();
+        async function loadEmployeeAttendanceData(employeeId) {
+            try {
+                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
+                const data = await response.json();
 
-        const tbody = document.getElementById("attendanceBody");
-        tbody.innerHTML = '';  // Clear previous data
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '';  // Clear previous data
 
-        // Check if there are any records to display
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">No records found</td></tr>';
+                // Check if there are any records to display
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No records found</td></tr>';
+                }
+
+                // Populate table with employee attendance and requests
+                data.forEach(record => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${record.date}</td>
+                        <td>${record.check_in || '-'}</td>  <!-- Directly display the check_in time -->
+                        <td>${record.check_out || '-'}</td> <!-- Directly display the check_out time -->
+                        <td>${record.status || '-'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading attendance data:', error);
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+            }
         }
+        async function loadAttendanceHistory(employeeId) {
+            const historyStatus = document.getElementById("historyStatus");
+            const table = document.getElementById("attendanceHistory");
+            const tbody = document.getElementById("attendanceHistoryBody");
 
-        // Populate table with employee attendance and requests
-        data.forEach(record => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${record.date}</td>
-                <td>${record.check_in || '-'}</td>  <!-- Directly display the check_in time -->
-                <td>${record.check_out || '-'}</td> <!-- Directly display the check_out time -->
-                <td>${record.status || '-'}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        console.error('Error loading attendance data:', error);
-        const tbody = document.getElementById("attendanceBody");
-        tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
-    }
-}
+            try {
+                const res = await fetch(`http://localhost:4000/hr/attendance/${employeeId}`);
+                const data = await res.json();
 
+                if (data.attendance?.length) {
+                    historyStatus.style.display = "none";
+                     table.style.display = "table";
+
+                data.attendance.forEach(record => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.check_in ?? '-'}</td>
+                    <td>${record.check_out ?? '-'}</td>
+                    <td>${record.status}</td>
+                    <td>${!isNaN(record.total_hours) ? parseFloat(record.total_hours).toFixed(2) : '0.00'}</td>
+                    <td>${!isNaN(record.overtime_hours) ? parseFloat(record.overtime_hours).toFixed(2) : '0.00'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                } else {
+                    historyStatus.textContent = "No attendance history found.";
+                }
+            } catch (err) {
+                console.error("Error loading attendance history:", err);
+                historyStatus.textContent = "Error fetching attendance history.";
+            }
+        }
 
           function getUserLocation() {
               return new Promise((resolve, reject) => {
@@ -427,6 +481,7 @@ async function loadEmployeeAttendanceData(employeeId) {
               const employeeId = await getUserId(); // Get the employee ID dynamically
               if (employeeId) {
                   loadEmployeeAttendanceData(employeeId); // Load the attendance data for the employee
+                  loadAttendanceHistory(employeeId);
               }
           };
           </script>

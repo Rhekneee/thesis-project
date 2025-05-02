@@ -26,6 +26,7 @@
 
     // 🔹 Get today's attendance for the employee
     router.get('/today/:id', HRController.getTodayAttendance);
+    router.get('/attendance/:userId', HRController.getAttendanceByUserId);
 
 // Routes for Early Out and Half-Day Requests
     router.post('/earlyOut-request/:id', HRController.requestEarlyOutRequest); // Submit early out request
