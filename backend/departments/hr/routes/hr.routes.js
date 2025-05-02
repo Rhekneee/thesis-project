@@ -32,8 +32,9 @@
     router.post('/earlyOut-request/:id', HRController.requestEarlyOutRequest); // Submit early out request
     router.post('/halfDay-request/:id', HRController.requestHalfDayRequest);    // Submit half-day request
     router.post('/overtime-request/:id', HRController.requestOvertimeRequest);
-    router.post('/approve-request/:id', HRController.approveRequest);  // Approve or reject requests
-
+    router.get('/requests', HRController.getAllPendingRequests);
+    router.get('/requests/:userId', HRController.getPendingRequestsByUserId);
+    router.post('/approve', HRController.handleRequestApproval);
 
 
     router.get('/check-session', (req, res) => {
