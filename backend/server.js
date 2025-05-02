@@ -41,7 +41,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
-app.use("/crm", crmRoutes);
+app.use('/crm', crmRoutes);
 
 
 // Use HTML routes for HR Manager pages
