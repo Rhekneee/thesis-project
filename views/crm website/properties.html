@@ -130,7 +130,7 @@
             <a href="/crm/vtour" class="btn btn-primary" target="_blank">
                 <i class="fa fa-eye"></i> View Virtual Tour
             </a>
-            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal">
+            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal"  data-property="Tiarra Premiere">
                 <i class="fa fa-car"></i> Request Tripping
             </button>
         </div>
@@ -156,7 +156,7 @@
             <a href="virtual-tour.html" class="btn btn-primary" target="_blank">
                 <i class="fa fa-eye"></i> View Virtual Tour
             </a>
-            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal">
+            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal" data-property="Cielo Townhouse">
                 <i class="fa fa-car"></i> Request Tripping
             </button>
         </div>
@@ -200,6 +200,10 @@
                             <div class="mb-3">
                                 <label for="pickUpLocation" class="form-label">Pick Up Location</label>
                                 <input type="text" class="form-control" id="pickUpLocation" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="property" class="form-label">Property</label>
+                                <input type="text" class="form-control" id="property" readonly>
                             </div>
                             <button type="submit" class="btn btn-dark w-100">Submit Request</button>
                         </form>
@@ -245,13 +249,63 @@
 
 </script>
 <script>
-    document.getElementById("trippingForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      alert("Tripping request submitted!");
-      this.reset();
-      const modal = bootstrap.Modal.getInstance(document.getElementById('trippingModal'));
-      modal.hide();
+    // Handle the "Request Tripping" button click
+document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
+    button.addEventListener("click", function(event) {
+        // Get the property name from the data attribute
+        const property = this.getAttribute("data-property");
+
+        // Set the value of the property input in the form
+        document.getElementById("property").value = property;
+
+        // Optionally, open the modal with the form if not already open
+        const modal = bootstrap.Modal.getInstance(document.getElementById('trippingModal'));
+        modal.hide();
+            });
     });
+
+    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+
+// Set the minimum date in the input field
+    document.getElementById("preferredDate").setAttribute("min", today);
+
+    // Handle form submission for site visit request
+    document.getElementById("trippingForm").addEventListener("submit", async function(event) {
+    event.preventDefault();  // Prevent the form from submitting traditionally
+
+    // Prepare form data as an object
+    const formData = {
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        email: document.getElementById("email").value,
+        contactNumber: document.getElementById("contactNumber").value,
+        preferredDate: document.getElementById("preferredDate").value,
+        pickUpLocation: document.getElementById("pickUpLocation").value,
+        property: document.getElementById("property").value
+    };
+
+    try {
+        // Send the form data as a POST request
+        let response = await fetch("http://localhost:4000/crm/submitVisitRequest", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        let result = await response.json();
+        if (response.ok) {
+            alert(result.message);  // Success message
+        } else {
+            alert(result.error);  // Error message from backend
+        }
+    } catch (error) {
+        alert("Error submitting the request. Please try again.");
+        console.error("Error:", error);
+    }
+});
+
   </script>
   
 </body>
