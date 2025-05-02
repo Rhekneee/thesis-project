@@ -307,16 +307,62 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     },
 
     // Handle Approving or Rejecting Requests (Early-out or Half-day)
-    approveRequest: async (req, res) => {
-        const userId = req.params.id;  // Get userId from the URL parameter
-        const { date, type, isApproved } = req.body;  // Get date, request type (early-out or half-day), and approval status from the request body
+    getAllPendingRequests: async (req, res) => {
+        try {
+            const requests = await HRModel.getAllPendingRequests(); // Fetch all pending requests
+            res.json({ requests });
+        } catch (error) {
+            console.error('Error fetching all pending requests:', error);
+            res.status(500).json({ message: 'Failed to fetch all pending requests.' });
+        }
+    },
+
+    // Get all pending requests by user_id (for HR head to view specific user's pending requests)
+    getPendingRequestsByUserId: async (req, res) => {
+        const { userId } = req.params;  // Get the userId from URL parameter
+        try {
+            const requests = await HRModel.getPendingRequestsByUserId(userId); // Fetch pending requests for specific user
+            res.json({ requests });
+        } catch (error) {
+            console.error('Error fetching pending requests by userId:', error);
+            res.status(500).json({ message: 'Failed to fetch pending requests by userId.' });
+        }
+    },
+    // Handle request approval/rejection (halfDay, earlyOut, overtime)
+    handleRequestApproval: async (req, res) => {
+        const { userId, requestType, isApproved } = req.body;
+
+        // Log the received data for debugging
+        console.log('Received:', { userId, requestType, isApproved });
+
+        // Validate requestType
+        const validRequestTypes = ['halfDay', 'earlyOut', 'overtime']; // Valid request types
+        if (!validRequestTypes.includes(requestType)) {
+            console.error('Invalid requestType:', requestType);
+            return res.status(400).json({ message: 'Invalid request type.' });
+        }
+
+        // Validate isApproved
+        if (typeof isApproved !== 'boolean') {
+            console.error('Invalid isApproved value:', isApproved);
+            return res.status(400).json({ message: 'Invalid approval status.' });
+        }
+
+        // Set the status based on isApproved
+        const status = isApproved ? 'approved' : 'rejected';
 
         try {
-            const result = await HRModel.approveRequest(userId, date, type, isApproved);
-            res.json({ success: true, message: `${type} request has been ${isApproved ? 'approved' : 'rejected'}.` });
+            // Call the Model to handle request approval/rejection
+            const result = await HRModel.handleRequestApproval(userId, requestType, status);
+
+            if (result.success) {
+                res.json({ success: true, affectedRows: result.affectedRows });
+            } else {
+                res.status(500).json({ message: 'Failed to approve/reject request.' });
+            }
         } catch (error) {
-            console.error('Error approving request:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
+            console.error('Error handling request approval:', error);
+            res.status(500).json({ message: 'Failed to approve/reject request.' });
         }
     },
 
