@@ -606,36 +606,57 @@ checkOut: async (userId, checkOutTime, date) => {
     },
 
     // Approve or Reject Requests (Early-out or Half-day)
-    approveRequest: async (userId, date, requestType, isApproved) => {
-        const status = isApproved ? (requestType === "earlyOut" ? "Early Out" : "Half Day") : "Absent";
-        const requestStatus = isApproved ? "approved" : "rejected"; // Update the status of the request
-        const approvedDate = isApproved ? new Date().toISOString().slice(0, 10) : null;
 
-        // Update the request status in the 'requests' table
-        const requestSql = `
-            UPDATE requests
-            SET status = ?, approved_date = ?
-            WHERE user_id = ? AND request_date = ? AND request_type = ?`;
-
+    getAllPendingRequests: async () => {
+        const sql = `SELECT * FROM requests WHERE status = 'pending'`; // Only select requests where status is 'pending'
         try {
-            // Update request status
-            await db.execute(requestSql, [requestStatus, approvedDate, userId, date, requestType]);
-
-            // Now update the attendance status based on the request approval
-            const attendanceSql = `
-                UPDATE attendance
-                SET status = ?, 
-                    ${requestType === "earlyOut" ? "early_leave_approved" : "half_day_approved"} = ?
-                WHERE user_id = ? AND date = ?`;
-
-            await db.execute(attendanceSql, [status, isApproved, userId, date]);
-
-            return { success: true };
+            const [requests] = await db.execute(sql);
+            return requests;
         } catch (error) {
-            console.error('Error approving/rejecting request:', error);
-            throw new Error('Failed to approve/reject request.');
+            console.error('Error fetching all pending requests:', error);
+            throw new Error('Failed to fetch all pending requests.');
         }
     },
+
+    // Get all pending requests by user_id (for HR head to select pending requests by user)
+    getPendingRequestsByUserId: async (userId) => {
+        const sql = `SELECT * FROM requests WHERE user_id = ? AND status = 'pending'`; // Only select pending requests for a specific user
+        try {
+            const [requests] = await db.execute(sql, [userId]);
+            return requests;
+        } catch (error) {
+            console.error('Error fetching pending requests by userId:', error);
+            throw new Error('Failed to fetch pending requests by userId.');
+        }
+    },
+
+    // Approve or Reject Requests (Half-day, Early-out, Overtime)
+    handleRequestApproval: async (userId, requestType, status) => {
+        // SQL query to update the request status with TRIM to handle any spaces in request_type
+        const requestSql = `
+            UPDATE requests
+            SET status = ?
+            WHERE user_id = ? AND TRIM(request_type) = ?`;
+
+        try {
+            // Log the SQL query and parameters for debugging
+            console.log('Executing SQL:', requestSql, [status, userId, requestType]);
+
+            // Execute the SQL query with the parameters
+            const [result] = await db.execute(requestSql, [status, userId, requestType]);
+
+            // Log how many rows were affected
+            console.log('Rows affected:', result.affectedRows);
+
+            // Return success if the row was updated
+            return { success: true, affectedRows: result.affectedRows };
+        } catch (error) {
+            console.error('Error in handleRequestApproval:', error);
+            throw new Error('Failed to approve/reject request.');
+        }
+    },  
+    
+    
 
     getTodayAttendance: async (userId, date) => {
         try {
