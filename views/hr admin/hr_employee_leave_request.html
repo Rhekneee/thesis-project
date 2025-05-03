@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Admin - Leave Requests</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Styling for the sidebar */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none; /* Sidebar is hidden by default */
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        #sidebar ul li.logout {
+            margin-top: 350px;
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545; /* Red background on hover */
+            color: white; /* Ensure the text stays white */
+        }
+
+        /* Other sidebar item hover effects */
+        #sidebar ul li a:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+
+        #sidebar ul li.active a {
+            background-color: #007bff; /* Blue background for active link */
+            color: white; /* Ensure text is white */
+        }
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+        .pagination {
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .sort-icon.active {
+            color: #007bff;
+        }
+
+        .sort-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0;
+        }
+
+        /* Bottom message */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table {
+            margin-top: 20px;
+        }
+
+        /* Table styling */
+        th,
+        td {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Modal Styling */
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Custom styling for modal button alignment */
+        .modal-footer .btn {
+            width: 48%;
+        }
+
+        /* Confirm modal spacing adjustments */
+        .modal-footer button {
+            font-size: 16px;
+            padding: 10px;
+        }
+
+        /* Cancel button styling */
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            float: right;
+            margin-bottom: 10px;
+            margin-right: 5px;
+
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #c82333;
+        }
+
+        .btn-secondary {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+       <!-- Sidebar -->
+       <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>HR Dashboard</h3>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item active" href="/hr/hr_admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="/hr/hr_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="/hr/hr_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+      
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                    <i class="fas fa-money-bill-wave"></i> Payroll Management<i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Payroll">
+                    <li class="nav-item"><a href="hr_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                    <li class="nav-item"><a href="hr_salary_deduction.html"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                    <i class="fas fa-users"></i> Employee Management <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Employee">
+                    <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                    <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                    <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                    
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                    <i class="fas fa-users"></i> Recruitment <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Recruitment">
+                    <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                    <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+                </ul>
+            </li>    
+            <!-- Move Logout to bottom -->
+            <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+        
+    </div>
+        <!-- Main content area -->
+        <div id="content">
+            <!-- Button to toggle sidebar with icon -->
+            <button class="btn" id="sidebar-toggle">
+                <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
+            </button>
+
+          <!-- ========== Leave Requests Content ========== -->
+          <h2>Leave Requests</h2>
+
+          <!-- Search Bar and Entries Per Page -->
+          <div class="search-container">
+              <input type="text" id="searchBar" class="form-control" placeholder="Search leave requests..." onkeyup="filterLeaveRequests()">
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div>
+                      <label for="entriesPerPage" class="form-label">Entries per page:</label>
+                      <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                          <option value="5">5</option>
+                          <option value="10">10</option>
+                          <option value="15">15</option>
+                          <option value="20">20</option>
+                      </select>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Leave Request Table -->
+          <table class="table table-bordered">
+              <thead>
+                  <tr>
+                      <th onclick="sortTable(0)">Leave Type <i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
+                      <th onclick="sortTable(1)">Employee Name <i class="fas fa-sort sort-icon" id="sortEmployeeName"></i></th>
+                      <th onclick="sortTable(2)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
+                      <th onclick="sortTable(3)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
+                      <th onclick="sortTable(4)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody id="leaveRequestsList">
+                  <!-- Leave request rows will be dynamically inserted here -->
+              </tbody>
+          </table>
+
+          <!-- Showing entries message -->
+          <div id="entriesMessage">
+              <span id="showingEntries"></span>
+          </div>
+
+          <!-- Pagination -->
+          <nav>
+              <ul class="pagination" id="paginationControls"></ul>
+          </nav>
+
+           <!-- View Leave Request Modal -->
+    <div class="modal fade" id="viewLeaveModal" tabindex="-1" aria-labelledby="viewLeaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewLeaveModalLabel">View Leave Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="leaveDetails">
+                    <!-- Leave details will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="approveBtn">Approve</button>
+                    <button type="button" class="btn btn-danger" id="rejectBtn">Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+  <!-- View Leave Request Modal -->
+  <div class="modal fade" id="viewLeaveModal" tabindex="-1" aria-labelledby="viewLeaveModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="viewLeaveModalLabel">View Leave Request</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" id="leaveDetails">
+                  <!-- Leave details will be dynamically inserted here -->
+              </div>
+          </div>
+      </div>
+  </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript for toggling the sidebar visibility
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+            
+            // Toggle sidebar visibility
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';  // Shift content to the right
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';  // No shift
+            }
+        });
+
+    </script>    
+
+<script>
+    // Sample Leave Requests data
+    let leaveRequests = [
+        { id: 1, leaveType: 'Sick Leave', employeeName: 'John Doe', from: '2025-05-01', to: '2025-05-03', status: 'Pending' },
+        { id: 2, leaveType: 'Vacation Leave', employeeName: 'Jane Smith', from: '2025-06-15', to: '2025-06-20', status: 'Approved' },
+        { id: 3, leaveType: 'Emergency Leave', employeeName: 'Alice Johnson', from: '2025-07-10', to: '2025-07-12', status: 'Rejected' },
+        { id: 4, leaveType: 'Maternity Leave', employeeName: 'Mike Brown', from: '2025-08-01', to: '2025-08-30', status: 'Pending' },
+        { id: 5, leaveType: 'Paternity Leave', employeeName: 'David Lee', from: '2025-09-05', to: '2025-09-10', status: 'Approved' }
+    ];
+
+    let itemsPerPage = 5;
+    let currentPage = 1;
+    let filteredLeaveRequests = null;
+
+    function renderLeaveRequests() {
+        const list = filteredLeaveRequests || leaveRequests;
+        const leaveRequestsList = document.getElementById('leaveRequestsList');
+        leaveRequestsList.innerHTML = '';
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = currentPage * itemsPerPage;
+        const currentLeaveRequests = list.slice(start, end);
+
+        currentLeaveRequests.forEach(request => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${request.leaveType}</td>
+                <td>${request.employeeName}</td>
+                <td>${request.from}</td>
+                <td>${request.to}</td>
+                <td>${request.status}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="viewLeaveRequest(${request.id})">View</button>
+                </td>
+            `;
+            leaveRequestsList.appendChild(row);
+        });
+
+        renderPagination();
+        updateEntriesMessage();
+    }
+
+    function renderPagination() {
+        const list = filteredLeaveRequests || leaveRequests;
+        const paginationControls = document.getElementById('paginationControls');
+        const totalPages = Math.ceil(list.length / itemsPerPage);
+        paginationControls.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('li');
+            pageButton.classList.add('page-item');
+            if (i === currentPage) pageButton.classList.add('active');
+            pageButton.innerHTML = `
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            `;
+            paginationControls.appendChild(pageButton);
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderLeaveRequests();
+    }
+
+    function updateEntriesMessage() {
+        const list = filteredLeaveRequests || leaveRequests;
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, list.length);
+        const message = `Showing ${start} to ${end} of ${list.length} entries`;
+        document.getElementById('showingEntries').textContent = message;
+    }
+
+    function viewLeaveRequest(id) {
+        const request = leaveRequests.find(req => req.id === id);
+        if (request) {
+            const leaveDetails = `
+                <p><strong>Leave Type:</strong> ${request.leaveType}</p>
+                <p><strong>Employee Name:</strong> ${request.employeeName}</p>
+                <p><strong>From:</strong> ${request.from}</p>
+                <p><strong>To:</strong> ${request.to}</p>
+                <p><strong>Status:</strong> ${request.status}</p>
+            `;
+            document.getElementById('leaveDetails').innerHTML = leaveDetails;
+
+            // Enable or disable buttons based on leave status
+            if (request.status === 'Pending') {
+                document.getElementById('approveBtn').disabled = false;
+                document.getElementById('rejectBtn').disabled = false;
+            } else {
+                document.getElementById('approveBtn').disabled = true;
+                document.getElementById('rejectBtn').disabled = true;
+            }
+
+            $('#viewLeaveModal').modal('show');
+
+            // Handle the approval or rejection
+            document.getElementById('approveBtn').onclick = function () {
+                updateLeaveStatus(id, 'Approved');
+            };
+
+            document.getElementById('rejectBtn').onclick = function () {
+                updateLeaveStatus(id, 'Rejected');
+            };
+        }
+    }
+
+    function updateLeaveStatus(id, status) {
+        const request = leaveRequests.find(req => req.id === id);
+        if (request) {
+            request.status = status;
+        }
+        $('#viewLeaveModal').modal('hide');
+        renderLeaveRequests();
+    }
+
+    renderLeaveRequests();
+</script>
+</body>
+
+</html>
