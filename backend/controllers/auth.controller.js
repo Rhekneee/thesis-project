@@ -37,9 +37,10 @@ exports.login = async (req, res) => {
 
         // Fetch user details along with the role_name from the roles table
         const SQL_COMMAND = `
-            SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
-            FROM users 
+              SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
+            FROM users
             JOIN roles ON users.role_id = roles.id
+            JOIN employees ON users.id = employees.user_id  -- Join the employees table to fetch employee details
             WHERE users.email = ? AND users.password = ?;
         `;
     
@@ -51,7 +52,7 @@ exports.login = async (req, res) => {
         }
     
         const user = users[0];
-        console.log(`✅ Login successful for ${user.role_name} (Role ID: ${user.role_id}): ${user.email}`);
+        console.log(`✅ Login successful for ${user.role_name} (Role ID: ${user.id}): ${user.email}`);
     
         // Fetch the user's permissions based on role_id
         const permissions = await getPermissionsForRole(user.role_id);
@@ -64,6 +65,7 @@ exports.login = async (req, res) => {
             role_id: user.role_id,
             role_name: user.role_name,
             created_at: user.created_at,
+            employee_id: user.employee_id,  // Add employee_id to the session
             permissions: permissions, // Store permissions array in the session
         };
         console.log("Session after login:", req.session.user);

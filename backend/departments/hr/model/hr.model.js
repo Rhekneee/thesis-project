@@ -360,8 +360,8 @@ const HRModel = {
 
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        const officeLat = 14.343465748292335;
-        const officeLng = 120.97962529302887;
+        const officeLat = 14.364287326919795;
+        const officeLng = 120.92761826289956;
         const allowedRadius = 500;
     
         // Check if the user is within the allowed radius
