@@ -60,6 +60,10 @@ app.get('/dashboard', (req, res) => {
         return res.redirect('/');  // If no session, redirect to login
     }
 
+     // Access the employee_id from session
+     const employeeId = req.session.user.employee_id;
+     console.log('Employee ID from session:', employeeId);
+
     // Ensure the user has permission to access their dashboard
     const roleDashboards = {
         'owner': 'owner_dashboard.html',
