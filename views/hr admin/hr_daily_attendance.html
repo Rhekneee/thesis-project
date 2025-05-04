@@ -449,59 +449,51 @@
               }
           }
 
-          // Check-in functionality
-          const checkInButton = document.getElementById("checkIn");
-          if (!checkInButton) {
-            console.error("Check-in button not found");
-          }
-          else{
-            checkInButton.addEventListener('click', async () => {
-        const userId = await getUserId(); // Get the employee ID dynamically
-        if (!userId) return; // Exit if no user ID
+           const checkInButton = document.getElementById("checkIn");
+          checkInButton.addEventListener('click', async () => {
+              const userId = await getUserId(); // Get the employee ID dynamically
+              if (!userId) return; // Exit if no user ID
 
-        // Get the user's location
-        const userLocation = await getUserLocation(); // Get the user's latitude and longitude
-        
-        // Use a new Date object and explicitly convert it to PHT (Asia/Manila timezone)
-        const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }).slice(0, 10); // Get today's date in PHT format (YYYY-MM-DD)
-        const checkInTime = new Date().toISOString(); // Get current check-in time
+              // Get the user's location
+              const userLocation = await getUserLocation(); // Get the user's latitude and longitude
+              const date = new Date().toISOString().slice(0, 10); // Get today's date
+              const checkInTime = new Date().toISOString(); // Get current check-in time
 
-        console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
+              console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
 
-        // Send the check-in request to the backend
-        const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId,
-                date,  // Send the date in correct format
-                checkInTime,
-                userLat: userLocation.lat,
-                userLng: userLocation.lng,
-            }),
-        });
+              // Send the check-in request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId,
+                      date,
+                      checkInTime,
+                      userLat: userLocation.lat,
+                      userLng: userLocation.lng,
+                  }),
+              });
 
-        const result = await response.json();
-        const statusParagraph = document.getElementById("status");
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
 
-        // Handle response error or success
-        if (result.error) {
-            statusParagraph.textContent = result.error; // Show error message if any
-        } else {
-            statusParagraph.textContent = result.message; // Show success message
-            loadEmployeeAttendanceData(userId); // Reload attendance data
-        }
+              // Handle response error or success
+              if (result.error) {
+                  statusParagraph.textContent = result.error; // Show error message if any
+              } else {
+                  statusParagraph.textContent = result.message; // Show success message
+                  loadEmployeeAttendanceData(userId); // Reload attendance data
+              }
           });
-        }
+
 
           // Check-out functionality
           const checkOutButton = document.getElementById("checkOut");
-
             checkOutButton.addEventListener('click', async () => {
                 const userId = await getUserId();  // Get the employee ID dynamically
                 if (!userId) return;  // Exit if no user ID
 
-                const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }).slice(0, 10); // Get today's date (YYYY-MM-DD)
+                const date = new Date().toISOString().slice(0, 10);  // Get today's date
                 const checkOutTime = new Date().toISOString();  // Get current check-out time
 
                 console.log("Sending check-out request with:", userId, date, checkOutTime);
@@ -514,17 +506,14 @@
                 });
 
                 const result = await response.json();
-
                 const statusParagraph = document.getElementById("status");
-
                 if (result.error) {
-                    statusParagraph.textContent = result.error;  // Show error message if any
+                    statusParagraph.textContent = result.error;  // Show any errors
                 } else {
                     statusParagraph.textContent = result.message;  // Show success message
                     loadEmployeeAttendanceData(userId);  // Reload attendance data
                 }
             });
-
 
           // Load today's attendance from the database
           async function loadEmployeeAttendanceData(employeeId) {
