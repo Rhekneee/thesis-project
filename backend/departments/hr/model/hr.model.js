@@ -322,12 +322,12 @@ const HRModel = {
     },
     
 
-
     adjustToPHT: (time) => {
         const date = new Date(time);
         date.setHours(date.getHours() + 8);
         return date.toISOString().slice(0, 19).replace("T", " ");
     },
+
 
     // Haversine formula to calculate distance (in meters)
     getDistanceMeters: (lat1, lon1, lat2, lon2) => {
@@ -371,11 +371,10 @@ const HRModel = {
         }
     },    
     
-    
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        const officeLat = 14.343474330820476;
-        const officeLng = 120.97962196019488;
+        const officeLat = 14.343465748292335;
+        const officeLng = 120.97962529302887;
         const allowedRadius = 500;
     
         // Check if the user is within the allowed radius
@@ -386,7 +385,6 @@ const HRModel = {
 
         // Check if the user has already checked in
         const alreadyIn = await HRModel.alreadyCheckedIn(userId, date);
-        console.log(`User ${userId} already checked in: ${alreadyIn}`);
         if (alreadyIn) {
             return { error: "You have already checked in today." };
         }
@@ -404,7 +402,7 @@ const HRModel = {
         const hourPHT = localTime.getHours(); // Get the hour in Philippine Time (PHT)
         const minutesPHT = localTime.getMinutes();
         const secondsPHT = localTime.getSeconds();
-        
+
         // Check if the employee has an approved half-day request for the day
         const request = await HRModel.checkRequestApproval(userId, date, "halfDay"); // Check for half-day approval
     
@@ -425,15 +423,11 @@ const HRModel = {
             else if (hourPHT >= 12 && hourPHT < 18) {
                 status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
             }
-        } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))){
-            // If no half-day request and check-in is between 9:00 AM and 9:10 AM, mark as "Late"
+        } else if (!request && hourPHT === 9 && minutesPHT > 10) {
+            // If no half-day request and check-in is after 9:10 AM, mark as "Late"
             status = "Late";
         }
-        else if (!request && hourPHT === 9 && minutesPHT >= 0 && minutesPHT <= 10) {
-            // If no half-day request and check-in is between 9:00 AM and 9:10 AM, mark as "Present"
-            status = "Present";
-        }
-
+        
         // Format the check-in time to 'HH:MM:SS' for the TIME field in the database
         const checkInFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
     
@@ -454,102 +448,85 @@ const HRModel = {
     },
 
         
-    // CHECK-OUT LOGIC
-checkOut: async (userId, checkOutTime, date) => {
-    try {
-        // 1. First, check if the user has checked in
-        const [checkInRecord] = await db.execute(
-            `SELECT check_in FROM attendance WHERE user_id = ? AND DATE(date) = ?`,  // Use DATE() to compare the date part
-            [userId, date]  // Date should be in YYYY-MM-DD format
-        );
-        
-        console.log('HRModel Result:', checkInRecord);
-
-        if (!checkInRecord || checkInRecord.length === 0 || !checkInRecord[0].check_in) {
-            return { error: "You must check in first." };
-        }
-
-        // 2. Convert check-out time to Philippine Time (PHT)
-        const checkOutDate = new Date(checkOutTime);
-        let hourPHT = checkOutDate.getUTCHours() + 8;  // Convert UTC to PHT (UTC + 8)
-        const minutesPHT = checkOutDate.getMinutes();
-        const secondsPHT = checkOutDate.getSeconds();
-
-        // 3. Format the check-out time to 'HH:MM:SS' for the TIME field in the database
-        const checkOutFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
-
-        // 4. Check if an early-out request is approved for this date
-        const request = await HRModel.checkRequestApproval(userId, date, "earlyOut"); 
-
-        let status = "Present";  // Default status for employees without any requests
-
-        // 5. Early Out Logic
-        if (request && request.status === 'approved' && hourPHT < 18) {
-            // Early Out approved and checking out before 6:00 PM
-            status = "Early Out";
-            console.log(`Early-out request approved for ${userId} on ${date}. Checkout allowed before 6 PM.`);
-        } else if (!request && hourPHT < 18) {
-            // Early Out not approved, block check-out before 6:00 PM
-            return { error: "Early Out not approved. You can check out at exactly 6:00 PM." };
-        }
-
-        // 6. Overtime Logic: Check if checkout is after 6:15 PM (After the grace period)
-        if (hourPHT > 18 || (hourPHT === 18 && minutesPHT > 15)) {
-            const overtimeRequest = await HRModel.checkRequestApproval(userId, date, "overtime");  // Check for overtime approval
-            if (overtimeRequest && overtimeRequest.status === 'approved') {
-                status = "Overtime";  // Mark as Overtime if approved
-                console.log(`Overtime request approved for ${userId} on ${date}.`);
-            } else {
-                status = "Present";  // If no overtime approval, mark as Present
+    checkOut: async (userId, checkOutTime, date) => {
+        try {
+            console.log('Check-out function called with:', userId, checkOutTime, date);  // Debugging log at the start
+    
+            // First, check if the user has checked in
+            const [checkInRecord] = await db.execute(
+                `SELECT check_in FROM attendance WHERE user_id = ? AND date = ?`,
+                [userId, date]
+            );
+    
+            console.log('Check-in record:', checkInRecord);  // Log the check-in record for debugging
+    
+            if (!checkInRecord || !checkInRecord[0].check_in) {
+                return { error: "You must check in first." };  // Error if the user hasn't checked in yet
             }
-        }
-
-        // 7. Half Day Logic (AM or PM)
-        if (request) {
-            // Morning half-day (check-in between 9:00 AM to 12:00 PM)
-            if (hourPHT >= 9 && hourPHT < 12) {
-                status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
+    
+            // Convert check-out time to Philippine Time (PHT) - UTC to PHT (UTC + 8)
+            const checkOutDate = new Date(checkOutTime);
+            const hourPHT = checkOutDate.getUTCHours() + 8;  // Convert UTC to PHT (UTC + 8)
+    
+            // Format the hour to 24-hour format (0-23)
+            const formattedHour = String(hourPHT % 24).padStart(2, '0'); // Handling overflow after 24 hours
+            const checkOutFormatted = `${formattedHour}:${String(checkOutDate.getMinutes()).padStart(2, '0')}:${String(checkOutDate.getSeconds()).padStart(2, '0')}`;
+    
+            console.log('Formatted check-out time (HH:MM:SS):', checkOutFormatted);  // Debugging log for formatted check-out time
+    
+            // Check if an early-out request is approved for this date
+            const request = await HRModel.checkRequestApproval(userId, date, 'early-out');  // Check if early-out request is approved
+            console.log('Early-out request:', request);  // Log the early-out request status
+            
+    
+            // If it's before 6 PM and no request is approved, show error
+            if (hourPHT < 18 && !request) {
+                return { error: "You can only check out after 6:00 PM unless approved for early out." };  // Error if before 6 PM and no approved request
             }
-            // Afternoon half-day (check-in between 12:00 PM to 6:00 PM)
-            else if (hourPHT >= 12 && hourPHT < 18) {
-                status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
+    
+            // If the request is approved, allow checkout even before 6 PM
+            if (request && request.status === 'approved') {
+                console.log(`Early-out request approved for ${userId} on ${date}. Checkout allowed before 6 PM.`);
             }
-        } else if (!request && hourPHT === 9 && minutesPHT > 0 && minutesPHT <= 10) {
-            // If no half-day request and check-in is between 9:00 AM and 9:10 AM, mark as "Late"
-            status = "Late";
+    
+            // SQL query to update check-out time, calculate total hours, and overtime
+            const sql = `
+                UPDATE attendance
+                SET check_out = ?, 
+                    total_hours = TIMESTAMPDIFF(MINUTE, check_in, ?) / 60,  -- Calculate total hours worked
+                    overtime_hours = GREATEST(TIMESTAMPDIFF(MINUTE, check_in, ?) / 60 - 8, 0)  -- Calculate overtime (anything over 8 hours)
+                WHERE user_id = ? AND date = ? AND check_in IS NOT NULL
+            `;
+    
+            console.log('Executing SQL query with values:', [
+                checkOutFormatted,
+                checkOutFormatted,
+                checkOutFormatted,
+                userId,
+                date
+            ]);  // Log the query and parameters
+    
+            const [result] = await db.execute(sql, [
+                checkOutFormatted,  // check-out time in HH:MM:SS format
+                checkOutFormatted,
+                checkOutFormatted,
+                userId,
+                date
+            ]);
+    
+            console.log('SQL query result:', result);  // Log the result of the SQL query
+    
+            if (result.affectedRows === 0) {
+                return { error: "Check-in required before check-out." };  // Error if no check-in exists for that date
+            }
+    
+            return { success: true, message: "Check-out recorded." };
+    
+        } catch (error) {
+            console.error('Error during check-out:', error);  // Log any error during check-out
+            return { error: error.message || 'Internal Server Error' };  // Return error with message
         }
-
-        // 8. Update check-out time and calculate total hours and overtime
-        const sql = `
-            UPDATE attendance
-            SET check_out = ?, 
-                status = ?, 
-                total_hours = (TIME_TO_SEC(check_out) - TIME_TO_SEC(check_in)) / 3600,  -- Calculate total hours worked
-                overtime_hours = GREATEST((TIME_TO_SEC(check_out) - TIME_TO_SEC(check_in)) / 3600 - 8, 0)  -- Calculate overtime (anything over 8 hours)
-            WHERE user_id = ? AND date = ? AND check_in IS NOT NULL
-        `;
-        
-        const [result] = await db.execute(sql, [
-            checkOutFormatted,
-            status,
-            userId,
-            date
-        ]);
-
-        // 9. If no rows were affected, the check-in might be missing
-        if (result.affectedRows === 0) {
-            return { error: "Check-in required before check-out." };  // Error if no check-in exists for that date
-        }
-
-        // 10. Return success message
-        return { success: true, message: "Check-out recorded." };
-
-    } catch (error) {
-        // Log any unexpected error
-        console.error("Error in HRModel.checkOut:", error);
-        return { error: "Internal error while processing check-out." };  // Return a generic error
-    }
-},
+    },    
 
     markMissedCheckOuts: async (targetDate) => {
         try {

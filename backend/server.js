@@ -67,7 +67,7 @@ app.get('/dashboard', (req, res) => {
     // Ensure the user has permission to access their dashboard
     const roleDashboards = {
         'owner': 'owner_dashboard.html',
-        'office_administrator': '/hr admin/hr_admin.html',
+        'office_administrator': '/hr_manager/hr_dashboard.html',
         'finance_accounting': 'manager_finance.html',
         'general_foreman': 'manager_manufacturing.html',
         'corporate_secretary': 'manager_corporate_secretary.html',
