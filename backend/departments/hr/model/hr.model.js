@@ -825,10 +825,33 @@ const HRModel = {
             console.error('Error in updatePayrollStatus:', err);
             throw err;
         }
-    }
+    },
     
+    // Get all deductions
+    getAllDeductions: async () => {
+        const [rows] = await db.query('SELECT * FROM deductions');
+        return rows;  // Return all rows (deductions)
+    },
 
-    
+    // Model function to update a deduction
+updateDeduction: async (id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage) => {
+    const [result] = await db.query(
+        `UPDATE deductions 
+         SET deduction_type = ?, salary_min = ?, salary_max = ?, employee_percentage = ?, employer_percentage = ? 
+         WHERE id = ?`,
+        [deduction_type, salary_min, salary_max, employee_percentage, employer_percentage, id]
+    );
+    return result;
+},
+
+deleteDeduction: async (id) => {
+    const [result] = await db.query(
+        `DELETE FROM deductions WHERE id = ?`,
+        [id]
+    );
+    return result;
+}
+
     
 };
 

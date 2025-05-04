@@ -502,7 +502,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
           res.status(500).json({ message: 'Internal server error' });
         }
       },
-      
+
       getPendingPayroll: async (req, res) => {
         try {
             const rows = await HRModel.getPendingPayroll();  // Get the data from the model
@@ -551,8 +551,60 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             console.error('Error in approveOrRejectPayroll:', err);
             res.status(500).json({ message: 'Internal server error' });
         }
+    },
+    // Controller to fetch all deductions
+    getAllDeductions: async (req, res) => {
+        try {
+            const deductions = await HRModel.getAllDeductions();  // Call the model function
+            res.json({ deductions });  // Send the deductions data as response
+        } catch (err) {
+            console.error('Error fetching deductions:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+    // HR Controller: Update Deduction
+updateDeduction: async (req, res) => {
+    try {
+        const { id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
+
+        // Validate input data
+        if (!id || !deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Call the model function to update the deduction in the database
+        const result = await HRModel.updateDeduction(id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage);
+
+        // If no rows were affected, return an error message
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Deduction not found' });
+        }
+
+        // If successful, return a success message
+        res.json({ message: 'Deduction updated successfully', deduction: result });
+    } catch (err) {
+        console.error('Error updating deduction:', err);
+        res.status(500).json({ message: 'Internal server error' });
     }
-    
+},  
+
+deleteDeduction: async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await HRModel.deleteDeduction(id);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Deduction not found' });
+        }
+
+        res.json({ message: 'Deduction deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting deduction:', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
     
 };
 
