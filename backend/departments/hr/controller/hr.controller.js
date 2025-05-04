@@ -256,6 +256,22 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
 
+    updateMissedCheckOuts: async (req, res) => {
+        const { date } = req.body;
+    
+        if (!date) {
+          return res.status(400).json({ error: "Missing date parameter (format: YYYY-MM-DD)" });
+        }
+    
+        try {
+          const result = await HRModel.markMissedCheckOuts(date);
+          res.json(result);
+        } catch (error) {
+          console.error('Error in updateMissedCheckOuts controller:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      },
+
     // Request early out
     requestHalfDayRequest: async (req, res) => {
         const userId = req.params.id;  // Get userId from the URL parameter
@@ -366,10 +382,11 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
 
+    // Controller
     getTodayAttendance: async (req, res) => {
         const employeeId = req.params.id;  // Get employeeId from the route parameter
         const date = new Date().toISOString().slice(0, 10);  // Get today's date in YYYY-MM-DD format
-
+    
         try {
             // Fetch today's attendance data for the employee
             const attendance = await HRModel.getTodayAttendance(employeeId, date);
@@ -379,6 +396,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch attendance data' });
         }
     },
+
+    
     getAttendanceByUserId: async (req, res) => {
         const { userId } = req.params;
     

@@ -113,12 +113,15 @@ app.get('/hr_manager/employee_list', (req, res) => {
   app.get('/crm/edit_properties', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'edit_properties.html')); // Adjusted path
   });
+  
   app.get('/crm/inquiries', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'inquiries.html')); // Adjusted path
   });
+
   app.get('/crm/property_list', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'property_list.html')); // Adjusted path
   });
+
   app.get('/crm/transactions', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'transactions.html')); // Adjusted path
   });
@@ -150,11 +153,91 @@ app.get('/hr_manager/employee_list', (req, res) => {
   app.get('/scm/requestmaterial', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'requestmaterial.html')); // Adjusted path
   });
+  
   app.get('/scm/supplier', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
   });
+
   app.get('/scm/transfer', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'transfer.html')); // Adjusted path
+  });
+
+  // ====================
+  // CRM Website Routes
+  // ====================
+  app.get('/crm/index', (req, res) => {
+    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'index.html')); // Adjusted path
+  });
+
+  app.get('/crm/application', (req, res) => {
+    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'application.html')); // Adjusted path
+  });
+
+  app.get('/crm/contact', (req, res) => {
+    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'contact.html')); // Adjusted path
+  });
+
+  app.get('/crm/developer', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'developers.html')); // Adjusted path
+  });
+
+  app.get('/crm/faqs', (req, res) => {
+    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'faqs.html')); // Adjusted path
+  });
+
+  app.get('/crm/properties', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'properties.html')); // Adjusted path
+  });
+  app.get('/crm/vtour', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'vtour.html')); // Adjusted path
+  });
+
+// ====================
+  // HR admin Routes
+  // ====================  
+
+  app.get('/hr/hr_admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_admin.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_applicants', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_applicants.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_daily_attendance', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_daily_attendance.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_employee_attendance', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_attendance.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_employee_halfday_request', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_halfday_request.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_employee_leave_request', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_leave_request.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_employee_list', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_list.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_halfday_request', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_halfday_request.html')); // Adjusted path
+  });
+  
+  app.get('/hr/hr_interview', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_interview.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_leave_request', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_leave_request.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_history_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_history_attendance.html')); // Adjusted path
   });
 
 };
