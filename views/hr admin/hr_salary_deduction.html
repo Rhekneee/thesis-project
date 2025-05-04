@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applicants</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Styling for the sidebar */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none; /* Sidebar is hidden by default */
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        #sidebar ul li.logout {
+            margin-top: 350px;
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545; /* Red background on hover */
+            color: white; /* Ensure the text stays white */
+        }
+
+        /* Other sidebar item hover effects */
+        #sidebar ul li a:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+
+        #sidebar ul li.active a {
+            background-color: #007bff; /* Blue background for active link */
+            color: white; /* Ensure text is white */
+        }
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Table and form styles */
+        .applicants-table {
+            margin-top: 20px;
+        }
+
+        .applicants-table th, .applicants-table td {
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .applicants-form {
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        /* Search bar styling */
+        #searchBar {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease; /* Smooth transition on color change */
+        }
+
+        .sort-icon.active {
+            color: #007bff; /* Change this to your preferred active color */
+        }
+
+        .sort-icon:hover {
+            color: #0056b3; /* Optional: Hover effect */
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0; /* Fix spacing */
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>HR Dashboard</h3>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/hr/hr_admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+
+                        <li class="nav-item"><a href="/hr/hr_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/hr/hr_history_attendance"><i class="fas fa-file-invoice"></i>Attendance Logs</a></li>
+                        <li class="nav-item"><a href="/hr/hr_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>  
+
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                        <i class="fas fa-money-bill-wave"></i> Payroll Management<i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Payroll">
+                        <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                        <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                        <i class="fas fa-users"></i> Employee Management <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Employee">
+
+                        <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                        
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                        <i class="fas fa-users"></i> Recruitment <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Recruitment">
+
+                        <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                        <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+                    </ul>
+                </li>    
+                <!-- Move Logout to bottom -->
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+            </ul>
+        </div>
+              <!-- Main content area -->
+              <div id="content">
+                <!-- Button to toggle sidebar with icon -->
+                <button class="btn" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
+                </button>
+    
+            
+            </div>
+        </div>
+    
+
+
+
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+// Global base URL for the HR endpoint
+const BASE_URL = "http://localhost:4000/hr";
+
+document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+            
+            // Toggle sidebar visibility
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';  // Shift content to the right
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';  // No shift
+            }
+        });
+
+
+        document.getElementById('generatePayrollBtn').addEventListener('click', async () => {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    if (!startDate || !endDate) {
+        alert('Please select start and end dates.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/payroll/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ startDate, endDate })
+        });
+
+        const payrollData = await response.json();
+
+        const tbody = document.querySelector('#payrollTable tbody');
+        tbody.innerHTML = '';
+
+        payrollData.forEach(emp => {
+            const row = `
+                <tr>
+                    <td>${emp.employee_id}</td>
+                    <td>${emp.name}</td>
+                    <td>${emp.role}</td>
+                    <td>${emp.days_present}</td>
+                    <td>${emp.total_hours.toFixed(2)}</td>
+                    <td>${emp.overtime_hours.toFixed(2)}</td>
+                    <td>${emp.salary_before_tax.toFixed(2)}</td>
+                    <td>${emp.deduction.toFixed(2)}</td>
+                    <td>${emp.net_pay.toFixed(2)}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        alert('Payroll generated successfully!');
+    } catch (error) {
+        console.error('Error generating payroll:', error);
+        alert('Failed to generate payroll.');
+    }
+});
+
+
+
+        
+    </script>
+</body>
+
+</html>

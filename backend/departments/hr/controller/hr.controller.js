@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer'); 
 const HRModel = require("../model/hr.model");
+const moment = require('moment');
+
 
 const HRController = {
     // 🔹 Add a new employee (Manager Only)
@@ -444,7 +446,113 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             console.error("Error updating application status:", error);
             res.status(500).json({ error: "Error updating application status" });
         }
+    },
+    generatePayroll: async (req, res) => {
+        try {
+          const { startDate, endDate } = req.body;
+          const payrollDate = moment().format('YYYY-MM-DD');
+    
+          // 1) Fetch attendance → now correctly joins on user_id
+          const emps = await HRModel.getEmployeesWithAttendance(startDate, endDate);
+          if (!emps.length) {
+            return res.status(404).json({ message: 'No attendance found for that period.' });
+          }
+    
+          // 2) Build payroll records
+          const records = [];
+          for (let e of emps) {
+            const dailyRate = e.fixed_salary / 22;
+            const overtimeRate = (dailyRate / 8) * 1.25;
+            const overtimePay = e.overtime_hours * overtimeRate;
+            const salaryBeforeTax = (dailyRate * (e.total_hours / 8)) + overtimePay;
+
+    
+            // Get deduction percentages by salary range
+            const dedRanges = await HRModel.getDeductionsBySalary(e.fixed_salary);
+            let totalDed = 0;
+            dedRanges.forEach(d => {
+              totalDed += salaryBeforeTax * (d.employee_percentage / 100);
+            });
+    
+            // Push record with status as 'pending' and the payroll_period
+            records.push({  
+              employee_id: e.employee_id,
+              period_start: startDate,
+              period_end: endDate,
+              payroll_date: payrollDate,
+              days_present:  e.days_present,   // Assuming 8 hours per work day
+              total_hours: e.total_hours,
+              overtime_hours: e.overtime_hours,
+              fixed_salary: e.fixed_salary,               // store base salary 
+              salary_before_tax: salaryBeforeTax,
+              deductions: totalDed,
+              net_pay: salaryBeforeTax - totalDed,
+              payroll_period: `${startDate} to ${endDate}`,  // Payroll period in a readable format
+              status: 'pending',  // Default status to 'pending'
+            });
+          }
+    
+          // 3) Insert batch into the payroll table
+          await HRModel.insertPayrollRecords(records);
+    
+          // Respond with success message and the payroll records
+          res.json({ message: 'Payroll generated successfully', payroll: records });
+        } catch (err) {
+          console.error('Error in generatePayroll:', err);
+          res.status(500).json({ message: 'Internal server error' });
+        }
+      },
+      
+      getPendingPayroll: async (req, res) => {
+        try {
+            const rows = await HRModel.getPendingPayroll();  // Get the data from the model
+
+            if (!rows || rows.length === 0) {
+                return res.status(404).json({ message: 'No pending payroll found.' });
+            }
+
+            // If the rows are valid, send the response
+            res.json({ payroll: rows });
+        } catch (err) {
+            console.error('Error fetching pending payroll:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }, 
+    getAcceptPayroll: async (req, res) => {
+        try {
+            const rows = await HRModel.getAcceptPayroll();  // Get the data from the model
+
+            if (!rows || rows.length === 0) {
+                return res.status(404).json({ message: 'No Approved payroll found.' });
+            }
+
+            // If the rows are valid, send the response
+            res.json({ payroll: rows });
+        } catch (err) {
+            console.error('Error fetching pending payroll:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    }, 
+
+    approveOrRejectPayroll: async (req, res) => {
+        try {
+            const { payrollId, status, remarks } = req.body;
+    
+            if (!['approved', 'rejected'].includes(status)) {
+                return res.status(400).json({ message: 'Invalid status' });
+            }
+    
+            // If approved, set remarks to NULL
+            const finalRemarks = status === 'approved' ? null : remarks || 'No remarks provided';
+    
+            await HRModel.updatePayrollStatus(payrollId, status, finalRemarks);
+            res.json({ message: `Payroll ${status} successfully.` });
+        } catch (err) {
+            console.error('Error in approveOrRejectPayroll:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
     }
+    
     
 };
 

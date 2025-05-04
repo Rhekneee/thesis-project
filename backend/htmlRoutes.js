@@ -239,6 +239,35 @@ app.get('/hr_manager/employee_list', (req, res) => {
   app.get('/hr/hr_history_attendance', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_history_attendance.html')); // Adjusted path
   });
+  app.get('/hr/hr_payroll', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_payroll.html')); // Adjusted path
+  });
+  app.get('/hr/hr_salary_deduction', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
+  });
+
+
+
+// ====================
+  // finance admin Routes
+  // ====================  
+
+  app.get('/fin/manager_finance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'manager_finance.html')); // Adjusted path
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 };
 
