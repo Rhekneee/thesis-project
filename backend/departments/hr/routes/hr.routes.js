@@ -24,6 +24,7 @@
     // 🔹 Check-out attendance for the employee
     router.post('/check-out/:id', HRController.checkOutAttendance);
 
+    router.post('/mark-missed-checkouts', HRController.updateMissedCheckOuts);
     // 🔹 Get today's attendance for the employee
     router.get('/today/:id', HRController.getTodayAttendance);
     router.get('/attendance/:userId', HRController.getAttendanceByUserId);

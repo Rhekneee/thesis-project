@@ -353,15 +353,29 @@ const HRModel = {
 
     // Check if already checked in
     alreadyCheckedIn: async (userId, date) => {
-        const sql = `SELECT check_in FROM attendance WHERE user_id = ? AND date = ?`;
-        const [rows] = await db.execute(sql, [userId, date]);
-        return rows.length > 0 && rows[0].check_in !== null;
-    },
-
+        try {
+            // Log the parameters to verify
+            console.log(`Checking if user ${userId} has checked in on ${date}`);
+    
+            // Query to check for today's check-in
+            const sql = `SELECT check_in FROM attendance WHERE user_id = ? AND DATE(date) = DATE(?)`;
+            const [rows] = await db.execute(sql, [userId, date]);
+    
+            // Log the result for debugging
+            console.log(`Query result for user ${userId} on ${date}:`, rows);
+    
+            return rows.length > 0 && rows[0].check_in !== null;
+        } catch (error) {
+            console.error('Error checking check-in status:', error);
+            throw error;
+        }
+    },    
+    
+    
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        const officeLat = 14.364287326919795;
-        const officeLng = 120.92761826289956;
+        const officeLat = 14.343474330820476;
+        const officeLng = 120.97962196019488;
         const allowedRadius = 500;
     
         // Check if the user is within the allowed radius
@@ -372,6 +386,7 @@ const HRModel = {
 
         // Check if the user has already checked in
         const alreadyIn = await HRModel.alreadyCheckedIn(userId, date);
+        console.log(`User ${userId} already checked in: ${alreadyIn}`);
         if (alreadyIn) {
             return { error: "You have already checked in today." };
         }
@@ -389,7 +404,7 @@ const HRModel = {
         const hourPHT = localTime.getHours(); // Get the hour in Philippine Time (PHT)
         const minutesPHT = localTime.getMinutes();
         const secondsPHT = localTime.getSeconds();
-
+        
         // Check if the employee has an approved half-day request for the day
         const request = await HRModel.checkRequestApproval(userId, date, "halfDay"); // Check for half-day approval
     
@@ -444,9 +459,11 @@ checkOut: async (userId, checkOutTime, date) => {
     try {
         // 1. First, check if the user has checked in
         const [checkInRecord] = await db.execute(
-            `SELECT check_in FROM attendance WHERE user_id = ? AND date = ?`,
-            [userId, date]
+            `SELECT check_in FROM attendance WHERE user_id = ? AND DATE(date) = ?`,  // Use DATE() to compare the date part
+            [userId, date]  // Date should be in YYYY-MM-DD format
         );
+        
+        console.log('HRModel Result:', checkInRecord);
 
         if (!checkInRecord || checkInRecord.length === 0 || !checkInRecord[0].check_in) {
             return { error: "You must check in first." };
@@ -533,8 +550,25 @@ checkOut: async (userId, checkOutTime, date) => {
         return { error: "Internal error while processing check-out." };  // Return a generic error
     }
 },
-    
-    
+
+    markMissedCheckOuts: async (targetDate) => {
+        try {
+        const [result] = await db.execute(`
+            UPDATE attendance
+            SET status = 'Missed Check-Out'
+            WHERE check_in IS NOT NULL
+            AND check_out IS NULL
+            AND status IN ('Present', 'Late')
+            AND DATE(date) = ?
+        `, [targetDate]);
+
+        return { success: true, affected: result.affectedRows };
+        } catch (error) {
+        console.error('Error updating missed check-outs:', error);
+        return { success: false, error: error.message };
+        }
+    },
+        
     requestHalfDay: async (userId, requestDate, remarks) => {
         if (!userId || !requestDate || !remarks) {
             throw new Error('Invalid input: userId, requestDate, and remarks are required.');
@@ -655,19 +689,19 @@ checkOut: async (userId, checkOutTime, date) => {
             throw new Error('Failed to approve/reject request.');
         }
     },  
-    
-    
 
     getTodayAttendance: async (userId, date) => {
         try {
-            const sql = `SELECT * FROM attendance WHERE user_id = ? AND date = ?`;
-            const [rows] = await db.execute(sql, [userId, date]);
+            // Use DATE() to compare only the date part of the timestamp
+            const sql = `SELECT * FROM attendance WHERE user_id = ? AND DATE(date) = CURDATE()`;
+            const [rows] = await db.execute(sql, [userId]);
             return rows;  // Return the attendance data
         } catch (error) {
             console.error('Error fetching attendance data:', error);
             throw error;
         }
     },
+    
 
     getAttendanceHistory: async (userId) => {
         const sql = `
