@@ -409,21 +409,6 @@
                                     </select>
                                 </div>
                                 
-                                <!-- Additional Employee Information (Using original format) -->
-                                <div class="form-group">
-                                    <label for="employeeName">Name</label>
-                                    <input type="text" id="employeeName" class="form-control" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="employeeDept">Department</label>
-                                    <input type="text" id="employeeDept" class="form-control" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="employeePosition">Position</label>
-                                    <input type="text" id="employeePosition" class="form-control" required>
-                                </div>
                                 
                                 <button type="submit" class="btn btn-success">Save Employee</button>
                             </form>
@@ -485,56 +470,48 @@
                 console.error('properties-toggle element not found');
             }
         });
-    </script>
-        <script>
-         // Sample data for employees (replace with your actual data)
-         let employees = [
-            { id: 1, name: 'John Doe', department: 'HR', position: 'HR Manager' },
-            { id: 2, name: 'Jane Smith', department: 'Finance', position: 'Accountant' },
-            { id: 3, name: 'Alice Johnson', department: 'IT', position: 'System Analyst' },
-            { id: 4, name: 'Mike Brown', department: 'Manufacturing', position: 'Production Manager' },
-            { id: 5, name: 'Emily Davis', department: 'Sales', position: 'Sales Executive' },
-            { id: 6, name: 'David Lee', department: 'Finance', position: 'Financial Analyst' },
-            { id: 7, name: 'Sarah Wilson', department: 'Marketing', position: 'Marketing Coordinator' },
-            { id: 8, name: 'Paul White', department: 'HR', position: 'Recruiter' }
-        ];
-
+        
+        let employees = []; // Declare employees array globally
         let itemsPerPage = 5;
         let currentPage = 1;
         let filteredEmployees = null;
 
         // Function to render employee list
         async function renderEmployees() {
-    try {
-        const response = await fetch(`${API_URL}/employees`);
-        const data = await response.json();
-        const list = filteredEmployees || employees; 
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = currentPage * itemsPerPage;
-        const currentEmployees = list.slice(start, end);
+            try {
+                const response = await fetch(`${API_URL}/employees`);
+                const data = await response.json();
 
+                // Update the global employees array
+                employees = data;
 
-        const activeEmployeeList = document.getElementById('activeEmployeeList');
-        const deletedEmployeeList = document.getElementById('deletedEmployeeList');
-        activeEmployeeList.innerHTML = '';  // Clear existing active employee rows
-        deletedEmployeeList.innerHTML = ''; // Clear existing deleted employee rows
+                // Proceed with the rest of the code for rendering employees
+                const list = filteredEmployees || employees;
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = currentPage * itemsPerPage;
+                const currentEmployees = list.slice(start, end);
 
-        // Check if there are any records to display
-        if (data.length === 0) {
-            activeEmployeeList.innerHTML = '<tr><td colspan="12">No employees found</td></tr>';
-        }
+                const activeEmployeeList = document.getElementById('activeEmployeeList');
+                const deletedEmployeeList = document.getElementById('deletedEmployeeList');
+                activeEmployeeList.innerHTML = '';  // Clear existing active employee rows
+                deletedEmployeeList.innerHTML = ''; // Clear existing deleted employee rows
 
-        // Render Active Employees
-        data.forEach(employee => {
-            if (!employee.is_deleted) {
-                renderEmployee(employee, activeEmployeeList);
-            } else {
-                renderEmployee(employee, deletedEmployeeList);
-            }
-        });
+                // Check if there are any records to display
+                if (data.length === 0) {
+                    activeEmployeeList.innerHTML = '<tr><td colspan="12">No employees found</td></tr>';
+                }
 
-        renderPagination();
-        updateEntriesMessage();
+                // Render Active Employees
+                data.forEach(employee => {
+                    if (!employee.is_deleted) {
+                        renderEmployee(employee, activeEmployeeList);
+                    } else {
+                        renderEmployee(employee, deletedEmployeeList);
+                    }
+                });
+
+                renderPagination();
+                updateEntriesMessage();
 
             } catch (error) {
                 console.error('Error loading employee data:', error);
@@ -545,30 +522,33 @@
             }
         }
 
+
         // Function to render a single employee row
-        function renderEmployee(employee, container) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${employee.employee_id}</td>
-                <td>${employee.email}</td>
-                <td>${employee.full_name}</td>
-                <td>${employee.contact}</td>
-                <td>${employee.address}</td>
-                <td>${employee.birthday}</td>
-                <td>${employee.employment_status}</td>
-                <td>${employee.educational_background}</td>
-                <td>${employee.emergency_contact_name}</td>
-                <td>${employee.department_name}</td>
-                <td>${employee.is_deleted ? 'Archived' : 'Active'}</td>
-                <td>
-                    ${employee.is_deleted
-                        ? `<button class="btn btn-success btn-sm" onclick="restoreEmployee(${employee.employee_id})">Restore</button>`
-                        : `<button class="btn btn-warning btn-sm" onclick="editEmployee(${employee.employee_id})">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${employee.employee_id})">Delete</button>`}
-                </td>
-            `;
-            container.appendChild(row);
-        }
+            function renderEmployee(employee, container) {
+                console.log(`Employee ID: ${employee.employee_id}, Type: ${typeof employee.employee_id}`);
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${employee.employee_id}</td>
+                    <td>${employee.email}</td>
+                    <td>${employee.full_name}</td>
+                    <td>${employee.contact}</td>
+                    <td>${employee.address}</td>
+                    <td>${employee.birthday}</td>
+                    <td>${employee.employment_status}</td>
+                    <td>${employee.educational_background}</td>
+                    <td>${employee.emergency_contact_name}</td>
+                    <td>${employee.department_name}</td>
+                    <td>${employee.is_deleted ? 'Archived' : 'Active'}</td>
+                    <td>
+                        ${employee.is_deleted
+                            ? `<button class="btn btn-success btn-sm" onclick="restoreEmployee(${employee.employee_id})">Restore</button>`
+                            : `<button class="btn btn-warning btn-sm" onclick="editEmployee(${employee.employee_id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${employee.employee_id})">Delete</button>`}
+                    </td>
+                `;
+                container.appendChild(row);
+            }
 
         // Function to toggle between Active and Deleted Employees
         function toggleDeletedEmployees() {
@@ -658,16 +638,57 @@
         }
 
         // Edit employee (open form with prefilled data)
-        function editEmployee(employeeId) {
-            const employee = employees.find(emp => emp.id === employeeId);
-            if (employee) {
-                document.getElementById('employeeName').value = employee.name;
-                document.getElementById('employeeDept').value = employee.department;
-                document.getElementById('employeePosition').value = employee.position;
-                document.getElementById('addEmployeeModalLabel').textContent = 'Edit Employee';
-                $('#addEmployeeModal').modal('show');
+            function editEmployee(employeeId) {
+                console.log(`editEmployee called for employeeId: ${employeeId}`);
+                console.log('Employees array:', employees); // Log the full employees array
+
+                // Ensure the employee ID is in the correct format
+                const formattedEmployeeId = `2025-${employeeId}`;
+                console.log(`Formatted employee ID: ${formattedEmployeeId}`); // Log the formatted ID
+
+                // Check if the formatted ID exists in the employees array
+                const employee = employees.find(emp => {
+                    console.log(`Comparing ${emp.employee_id} with ${formattedEmployeeId}`); // Log each comparison
+                    return emp.employee_id === formattedEmployeeId;
+                });
+
+                if (employee) {
+                    console.log(`Employee found:`, employee);
+                    // Prefill the form with employee data
+                    document.getElementById('full_name').value = employee.full_name;
+                    document.getElementById('employeeDept').value = employee.department_name;
+                    document.getElementById('employeePosition').value = employee.position;
+                    document.getElementById('email').value = employee.email;
+                    document.getElementById('contact').value = employee.contact;
+                    document.getElementById('address').value = employee.address;
+                    document.getElementById('birthday').value = employee.birthday;
+                    document.getElementById('employment_status').value = employee.employment_status;
+                    document.getElementById('educational_background').value = employee.educational_background;
+                    document.getElementById('emergency_contact_name').value = employee.emergency_contact_name;
+                    document.getElementById('emergency_contact_relationship').value = employee.emergency_contact_relationship;
+                    document.getElementById('emergency_contact_phone').value = employee.emergency_contact_phone;
+                    document.getElementById('roleSelect').value = employee.role_id; // Role Selection
+                    document.getElementById('addEmployeeModalLabel').textContent = 'Edit Employee'; // Modal Title
+
+                    // Open the modal for editing
+                    const modal = $('#addEmployeeModal');
+                    if (modal.length) {
+                        console.log('Modal found, showing it now...');
+                        modal.modal('show'); // Show Modal
+                    } else {
+                        console.error('Modal element not found!');
+                    }
+
+                    // Set the form submit to save the employee changes
+                    document.getElementById('employeeForm').onsubmit = function(event) {
+                        event.preventDefault();
+                        saveEmployeeChanges(employee.employee_id); // Pass employee_id to save changes
+                    };
+                } else {
+                    console.error(`Employee with ID ${formattedEmployeeId} not found!`);
+                    alert('Employee ID not found. Please check the ID.');
+                }
             }
-        }
 
         // Delete employee
         function confirmDelete(employeeId) {
