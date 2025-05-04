@@ -241,13 +241,10 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     checkOutAttendance: async (req, res) => {
         const userId = req.params.id;
         const { date, checkOutTime } = req.body;
-        console.log("Received Check-out Request:", { userId, date, checkOutTime });
 
         try {
             const result = await HRModel.checkOut(userId, checkOutTime, date);
-            console.log("HRModel Result:", result);
             if (result.error) {
-                console.error("Error from HRModel:", result.error);  // Log error from model
                 return res.status(400).json({ error: result.error });
             }
             return res.status(200).json(result);
@@ -255,6 +252,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
+
 
     updateMissedCheckOuts: async (req, res) => {
         const { date } = req.body;
