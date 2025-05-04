@@ -236,7 +236,9 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_leave_request.html')); // Adjusted path
   });
 
-
+  app.get('/hr/hr_history_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_history_attendance.html')); // Adjusted path
+  });
 
 };
 
