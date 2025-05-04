@@ -708,8 +708,128 @@ const HRModel = {
         const query = "SELECT * FROM applications WHERE id = ?";
         const [rows] = await db.execute(query, [id]);
         return rows[0] || null;
-    }
+    },
 
+    getEmployeesWithAttendance: async (startDate, endDate) => {
+        const [rows] = await db.query(
+            `SELECT 
+                e.employee_id, 
+                e.full_name, 
+                e.role_id, 
+                COALESCE(p.salary, 0) AS fixed_salary, 
+                SUM(a.total_hours) AS total_hours, 
+                SUM(a.overtime_hours) AS overtime_hours,
+                COUNT(DISTINCT DATE(a.date)) AS days_present 
+             FROM employees e
+             JOIN attendance a 
+               ON e.user_id = a.user_id
+            JOIN roles r 
+               ON e.role_id = r.id  
+            JOIN positions p 
+                 ON e.role_id = p.role_id 
+             WHERE a.date BETWEEN ? AND ? AND a.status = 'present'  -- Only count 'present' status
+             GROUP BY e.employee_id, e.full_name, e.role_id, p.salary`,
+            [startDate, endDate]
+        );
+        return rows;
+    },
+    
+    getDeductionsBySalary: async (salary) => {
+        const [rows] = await db.query(
+            `SELECT * 
+             FROM deductions 
+             WHERE ? BETWEEN salary_min AND salary_max`,
+            [salary]
+        );
+        return rows;
+    },
+    
+    insertPayrollRecords: async (records) => {
+        const values = records.map(r => [
+            r.employee_id,
+            r.period_start,
+            r.period_end,
+            r.payroll_date,
+            r.days_present,
+            r.total_hours || 0,
+            r.overtime_hours,
+            r.fixed_salary || 0,
+            r.deductions || 0,
+            r.salary_before_tax || 0,
+            r.net_pay || 0,
+            r.payroll_period || '',
+            r.status || 'pending'    // default to 'pending'
+        ]);
+    
+        await db.query(
+            `INSERT INTO payroll 
+             (employee_id, start_date, end_date, payroll_date, days_present, 
+              total_hours, overtime_hours, fixed_salary, total_deductions, salary_before_tax, 
+              net_salary, payroll_period, status)
+             VALUES ?`, [values]
+        );
+    },
+    getPendingPayroll: async () => {
+        try {
+            const [rows] = await db.query(
+                `SELECT p.*, e.full_name,  ros.name AS position
+                 FROM payroll p 
+                 JOIN employees e 
+                   ON p.employee_id = e.employee_id
+                     JOIN roles ros ON e.role_id = ros.id
+                      JOIN positions pos ON e.role_id = pos.position_id
+                 WHERE p.status = "pending"`
+            );
+            console.log('Rows:', rows); // Log the result to inspect it
+            return rows;  // Return the rows if found
+        } catch (err) {
+            console.error('Error in getPendingPayroll:', err);
+            throw err;  // Ensure we throw the error so it's caught in the controller
+        }
+    },
+    getAcceptPayroll: async () => {
+        try {
+            const [rows] = await db.query(
+                `SELECT p.*, e.full_name,  ros.name AS position
+                 FROM payroll p 
+                 JOIN employees e 
+                   ON p.employee_id = e.employee_id
+                     JOIN roles ros ON e.role_id = ros.id
+                      JOIN positions pos ON e.role_id = pos.position_id
+                 WHERE p.status = "approved"`
+            );
+            console.log('Rows:', rows); // Log the result to inspect it
+            return rows;  // Return the rows if found
+        } catch (err) {
+            console.error('Error in getPendingPayroll:', err);
+            throw err;  // Ensure we throw the error so it's caught in the controller
+        }
+    },
+    updatePayrollStatus: async (payrollId, status, remarks) => {
+        try {
+            // Check if status is 'rejected' and update accordingly
+            let query = `
+                UPDATE payroll
+                SET status = ?, 
+                    remarks = ? 
+                WHERE id = ?`;
+    
+            // If the status is 'rejected' and remarks are provided, keep the remarks
+            if (status !== 'rejected') {
+                remarks = null;  // Set remarks to null if the status is not 'rejected'
+            }
+    
+            // Execute the update query
+            await db.query(query, [status, remarks, payrollId]);
+        } catch (err) {
+            console.error('Error in updatePayrollStatus:', err);
+            throw err;
+        }
+    }
+    
+
+    
+    
 };
 
 module.exports = HRModel;

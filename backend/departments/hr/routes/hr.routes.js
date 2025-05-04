@@ -36,7 +36,10 @@
     router.get('/requests', HRController.getAllPendingRequests);
     router.get('/requests/:userId', HRController.getPendingRequestsByUserId);
     router.post('/approve', HRController.handleRequestApproval);
-
+    router.post('/payroll/generate', HRController.generatePayroll);
+    router.get('/payroll/pending', HRController.getPendingPayroll);
+    router.post('/payroll/approve-reject', HRController.approveOrRejectPayroll);
+    router.get('/payroll/approved', HRController.getPendingPayroll);
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
