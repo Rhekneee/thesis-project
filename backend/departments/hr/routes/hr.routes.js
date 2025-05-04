@@ -40,6 +40,10 @@
     router.get('/payroll/pending', HRController.getPendingPayroll);
     router.post('/payroll/approve-reject', HRController.approveOrRejectPayroll);
     router.get('/payroll/approved', HRController.getPendingPayroll);
+    router.get('/deductions', HRController.getAllDeductions);
+    router.put('/deductions/update', HRController.updateDeduction);
+
+
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
