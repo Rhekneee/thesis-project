@@ -39,6 +39,24 @@ const CRMModel = {
         return rows[0] || null;
     },
 
+    // Store applicant data into the database
+storeApplication: async (data) => {
+    const query = `
+        INSERT INTO applications (full_name, email, phone, resume, age, birthdate, middleinitial, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+    `;
+    await db.execute(query, [
+        data.full_name,
+        data.email,
+        data.phone,
+        data.resume,
+        data.age,
+        data.birthdate,
+        data.middleinitial
+    ]);
+},
+
+
     
 };
 

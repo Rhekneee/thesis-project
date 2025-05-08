@@ -331,39 +331,55 @@
     </script>
 
 <script>
+    let attendance = [];
     let itemsPerPage = 5;
     let currentPage = 1;
     let filteredAttendance = null;
 
-    // Function to render attendance list
-    function renderAttendance() {
-        const list = filteredAttendance || attendance;
-        const attendanceList = document.getElementById('attendanceList');
-        attendanceList.innerHTML = '';
-
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = currentPage * itemsPerPage;
-        const currentAttendance = list.slice(start, end);
-
-        currentAttendance.forEach(record => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${record.name}</td>
-                <td>${record.position}</td>
-                <td>${record.department}</td>
-                <td>${record.date}</td>
-                <td>${record.checkin}</td>
-                <td>${record.checkout}</td>
-                <td>${record.status}</td>
-                <td>${record.totalHours}</td>
-                <td>${record.overtimeHours}</td>
-            `;
-            attendanceList.appendChild(row);
-        });
-
-        renderPagination();
-        updateEntriesMessage();
+    async function fetchAttendance() {
+    try {
+        const response = await fetch('/hr/getAllAttendanceRecords');
+        if (!response.ok) throw new Error("Network response was not ok");
+        attendance = await response.json();
+        console.log("Fetched attendance records:", attendance);
+        renderAttendance(); // Render once fetched
+    } catch (error) {
+        console.error('Error fetching attendance:', error);
     }
+}
+
+    // Function to render attendance list
+    // Render function (already in your code, just call fetchAttendance initially)
+function renderAttendance() {
+    const list = filteredAttendance || attendance;
+    const attendanceList = document.getElementById('attendanceList');
+    attendanceList.innerHTML = '';
+
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = currentPage * itemsPerPage;
+    const currentAttendance = list.slice(start, end);
+
+    currentAttendance.forEach(record => {
+        const checkinTime = formatTo12Hour(record.checkin);
+        const checkoutTime = formatTo12Hour(record.checkout);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${record.name}</td>
+            <td>${record.position}</td>
+            <td>${record.department}</td>
+            <td>${record.date}</td>
+            <td>${checkinTime}</td>
+            <td>${checkoutTime}</td>
+            <td>${record.status}</td>
+            <td>${record.total_hours ?? 0}</td>
+            <td>${record.overtime_hours ?? 0}</td>
+        `;
+        attendanceList.appendChild(row);
+    });
+
+    renderPagination();
+    updateEntriesMessage();
+}
 
     // Pagination controls rendering
     function renderPagination() {
@@ -436,8 +452,17 @@
         renderAttendance();
     }
 
+        function formatTo12Hour(timeStr) {
+        if (!timeStr) return 'N/A';
+        const [hour, minute] = timeStr.split(':');
+        const hourInt = parseInt(hour);
+        const ampm = hourInt >= 12 ? 'PM' : 'AM';
+        const hour12 = hourInt % 12 || 12;
+        return `${hour12}:${minute} ${ampm}`;
+    }
     // Initial render of attendance records
     renderAttendance();
+    fetchAttendance();
 </script>
 </body>
 

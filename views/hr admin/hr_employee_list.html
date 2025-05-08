@@ -297,7 +297,8 @@
                         <th onclick="sortTable(7)">Education <i class="fas fa-sort sort-icon" id="sortEducation"></i></th>
                         <th onclick="sortTable(8)">Emergency Contact <i class="fas fa-sort sort-icon" id="sortEmerContact"></i></th>
                         <th onclick="sortTable(9)">Department <i class="fas fa-sort sort-icon" id="sortDept"></i></th>
-                        <th onclick="sortTable(10)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                        <th onclick="sortTable(10)">Positions <i class="fas fa-sort sort-icon" id="sortPositions"></i></th>
+                        <th onclick="sortTable(11)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -322,7 +323,8 @@
                         <th onclick="sortTable(7)">Education <i class="fas fa-sort sort-icon" id="sortEducation"></i></th>
                         <th onclick="sortTable(8)">Emergency Contact <i class="fas fa-sort sort-icon" id="sortEmerContact"></i></th>
                         <th onclick="sortTable(9)">Department <i class="fas fa-sort sort-icon" id="sortDept"></i></th>
-                        <th onclick="sortTable(10)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                        <th onclick="sortTable(10)">Positions <i class="fas fa-sort sort-icon" id="sortPositions"></i></th>
+                        <th onclick="sortTable(11)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -409,6 +411,11 @@
                                     <label for="emergency_contact_phone">Phone:</label>
                                     <input type="text" id="emergency_contact_phone" class="form-control" placeholder="Enter phone number" required>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="departmentName">Department:</label>
+                                    <input type="text" id="departmentName" class="form-control" readonly>
+                                </div>
                                 
                                 <h3>Roles</h3>
                                 <div class="form-group">
@@ -423,6 +430,7 @@
                     </div>
                 </div>
             </div>
+            
 
             <!-- Delete Confirmation Modal -->
             <div class="modal fade" id="deleteEmployeeModal" tabindex="-1" aria-labelledby="deleteEmployeeModalLabel" aria-hidden="true">
@@ -510,13 +518,20 @@
                 }
 
                 // Render Active Employees
-                data.forEach(employee => {
-                    if (!employee.is_deleted) {
-                        renderEmployee(employee, activeEmployeeList);
-                    } else {
-                        renderEmployee(employee, deletedEmployeeList);
-                    }
+                // ✅ FILTER FIRST
+                const activeEmployees = employees.filter(emp => !emp.is_deleted);
+                const deletedEmployees = employees.filter(emp => emp.is_deleted);
+
+                // ✅ RENDER ACTIVE EMPLOYEES (PAGINATED)
+                currentEmployees.forEach(employee => {
+                    renderEmployee(employee, activeEmployeeList);
                 });
+
+                // ✅ RENDER ALL DELETED EMPLOYEES
+                deletedEmployees.forEach(employee => {
+                    renderEmployee(employee, deletedEmployeeList);
+                });
+
 
                 renderPagination();
                 updateEntriesMessage();
@@ -547,11 +562,12 @@
                     <td>${employee.educational_background}</td>
                     <td>${employee.emergency_contact_name}</td>
                     <td>${employee.department_name}</td>
+                    <td>${employee.role_name}</td> <!-- Position/Role -->
                     <td>${employee.is_deleted ? 'Archived' : 'Active'}</td>
                     <td>
                         ${employee.is_deleted
                             ? `<button class="btn btn-success btn-sm" onclick="restoreEmployee(${employee.employee_id})">Restore</button>`
-                            : `<button class="btn btn-warning btn-sm" onclick="editEmployee(${employee.employee_id})">Edit</button>
+                            : `<button class="btn btn-warning btn-sm" onclick="editEmployee('${employee.employee_id}')">Edit</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${employee.employee_id})">Delete</button>`}
                     </td>
                 `;
@@ -572,6 +588,26 @@
             }
         }
 
+        async function loadRoles() {
+    try {
+        const response = await fetch(`${API_URL}/roles`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const roles = await response.json();
+        const roleSelect = document.getElementById("roleSelect");
+        roleSelect.innerHTML = '<option value="">Select Role</option>'; // Default option
+
+        roles.forEach(role => {
+            const option = document.createElement("option");
+            option.value = role.id; // The role ID
+            option.textContent = role.name; // The role name
+            roleSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error loading roles:", error);
+        alert("Error loading roles, please try again later.");
+    }
+}
         // Function to delete an employee
         function deleteEmployee(id) {
             const employee = employees.find(emp => emp.employee_id === id);
@@ -591,7 +627,7 @@
         }
         // Pagination controls rendering
         function renderPagination() {
-            const list = filteredEmployees || employees;
+            const list = filteredEmployees || employees.filter(emp => !emp.is_deleted);
             const paginationControls = document.getElementById('paginationControls');
             const totalPages = Math.ceil(list.length / itemsPerPage);
             paginationControls.innerHTML = '';
@@ -601,8 +637,9 @@
                 pageButton.classList.add('page-item');
                 if (i === currentPage) pageButton.classList.add('active');
                 pageButton.innerHTML = `
-                    <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+                    <a class="page-link" href="javascript:void(0);" onclick="goToPage(${i})">${i}</a>
                 `;
+
                 paginationControls.appendChild(pageButton);
             }
         }
@@ -647,57 +684,57 @@
 
         // Edit employee (open form with prefilled data)
 
-            function editEmployee(employeeId) {
+        async function editEmployee(employeeId) {
                 console.log(`editEmployee called for employeeId: ${employeeId}`);
-                console.log('Employees array:', employees); // Log the full employees array
+                
+                document.getElementById('employeeForm').reset();
 
-                // Ensure the employee ID is in the correct format
-                const formattedEmployeeId = `2025-${employeeId}`;
-                console.log(`Formatted employee ID: ${formattedEmployeeId}`); // Log the formatted ID
+                const employee = employees.find(emp => emp.employee_id === employeeId);
 
-                // Check if the formatted ID exists in the employees array
-                const employee = employees.find(emp => {
-                    console.log(`Comparing ${emp.employee_id} with ${formattedEmployeeId}`); // Log each comparison
-                    return emp.employee_id === formattedEmployeeId;
-                });
+            if (employee) {
+                await loadRoles();  // Load roles first
+                console.log('Employee found:', employee);
 
-                if (employee) {
-                    console.log(`Employee found:`, employee);
-                    // Prefill the form with employee data
-                    document.getElementById('full_name').value = employee.full_name;
-                    document.getElementById('employeeDept').value = employee.department_name;
-                    document.getElementById('employeePosition').value = employee.position;
-                    document.getElementById('email').value = employee.email;
-                    document.getElementById('contact').value = employee.contact;
-                    document.getElementById('address').value = employee.address;
-                    document.getElementById('birthday').value = employee.birthday;
-                    document.getElementById('employment_status').value = employee.employment_status;
-                    document.getElementById('educational_background').value = employee.educational_background;
-                    document.getElementById('emergency_contact_name').value = employee.emergency_contact_name;
-                    document.getElementById('emergency_contact_relationship').value = employee.emergency_contact_relationship;
-                    document.getElementById('emergency_contact_phone').value = employee.emergency_contact_phone;
-                    document.getElementById('roleSelect').value = employee.role_id; // Role Selection
-                    document.getElementById('addEmployeeModalLabel').textContent = 'Edit Employee'; // Modal Title
+                // Prefill the form with employee data
+                document.getElementById('full_name').value = employee.full_name || '';
+                document.getElementById('departmentName').value = employee.department_name || '';
+                document.getElementById('email').value = employee.email || '';
+                document.getElementById('contact').value = employee.contact || '';
+                document.getElementById('address').value = employee.address || '';
+                document.getElementById('birthday').value = employee.birthday || '';
+                document.getElementById('employment_status').value = employee.employment_status || '';
+                document.getElementById('educational_background').value = employee.educational_background || '';
+                document.getElementById('emergency_contact_name').value = employee.emergency_contact_name || '';
+                document.getElementById('emergency_contact_relationship').value = employee.emergency_contact_relationship || '';
+                document.getElementById('emergency_contact_phone').value = employee.emergency_contact_phone || '';
+                document.getElementById('roleSelect').value = employee.role_id || '';
 
-                    // Open the modal for editing
-                    const modal = $('#addEmployeeModal');
-                    if (modal.length) {
-                        console.log('Modal found, showing it now...');
-                        modal.modal('show'); // Show Modal
-                    } else {
-                        console.error('Modal element not found!');
-                    }
+                // Update modal title
+                document.getElementById('addEmployeeModalLabel').textContent = 'Edit Employee';
 
-                    // Set the form submit to save the employee changes
-                    document.getElementById('employeeForm').onsubmit = function(event) {
-                        event.preventDefault();
-                        saveEmployeeChanges(employee.employee_id); // Pass employee_id to save changes
-                    };
-                } else {
-                    console.error(`Employee with ID ${formattedEmployeeId} not found!`);
-                    alert('Employee ID not found. Please check the ID.');
-                }
+                // Show the modal
+                $('#addEmployeeModal').modal('show');
+
+                // Set the form submit to save the employee changes
+                document.getElementById('employeeForm').onsubmit = function (event) {
+                    event.preventDefault();
+                    saveEmployeeChanges(employee.employee_id); // Pass full ID
+                };
+            } else {
+                console.error(`Employee with ID ${employeeId} not found!`);
+                alert('Employee ID not found. Please check the ID.');
             }
+            }
+            async function getEmployeeById(employeeId) {
+            const response = await fetch(`${API_URL}/employees/${employeeId}`);
+            if (!response.ok) {
+                console.error("Failed to fetch employee data.");
+                return null;
+            }
+            const employee = await response.json();
+            return employee;
+        }
+
 
         // Delete employee
         function confirmDelete(employeeId) {
@@ -710,6 +747,73 @@
             };
             $('#deleteEmployeeModal').modal('show');
         }
+
+        // 🔹 Save Employee Changes (Edit)
+async function saveEmployeeChanges(employeeId) {
+    // Form data to be saved
+    const formData = {
+        email: document.getElementById('email').value,
+        full_name: document.getElementById('full_name').value,
+        contact: document.getElementById('contact').value,
+        address: document.getElementById('address').value,
+        birthday: document.getElementById('birthday').value,
+        employment_status: document.getElementById('employment_status').value,
+        educational_background: document.getElementById('educational_background').value,
+        emergency_contact_name: document.getElementById('emergency_contact_name').value,
+        emergency_contact_relationship: document.getElementById('emergency_contact_relationship').value,
+        emergency_contact_phone: document.getElementById('emergency_contact_phone').value,
+        role_id: document.getElementById('roleSelect').value,
+    };
+
+    const response = await fetch(`${API_URL}/employees/${employeeId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+    });
+
+    if (response.ok) {
+        alert("Employee updated successfully!");
+        // Refresh the employee list (re-render or fetch data again)
+    } else {
+        console.error("Failed to update employee.");
+        alert("Failed to update employee.");
+    }
+}
+
+// 🔹 Save New Employee (Add)
+async function saveNewEmployee() {
+    const formData = {
+        email: document.getElementById('email').value,
+        full_name: document.getElementById('full_name').value,
+        contact: document.getElementById('contact').value,
+        address: document.getElementById('address').value,
+        birthday: document.getElementById('birthday').value,
+        employment_status: document.getElementById('employment_status').value,
+        educational_background: document.getElementById('educational_background').value,
+        emergency_contact_name: document.getElementById('emergency_contact_name').value,
+        emergency_contact_relationship: document.getElementById('emergency_contact_relationship').value,
+        emergency_contact_phone: document.getElementById('emergency_contact_phone').value,
+        role_id: document.getElementById('roleSelect').value,
+    };
+
+    const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+    });
+
+    if (response.ok) {
+        alert("Employee added successfully!");
+        // Refresh the employee list (re-render or fetch data again)
+    } else {
+        console.error("Failed to add employee.");
+        alert("Failed to add employee.");
+    }
+}
 
         // Initial render of employees
         renderEmployees();

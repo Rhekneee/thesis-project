@@ -57,5 +57,6 @@
 
     // Route to update application status (POST method)
     router.post('/updateStatus', HRController.updateApplicationStatus);
-    
+    router.post('/scheduleInterview', HRController.scheduleInterview);
+    router.get('/getAllAttendanceRecords', HRController.getAllAttendanceRecords)
     module.exports = router;

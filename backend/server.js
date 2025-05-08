@@ -73,7 +73,8 @@ app.get('/dashboard', (req, res) => {
         'corporate_secretary': 'manager_corporate_secretary.html',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
-        'logistics': '/scm admin/scm_dashboard.html'
+        'logistics': '/scm admin/scm_dashboard.html',
+        'agents': '/agents/agent_dashboard.html'
     };
 
     const userRole = req.session.user.role_name; // Get the role name from session
