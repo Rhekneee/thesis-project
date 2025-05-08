@@ -9,11 +9,120 @@
 <body>
 <div class="container">
     <h2>Login</h2>
-    <form action="/auth/login" method="POST">
-        <input type="email" name="email" placeholder="Enter email">
-        <input type="password" name="password" placeholder="Enter password" required>
-        <button type="submit">Login</button>
+    <form id="loginForm" action="/auth/login" method="POST">
+        <input type="email" name="email" id="email" placeholder="Enter email">
+        <input type="password" name="password" id="password" placeholder="Enter password" required>
+        <button type="submit"><span>Login</span></button>
     </form>
 </div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-message">Logging in...</div>
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="error-modal">
+    <div class="error-modal-content">
+        <div class="error-modal-title">Login Failed</div>
+        <div class="error-modal-message"></div>
+        <button class="error-modal-button">Close & Try Again</button>
+    </div>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    const errorModal = document.querySelector('.error-modal');
+    const errorMessage = errorModal.querySelector('.error-modal-message');
+    const button = this.querySelector('button');
+    
+    // Hide error modal if it's visible
+    errorModal.classList.remove('active');
+    
+    // Show loading overlay
+    loadingOverlay.classList.add('active');
+
+    // Wait for 3 seconds before submitting the form
+    setTimeout(() => {
+        // Get form data
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        console.log('Sending login data:', { email, password });
+
+        fetch('/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password }),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            // Log the response for debugging
+            console.log('Response status:', response.status);
+            return response.json().then(data => {
+                console.log('Response data:', data);
+                if (!response.ok) {
+                    // Check if it's a password error
+                    if (data.message && data.message.toLowerCase().includes('password')) {
+                        throw new Error('password');
+                    }
+                    // Check if it's an email error
+                    else if (data.message && data.message.toLowerCase().includes('email')) {
+                        throw new Error('email');
+                    }
+                    // Default error
+                    throw new Error(data.message || 'Invalid email or password');
+                }
+                return data;
+            });
+        })
+        .then(data => {
+            // Hide loading overlay
+            loadingOverlay.classList.remove('active');
+            
+            // If we get here, login was successful
+            window.location.href = '/dashboard';
+        })
+        .catch(error => {
+            console.log('Login error:', error);
+            // Hide loading overlay
+            loadingOverlay.classList.remove('active');
+            
+            // Show specific error message based on the error
+            let specificMessage = "Invalid email or password.";
+            
+            if (error.message === 'email') {
+                specificMessage = "Invalid email address. Please use correct credentials to login.";
+            } else if (error.message === 'password') {
+                specificMessage = "Incorrect password. Please try again.";
+            }
+            
+            errorMessage.textContent = specificMessage;
+            errorModal.classList.add('active');
+            button.disabled = false;
+        });
+    }, 3000);
+});
+
+// Close error modal when clicking the button
+document.querySelector('.error-modal-button').addEventListener('click', function() {
+    document.querySelector('.error-modal').classList.remove('active');
+});
+
+// Prevent browser back button from showing loading state
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        document.querySelector('.loading-overlay').classList.remove('active');
+    }
+});
+</script>
 </body>
 </html>

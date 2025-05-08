@@ -34,55 +34,61 @@ const getPermissionsForRole = async (role_id) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log("🔍 Login attempt with:", { email, password });
 
-        // Fetch user details along with the role_name from the roles table
-        const SQL_COMMAND = `
-              SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
+        // First check if user exists
+        const checkUserSQL = `
+            SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
             FROM users
             JOIN roles ON users.role_id = roles.id
-            JOIN employees ON users.id = employees.user_id  -- Join the employees table to fetch employee details
-            WHERE users.email = ? AND users.password = ?;
+            JOIN employees ON users.id = employees.user_id
+            WHERE LOWER(users.email) = LOWER(?);
         `;
-    
-        const [users] = await db.query(SQL_COMMAND, [email, password]);
-    
-        if (users.length === 0) {
-            console.log("❌ Invalid email or password");
-            return res.status(401).json({ message: "Invalid email or password." });
-        }
-    
-        const user = users[0];
-        console.log(`✅ Login successful for ${user.role_name} (Role ID: ${user.id}): ${user.email}`);
-    
-        // Fetch the user's permissions based on role_id
-        const permissions = await getPermissionsForRole(user.role_id);
-        console.log(`Permissions for ${user.role_name}:`, permissions);
+        
+        console.log("🔍 Checking if user exists...");
+        const [users] = await db.query(checkUserSQL, [email]);
+        console.log("🔍 User check result:", users);
 
-        // Store user data and permissions in the session
+        if (users.length === 0) {
+            console.log("❌ User not found");
+            return res.status(401).json({ message: "Invalid email address." });
+        }
+
+        const user = users[0];
+        console.log("🔍 Found user:", { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role_name,
+            storedPassword: user.password,
+            providedPassword: password
+        });
+
+        // Now check password
+        if (user.password !== password) {
+            console.log("❌ Password mismatch");
+            return res.status(401).json({ message: "Invalid password." });
+        }
+
+        console.log("✅ Login successful for user:", user.email);
+
+        // Set session data
         req.session.user = {
             id: user.id,
             email: user.email,
-            role_id: user.role_id,
             role_name: user.role_name,
-            created_at: user.created_at,
-            employee_id: user.employee_id,  // Add employee_id to the session
-            permissions: permissions, // Store permissions array in the session
+            employee_id: user.employee_id
         };
-        console.log("Session after login:", req.session.user);
+        console.log("📝 Session data set:", req.session.user);
 
-        req.session.save((err) => {
-            if (err) {
-                console.error("❌ Error saving session:", err);
-                return res.status(500).json({ message: "Session error." });
-            }
-
-            // Redirect to the dashboard after successful login
-            res.redirect('/dashboard');
+        // Send JSON response for successful login
+        return res.status(200).json({ 
+            message: "Login successful",
+            redirect: "/dashboard"
         });
 
     } catch (error) {
-        console.error("❌ Login Error:", error.message);
-        res.status(500).json({ message: "Internal Server Error." });
+        console.error("❌ Login error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
