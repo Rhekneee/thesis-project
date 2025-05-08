@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/public/css/logout_style.css">
+    <title>Logout</title>
+</head>
+<body>
+<div class="container">
+    <h2>Are you sure you want to logout?</h2>
+    <form id="logoutForm" action="/logout" method="GET">
+        <div class="button-container">
+            <button type="submit" id="logoutButton">Logout</button>
+            <button type="button" class="cancel" onclick="window.history.back()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-message">Logging out...</div>
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+    </div>
+</div>
+
+<script>
+document.getElementById('logoutForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    const logoutButton = document.getElementById('logoutButton');
+    
+    // Disable the logout button
+    logoutButton.disabled = true;
+    
+    // Show loading overlay
+    loadingOverlay.classList.add('active');
+
+    // Wait for 5 seconds before submitting the form
+    setTimeout(() => {
+        // Submit the form
+        fetch('/logout', {
+            method: 'GET',
+            credentials: 'same-origin' // This ensures cookies are sent
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                window.location.href = '/';
+            }
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            window.location.href = '/';
+        });
+    }, 5000);
+});
+</script>
+</body>
+</html> 
