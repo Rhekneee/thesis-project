@@ -278,17 +278,14 @@
             <table class="table applicants-table">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">First Name <i class="fas fa-sort sort-icon" id="sortFirstName"></i></th>
-                        <th onclick="sortTable(1)">Last Name <i class="fas fa-sort sort-icon" id="sortLastName"></i></th>
+                        <th onclick="sortTable(0)">Full Name <i class="fas fa-sort sort-icon" id="sortFirstName"></i></th>
                         <th onclick="sortTable(2)">Middle Name <i class="fas fa-sort sort-icon" id="sortMiddleName"></i></th>
                         <th onclick="sortTable(3)">Age <i class="fas fa-sort sort-icon" id="sortAge"></i></th>
                         <th onclick="sortTable(4)">Birthdate <i class="fas fa-sort sort-icon" id="sortBirthdate"></i></th>
                         <th onclick="sortTable(5)">Email <i class="fas fa-sort sort-icon" id="sortEmail"></i></th>
-                        <th onclick="sortTable(6)">Contact <i class="fas fa-sort sort-icon" id="sortContactNumber"></i></th>
-                        <th onclick="sortTable(7)">Interview Date<i class="fas fa-sort sort-icon" id="sortInterviewDate"></i></th>
-                        <th onclick="sortTable(8)">Interview Time <i class="fas fa-sort sort-icon" id="sortInterviewTime"></i></th>
-                        <th>Status</th>
+                        <th onclick="sortTable(6)">Phone <i class="fas fa-sort sort-icon" id="sortContactNumber"></i></th>
                         <th>Resume</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -340,10 +337,23 @@
                     </div>
                 </div>
             </div>
-
-            
-
-
+            <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="rejectModalLabel">Reject</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Interview has been Rejected</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
             <!-- Delete Confirmation Modal -->
             <div class="modal fade" id="deleteApplicantModal" tabindex="-1" aria-labelledby="deleteApplicantModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -401,17 +411,22 @@
 
         
         // Sample data for applicants
-        const applicants = [
-            { id: 1, firstName: 'John', lastName: 'Doe', middleName: 'A', age: 30, birthdate: '1991-05-15', email: 'john.doe@example.com', contact: '123-456-7890', resume: 'john_resume.pdf', status: 'Pending' },
-            { id: 2, firstName: 'Jane', lastName: 'Smith', middleName: 'B', age: 28, birthdate: '1993-03-22', email: 'jane.smith@example.com', contact: '234-567-8901', resume: 'jane_resume.pdf', status: 'Reject' },
-            { id: 3, firstName: 'Alice', lastName: 'Johnson', middleName: 'C', age: 35, birthdate: '1986-02-12', email: 'alice.johnson@example.com', contact: '345-678-9012', resume: 'alice_resume.pdf', status: 'Hired' }
-        ];
-    
+        let applicants = [];
+        let currentApplicantId = null;
         let itemsPerPage = 5;
         let currentPage = 1;
         let filteredApplicants = null;
         let applicantToDelete = null;
     
+        async function fetchApplicants() {
+            try {
+                const response = await fetch('/hr/getApplicationsByStatus?status=Ready for Interview');
+                applicants = await response.json();
+                renderApplicants();
+            } catch (err) {
+                console.error('Error fetching applicants:', err);
+            }
+        }
         // Render applicants dynamically
         function renderApplicants() {
             const applicantsList = document.getElementById('applicantsList');
@@ -425,20 +440,19 @@
             currentApplicants.forEach(applicant => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${applicant.firstName}</td>
-                    <td>${applicant.lastName}</td>
-                    <td>${applicant.middleName}</td>
-                    <td>${applicant.age}</td>
-                    <td>${applicant.birthdate}</td>
-                    <td>${applicant.email}</td>
-                    <td>${applicant.contact}</td>
-                    <td>${applicant.interviewDate || 'N/A'}</td>
-                    <td>${applicant.interviewTime || 'N/A'}</td>
-                    <td><button class="btn btn-info btn-sm" onclick="viewResume('${applicant.resume}')">View Resume</button></td>
-                    <td>${applicant.status}</td>
+                    <td>${applicant.full_name || 'N/A'}</td>
+                    <td>${applicant.middleinitial || 'N/A'}</td>
+                    <td>${applicant.age || 'N/A'}</td>
+                    <td>${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</td>
+                    <td>${applicant.email || 'N/A'}</td>
+                    <td>${applicant.phone || 'N/A'}</td>
+                    <td> ${applicant.resume ? 
+                    `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` : 
+                    'N/A'}
+                    </td>
+                    <td>${applicant.status || 'Pending'}</td>
                     <td>
                         <button class="btn btn-warning btn-sm" onclick="viewApplicantDetails(${applicant.id})">View</button>
-                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(${applicant.id})">Delete</button>
                     </td>
                 `;
                 applicantsList.appendChild(row);
@@ -460,18 +474,20 @@
             
             if (applicant) {
                 const applicantDetails = `
-                    <p><strong>First Name:</strong> ${applicant.firstName}</p>
-                    <p><strong>Last Name:</strong> ${applicant.lastName}</p>
-                    <p><strong>Middle Name:</strong> ${applicant.middleName}</p>
-                    <p><strong>Age:</strong> ${applicant.age}</p>
-                    <p><strong>Birthdate:</strong> ${applicant.birthdate}</p>
-                    <p><strong>Email:</strong> ${applicant.email}</p>
-                    <p><strong>Contact:</strong> ${applicant.contact}</p>
-                    <p><strong>Interview Date:</strong> ${applicant.interviewDate || 'N/A'}</p>
-                    <p><strong>Interview Time:</strong> ${applicant.interviewTime || 'N/A'}</p>
-                    <p><strong>Status:</strong> ${applicant.status}</p>
-                    <p><strong>Resume:</strong> <a href="path/to/resumes/${applicant.resume}" target="_blank">View Resume</a></p>
-                `;
+                <p><strong>Full Name:</strong> ${applicant.full_name || 'N/A'}</p>
+                <p><strong>Middle Initial:</strong> ${applicant.middleinitial || 'N/A'}</p>
+                <p><strong>Age:</strong> ${applicant.age || 'N/A'}</p>
+                <p><strong>Birthdate:</strong> ${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Email:</strong> ${applicant.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${applicant.phone || 'N/A'}</p>
+                <p><strong>Status:</strong> ${applicant.status || 'Pending'}</p>
+                <p><strong>Resume:</strong> ${
+                    applicant.resume 
+                        ? `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` 
+                        : 'N/A'
+                }</p>
+            `;
+
                 document.getElementById('applicantDetails').innerHTML = applicantDetails;
                 
                 // Show or hide Reject and Schedule Interview buttons based on status
@@ -485,31 +501,59 @@
             }
         }
 
-        // Reject Applicant
         function rejectApplicant() {
-            const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
-            if (applicant) {
-                applicant.status = 'Rejected';
-                $('#viewApplicantModal').modal('hide');
-                renderApplicants();
-            }
-        }
+    const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
+    if (applicant) {
+        fetch('/hr/updateStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: applicant.id,
+                status: 'Rejected'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('Status updated:', data);
+            applicant.status = 'Rejected';
+            $('#viewApplicantModal').modal('hide');
+            $('#rejectModal').modal('show');
+            fetchApplicants();
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+        });
+    }
+}
+
+
 
         // Hire Applicant
 
-        function hireApplicant() {
-            const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
-            if (applicant) {
-                applicant.status = 'Hired';
-                $('#viewApplicantModal').modal('hide');
-                $('#successModal').modal('show');
-                renderApplicants();
-            }
-        }
-        
+        async function hireApplicant() {
+    const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
+    if (applicant) {
+        try {
+            const response = await fetch('/hr/updateStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: applicant.id, status: 'Accepted' })
+            });
 
-        
-        
+            const result = await response.json();
+            alert(result.message);  // Optional
+            $('#viewApplicantModal').modal('hide');
+            $('#successModal').modal('show');
+            fetchApplicants();  // Reload updated list
+        } catch (error) {
+            console.error('Error updating status:', error);
+        }
+    }
+}        
         // Delete applicant
         function confirmDelete(applicantId) {
             applicantToDelete = applicantId;
@@ -581,6 +625,7 @@
     
         // Initial render of applicants
         renderApplicants();
+        fetchApplicants();
     </script>
 </body>
 

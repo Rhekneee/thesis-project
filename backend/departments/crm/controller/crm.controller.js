@@ -115,11 +115,12 @@ const CRMController = {
             const full_name = `${lastname}, ${firstname}`;
             const resumeFileName = req.file.filename;
 
-            // Check if the email already exists in the database (to avoid duplicates)
+            /* Check if the email already exists in the database (to avoid duplicates)
             const emailExists = await CRMModel.checkApplicantEmail(email);
             if (emailExists) {
                 return res.status(400).json({ error: "Applicant with this email already exists" });
             }
+            */
 
             const resumeFilePath = path.join(uploadDir, resumeFileName);
             console.log("Resume file path:", resumeFilePath);
