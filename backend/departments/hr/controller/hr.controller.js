@@ -410,6 +410,16 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
       },
 
+      getAllAttendanceRecords: async (req, res) => {
+        try {
+            const records = await HRModel.getAllAttendanceRecords();
+            res.json(records);
+        } catch (error) {
+            console.error('Error fetching attendance records:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
     getApplicationsByStatus: async (req, res) => {
         const { status } = req.query;  // Get the status from query parameters
         try {
@@ -440,6 +450,12 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             if (status === 'Ready for Interview') {
                 await sendEmailNotification(application.email, status);
             }
+            else if (status === 'Accepted') {
+                await sendEmailNotification(application.email, status); // No date/time needed
+            }
+            else if (status === 'Rejected') {
+                await sendEmailNotification(application.email, status); // No date/time needed
+            }
 
             res.status(200).json({ message: `Status updated to ${status}` });
         } catch (error) {
@@ -447,6 +463,26 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ error: "Error updating application status" });
         }
     },
+    scheduleInterview: async (req, res) => {
+        const { id, date, time } = req.body;
+    
+        try {
+            // 1. Schedule the interview
+            await HRModel.scheduleInterview(id, date, time); // this should update interview_date, interview_time, and status
+    
+            // 2. Get the applicant’s info
+            const applicant = await HRModel.getApplicationById(id);
+    
+            // 3. Send email notification with schedule
+            await sendEmailNotification(applicant.email, 'Ready for Interview', date, time);
+    
+            res.status(200).json({ message: "Interview scheduled and email sent successfully." });
+        } catch (error) {
+            console.error("Error in scheduleInterview:", error);
+            res.status(500).json({ error: "Failed to schedule interview." });
+        }
+    },    
+
     generatePayroll: async (req, res) => {
         try {
           const { startDate, endDate } = req.body;
@@ -607,7 +643,7 @@ deleteDeduction: async (req, res) => {
 
     
 };
-
+/*
 // Method to send an email notification to the applicant
 const sendEmailNotification = async (applicantEmail, status) => {
     const transporter = nodemailer.createTransport({
@@ -631,6 +667,87 @@ const sendEmailNotification = async (applicantEmail, status) => {
     } catch (error) {
         console.error('Error sending email:', error);
     }
+
+    
+    const sendEmailNotification = async (applicantEmail, status, interviewDate = null, interviewTime = null) => {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'reneemadel15@gmail.com',
+                pass: 'ldcp sknb lfuj kmlf',
+            },
+        });
+    
+        let message = `Hello, your application status has been updated to ${status}.`;
+    
+        if (interviewDate && interviewTime) {
+            const formattedDate = new Date(interviewDate).toLocaleDateString();
+            const [hour, minute] = interviewTime.split(':');
+            const hour12 = (hour % 12) || 12;
+            const ampm = hour < 12 || hour === '00' ? 'AM' : 'PM';
+            const formattedTime = `${hour12}:${minute} ${ampm}`;            
+            message += `\n\nYour interview is scheduled on ${formattedDate} at ${formattedTime}.`;
+        }
+    
+        message += `\n\nPlease check your profile for more details.\n\nThank you!`;
+    
+        const mailOptions = {
+            from: 'reneemadel15@gmail.com',
+            to: applicantEmail,
+            subject: `Your application status has been updated to ${status}`,
+            text: message,
+        };
+    
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('Email sent successfully');
+        } catch (error) {
+            console.error('Error sending email:', error);
+        } 
+            */
+        const sendEmailNotification = async (applicantEmail, status, interviewDate = null, interviewTime = null) => {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: 'reneemadel15@gmail.com',
+                    pass: 'ldcp sknb lfuj kmlf',
+                },
+            });
+        
+            let message = '';
+        
+            if (status === 'Ready for Interview') {
+                const formattedDate = new Date(interviewDate).toLocaleDateString();
+                const [hour, minute] = interviewTime.split(':');
+                const hour12 = (hour % 12) || 12;
+                const ampm = hour < 12 || hour === '00' ? 'AM' : 'PM';
+                const formattedTime = `${hour12}:${minute} ${ampm}`;
+        
+                message = `Hello! Your application status has been updated to *${status}*.\n\nYour interview is scheduled on ${formattedDate} at ${formattedTime}.\n\nPlease be on time and bring all necessary documents.`;
+            } else if (status === 'Accepted') {
+                message = `Congratulations! 🎉\n\nYou have been *ACCEPTED* for the position. We are excited to welcome you aboard!\n\nPlease await further instructions regarding onboarding and orientation.`;
+            } else if (status === 'Rejected') {
+                message = `Thank you for your interest in the position.\n\nAfter careful consideration, we regret to inform you that your application has not been selected at this time.\n\nWe encourage you to apply again in the future. Wishing you all the best in your job search.`;
+            } else {
+                message = `Hello, your application status has been updated to *${status}*.\n\nPlease check your profile for details.`;
+            }
+        
+            message += `\n\nBest regards,\nHR Department`;
+        
+            const mailOptions = {
+                from: 'reneemadel15@gmail.com',
+                to: applicantEmail,
+                subject: `Application Update: ${status}`,
+                text: message,
+            };
+        
+            try {
+                await transporter.sendMail(mailOptions);
+                console.log('Email sent successfully to', applicantEmail);
+            } catch (error) {
+                console.error('Error sending email:', error);
+            }
+           
 };
 
 module.exports = HRController;

@@ -259,15 +259,41 @@ app.get('/hr_manager/employee_list', (req, res) => {
 
 
 
+// ====================
+  //   admin Routes
+  // ====================  
+
+
+  app.get('/hr/hr_salary_deduction', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
+  });
 
 
 
+// ====================
+  //   agents Routes
+  // ====================  
 
 
+  app.get('/agents/agent_dashboard', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_dashboard.html')); // Adjusted path
+  });
 
+ app.get('/agents/agent_client', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_client.html')); // Adjusted path
+  });
 
+  app.get('/agents/agent_assigned_task', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_assigned_task.html')); // Adjusted path
+  });
 
+  app.get('/agents/agent_tripping', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_tripping.html')); // Adjusted path
+  });
 
+  app.get('/agents/agent_transactions', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_transactions.html')); // Adjusted path
+  });
 
 };
 

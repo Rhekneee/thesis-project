@@ -373,8 +373,8 @@ const HRModel = {
     
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        const officeLat = 14.343465748292335;
-        const officeLng = 120.97962529302887;
+        const officeLat = 14.327421495764893;
+        const officeLng = 120.94053562075905;
         const allowedRadius = 500;
     
         // Check if the user is within the allowed radius
@@ -423,10 +423,9 @@ const HRModel = {
             else if (hourPHT >= 12 && hourPHT < 18) {
                 status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
             }
-        } else if (!request && hourPHT === 9 && minutesPHT > 10) {
-            // If no half-day request and check-in is after 9:10 AM, mark as "Late"
+        } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))) {
             status = "Late";
-        }
+        }        
         
         // Format the check-in time to 'HH:MM:SS' for the TIME field in the database
         const checkInFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
@@ -691,6 +690,27 @@ const HRModel = {
         return rows;
       },
 
+      getAllAttendanceRecords: async () => {
+        const [rows] = await db.query(
+            `SELECT 
+                e.full_name AS name,
+                r.name AS position,
+                d.name AS department,
+                a.date,
+                DATE_FORMAT(a.check_in, '%h:%i %p') AS checkin,
+                DATE_FORMAT(a.check_out, '%h:%i %p') AS checkout,
+                a.status,
+                a.total_hours,
+                a.overtime_hours
+            FROM attendance a
+            JOIN employees e ON a.user_id = e.user_id
+            JOIN roles r ON e.role_id = r.id
+            JOIN departments d ON r.department_id = d.id
+            ORDER BY a.date DESC`
+        );
+        return rows;
+    },    
+
     getApplicationsByStatus: async (status) => {
         const query = "SELECT * FROM applications WHERE status = ?";
         const [rows] = await db.execute(query, [status]);
@@ -702,6 +722,12 @@ const HRModel = {
         const query = "UPDATE applications SET status = ? WHERE id = ?";
         await db.execute(query, [status, id]);
     },
+
+
+    scheduleInterview: async (id, date, time) => {
+        const query = `UPDATE applications SET interview_date = ?, interview_time = ?, status = 'Ready for Interview' WHERE id = ?`;
+        await db.execute(query, [date, time, id]);
+    }, 
 
     // Get application details by ID
     getApplicationById: async (id) => {
