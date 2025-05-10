@@ -246,7 +246,9 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
   });
 
-
+  app.get('/hr/hr_profile', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_profile.html')); // Adjusted path
+  });
 
 // ====================
   // finance admin Routes
