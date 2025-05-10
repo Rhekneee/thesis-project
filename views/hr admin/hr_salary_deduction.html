@@ -184,40 +184,153 @@
         }
         /* Modal background */
 .modal {
-    display: none;  /* Hidden by default */
+    display: none;
     position: fixed;
-    z-index: 1; /* Sit on top */
+    z-index: 1;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgb(0, 0, 0); /* Fallback color */
-    background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 /* Modal content */
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto;
+    margin: 5% auto; /* Changed from 15% to 5% to position higher */
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; /* Could be more or less, depending on screen size */
+    width: 90%;
+    max-width: 500px;
+    border-radius: 5px;
+    max-height: 90vh; /* Limit height to 90% of viewport height */
+    overflow-y: auto; /* Enable vertical scrolling if needed */
 }
 
-/* Close button */
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+/* Form styling */
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Reduced gap from 15px to 10px */
+}
+
+.modal-content label {
     font-weight: bold;
+    margin-bottom: 2px; /* Reduced margin */
+}
+
+.modal-content input,
+.modal-content select {
+    padding: 6px; /* Reduced padding */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 5px; /* Added small margin between inputs */
+}
+
+.modal-content button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    padding: 8px; /* Reduced padding */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Close button positioning */
+.close {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .close:hover,
 .close:focus {
     color: black;
     text-decoration: none;
-    cursor: pointer;
+}
+
+/* Table styling */
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    background-color: transparent;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+/* Button styling */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.edit-btn, .delete-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+    margin: 0 2px;
+}
+
+.edit-btn {
+    color: #fff;
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.edit-btn:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.delete-btn {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
 }
 
     </style>
@@ -289,24 +402,67 @@
                 <button class="btn" id="sidebar-toggle">
                     <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
                 </button>
-                <table id="deductionsTable">
-                    <thead>
-                        <tr>
-                            <th>Deduction Type</th>
-                            <th>Salary Min</th>
-                            <th>Salary Max</th>
-                            <th>Employee Percentage</th>
-                            <th>Employer Percentage</th>
-                            <th>Actions</th> <!-- For edit and delete -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Deductions will be populated here -->
-                    </tbody>
-                </table>
-                
-                </table>
-                
+
+                <!-- Add Deduction Button -->
+                <div class="mb-4">
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i> Add Deduction
+                    </button>
+                </div>
+
+                <!-- Tabs for Active/Inactive Deductions -->
+                <ul class="nav nav-tabs mb-3" id="deductionTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">Active Deductions</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="inactive-tab" data-bs-toggle="tab" data-bs-target="#inactive" type="button" role="tab" aria-controls="inactive" aria-selected="false">Archived Deductions</button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="deductionTabsContent">
+                    <!-- Active Deductions Tab -->
+                    <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
+                        <table id="activeDeductionsTable" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Deduction Type</th>
+                                    <th>Salary Range</th>
+                                    <th>Employee Percentage</th>
+                                    <th>Employer Percentage</th>
+                                    <th>Total Rate</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Active deductions will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Inactive Deductions Tab -->
+                    <div class="tab-pane fade" id="inactive" role="tabpanel" aria-labelledby="inactive-tab">
+                        <table id="inactiveDeductionsTable" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Deduction Type</th>
+                                    <th>Salary Range</th>
+                                    <th>Employee Percentage</th>
+                                    <th>Employer Percentage</th>
+                                    <th>Total Rate</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inactive deductions will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Edit Deduction Modal -->
                 <div id="editDeductionModal" class="modal" style="display: none;">
                     <div class="modal-content">
@@ -316,22 +472,88 @@
                             <input type="hidden" id="edit_deduction_id">
                             
                             <label for="edit_deduction_type">Deduction Type:</label>
-                            <input type="text" id="edit_deduction_type" required>
+                            <select id="edit_deduction_type" required>
+                                <option value="SSS">SSS</option>
+                                <option value="Pag-IBIG">Pag-IBIG</option>
+                                <option value="PhilHealth">PhilHealth</option>
+                            </select>
 
-                            <label for="edit_salary_min">Salary Min:</label>
+                            <label for="edit_salary_min">Minimum Salary:</label>
                             <input type="number" id="edit_salary_min" required>
 
-                            <label for="edit_salary_max">Salary Max:</label>
+                            <label for="edit_salary_max">Maximum Salary:</label>
                             <input type="number" id="edit_salary_max" required>
 
-                            <label for="edit_employee_percentage">Employee Percentage:</label>
-                            <input type="number" id="edit_employee_percentage" required>
+                            <label for="edit_employee_percentage">Employee Percentage (%):</label>
+                            <input type="number" id="edit_employee_percentage" step="0.01" required>
 
-                            <label for="edit_employer_percentage">Employer Percentage:</label>
-                            <input type="number" id="edit_employer_percentage" required>
+                            <label for="edit_employer_percentage">Employer Percentage (%):</label>
+                            <input type="number" id="edit_employer_percentage" step="0.01" required>
+
+                            <label for="edit_total_rate">Total Rate (%):</label>
+                            <input type="number" id="edit_total_rate" step="0.01" required readonly>
 
                             <button type="submit">Update Deduction</button>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Add Deduction Modal -->
+                <div id="addDeductionModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAddModal()">&times;</span>
+                        <h3>Add New Deduction</h3>
+                        <form id="addDeductionForm">
+                            <label for="add_deduction_type">Deduction Type:</label>
+                            <select id="add_deduction_type" required>
+                                <option value="SSS">SSS</option>
+                                <option value="Pag-IBIG">Pag-IBIG</option>
+                                <option value="PhilHealth">PhilHealth</option>
+                            </select>
+
+                            <label for="add_salary_min">Minimum Salary:</label>
+                            <input type="number" id="add_salary_min" required>
+
+                            <label for="add_salary_max">Maximum Salary:</label>
+                            <input type="number" id="add_salary_max" required>
+
+                            <label for="add_employee_percentage">Employee Percentage (%):</label>
+                            <input type="number" id="add_employee_percentage" step="0.01" required>
+
+                            <label for="add_employer_percentage">Employer Percentage (%):</label>
+                            <input type="number" id="add_employer_percentage" step="0.01" required>
+
+                            <label for="add_total_rate">Total Rate (%):</label>
+                            <input type="number" id="add_total_rate" step="0.01" required readonly>
+
+                            <button type="submit">Add Deduction</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Archive Confirmation Modal -->
+                <div id="archiveModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeArchiveModal()">&times;</span>
+                        <h3>Archive Deduction</h3>
+                        <p>Are you sure you want to archive this deduction? This action can be reversed later.</p>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeArchiveModal()">Cancel</button>
+                            <button class="btn btn-warning" onclick="confirmArchive()">Archive</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Restore Confirmation Modal -->
+                <div id="restoreModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeRestoreModal()">&times;</span>
+                        <h3>Restore Deduction</h3>
+                        <p>Are you sure you want to restore this deduction?</p>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeRestoreModal()">Cancel</button>
+                            <button class="btn btn-success" onclick="confirmRestore()">Restore</button>
+                        </div>
                     </div>
                 </div>
 
@@ -349,6 +571,10 @@
 // Global base URL for the HR endpoint
 const BASE_URL = "http://localhost:4000/hr";
 
+// Add these new variables at the top of your script
+let currentDeductionId = null;
+let isArchiveAction = true; // true for archive, false for restore
+
 document.getElementById('sidebar-toggle').addEventListener('click', function () {
             var sidebar = document.getElementById('sidebar');
             var content = document.getElementById('content');
@@ -364,67 +590,80 @@ document.getElementById('sidebar-toggle').addEventListener('click', function () 
         });
 // Fetch deductions from the backend and populate the table
 async function fetchDeductions() {
-    const response = await fetch('http://localhost:4000/hr/deductions');
-    const data = await response.json();
-
-    if (data.deductions) {
-        const tbody = document.querySelector('#deductionsTable tbody');
-        tbody.innerHTML = '';  // Clear the table body before adding new rows
-
+    try {
+        const response = await fetch(`${BASE_URL}/deductions`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch deductions');
+        }
+        const data = await response.json();
+        
+        if (!data.deductions || !Array.isArray(data.deductions)) {
+            throw new Error('Invalid data format received from server');
+        }
+        
+        const activeTbody = document.querySelector('#activeDeductionsTable tbody');
+        const inactiveTbody = document.querySelector('#inactiveDeductionsTable tbody');
+        activeTbody.innerHTML = '';
+        inactiveTbody.innerHTML = '';
+        
         data.deductions.forEach(deduction => {
             const row = document.createElement('tr');
+            const statusBadge = deduction.is_active ? 
+                '<span class="badge bg-success">Active</span>' : 
+                '<span class="badge bg-secondary">Archived</span>';
+            
+            const actionButtons = deduction.is_active ?
+                `<button onclick="handleEditClick(${deduction.id})" class="btn btn-sm btn-primary">Edit</button>
+                 <button onclick="handleArchiveClick(${deduction.id})" class="btn btn-sm btn-warning">Archive</button>` :
+                `<button onclick="handleRestoreClick(${deduction.id})" class="btn btn-sm btn-success">Restore</button>`;
+            
             row.innerHTML = `
                 <td>${deduction.deduction_type}</td>
-                <td>${deduction.salary_min}</td>
-                <td>${deduction.salary_max}</td>
-                <td>${deduction.employee_percentage}</td>
-                <td>${deduction.employer_percentage}</td>
-                <td>
-                    <button class="edit-btn" data-id="${deduction.id}">Edit</button>
-                    <button class="delete-btn" data-id="${deduction.id}">Delete</button>
-                </td>
+                <td>₱${deduction.salary_min.toLocaleString()} - ₱${deduction.salary_max.toLocaleString()}</td>
+                <td>${deduction.employee_percentage}%</td>
+                <td>${deduction.employer_percentage}%</td>
+                <td>${deduction.total_rate}%</td>
+                <td>${statusBadge}</td>
+                <td>${actionButtons}</td>
             `;
-            tbody.appendChild(row);
+            
+            if (deduction.is_active) {
+                activeTbody.appendChild(row);
+            } else {
+                inactiveTbody.appendChild(row);
+            }
         });
-
-        // Add event listeners for the edit and delete buttons
-        document.querySelectorAll('.edit-btn').forEach(button => {
-            button.addEventListener('click', handleEdit);
-        });
-
-        document.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener('click', handleDelete);
-        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch deductions. Please try again.');
     }
 }
 // Call fetchDeductions to load the data on page load
 fetchDeductions();
 
 // Function to open the modal with the selected deduction details
-async function editDeduction(id) {
+async function handleEditClick(id) {
     try {
-        // Fetch existing deduction details to populate the edit form
-        const response = await fetch(`http://localhost:4000/hr/deductions/${id}`);
-        
+        const response = await fetch(`${BASE_URL}/deductions/${id}`);
         if (!response.ok) {
-            throw new Error('Failed to fetch deduction');
+            throw new Error('Failed to load deduction details');
         }
-
         const deduction = await response.json();
-
-        // Fill in the modal fields with the current deduction details
+        
+        // Populate the edit form
         document.getElementById('edit_deduction_id').value = deduction.id;
         document.getElementById('edit_deduction_type').value = deduction.deduction_type;
         document.getElementById('edit_salary_min').value = deduction.salary_min;
         document.getElementById('edit_salary_max').value = deduction.salary_max;
         document.getElementById('edit_employee_percentage').value = deduction.employee_percentage;
         document.getElementById('edit_employer_percentage').value = deduction.employer_percentage;
+        document.getElementById('edit_total_rate').value = deduction.total_rate;
 
-        // Show the modal
+        // Show the edit modal
         document.getElementById('editDeductionModal').style.display = 'block';
     } catch (error) {
-        console.error('Error editing deduction:', error);
-        alert('Failed to load deduction details.');
+        console.error('Error:', error);
+        alert('Failed to load deduction details. Please try again.');
     }
 }
 
@@ -433,62 +672,253 @@ function closeModal() {
     document.getElementById('editDeductionModal').style.display = 'none';
 }
 
-// Handle form submission to update the deduction
-document.getElementById('editDeductionForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Add this function to show alerts
+function showAlert(type, message) {
+    // Remove any existing alerts
+    const existingAlert = document.querySelector('.alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
 
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Insert alert before the table
+    const table = document.querySelector('.tab-content');
+    table.parentNode.insertBefore(alertDiv, table);
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Update the edit form submission handler
+document.getElementById('editDeductionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
     const id = document.getElementById('edit_deduction_id').value;
     const deduction_type = document.getElementById('edit_deduction_type').value;
     const salary_min = document.getElementById('edit_salary_min').value;
     const salary_max = document.getElementById('edit_salary_max').value;
     const employee_percentage = document.getElementById('edit_employee_percentage').value;
     const employer_percentage = document.getElementById('edit_employer_percentage').value;
+    const total_rate = document.getElementById('edit_total_rate').value;
 
-    // Send PUT request to update the deduction
-    const response = await fetch("http://localhost:4000/hr/deductions/update", {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage })
-    });
-
-    const data = await response.json();
-    if (data.message === 'Deduction updated successfully') {
-        alert('Deduction updated');
-        fetchDeductions();  // Refresh the table
-        closeModal();  // Close the modal
+    // Validate percentages
+    if (parseFloat(employee_percentage) < 0 || parseFloat(employer_percentage) < 0) {
+        showAlert('danger', 'Percentages cannot be negative');
+        return;
     }
-});
 
-// Function to handle the delete action (for deletion of deductions)
-async function handleDelete(event) {
-    const id = event.target.getAttribute('data-id');
+    if (parseFloat(salary_min) >= parseFloat(salary_max)) {
+        showAlert('danger', 'Minimum salary must be less than maximum salary');
+        return;
+    }
 
-    const confirmation = confirm("Are you sure you want to delete this deduction?");
-    if (confirmation) {
-        const response = await fetch(`http://localhost:4000/hr/deductions/delete/${id}`, {
-            method: 'DELETE'
+    try {
+        const response = await fetch(`${BASE_URL}/deductions/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id,
+                deduction_type,
+                salary_min,
+                salary_max,
+                employee_percentage,
+                employer_percentage,
+                total_rate
+            })
         });
 
         const data = await response.json();
-        if (data.message === 'Deduction deleted successfully') {
-            alert('Deduction deleted');
-            fetchDeductions();  // Refresh the table
-        } else {
-            alert('Failed to delete deduction');
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to update deduction');
         }
+
+        showAlert('success', 'Deduction updated successfully');
+        closeModal();
+        fetchDeductions();
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', error.message || 'Failed to update deduction. Please try again.');
+    }
+});
+
+// Function to handle archive click
+function handleArchiveClick(id) {
+    currentDeductionId = id;
+    isArchiveAction = true;
+    document.getElementById('archiveModal').style.display = 'block';
+}
+
+// Function to handle restore click
+function handleRestoreClick(id) {
+    currentDeductionId = id;
+    isArchiveAction = false;
+    document.getElementById('restoreModal').style.display = 'block';
+}
+
+// Function to close archive modal
+function closeArchiveModal() {
+    document.getElementById('archiveModal').style.display = 'none';
+    currentDeductionId = null;
+}
+
+// Function to close restore modal
+function closeRestoreModal() {
+    document.getElementById('restoreModal').style.display = 'none';
+    currentDeductionId = null;
+}
+
+// Function to confirm archive
+async function confirmArchive() {
+    if (!currentDeductionId) return;
+    
+    try {
+        const response = await fetch(`${BASE_URL}/deductions/archive/${currentDeductionId}`, {
+            method: 'PUT'
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            showAlert('success', 'Deduction archived successfully');
+            closeArchiveModal();
+            fetchDeductions();
+        } else {
+            throw new Error(data.error || 'Failed to archive deduction');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', error.message || 'Failed to archive deduction');
     }
 }
 
-// Event listener for closing the modal (in case user clicks outside the modal or on a close button)
-document.querySelector('.close-modal').addEventListener('click', closeModal);
+// Function to confirm restore
+async function confirmRestore() {
+    if (!currentDeductionId) return;
+    
+    try {
+        const response = await fetch(`${BASE_URL}/deductions/restore/${currentDeductionId}`, {
+            method: 'PUT'
+        });
 
-// Optional: Fetch deductions again when the page is reloaded or after successful updates
-window.onload = fetchDeductions;
+        const data = await response.json();
+        if (response.ok) {
+            showAlert('success', 'Deduction restored successfully');
+            closeRestoreModal();
+            fetchDeductions();
+        } else {
+            throw new Error(data.error || 'Failed to restore deduction');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('danger', error.message || 'Failed to restore deduction');
+    }
+}
 
+// Function to calculate total rate with validation
+function calculateTotalRate(employeePercentage, employerPercentage, totalRateId) {
+    // Convert to numbers and handle empty/invalid values
+    const employeePercent = Math.max(0, parseFloat(employeePercentage) || 0);
+    const employerPercent = Math.max(0, parseFloat(employerPercentage) || 0);
+    
+    // Calculate total rate
+    const totalRate = employeePercent + employerPercent;
+    
+    // Update the total rate field with 2 decimal places
+    document.getElementById(totalRateId).value = totalRate.toFixed(2);
+    
+    // Update the input fields with validated values
+    if (totalRateId === 'edit_total_rate') {
+        document.getElementById('edit_employee_percentage').value = employeePercent.toFixed(2);
+        document.getElementById('edit_employer_percentage').value = employerPercent.toFixed(2);
+    } else {
+        document.getElementById('add_employee_percentage').value = employeePercent.toFixed(2);
+        document.getElementById('add_employer_percentage').value = employerPercent.toFixed(2);
+    }
+}
 
+// Add event listeners for percentage inputs with validation
+document.getElementById('edit_employee_percentage').addEventListener('input', function() {
+    const value = Math.max(0, parseFloat(this.value) || 0);
+    this.value = value.toFixed(2);
+    const employeePercentage = this.value;
+    const employerPercentage = document.getElementById('edit_employer_percentage').value;
+    calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
+});
 
+document.getElementById('edit_employer_percentage').addEventListener('input', function() {
+    const value = Math.max(0, parseFloat(this.value) || 0);
+    this.value = value.toFixed(2);
+    const employerPercentage = this.value;
+    const employeePercentage = document.getElementById('edit_employee_percentage').value;
+    calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
+});
 
-        
+// Function to open the add modal
+function openAddModal() {
+    document.getElementById('addDeductionModal').style.display = 'block';
+    // Reset form
+    document.getElementById('addDeductionForm').reset();
+}
+
+// Function to close the add modal
+function closeAddModal() {
+    document.getElementById('addDeductionModal').style.display = 'none';
+}
+
+// Function to handle edit button click
+function handleEdit(event) {
+    const id = event.target.getAttribute('data-id');
+    handleEditClick(id);
+}
+
+// Update the add form submission handler
+document.getElementById('addDeductionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const deduction_type = document.getElementById('add_deduction_type').value;
+    const salary_min = document.getElementById('add_salary_min').value;
+    const salary_max = document.getElementById('add_salary_max').value;
+    const employee_percentage = document.getElementById('add_employee_percentage').value;
+    const employer_percentage = document.getElementById('add_employer_percentage').value;
+    const total_rate = document.getElementById('add_total_rate').value;
+
+    try {
+        const response = await fetch(`${BASE_URL}/deductions/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                deduction_type,
+                salary_min,
+                salary_max,
+                employee_percentage,
+                employer_percentage,
+                total_rate
+            })
+        });
+
+        const data = await response.json();
+        if (data.message === 'Deduction added successfully') {
+            showAlert('success', 'Deduction added successfully');
+            closeAddModal();
+            fetchDeductions();
+        } else {
+            showAlert('danger', 'Failed to add deduction: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error adding deduction:', error);
+        showAlert('danger', 'Failed to add deduction');
+    }
+});
+
     </script>
 </body>
 

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Profile</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Content area styling */
+        #content {
+            margin-left: 300px;
+            margin-top: 60px;
+            transition: margin-left 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main content area -->
+    <div id="content">
+        <div class="container-fluid">
+            <div class="profile-container">
+                <!-- Back Button -->
+                <div class="back-button">
+                    <a href="/hr/hr_admin" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center">
+                    <div class="loading-spinner"></div>
+                    <p>Loading profile data...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="error-message" style="display: none;">
+                    Failed to load profile data. Please try again later.
+                </div>
+
+                <!-- Profile Content -->
+                <div id="profileContent" style="display: none;">
+                    <div class="profile-header">
+                        <img src="/images/default-profile.png" alt="Profile Picture" class="profile-picture">
+                        <h2 id="profileHeaderName">Loading...</h2>
+                        <div id="statusBadge" class="status-badge">Loading...</div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Personal Information -->
+                        <div class="col-md-6">
+                            <h3 class="section-title">Personal Information</h3>
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <p id="profileName" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Department</label>
+                                <p id="profileDepartment" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Position</label>
+                                <p id="profilePosition" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Educational Background</label>
+                                <p id="profileEducation" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Employment Status</label>
+                                <p id="profileStatus" class="form-control-plaintext">Loading...</p>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="col-md-6">
+                            <h3 class="section-title">Contact Information</h3>
+                            <div class="mb-3">
+                                <label class="form-label">Birthday</label>
+                                <p id="profileBirthday" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Address</label>
+                                <p id="profileAddress" class="form-control-plaintext">Loading...</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contact Number</label>
+                                <p id="profileContact" class="form-control-plaintext">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h3 class="section-title">Emergency Contact</h3>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Name</label>
+                                        <p id="profileEmergencyName" class="form-control-plaintext">Loading...</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Relationship</label>
+                                        <p id="profileEmergencyRelationship" class="form-control-plaintext">Loading...</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone Number</label>
+                                        <p id="profileEmergencyPhone" class="form-control-plaintext">Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h3 class="section-title">Security</h3>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" value="••••••••" readonly>
+                                    <button class="btn btn-primary" type="button" onclick="window.location.href='/hr/change-password'">
+                                        Change Password
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to show loading state
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'none';
+        }
+
+        // Function to show error state
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('profileContent').style.display = 'none';
+        }
+
+        // Function to show profile content
+        function showProfile() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+        }
+
+        // Function to format date
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Function to update status badge
+        function updateStatusBadge(status) {
+            const badge = document.getElementById('statusBadge');
+            if (status === 'Active') {
+                badge.className = 'status-badge status-active';
+                badge.textContent = 'Active';
+            } else {
+                badge.className = 'status-badge status-inactive';
+                badge.textContent = 'Inactive';
+            }
+        }
+
+        // Function to populate profile data
+        async function populateProfileData() {
+            showLoading();
+            try {
+                // Fetch session data
+                const response = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const data = await response.json();
+                console.log('Session data:', data);
+
+                if (!data.user) {
+                    throw new Error('No user data in session');
+                }
+
+                const user = data.user;
+
+                // Fetch employee details with role and department information
+                const employeeResponse = await fetch(`/hr/employees/${user.employee_id}`, {
+                    credentials: 'include'
+                });
+
+                if (!employeeResponse.ok) {
+                    throw new Error('Failed to fetch employee details');
+                }
+
+                const employeeData = await employeeResponse.json();
+                console.log('Employee data:', employeeData);
+
+                // Update status badge
+                updateStatusBadge(employeeData.employment_status);
+
+                // Populate profile fields
+                const fullName = employeeData.full_name || 'N/A';
+                document.getElementById('profileHeaderName').textContent = fullName;
+                document.getElementById('profileName').textContent = fullName;
+                document.getElementById('profileDepartment').textContent = employeeData.department_name || 'N/A';
+                document.getElementById('profilePosition').textContent = employeeData.role_name || 'N/A';
+                document.getElementById('profileEducation').textContent = employeeData.educational_background || 'N/A';
+                document.getElementById('profileStatus').textContent = employeeData.employment_status || 'N/A';
+                document.getElementById('profileBirthday').textContent = formatDate(employeeData.birthday);
+                document.getElementById('profileAddress').textContent = employeeData.address || 'N/A';
+                document.getElementById('profileContact').textContent = employeeData.contact || 'N/A';
+                document.getElementById('profileEmergencyName').textContent = employeeData.emergency_contact_name || 'N/A';
+                document.getElementById('profileEmergencyRelationship').textContent = employeeData.emergency_contact_relationship || 'N/A';
+                document.getElementById('profileEmergencyPhone').textContent = employeeData.emergency_contact_phone || 'N/A';
+
+                showProfile();
+            } catch (error) {
+                console.error('Error populating profile data:', error);
+                showError();
+            }
+        }
+
+        // Call populateProfileData when page loads
+        window.addEventListener('load', populateProfileData);
+    </script>
+</body>
+</html> 

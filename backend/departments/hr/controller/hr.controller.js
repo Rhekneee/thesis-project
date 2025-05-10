@@ -143,9 +143,7 @@ const HRController = {
             if (!employee) {
                 return res.status(404).json({ error: "Employee not found" });
             }
-
-            const permissions = await HRModel.getAllPermissions();
-            res.status(200).json({ employee, permissions });
+            res.status(200).json(employee);
         } catch (error) {
             console.error("❌ Error fetching employee details:", error);
             res.status(500).json({ error: "Failed to fetch employee details" });
@@ -470,7 +468,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             // 1. Schedule the interview
             await HRModel.scheduleInterview(id, date, time); // this should update interview_date, interview_time, and status
     
-            // 2. Get the applicant’s info
+            // 2. Get the applicant's info
             const applicant = await HRModel.getApplicationById(id);
     
             // 3. Send email notification with schedule
@@ -485,70 +483,183 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
     generatePayroll: async (req, res) => {
         try {
-          const { startDate, endDate } = req.body;
-          const payrollDate = moment().format('YYYY-MM-DD');
-    
-          // 1) Fetch attendance → now correctly joins on user_id
-          const emps = await HRModel.getEmployeesWithAttendance(startDate, endDate);
-          if (!emps.length) {
-            return res.status(404).json({ message: 'No attendance found for that period.' });
-          }
-    
-          // 2) Build payroll records
-          const records = [];
-          for (let e of emps) {
-            const dailyRate = e.fixed_salary / 22;
-            const overtimeRate = (dailyRate / 8) * 1.25;
-            const overtimePay = e.overtime_hours * overtimeRate;
-            const salaryBeforeTax = (dailyRate * (e.total_hours / 8)) + overtimePay;
+            const { month, year, period } = req.body;
+            console.log('\n=== PAYROLL GENERATION STARTED ===');
+            console.log('1. Input Parameters:', { month, year, period });
 
-    
-            // Get deduction percentages by salary range
-            const dedRanges = await HRModel.getDeductionsBySalary(e.fixed_salary);
-            let totalDed = 0;
-            dedRanges.forEach(d => {
-              totalDed += salaryBeforeTax * (d.employee_percentage / 100);
+            // Convert month and year to numbers
+            const monthNum = parseInt(month);
+            const yearNum = parseInt(year);
+
+            // Get current date
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
+            const currentYear = currentDate.getFullYear();
+
+            // Validate if the selected month is the current month
+            if (monthNum !== currentMonth || yearNum !== currentYear) {
+                return res.status(400).json({ 
+                    message: `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`
+                });
+            }
+
+            // Validate month and year
+            if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+                return res.status(400).json({ message: 'Invalid month' });
+            }
+            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+                return res.status(400).json({ message: 'Invalid year' });
+            }
+
+            let startDate, endDate;
+
+            // Helper function to get the last day of the month
+            const getLastDayOfMonth = (year, month) => {
+                return new Date(year, month, 0).getDate();
+            };
+
+            // Helper function to format date with ordinal
+            const formatDateWithOrdinal = (date) => {
+                const day = date.getDate();
+                const suffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3 || day > 20) ? 0 : day % 10];
+                return `${day}${suffix}`;
+            };
+
+            if (period === 'first') {
+                // First period: 1st to 15th
+                startDate = new Date(yearNum, monthNum - 1, 1);
+                endDate = new Date(yearNum, monthNum - 1, 15);
+            } else {
+                // Second period: 16th to last day of month
+                startDate = new Date(yearNum, monthNum - 1, 16);
+                const lastDay = getLastDayOfMonth(yearNum, monthNum);
+                endDate = new Date(yearNum, monthNum - 1, lastDay);
+            }
+
+            // Format dates to YYYY-MM-DD
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const formattedStartDate = formatDate(startDate);
+            const formattedEndDate = formatDate(endDate);
+
+            // Get all active employees
+            const employees = await HRModel.getEmployeesWithAttendance(
+                formattedStartDate,
+                formattedEndDate
+            );
+
+            if (!employees || employees.length === 0) {
+                return res.status(404).json({ 
+                    message: 'No active employees found in the system.'
+                });
+            }
+
+            const records = [];
+            for (let e of employees) {
+                try {
+                    // Get position details
+                    const positionInfo = await HRModel.getPositionSalary(e.role_id);
+                    if (!positionInfo) {
+                        console.log(`No position found for role_id: ${e.role_id}`);
+                        continue;
+                    }
+
+                    // Base salary calculations
+                    const baseSalary = positionInfo.salary || 0;
+                    const dailyRate = baseSalary / 22; // Assuming 22 working days per month
+                    const hourlyRate = dailyRate / 8; // Assuming 8 hours per day
+
+                    // Calculate regular pay
+                    const regularPay = dailyRate * e.days_present;
+
+                    // Calculate half-day pay
+                    const halfDayPay = (dailyRate / 2) * e.days_half_day;
+
+                    // Calculate early out deductions
+                    const earlyOutDeduction = hourlyRate * e.days_early_out;
+
+                    // Calculate overtime pay (1.25x rate for overtime)
+                    const overtimePay = hourlyRate * 1.25 * e.overtime_hours;
+
+                    // Calculate absence deduction
+                    const absenceDeduction = dailyRate * e.days_absent;
+
+                    // Calculate total deductions
+                    const deductions = await HRModel.getDeductionsBySalary(baseSalary);
+                    const totalDeductions = deductions.reduce((sum, deduction) => {
+                        const amount = (baseSalary * deduction.employee_percentage) / 100;
+                        return sum + amount;
+                    }, 0);
+
+                    // Calculate net salary
+                    const grossSalary = regularPay + halfDayPay + overtimePay - earlyOutDeduction - absenceDeduction;
+                    const netSalary = grossSalary - totalDeductions;
+
+                    records.push({
+                        employee_id: e.employee_id,
+                        full_name: e.full_name,
+                        position: e.position,
+                        start_date: formattedStartDate,
+                        end_date: formattedEndDate,
+                        days_present: e.days_present,
+                        days_half_day: e.days_half_day,
+                        days_early_out: e.days_early_out,
+                        days_absent: e.days_absent,
+                        days_holiday_rest: e.days_holiday_rest,
+                        days_on_leave: e.days_on_leave,
+                        total_hours: e.total_hours,
+                        overtime_hours: e.overtime_hours,
+                        fixed_salary: baseSalary,
+                        regular_pay: regularPay,
+                        half_day_pay: halfDayPay,
+                        overtime_pay: overtimePay,
+                        early_out_deduction: earlyOutDeduction,
+                        absence_deduction: absenceDeduction,
+                        total_deductions: totalDeductions,
+                        gross_salary: grossSalary,
+                        net_salary: netSalary,
+                        payroll_date: new Date().toISOString().split('T')[0],
+                        payroll_period: `${formatDateWithOrdinal(startDate)} to ${formatDateWithOrdinal(endDate)} of ${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })}`,
+                        status: 'pending'
+                    });
+                } catch (error) {
+                    console.error(`Error processing employee ${e.employee_id}:`, error);
+                    continue;
+                }
+            }
+
+            if (records.length === 0) {
+                return res.status(404).json({ 
+                    message: 'No payroll records could be generated. Please check if all employees have valid position information.'
+                });
+            }
+
+            await HRModel.insertPayrollRecords(records);
+            
+            res.json({ 
+                message: `Payroll generated successfully for ${period === 'first' ? '1st to 15th' : '16th to 30th/31st'} of ${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })}`,
+                payroll: records 
             });
-    
-            // Push record with status as 'pending' and the payroll_period
-            records.push({  
-              employee_id: e.employee_id,
-              period_start: startDate,
-              period_end: endDate,
-              payroll_date: payrollDate,
-              days_present:  e.days_present,   // Assuming 8 hours per work day
-              total_hours: e.total_hours,
-              overtime_hours: e.overtime_hours,
-              fixed_salary: e.fixed_salary,               // store base salary 
-              salary_before_tax: salaryBeforeTax,
-              deductions: totalDed,
-              net_pay: salaryBeforeTax - totalDed,
-              payroll_period: `${startDate} to ${endDate}`,  // Payroll period in a readable format
-              status: 'pending',  // Default status to 'pending'
-            });
-          }
-    
-          // 3) Insert batch into the payroll table
-          await HRModel.insertPayrollRecords(records);
-    
-          // Respond with success message and the payroll records
-          res.json({ message: 'Payroll generated successfully', payroll: records });
         } catch (err) {
-          console.error('Error in generatePayroll:', err);
-          res.status(500).json({ message: 'Internal server error' });
+            console.error('Error in generatePayroll:', err);
+            res.status(500).json({ 
+                message: 'Failed to generate payroll. Please try again later.',
+                error: process.env.NODE_ENV === 'development' ? err.message : undefined
+            });
         }
-      },
+    },
 
-      getPendingPayroll: async (req, res) => {
+    getPendingPayroll: async (req, res) => {
         try {
             const rows = await HRModel.getPendingPayroll();  // Get the data from the model
 
-            if (!rows || rows.length === 0) {
-                return res.status(404).json({ message: 'No pending payroll found.' });
-            }
-
-            // If the rows are valid, send the response
-            res.json({ payroll: rows });
+            // Return empty array instead of 404 error
+            res.json({ payroll: rows || [] });
         } catch (err) {
             console.error('Error fetching pending payroll:', err);
             res.status(500).json({ message: 'Internal server error' });
@@ -558,14 +669,10 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         try {
             const rows = await HRModel.getAcceptPayroll();  // Get the data from the model
 
-            if (!rows || rows.length === 0) {
-                return res.status(404).json({ message: 'No Approved payroll found.' });
-            }
-
-            // If the rows are valid, send the response
-            res.json({ payroll: rows });
+            // Return empty array instead of 404 error
+            res.json({ payroll: rows || [] });
         } catch (err) {
-            console.error('Error fetching pending payroll:', err);
+            console.error('Error fetching approved payroll:', err);
             res.status(500).json({ message: 'Internal server error' });
         }
     }, 
@@ -591,163 +698,196 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Controller to fetch all deductions
     getAllDeductions: async (req, res) => {
         try {
-            const deductions = await HRModel.getAllDeductions();  // Call the model function
-            res.json({ deductions });  // Send the deductions data as response
+            const deductions = await HRModel.getAllDeductions();
+            res.json({ deductions });
         } catch (err) {
             console.error('Error fetching deductions:', err);
             res.status(500).json({ message: 'Internal server error' });
         }
     },
     // HR Controller: Update Deduction
-updateDeduction: async (req, res) => {
-    try {
-        const { id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
-
-        // Validate input data
-        if (!id || !deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
-            return res.status(400).json({ message: 'Missing required fields' });
-        }
-
-        // Call the model function to update the deduction in the database
-        const result = await HRModel.updateDeduction(id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage);
-
-        // If no rows were affected, return an error message
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Deduction not found' });
-        }
-
-        // If successful, return a success message
-        res.json({ message: 'Deduction updated successfully', deduction: result });
-    } catch (err) {
-        console.error('Error updating deduction:', err);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-},  
-
-deleteDeduction: async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const result = await HRModel.deleteDeduction(id);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Deduction not found' });
-        }
-
-        res.json({ message: 'Deduction deleted successfully' });
-    } catch (err) {
-        console.error('Error deleting deduction:', err);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-}
-
-    
-};
-/*
-// Method to send an email notification to the applicant
-const sendEmailNotification = async (applicantEmail, status) => {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: 'reneemadel15@gmail.com',  // Replace with your email
-            pass: 'ldcp sknb lfuj kmlf',   // Replace with your email password
-        },
-    });
-
-    const mailOptions = {
-        from: 'reneemadel15@gmail.com',  // Replace with your email
-        to: applicantEmail,
-        subject: `Your application status has been updated to ${status}`,
-        text: `Hello, your application status has been updated to ${status}. Please check your profile for more details.`,
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully');
-    } catch (error) {
-        console.error('Error sending email:', error);
-    }
-
-    
-    const sendEmailNotification = async (applicantEmail, status, interviewDate = null, interviewTime = null) => {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'reneemadel15@gmail.com',
-                pass: 'ldcp sknb lfuj kmlf',
-            },
-        });
-    
-        let message = `Hello, your application status has been updated to ${status}.`;
-    
-        if (interviewDate && interviewTime) {
-            const formattedDate = new Date(interviewDate).toLocaleDateString();
-            const [hour, minute] = interviewTime.split(':');
-            const hour12 = (hour % 12) || 12;
-            const ampm = hour < 12 || hour === '00' ? 'AM' : 'PM';
-            const formattedTime = `${hour12}:${minute} ${ampm}`;            
-            message += `\n\nYour interview is scheduled on ${formattedDate} at ${formattedTime}.`;
-        }
-    
-        message += `\n\nPlease check your profile for more details.\n\nThank you!`;
-    
-        const mailOptions = {
-            from: 'reneemadel15@gmail.com',
-            to: applicantEmail,
-            subject: `Your application status has been updated to ${status}`,
-            text: message,
-        };
-    
+    updateDeduction: async (req, res) => {
         try {
-            await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully');
+            const { id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
+
+            // Validate required fields
+            if (!id || !deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
+                return res.status(400).json({ error: 'All fields are required' });
+            }
+
+            // Validate percentages are not negative
+            if (employee_percentage < 0 || employer_percentage < 0) {
+                return res.status(400).json({ error: 'Percentages cannot be negative' });
+            }
+
+            // Validate salary range
+            if (parseFloat(salary_min) >= parseFloat(salary_max)) {
+                return res.status(400).json({ error: 'Minimum salary must be less than maximum salary' });
+            }
+
+            const result = await HRModel.updateDeduction(
+                id,
+                deduction_type,
+                salary_min,
+                salary_max,
+                employee_percentage,
+                employer_percentage
+            );
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Deduction not found' });
+            }
+
+            res.json({ message: 'Deduction updated successfully' });
         } catch (error) {
-            console.error('Error sending email:', error);
-        } 
-            */
-        const sendEmailNotification = async (applicantEmail, status, interviewDate = null, interviewTime = null) => {
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: 'reneemadel15@gmail.com',
-                    pass: 'ldcp sknb lfuj kmlf',
-                },
+            console.error('Error updating deduction:', error);
+            res.status(500).json({ error: 'Failed to update deduction' });
+        }
+    },
+    // Add new deduction
+    addDeduction: async (req, res) => {
+        try {
+            const { deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
+
+            // Validate required fields
+            if (!deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
+                return res.status(400).json({ error: 'All fields are required' });
+            }
+
+            // Validate percentages are not negative
+            if (employee_percentage < 0 || employer_percentage < 0) {
+                return res.status(400).json({ error: 'Percentages cannot be negative' });
+            }
+
+            // Validate salary range
+            if (parseFloat(salary_min) >= parseFloat(salary_max)) {
+                return res.status(400).json({ error: 'Minimum salary must be less than maximum salary' });
+            }
+
+            const result = await HRModel.addDeduction(
+                deduction_type,
+                salary_min,
+                salary_max,
+                employee_percentage,
+                employer_percentage
+            );
+
+            res.status(201).json({
+                message: 'Deduction added successfully',
+                id: result.insertId
             });
-        
-            let message = '';
-        
-            if (status === 'Ready for Interview') {
-                const formattedDate = new Date(interviewDate).toLocaleDateString();
-                const [hour, minute] = interviewTime.split(':');
-                const hour12 = (hour % 12) || 12;
-                const ampm = hour < 12 || hour === '00' ? 'AM' : 'PM';
-                const formattedTime = `${hour12}:${minute} ${ampm}`;
-        
-                message = `Hello! Your application status has been updated to *${status}*.\n\nYour interview is scheduled on ${formattedDate} at ${formattedTime}.\n\nPlease be on time and bring all necessary documents.`;
-            } else if (status === 'Accepted') {
-                message = `Congratulations! 🎉\n\nYou have been *ACCEPTED* for the position. We are excited to welcome you aboard!\n\nPlease await further instructions regarding onboarding and orientation.`;
-            } else if (status === 'Rejected') {
-                message = `Thank you for your interest in the position.\n\nAfter careful consideration, we regret to inform you that your application has not been selected at this time.\n\nWe encourage you to apply again in the future. Wishing you all the best in your job search.`;
+        } catch (error) {
+            console.error('Error adding deduction:', error);
+            res.status(500).json({ error: 'Failed to add deduction' });
+        }
+    },
+
+    // Delete deduction
+    deleteDeduction: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const result = await HRModel.deleteDeduction(id);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Deduction not found' });
+            }
+
+            res.json({ message: 'Deduction deleted successfully' });
+        } catch (err) {
+            console.error('Error deleting deduction:', err);
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+
+    // Add this new controller function
+    cancelPayroll: async (req, res) => {
+        try {
+            console.log('Cancelling all pending payroll records...');
+            const affectedRows = await HRModel.cancelPendingPayroll();
+            
+            console.log(`Successfully cancelled ${affectedRows} payroll records`);
+            res.json({ 
+                message: `Successfully cancelled ${affectedRows} payroll records`,
+                cancelledCount: affectedRows
+            });
+        } catch (error) {
+            console.error('Error in cancelPayroll:', error);
+            res.status(500).json({ 
+                message: 'Failed to cancel payroll records',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    },
+
+    // Get a single deduction by ID
+    getDeductionById: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const deduction = await HRModel.getDeductionById(id);
+            
+            if (!deduction) {
+                return res.status(404).json({ error: 'Deduction not found' });
+            }
+            
+            res.json(deduction);
+        } catch (error) {
+            console.error('Error getting deduction:', error);
+            res.status(500).json({ error: 'Failed to get deduction' });
+        }
+    },
+
+    // Archive a deduction
+    archiveDeduction: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const result = await HRModel.archiveDeduction(id);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Deduction not found' });
+            }
+
+            res.json({ message: 'Deduction archived successfully' });
+        } catch (error) {
+            console.error('Error archiving deduction:', error);
+            res.status(500).json({ error: 'Failed to archive deduction' });
+        }
+    },
+
+    // Restore a deduction
+    restoreDeduction: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const result = await HRModel.restoreDeduction(id);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Deduction not found' });
+            }
+
+            res.json({ message: 'Deduction restored successfully' });
+        } catch (error) {
+            console.error('Error restoring deduction:', error);
+            res.status(500).json({ error: 'Failed to restore deduction' });
+        }
+    },
+
+    markAbsences: async (req, res) => {
+        try {
+            const { date } = req.body;
+            if (!date) {
+                return res.status(400).json({ error: 'Date is required' });
+            }
+
+            const result = await HRModel.markAbsences(date);
+            if (result.success) {
+                res.json({ message: 'Absences marked successfully' });
             } else {
-                message = `Hello, your application status has been updated to *${status}*.\n\nPlease check your profile for details.`;
+                res.status(500).json({ error: result.error || 'Failed to mark absences' });
             }
-        
-            message += `\n\nBest regards,\nHR Department`;
-        
-            const mailOptions = {
-                from: 'reneemadel15@gmail.com',
-                to: applicantEmail,
-                subject: `Application Update: ${status}`,
-                text: message,
-            };
-        
-            try {
-                await transporter.sendMail(mailOptions);
-                console.log('Email sent successfully to', applicantEmail);
-            } catch (error) {
-                console.error('Error sending email:', error);
-            }
-           
+        } catch (error) {
+            console.error('Error marking absences:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
 };
 
 module.exports = HRController;

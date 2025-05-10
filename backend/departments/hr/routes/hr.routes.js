@@ -37,13 +37,17 @@
     router.get('/requests/:userId', HRController.getPendingRequestsByUserId);
     router.post('/approve', HRController.handleRequestApproval);
     router.post('/payroll/generate', HRController.generatePayroll);
+    router.post('/payroll/cancel', HRController.cancelPayroll);
     router.get('/payroll/pending', HRController.getPendingPayroll);
     router.post('/payroll/approve-reject', HRController.approveOrRejectPayroll);
-    router.get('/payroll/approved', HRController.getPendingPayroll);
+    router.get('/payroll/approved', HRController.getAcceptPayroll);
     router.get('/deductions', HRController.getAllDeductions);
-    router.put('/deductions/update', HRController.updateDeduction);
-
-
+    router.post('/deductions/add', HRController.addDeduction);
+    router.put('/deductions/update/:id', HRController.updateDeduction);
+    router.put('/deductions/archive/:id', HRController.archiveDeduction);
+    router.put('/deductions/restore/:id', HRController.restoreDeduction);
+    router.delete('/deductions/delete/:id', HRController.deleteDeduction);
+    router.get('/deductions/:id', HRController.getDeductionById);
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
@@ -55,7 +59,7 @@
 
     router.get('/getApplicationsByStatus', HRController.getApplicationsByStatus);
 
-    // Route to update application status (POST method)
+    // Route to update application status (POST method) 
     router.post('/updateStatus', HRController.updateApplicationStatus);
     router.post('/scheduleInterview', HRController.scheduleInterview);
     router.get('/getAllAttendanceRecords', HRController.getAllAttendanceRecords)
