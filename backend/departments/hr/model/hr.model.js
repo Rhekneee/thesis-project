@@ -160,27 +160,43 @@ const HRModel = {
         }
     },
 
-
-            
-
     // 🔹 Get employee by ID (Added this function for updates)
-        getEmployeeById: async (employeeId) => {
-            try {
-                const query = "SELECT * FROM employees WHERE employee_id = ?";
-                const [rows] = await db.query(query, [employeeId]);
-                if (rows.length > 0) {
-                    let employee = rows[0];
+    getEmployeeById: async (employeeId) => {
+        try {
+            const query = `
+                SELECT 
+                    e.employee_id,
+                    e.full_name,
+                    e.email,
+                    e.contact,
+                    e.address,
+                    e.birthday,
+                    e.employment_status,
+                    e.educational_background,
+                    e.emergency_contact_name,
+                    e.emergency_contact_relationship,
+                    e.emergency_contact_phone,
+                    r.name as role_name,
+                    d.name as department_name
+                FROM employees e
+                LEFT JOIN roles r ON e.role_id = r.id
+                LEFT JOIN departments d ON r.department_id = d.id
+                WHERE e.employee_id = ?
+            `;
+            const [rows] = await db.query(query, [employeeId]);
+            if (rows.length > 0) {
+                let employee = rows[0];
 
-                    // Format birthday as 'YYYY-MM-DD'
-                    employee.birthday = employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null;
-                    return employee;
-                }
-                return null;
-            } catch (error) {
-                console.error("❌ Error fetching employee by ID:", error);
-                throw error;
+                // Format birthday as 'YYYY-MM-DD'
+                employee.birthday = employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null;
+                return employee;
             }
-        },
+            return null;
+        } catch (error) {
+            console.error("❌ Error fetching employee by ID:", error);
+            throw error;
+        }
+    },
 
     // 🔹 Get all permissions
     getAllRoles: async () => {
@@ -449,81 +465,82 @@ const HRModel = {
         
     checkOut: async (userId, checkOutTime, date) => {
         try {
-            console.log('Check-out function called with:', userId, checkOutTime, date);  // Debugging log at the start
-    
+            console.log('Check-out function called with:', userId, checkOutTime, date);
+
             // First, check if the user has checked in
             const [checkInRecord] = await db.execute(
-                `SELECT check_in FROM attendance WHERE user_id = ? AND date = ?`,
+                `SELECT check_in, status FROM attendance WHERE user_id = ? AND date = ?`,
                 [userId, date]
             );
-    
-            console.log('Check-in record:', checkInRecord);  // Log the check-in record for debugging
-    
+
             if (!checkInRecord || !checkInRecord[0].check_in) {
-                return { error: "You must check in first." };  // Error if the user hasn't checked in yet
+                return { error: "You must check in first." };
             }
-    
+
             // Convert check-out time to Philippine Time (PHT) - UTC to PHT (UTC + 8)
             const checkOutDate = new Date(checkOutTime);
-            const hourPHT = checkOutDate.getUTCHours() + 8;  // Convert UTC to PHT (UTC + 8)
-    
+            const hourPHT = checkOutDate.getUTCHours() + 8;
+            const minutesPHT = checkOutDate.getUTCMinutes();
+
             // Format the hour to 24-hour format (0-23)
-            const formattedHour = String(hourPHT % 24).padStart(2, '0'); // Handling overflow after 24 hours
-            const checkOutFormatted = `${formattedHour}:${String(checkOutDate.getMinutes()).padStart(2, '0')}:${String(checkOutDate.getSeconds()).padStart(2, '0')}`;
-    
-            console.log('Formatted check-out time (HH:MM:SS):', checkOutFormatted);  // Debugging log for formatted check-out time
-    
-            // Check if an early-out request is approved for this date
-            const request = await HRModel.checkRequestApproval(userId, date, 'early-out');  // Check if early-out request is approved
-            console.log('Early-out request:', request);  // Log the early-out request status
-            
-    
-            // If it's before 6 PM and no request is approved, show error
-            if (hourPHT < 18 && !request) {
-                return { error: "You can only check out after 6:00 PM unless approved for early out." };  // Error if before 6 PM and no approved request
+            const formattedHour = String(hourPHT % 24).padStart(2, '0');
+            const checkOutFormatted = `${formattedHour}:${String(minutesPHT).padStart(2, '0')}:${String(checkOutDate.getSeconds()).padStart(2, '0')}`;
+
+            // Get check-in time for calculations
+            const checkInTime = checkInRecord[0].check_in;
+            const [checkInHour, checkInMinute] = checkInTime.split(':').map(Number);
+
+            // Calculate total minutes worked
+            const totalMinutes = (hourPHT * 60 + minutesPHT) - (checkInHour * 60 + checkInMinute);
+            const totalHours = totalMinutes / 60;
+
+            let status = checkInRecord[0].status;
+            let overtimeHours = 0;
+            let adjustedHours = totalHours;
+
+            // Handle different attendance statuses
+            if (status === 'Half Day') {
+                // For half day, cap the hours at 4
+                adjustedHours = Math.min(totalHours, 4);
+            } else if (hourPHT < 18) {
+                // Early out - calculate deduction based on hours before 6 PM
+                const minutesBefore6PM = (18 * 60) - (hourPHT * 60 + minutesPHT);
+                adjustedHours = totalHours - (minutesBefore6PM / 60);
+                status = 'Early Out';
+            } else if (hourPHT >= 18) {
+                // Overtime - calculate hours after 6 PM
+                overtimeHours = (hourPHT * 60 + minutesPHT - 18 * 60) / 60;
+                status = 'Overtime';
             }
-    
-            // If the request is approved, allow checkout even before 6 PM
-            if (request && request.status === 'approved') {
-                console.log(`Early-out request approved for ${userId} on ${date}. Checkout allowed before 6 PM.`);
-            }
-    
-            // SQL query to update check-out time, calculate total hours, and overtime
+
+            // Update attendance record with calculated values
             const sql = `
                 UPDATE attendance
-                SET check_out = ?, 
-                    total_hours = TIMESTAMPDIFF(MINUTE, check_in, ?) / 60,  -- Calculate total hours worked
-                    overtime_hours = GREATEST(TIMESTAMPDIFF(MINUTE, check_in, ?) / 60 - 8, 0)  -- Calculate overtime (anything over 8 hours)
+                SET check_out = ?,
+                    total_hours = ?,
+                    overtime_hours = ?,
+                    status = ?
                 WHERE user_id = ? AND date = ? AND check_in IS NOT NULL
             `;
-    
-            console.log('Executing SQL query with values:', [
-                checkOutFormatted,
-                checkOutFormatted,
-                checkOutFormatted,
-                userId,
-                date
-            ]);  // Log the query and parameters
-    
+
             const [result] = await db.execute(sql, [
-                checkOutFormatted,  // check-out time in HH:MM:SS format
                 checkOutFormatted,
-                checkOutFormatted,
+                adjustedHours,
+                overtimeHours,
+                status,
                 userId,
                 date
             ]);
-    
-            console.log('SQL query result:', result);  // Log the result of the SQL query
-    
+
             if (result.affectedRows === 0) {
-                return { error: "Check-in required before check-out." };  // Error if no check-in exists for that date
+                return { error: "Check-in required before check-out." };
             }
-    
+
             return { success: true, message: "Check-out recorded." };
-    
+
         } catch (error) {
-            console.error('Error during check-out:', error);  // Log any error during check-out
-            return { error: error.message || 'Internal Server Error' };  // Return error with message
+            console.error('Error during check-out:', error);
+            return { error: error.message || 'Internal Server Error' };
         }
     },    
 
@@ -736,99 +753,224 @@ const HRModel = {
         return rows[0] || null;
     },
 
+    markAbsences: async (date) => {
+        try {
+            // Get all active employees
+            const [employees] = await db.execute(
+                `SELECT user_id FROM employees WHERE is_deleted = 0`
+            );
+
+            // For each employee, check if they have an attendance record for the date
+            for (const employee of employees) {
+                const [attendance] = await db.execute(
+                    `SELECT * FROM attendance WHERE user_id = ? AND DATE(date) = ?`,
+                    [employee.user_id, date]
+                );
+
+                // If no attendance record exists, mark as absent
+                if (attendance.length === 0) {
+                    await db.execute(
+                        `INSERT INTO attendance (user_id, date, status) VALUES (?, ?, 'Absent')`,
+                        [employee.user_id, date]
+                    );
+                }
+            }
+            return { success: true };
+        } catch (error) {
+            console.error('Error marking absences:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     getEmployeesWithAttendance: async (startDate, endDate) => {
-        const [rows] = await db.query(
-            `SELECT 
-                e.employee_id, 
-                e.full_name, 
-                e.role_id, 
-                COALESCE(p.salary, 0) AS fixed_salary, 
-                SUM(a.total_hours) AS total_hours, 
-                SUM(a.overtime_hours) AS overtime_hours,
-                COUNT(DISTINCT DATE(a.date)) AS days_present 
-             FROM employees e
-             JOIN attendance a 
-               ON e.user_id = a.user_id
-            JOIN roles r 
-               ON e.role_id = r.id  
-            JOIN positions p 
-                 ON e.role_id = p.role_id 
-             WHERE a.date BETWEEN ? AND ? AND a.status = 'present'  -- Only count 'present' status
-             GROUP BY e.employee_id, e.full_name, e.role_id, p.salary`,
-            [startDate, endDate]
-        );
-        return rows;
+        try {
+            console.log('\n=== PAYROLL GENERATION DEBUG ===');
+            console.log('1. Input Parameters:', {
+                startDate,
+                endDate,
+                startDateType: typeof startDate,
+                endDateType: typeof endDate
+            });
+            
+            const query = `
+                WITH date_range AS (
+                    SELECT CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY AS date
+                    FROM (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS a
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS b
+                    CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS c
+                    WHERE CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY BETWEEN ? AND ?
+                ),
+                employee_dates AS (
+                    SELECT e.employee_id, d.date
+                    FROM employees e
+                    CROSS JOIN date_range d
+                    WHERE e.is_deleted = 0
+                )
+                SELECT 
+                    e.employee_id, 
+                    e.full_name, 
+                    e.role_id,
+                    r.name as position,
+                    COALESCE(p.salary, 0) AS fixed_salary,
+                    COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.total_hours ELSE 0 END), 0) AS total_hours, 
+                    COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.overtime_hours ELSE 0 END), 0) AS overtime_hours,
+                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Present', 'Late', 'Overtime') THEN DATE(a.date) END), 0) AS days_present,
+                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Half Day' THEN DATE(a.date) END), 0) AS days_half_day,
+                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Early Out' THEN DATE(a.date) END), 0) AS days_early_out,
+                    COALESCE(COUNT(DISTINCT CASE 
+                        WHEN ed.date BETWEEN ? AND ? 
+                        AND (a.status = 'Absent' OR a.status IS NULL) 
+                        AND ed.date NOT IN (
+                            SELECT date 
+                            FROM attendance 
+                            WHERE user_id = e.user_id 
+                            AND status IN ('Holiday', 'Rest Day', 'On Leave')
+                        )
+                        THEN ed.date 
+                    END), 0) AS days_absent,
+                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Holiday', 'Rest Day') THEN DATE(a.date) END), 0) AS days_holiday_rest,
+                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'On Leave' THEN DATE(a.date) END), 0) AS days_on_leave
+                FROM employees e
+                LEFT JOIN roles r ON e.role_id = r.id
+                LEFT JOIN positions p ON e.role_id = p.role_id 
+                LEFT JOIN attendance a ON e.user_id = a.user_id
+                LEFT JOIN employee_dates ed ON e.employee_id = ed.employee_id
+                WHERE e.is_deleted = 0
+                GROUP BY e.employee_id, e.full_name, e.role_id, r.name, p.salary`;
+
+            const params = [
+                startDate, endDate,  // date_range
+                startDate, endDate,  // total_hours
+                startDate, endDate,  // overtime_hours
+                startDate, endDate,  // days_present
+                startDate, endDate,  // days_half_day
+                startDate, endDate,  // days_early_out
+                startDate, endDate,  // days_absent
+                startDate, endDate,  // days_holiday_rest
+                startDate, endDate   // days_on_leave
+            ];
+
+            const [rows] = await db.query(query, params);
+
+            console.log('2. Query Results:');
+            console.log('- Number of employees found:', rows.length);
+            return rows;
+        } catch (error) {
+            console.error('Error in getEmployeesWithAttendance:', error);
+            throw error;
+        }
     },
     
     getDeductionsBySalary: async (salary) => {
-        const [rows] = await db.query(
-            `SELECT * 
-             FROM deductions 
-             WHERE ? BETWEEN salary_min AND salary_max`,
-            [salary]
-        );
-        return rows;
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    id,
+                    deduction_type,
+                    salary_min,
+                    salary_max,
+                    employee_percentage,
+                    employer_percentage,
+                    total_rate
+                FROM deductions 
+                WHERE ? BETWEEN salary_min AND salary_max
+                ORDER BY deduction_type
+            `, [salary]);
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching deductions by salary:", error);
+            throw error;
+        }
     },
     
     insertPayrollRecords: async (records) => {
         const values = records.map(r => [
             r.employee_id,
-            r.period_start,
-            r.period_end,
+            r.start_date,
+            r.end_date,
             r.payroll_date,
             r.days_present,
+            r.days_absent,
             r.total_hours || 0,
             r.overtime_hours,
             r.fixed_salary || 0,
-            r.deductions || 0,
-            r.salary_before_tax || 0,
-            r.net_pay || 0,
+            r.total_deductions || 0,
+            r.absence_deduction || 0,
+            r.net_salary || 0,
             r.payroll_period || '',
-            r.status || 'pending'    // default to 'pending'
+            r.status || 'pending',    // default to 'pending'
+            r.fixed_salary || 0       // salary_before_tax is same as fixed_salary
         ]);
     
-        await db.query(
-            `INSERT INTO payroll 
-             (employee_id, start_date, end_date, payroll_date, days_present, 
-              total_hours, overtime_hours, fixed_salary, total_deductions, salary_before_tax, 
-              net_salary, payroll_period, status)
-             VALUES ?`, [values]
-        );
+        try {
+            console.log('Inserting payroll records with dates:', {
+                firstRecord: {
+                    start: records[0]?.start_date,
+                    end: records[0]?.end_date,
+                    payroll_date: records[0]?.payroll_date
+                }
+            });
+
+            await db.query(
+                `INSERT INTO payroll 
+                 (employee_id, start_date, end_date, payroll_date, days_present, 
+                  days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
+                  absence_deduction, net_salary, payroll_period, status, salary_before_tax)
+                 VALUES ?`, [values]
+            );
+        } catch (error) {
+            console.error('Error inserting payroll records:', error);
+            throw error;
+        }
     },
     getPendingPayroll: async () => {
         try {
             const [rows] = await db.query(
-                `SELECT p.*, e.full_name,  ros.name AS position
+                `SELECT 
+                    p.*, 
+                    e.full_name,  
+                    r.name AS position,
+                    DATE_FORMAT(p.start_date, '%Y-%m-%d') as start_date,
+                    DATE_FORMAT(p.end_date, '%Y-%m-%d') as end_date
                  FROM payroll p 
                  JOIN employees e 
                    ON p.employee_id = e.employee_id
-                     JOIN roles ros ON e.role_id = ros.id
-                      JOIN positions pos ON e.role_id = pos.position_id
-                 WHERE p.status = "pending"`
+                 JOIN roles r ON e.role_id = r.id
+                 WHERE p.status = "pending"
+                 ORDER BY p.payroll_date DESC`
             );
-            console.log('Rows:', rows); // Log the result to inspect it
-            return rows;  // Return the rows if found
+            console.log('Retrieved pending payroll records:', {
+                count: rows.length,
+                firstRecord: rows[0] ? {
+                    start: rows[0].start_date,
+                    end: rows[0].end_date
+                } : null
+            });
+            return rows;
         } catch (err) {
             console.error('Error in getPendingPayroll:', err);
-            throw err;  // Ensure we throw the error so it's caught in the controller
+            throw err;
         }
     },
     getAcceptPayroll: async () => {
         try {
             const [rows] = await db.query(
-                `SELECT p.*, e.full_name,  ros.name AS position
-                 FROM payroll p 
-                 JOIN employees e 
-                   ON p.employee_id = e.employee_id
-                     JOIN roles ros ON e.role_id = ros.id
-                      JOIN positions pos ON e.role_id = pos.position_id
-                 WHERE p.status = "approved"`
+                `SELECT 
+                    p.*,
+                    e.full_name,
+                    r.name AS position,
+                    pos.salary AS base_salary
+                FROM payroll p 
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                JOIN positions pos ON e.role_id = pos.role_id
+                WHERE p.status = 'approved'
+                ORDER BY p.payroll_date DESC, p.employee_id`
             );
-            console.log('Rows:', rows); // Log the result to inspect it
-            return rows;  // Return the rows if found
+            return rows;
         } catch (err) {
-            console.error('Error in getPendingPayroll:', err);
-            throw err;  // Ensure we throw the error so it's caught in the controller
+            console.error('Error in getAcceptPayroll:', err);
+            throw err;
         }
     },
     updatePayrollStatus: async (payrollId, status, remarks) => {
@@ -855,30 +997,185 @@ const HRModel = {
     
     // Get all deductions
     getAllDeductions: async () => {
-        const [rows] = await db.query('SELECT * FROM deductions');
-        return rows;  // Return all rows (deductions)
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    id,
+                    deduction_type,
+                    salary_min,
+                    salary_max,
+                    employee_percentage,
+                    employer_percentage,
+                    (employee_percentage + employer_percentage) as total_rate,
+                    is_active
+                FROM deductions
+                ORDER BY deduction_type, salary_min
+            `);
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching deductions:", error);
+            throw error;
+        }
+    },
+
+    // Archive a deduction (soft delete)
+    archiveDeduction: async (id) => {
+        try {
+            const [result] = await db.query(
+                `UPDATE deductions 
+                 SET is_active = 0
+                 WHERE id = ?`,
+                [id]
+            );
+            return result;
+        } catch (error) {
+            console.error("❌ Error archiving deduction:", error);
+            throw error;
+        }
+    },
+
+    // Restore a deduction
+    restoreDeduction: async (id) => {
+        try {
+            const [result] = await db.query(
+                `UPDATE deductions 
+                 SET is_active = 1
+                 WHERE id = ?`,
+                [id]
+            );
+            return result;
+        } catch (error) {
+            console.error("❌ Error restoring deduction:", error);
+            throw error;
+        }
     },
 
     // Model function to update a deduction
-updateDeduction: async (id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage) => {
-    const [result] = await db.query(
-        `UPDATE deductions 
-         SET deduction_type = ?, salary_min = ?, salary_max = ?, employee_percentage = ?, employer_percentage = ? 
-         WHERE id = ?`,
-        [deduction_type, salary_min, salary_max, employee_percentage, employer_percentage, id]
-    );
-    return result;
-},
+    updateDeduction: async (deduction) => {
+        try {
+            const [result] = await db.query(`
+                UPDATE deductions 
+                SET deduction_type = ?,
+                    salary_min = ?,
+                    salary_max = ?,
+                    employee_percentage = ?,
+                    employer_percentage = ?,
+                    total_rate = ?
+                WHERE id = ?
+            `, [
+                deduction.deduction_type,
+                deduction.salary_min,
+                deduction.salary_max,
+                deduction.employee_percentage,
+                deduction.employer_percentage,
+                deduction.total_rate,
+                deduction.id
+            ]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error updating deduction:", error);
+            throw error;
+        }
+    },
 
-deleteDeduction: async (id) => {
-    const [result] = await db.query(
-        `DELETE FROM deductions WHERE id = ?`,
-        [id]
-    );
-    return result;
-}
+    // Add new deduction
+    addDeduction: async (deduction) => {
+        try {
+            const [result] = await db.query(`
+                INSERT INTO deductions 
+                (deduction_type, salary_min, salary_max, employee_percentage, employer_percentage, total_rate)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `, [
+                deduction.deduction_type,
+                deduction.salary_min,
+                deduction.salary_max,
+                deduction.employee_percentage,
+                deduction.employer_percentage,
+                deduction.total_rate
+            ]);
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error adding deduction:", error);
+            throw error;
+        }
+    },
 
-    
+    // Get position salary from position table
+    getPositionSalary: async (roleId) => {
+        try {
+            const query = `
+                SELECT p.salary, p.position_name 
+                FROM positions p 
+                WHERE p.role_id = ?
+            `;
+            const [rows] = await db.query(query, [roleId]);
+            return rows.length > 0 ? rows[0] : null;
+        } catch (error) {
+            console.error("❌ Error fetching position salary:", error);
+            throw error;
+        }
+    },
+
+    // Add this new function
+    cancelPendingPayroll: async () => {
+        try {
+            const [result] = await db.query(
+                `DELETE FROM payroll WHERE status = 'pending'`
+            );
+            console.log('Cancelled payroll records:', result.affectedRows);
+            return result.affectedRows;
+        } catch (error) {
+            console.error('Error cancelling payroll records:', error);
+            throw error;
+        }
+    },
+
+    // Get a single deduction by ID
+    getDeductionById: async (id) => {
+        try {
+            const [rows] = await db.query(
+                `SELECT 
+                    id,
+                    deduction_type,
+                    salary_min,
+                    salary_max,
+                    employee_percentage,
+                    employer_percentage,
+                    (employee_percentage + employer_percentage) as total_rate
+                FROM deductions 
+                WHERE id = ?`,
+                [id]
+            );
+            return rows.length > 0 ? rows[0] : null;
+        } catch (error) {
+            console.error("❌ Error fetching deduction by ID:", error);
+            throw error;
+        }
+    },
+
+    createDeductionsTable: async () => {
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS deductions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    deduction_type VARCHAR(50) NOT NULL,
+                    salary_min DECIMAL(10, 2) NOT NULL,
+                    salary_max DECIMAL(10, 2) NOT NULL,
+                    employee_percentage DECIMAL(5, 2) NOT NULL,
+                    employer_percentage DECIMAL(5, 2) NOT NULL,
+                    total_rate DECIMAL(5, 2) NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+            console.log("✅ Deductions table created or already exists");
+        } catch (error) {
+            console.error("❌ Error creating deductions table:", error);
+            throw error;
+        }
+    },
+
 };
 
 module.exports = HRModel;
