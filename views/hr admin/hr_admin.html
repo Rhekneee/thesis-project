@@ -179,11 +179,22 @@
             margin-left: 300px;
             margin-top: 0;
             padding: 20px;
+            padding-top: 60px;
             transition: margin-left 0.3s ease;
             width: calc(100% - 300px);
             position: relative;
             overflow-x: hidden;
             min-height: 100vh;
+        }
+        
+        /* Remove .content-container class */
+        /* .content-container {
+            padding-top: 70px;
+        } */
+        
+        /* Remove top margin from first heading */
+        #content h2:first-child {
+            margin-top: 0;
         }
 
         /* Update collapsed states */
@@ -1106,103 +1117,7 @@
             min-height: 100vh;
         }
     </style>
-    <script>
-        // Function to fetch user info
-        async function getUserInfo() {
-            try {
-                const response = await fetch('/hr/check-session', {
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user info');
-                }
-
-                const data = await response.json();
-                console.log('Session data:', data);
-
-                if (!data.user) {
-                    throw new Error('No user data in session');
-                }
-
-                const user = data.user;
-
-                // Update profile section
-                const profileName = document.querySelector('.profile-name');
-                const profilePosition = document.querySelector('.profile-position');
-
-                if (profileName && profilePosition) {
-                    profileName.textContent = user.full_name || 'Not Set';
-                    profilePosition.textContent = user.role_name || 'Not Set';
-                }
-            } catch (error) {
-                console.error('Error fetching user info:', error);
-            }
-        }
-
-        // Function to toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            const menuToggle = document.querySelector('.menu-toggle i');
-            
-            sidebar.classList.toggle('collapsed');
-            menuToggle.classList.toggle('fa-bars');
-            menuToggle.classList.toggle('fa-times');
-            
-            if (sidebar.classList.contains('collapsed')) {
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set initial state
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-
-            // Fetch user info
-            getUserInfo();
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                sidebar.classList.remove('collapsed');
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-        });
-    </script>
+    
 </head>
 
 <body>
@@ -1273,7 +1188,7 @@
         <!-- Sidebar -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <img src="/public/image/mdb-removebg-preview.png" alt="MDB Logo">
                 <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
@@ -1457,6 +1372,103 @@
                 chevronIcon.classList.toggle('rotate');
             }
         }
+    </script>
+    <script>
+        // Function to fetch user info
+        async function getUserInfo() {
+            try {
+                const response = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const data = await response.json();
+                console.log('Session data:', data);
+
+                if (!data.user) {
+                    throw new Error('No user data in session');
+                }
+
+                const user = data.user;
+
+                // Update profile section
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+
+                if (profileName && profilePosition) {
+                    profileName.textContent = user.full_name || 'Not Set';
+                    profilePosition.textContent = user.role_name || 'Not Set';
+                }
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+            }
+        }
+
+        // Function to toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            const menuToggle = document.querySelector('.menu-toggle i');
+            
+            sidebar.classList.toggle('collapsed');
+            menuToggle.classList.toggle('fa-bars');
+            menuToggle.classList.toggle('fa-times');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial state
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+
+            // Fetch user info
+            getUserInfo();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                sidebar.classList.remove('collapsed');
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        });
     </script>
         <script>
         // Sample data for charts (use real data)
