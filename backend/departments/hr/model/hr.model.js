@@ -1,4 +1,36 @@
 const db = require("../../../db");
+const bcrypt = require('bcrypt');
+
+// Add a function to fix existing plain text passwords
+const fixPlainTextPasswords = async () => {
+    try {
+        console.log('🔍 Checking for plain text passwords...');
+        const [users] = await db.query('SELECT id, password FROM users WHERE password NOT LIKE "$2b$%"');
+        
+        if (users.length > 0) {
+            console.log(`Found ${users.length} users with plain text passwords`);
+            
+            for (const user of users) {
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+                
+                await db.query(
+                    'UPDATE users SET password = ? WHERE id = ?',
+                    [hashedPassword, user.id]
+                );
+                console.log(`✅ Updated password for user ${user.id}`);
+            }
+        } else {
+            console.log('✅ All passwords are properly hashed');
+        }
+    } catch (error) {
+        console.error('❌ Error fixing passwords:', error);
+        throw error;
+    }
+};
+
+// Call the fix function when the module loads
+fixPlainTextPasswords().catch(console.error);
 
 const HRModel = {
     // 🔹 Get permission by ID
@@ -17,6 +49,9 @@ const HRModel = {
         }
 
         const defaultPassword = "default123";
+        // Hash the default password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
 
         // 🧠 Step 1: Get permission_id from role_permission
         let permission_id = null;
@@ -37,7 +72,7 @@ const HRModel = {
             throw new Error("Failed to fetch permission_id for the role");
         }
 
-        // 🧾 Step 2: Insert the user with permission_id
+        // 🧾 Step 2: Insert the user with permission_id and hashed password
         const userInsertQuery = `
             INSERT INTO users (email, username, role_id, password) 
             VALUES (?, ?, ?, ?)
@@ -48,7 +83,7 @@ const HRModel = {
                 email,
                 full_name,
                 role_id,
-                defaultPassword,
+                hashedPassword,
             ]);
 
             return result.insertId;
@@ -166,6 +201,7 @@ const HRModel = {
             const query = `
                 SELECT 
                     e.employee_id,
+                    e.user_id,
                     e.full_name,
                     e.email,
                     e.contact,
@@ -176,11 +212,15 @@ const HRModel = {
                     e.emergency_contact_name,
                     e.emergency_contact_relationship,
                     e.emergency_contact_phone,
+                    e.is_deleted,
+                    e.profile_picture,
                     r.name as role_name,
-                    d.name as department_name
+                    d.name as department_name,
+                    u.is_active
                 FROM employees e
                 LEFT JOIN roles r ON e.role_id = r.id
                 LEFT JOIN departments d ON r.department_id = d.id
+                LEFT JOIN users u ON e.user_id = u.id
                 WHERE e.employee_id = ?
             `;
             const [rows] = await db.query(query, [employeeId]);
@@ -1176,6 +1216,369 @@ const HRModel = {
         }
     },
 
+    // Update employee contact information
+    updateEmployeeContact: async (employeeId, contactData) => {
+        try {
+            const {
+                birthday,
+                address,
+                contact,
+                emergency_contact_name,
+                emergency_contact_relationship,
+                emergency_contact_phone
+            } = contactData;
+
+            // Validate employee exists
+            const existingEmployee = await HRModel.getEmployeeById(employeeId);
+            if (!existingEmployee) {
+                throw new Error("Employee not found");
+            }
+
+            // Update the employee contact information
+            const query = `
+                UPDATE employees 
+                SET birthday = ?,
+                    address = ?,
+                    contact = ?,
+                    emergency_contact_name = ?,
+                    emergency_contact_relationship = ?,
+                    emergency_contact_phone = ?
+                WHERE employee_id = ?
+            `;
+
+            const [result] = await db.query(query, [
+                birthday,
+                address,
+                contact,
+                emergency_contact_name,
+                emergency_contact_relationship,
+                emergency_contact_phone,
+                employeeId
+            ]);
+
+            if (result.affectedRows === 0) {
+                throw new Error("No changes were made");
+            }
+
+            // Return updated employee data
+            return await HRModel.getEmployeeById(employeeId);
+        } catch (error) {
+            console.error("❌ Error updating employee contact:", error);
+            throw error;
+        }
+    },
+
+    // Create or update security questions for a user
+    updateSecurityQuestions: async (userId, questions) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // First, delete existing questions for this user
+            await connection.query(
+                'DELETE FROM user_security_questions WHERE user_id = ?',
+                [userId]
+            );
+
+            // Hash the answers before storing
+            const bcrypt = require('bcrypt');
+            const saltRounds = 10;
+
+            // Insert new questions
+            for (let i = 1; i <= 3; i++) {
+                const question = questions[`question${i}`];
+                const answer = questions[`answer${i}`];
+                
+                // Hash the answer
+                const answerHash = await bcrypt.hash(answer.toLowerCase().trim(), saltRounds);
+
+                await connection.query(
+                    `INSERT INTO user_security_questions 
+                    (user_id, question_number, question, answer_hash) 
+                    VALUES (?, ?, ?, ?)`,
+                    [userId, i, question, answerHash]
+                );
+            }
+
+            await connection.commit();
+            return true;
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error updating security questions:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get security questions for a user
+    getSecurityQuestions: async (userId) => {
+        try {
+            const [questions] = await db.query(
+                `SELECT question_number, question, answer_hash 
+                FROM user_security_questions 
+                WHERE user_id = ? 
+                ORDER BY question_number`,
+                [userId]
+            );
+
+            // Format the response to match the frontend expectations
+            const formattedQuestions = {
+                question1: questions[0]?.question || '',
+                answer1: '',  // Don't send the hash to frontend
+                question2: questions[1]?.question || '',
+                answer2: '',
+                question3: questions[2]?.question || '',
+                answer3: ''
+            };
+
+            return formattedQuestions;
+        } catch (error) {
+            console.error("❌ Error fetching security questions:", error);
+            throw error;
+        }
+    },
+
+    // Verify security question answers
+    verifySecurityQuestions: async (userId, answers) => {
+        try {
+            // Validate input
+            if (!userId || !answers || typeof answers !== 'object') {
+                console.error("❌ Invalid input to verifySecurityQuestions:", { userId, answers });
+                return false;
+            }
+
+            const [questions] = await db.query(
+                `SELECT question_number, answer_hash 
+                FROM user_security_questions 
+                WHERE user_id = ? 
+                ORDER BY question_number`,
+                [userId]
+            );
+
+            if (questions.length === 0) {
+                console.error("❌ No security questions found for user:", userId);
+                return false;
+            }
+
+            const bcrypt = require('bcrypt');
+            
+            // Verify each answer
+            for (let i = 1; i <= questions.length; i++) {
+                const answerKey = `answer${i}`;
+                const answer = answers[answerKey];
+                
+                // Skip if answer is undefined or empty
+                if (!answer || typeof answer !== 'string') {
+                    console.error(`❌ Invalid answer for question ${i}:`, answer);
+                    return false;
+                }
+
+                const storedHash = questions[i-1].answer_hash;
+                const isMatch = await bcrypt.compare(answer.toLowerCase().trim(), storedHash);
+                
+                if (!isMatch) {
+                    console.error(`❌ Answer mismatch for question ${i}`);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error("❌ Error verifying security questions:", error);
+            throw error;
+        }
+    },
+
+    async changePassword(userId, currentPassword, newPassword) {
+        try {
+            console.log('🔍 Starting password change for user:', userId);
+            
+            // First, verify the current password
+            const [user] = await db.query(
+                'SELECT password FROM users WHERE id = ?',
+                [userId]
+            );
+
+            if (!user || user.length === 0) {
+                console.log('❌ User not found in database');
+                throw new Error('User not found');
+            }
+
+            console.log('🔍 Found user in database');
+            console.log('🔍 Attempting to verify current password...');
+
+            const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user[0].password);
+            console.log('🔍 Password verification result:', isCurrentPasswordValid);
+
+            if (!isCurrentPasswordValid) {
+                console.log('❌ Current password verification failed');
+                throw new Error('Current password is incorrect');
+            }
+
+            console.log('✅ Current password verified successfully');
+
+            // Hash the new password
+            const saltRounds = 10;
+            const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+            console.log('🔍 New password hashed successfully');
+
+            // Update the password (removed updated_at field)
+            await db.query(
+                'UPDATE users SET password = ? WHERE id = ?',
+                [newPasswordHash, userId]
+            );
+            console.log('✅ Password updated successfully in database');
+
+            return true;
+        } catch (error) {
+            console.error('❌ Error in changePassword:', error);
+            throw error;
+        }
+    },
+
+    // Update employee profile picture
+    updateProfilePicture: async (employeeId, imagePath) => {
+        try {
+            // Extract just the filename from the path if it's a full path
+            const filename = imagePath.includes('/') ? imagePath.split('/').pop() : imagePath;
+            console.log('Storing filename in database:', filename);
+
+            const query = `
+                UPDATE employees 
+                SET profile_picture = ?
+                WHERE employee_id = ?
+            `;
+
+            const [result] = await db.query(query, [filename, employeeId]);
+
+            if (result.affectedRows === 0) {
+                throw new Error("Employee not found");
+            }
+
+            return filename;
+        } catch (error) {
+            console.error("❌ Error updating profile picture:", error);
+            throw error;
+        }
+    },
+
+    // Fix existing profile picture paths in the database
+    fixProfilePicturePaths: async () => {
+        try {
+            const query = `
+                UPDATE employees 
+                SET profile_picture = SUBSTRING_INDEX(profile_picture, '/', -1)
+                WHERE profile_picture LIKE '/uploads/profile_pictures/%'
+            `;
+            const [result] = await db.query(query);
+            console.log(`Fixed ${result.affectedRows} profile picture paths`);
+            return result.affectedRows;
+        } catch (error) {
+            console.error("❌ Error fixing profile picture paths:", error);
+            throw error;
+        }
+    },
+
+    // Forgot Password Model Functions
+    getSecurityQuestionsByEmail: async (email) => {
+        try {
+            // First get the user ID from email
+            const [user] = await db.query(
+                'SELECT id FROM users WHERE email = ?',
+                [email]
+            );
+
+            if (!user || user.length === 0) {
+                return null;
+            }
+
+            const userId = user[0].id;
+
+            // Get security questions for the user
+            const [questions] = await db.query(
+                `SELECT question_number, question 
+                FROM user_security_questions 
+                WHERE user_id = ? 
+                ORDER BY question_number`,
+                [userId]
+            );
+
+            if (questions.length === 0) {
+                return null;
+            }
+
+            return {
+                userId: userId,
+                questions: {
+                    question1: questions[0]?.question || '',
+                    question2: questions[1]?.question || '',
+                    question3: questions[2]?.question || ''
+                }
+            };
+        } catch (error) {
+            console.error("❌ Error in getSecurityQuestionsByEmail:", error);
+            throw error;
+        }
+    },
+
+    verifySecurityAnswers: async (userId, answers) => {
+        try {
+            // Get stored security questions and answers
+            const [questions] = await db.query(
+                `SELECT question_number, answer_hash 
+                FROM user_security_questions 
+                WHERE user_id = ? 
+                ORDER BY question_number`,
+                [userId]
+            );
+
+            if (questions.length === 0) {
+                return false;
+            }
+
+            // Verify each answer
+            for (let i = 1; i <= questions.length; i++) {
+                const answerKey = `answer${i}`;
+                const answer = answers[answerKey];
+                
+                if (!answer || typeof answer !== 'string') {
+                    return false;
+                }
+
+                const storedHash = questions[i-1].answer_hash;
+                const isMatch = await bcrypt.compare(answer.toLowerCase().trim(), storedHash);
+                
+                if (!isMatch) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error("❌ Error in verifySecurityAnswers:", error);
+            throw error;
+        }
+    },
+
+    updateUserPassword: async (userId, newPassword) => {
+        try {
+            // Hash the new password
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+            
+            // Update the password
+            const [result] = await db.query(
+                'UPDATE users SET password = ? WHERE id = ?',
+                [hashedPassword, userId]
+            );
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error in updateUserPassword:", error);
+            throw error;
+        }
+    }
 };
 
 module.exports = HRModel;
