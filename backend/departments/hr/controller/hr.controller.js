@@ -1,7 +1,40 @@
 const nodemailer = require('nodemailer'); 
 const HRModel = require("../model/hr.model");
 const moment = require('moment');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
+// Configure multer for file upload
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'profile_pictures');
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename: employeeId_timestamp.extension
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, `profile_${req.params.id}_${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept only image files
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+    }
+}).single('profile_picture');
 
 const HRController = {
     // 🔹 Add a new employee (Manager Only)
@@ -886,6 +919,315 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         } catch (error) {
             console.error('Error marking absences:', error);
             res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    // Update employee contact information
+    updateEmployeeContact: async (req, res) => {
+        try {
+            const employeeId = req.params.id;
+            const contactData = req.body;
+
+            // Validate required fields
+            const requiredFields = ['birthday', 'address', 'contact', 'emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_phone'];
+            const missingFields = requiredFields.filter(field => !contactData[field]);
+            
+            if (missingFields.length > 0) {
+                return res.status(400).json({ 
+                    error: `Missing required fields: ${missingFields.join(', ')}` 
+                });
+            }
+
+            // Validate date format for birthday
+            const birthdayDate = new Date(contactData.birthday);
+            if (isNaN(birthdayDate.getTime())) {
+                return res.status(400).json({ error: "Invalid birthday date format" });
+            }
+
+            // Validate phone number format (basic validation)
+            const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+            if (!phoneRegex.test(contactData.contact) || !phoneRegex.test(contactData.emergency_contact_phone)) {
+                return res.status(400).json({ error: "Invalid phone number format" });
+            }
+
+            // Update the contact information
+            const updatedEmployee = await HRModel.updateEmployeeContact(employeeId, contactData);
+            
+            res.status(200).json({ 
+                message: "Contact information updated successfully",
+                employee: updatedEmployee
+            });
+
+        } catch (error) {
+            console.error("❌ Error updating employee contact:", error);
+            if (error.message === "Employee not found") {
+                return res.status(404).json({ error: "Employee not found" });
+            }
+            res.status(500).json({ error: "Failed to update contact information" });
+        }
+    },
+
+    // Update security questions
+    updateSecurityQuestions: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const userId = req.session.user.id;
+            const questions = req.body;
+
+            // Validate required fields
+            const requiredFields = ['question1', 'answer1', 'question2', 'answer2', 'question3', 'answer3'];
+            const missingFields = requiredFields.filter(field => !questions[field]);
+            
+            if (missingFields.length > 0) {
+                return res.status(400).json({ 
+                    error: `Missing required fields: ${missingFields.join(', ')}` 
+                });
+            }
+
+            // Validate that all questions are different
+            const selectedQuestions = new Set([
+                questions.question1,
+                questions.question2,
+                questions.question3
+            ]);
+
+            if (selectedQuestions.size !== 3) {
+                return res.status(400).json({ 
+                    error: "Please select different questions for each security question" 
+                });
+            }
+
+            await HRModel.updateSecurityQuestions(userId, questions);
+            res.json({ message: "Security questions updated successfully" });
+        } catch (error) {
+            console.error("❌ Error updating security questions:", error);
+            res.status(500).json({ error: "Failed to update security questions" });
+        }
+    },
+
+    // Get security questions
+    getSecurityQuestions: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const userId = req.session.user.id;
+            const questions = await HRModel.getSecurityQuestions(userId);
+            res.json(questions);
+        } catch (error) {
+            console.error("❌ Error fetching security questions:", error);
+            res.status(500).json({ error: "Failed to fetch security questions" });
+        }
+    },
+
+    // Verify security questions (for password reset or account recovery)
+    verifySecurityQuestions: async (req, res) => {
+        try {
+            const { userId, answers } = req.body;
+
+            if (!userId || !answers || typeof answers !== 'object') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid input: userId and answers are required'
+                });
+            }
+
+            const isValid = await HRModel.verifySecurityAnswers(userId, answers);
+
+            res.json({
+                success: true,
+                verified: isValid
+            });
+        } catch (error) {
+            console.error('Error in verifySecurityQuestions:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    },
+
+    changePassword: async (req, res) => {
+        try {
+            // Verify session
+            if (!req.session || !req.session.user || !req.session.user.id) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+
+            const { currentPassword, newPassword } = req.body;
+
+            // Validate input
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ message: 'Current password and new password are required' });
+            }
+
+            // Validate password requirements
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                return res.status(400).json({ 
+                    message: 'New password must be at least 8 characters long and contain uppercase, lowercase, number, and special character' 
+                });
+            }
+
+            // Call model to change password
+            await HRModel.changePassword(req.session.user.id, currentPassword, newPassword);
+
+            res.json({ message: 'Password changed successfully' });
+        } catch (error) {
+            console.error('Error in changePassword controller:', error);
+            if (error.message === 'Current password is incorrect') {
+                return res.status(400).json({ message: error.message });
+            }
+            res.status(500).json({ message: 'Internal server error' });
+        }
+    },
+
+    // Upload profile picture
+    uploadProfilePicture: async (req, res) => {
+        upload(req, res, async function(err) {
+            if (err instanceof multer.MulterError) {
+                // A Multer error occurred when uploading
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ error: 'File size too large. Maximum size is 5MB.' });
+                }
+                return res.status(400).json({ error: err.message });
+            } else if (err) {
+                // An unknown error occurred
+                return res.status(500).json({ error: err.message });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            try {
+                const employeeId = req.params.id;
+                // Store only the filename in the database, not the full path
+                const imagePath = req.file.filename;
+                console.log('Storing image path in database:', imagePath);
+                
+                // Update database with new image path
+                await HRModel.updateProfilePicture(employeeId, imagePath);
+
+                res.json({ 
+                    message: 'Profile picture uploaded successfully',
+                    imagePath: imagePath
+                });
+            } catch (error) {
+                // If database update fails, delete the uploaded file
+                if (req.file) {
+                    fs.unlinkSync(req.file.path);
+                }
+                console.error('Error uploading profile picture:', error);
+                res.status(500).json({ error: 'Failed to update profile picture' });
+            }
+        });
+    },
+
+    // Forgot Password Controller Functions
+    verifyEmailForReset: async (req, res) => {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Email is required'
+                });
+            }
+
+            const result = await HRModel.getSecurityQuestionsByEmail(email);
+
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Email not found or no security questions set'
+                });
+            }
+
+            res.json({
+                success: true,
+                userId: result.userId,
+                questions: result.questions
+            });
+        } catch (error) {
+            console.error('Error in verifyEmailForReset:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    },
+
+    verifySecurityQuestions: async (req, res) => {
+        try {
+            const { userId, answers } = req.body;
+
+            if (!userId || !answers || typeof answers !== 'object') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid input: userId and answers are required'
+                });
+            }
+
+            const isValid = await HRModel.verifySecurityAnswers(userId, answers);
+
+            res.json({
+                success: true,
+                verified: isValid
+            });
+        } catch (error) {
+            console.error('Error in verifySecurityQuestions:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    },
+
+    resetPassword: async (req, res) => {
+        try {
+            const { userId, newPassword } = req.body;
+
+            if (!userId || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'UserId and new password are required'
+                });
+            }
+
+            // Validate password requirements
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Password does not meet requirements'
+                });
+            }
+
+            const success = await HRModel.updateUserPassword(userId, newPassword);
+
+            if (!success) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Password reset successfully'
+            });
+        } catch (error) {
+            console.error('Error in resetPassword:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
         }
     },
 };
