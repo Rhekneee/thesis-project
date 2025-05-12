@@ -51,6 +51,7 @@
             font-size: 24px;
             cursor: pointer;
             padding: 5px;
+            margin-left: -20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -71,6 +72,7 @@
         .topbar-right {
             display: flex;
             align-items: center;
+            height: 100%;
         }
 
         .notification-icon {
@@ -114,13 +116,23 @@
             align-items: center;
             margin-left: 20px;
             cursor: pointer;
+            height: 100%;
+            padding: 0;
+            position: relative;
+            top: -8px;
+            gap: 15px;
         }
 
         .profile-info {
-            margin-right: 10px;
+            margin-right: 0;
             text-align: right;
             display: flex;
             flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            padding-top: 15px;
         }
 
         .profile-name {
@@ -128,14 +140,17 @@
             font-size: 14px;
             font-weight: 500;
             margin: 0;
-            line-height: 1.2;
+            padding: 0;
+            line-height: 1.5;
+            margin-bottom: 5px;
         }
 
         .profile-position {
             color: #ccc;
             font-size: 12px;
             margin: 0;
-            line-height: 1.2;
+            padding: 0;
+            line-height: 1;
         }
 
         .profile-picture {
@@ -144,6 +159,9 @@
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid white;
+            margin: 0;
+            padding: 0;
+            margin-top: 10px;
         }
 
         /* Sidebar styling */
@@ -156,7 +174,7 @@
             top: 0;
             transition: width 0.3s ease;
             color: white;
-            padding-top: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
@@ -164,7 +182,8 @@
         }
 
         #sidebar.collapsed {
-            width: 80px;
+            overflow: visible !important;
+            width: 80px !important;
         }
 
         /* Ensure sidebar is always visible */
@@ -177,24 +196,14 @@
         /* Content area styling */
         #content {
             margin-left: 300px;
-            margin-top: 0;
-            padding: 20px;
-            padding-top: 60px;
+            margin-top: 60px; /* Match topbar height */
+            padding: 0;
             transition: margin-left 0.3s ease;
             width: calc(100% - 300px);
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
             overflow-x: hidden;
-            min-height: 100vh;
-        }
-        
-        /* Remove .content-container class */
-        /* .content-container {
-            padding-top: 70px;
-        } */
-        
-        /* Remove top margin from first heading */
-        #content h2:first-child {
-            margin-top: 0;
         }
 
         /* Update collapsed states */
@@ -205,6 +214,41 @@
         #sidebar.collapsed + .topbar + #content {
             margin-left: 80px;
             width: calc(100% - 80px);
+        }
+
+        /* Topbar styling */
+        .topbar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 300px;
+            height: 60px;
+            background-color: #343a40;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+        }
+
+        /* Wrapper styling */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        /* Body styling */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            position: relative;
         }
 
         /* Menu toggle button */
@@ -245,17 +289,16 @@
 
         /* Menu items in collapsed state */
         #sidebar.collapsed ul li a {
-            padding: 15px 0;
-            text-align: center;
+            padding: 10px 0 !important;
+            justify-content: center !important;
         }
 
         #sidebar.collapsed ul li a i {
-            margin: 0;
-            font-size: 20px;
+            margin-right: 0 !important;
         }
 
         #sidebar.collapsed ul li a span {
-            display: none;
+            display: none !important;
         }
 
         /* Ensure proper spacing in collapsed state */
@@ -295,14 +338,16 @@
             flex: 1;
             padding: 0;
             list-style: none;
-            margin-bottom: 80px;
+            margin: 0;
             overflow-y: auto;
+            padding-bottom: 60px; /* Add padding to prevent content from being hidden behind logout */
+            position: relative;
         }
 
         #sidebar ul li {
             padding: 0;
             margin: 0;
-            position: relative;
+            text-align: left;
         }
 
         #sidebar ul li a {
@@ -310,32 +355,36 @@
             align-items: center;
             color: white;
             text-decoration: none;
-            font-size: 14px;
-            padding: 6px 20px;
-            margin: 0;
-            height: 32px;
-            line-height: 32px;
+            font-size: 15px;
+            padding: 10px 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 0;
+            position: relative;
         }
 
         #sidebar ul li a i:first-child {
+            width: 20px;
+            text-align: center;
             margin-right: 15px;
+            font-size: 18px;
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+
+        #sidebar.collapsed ul li a {
+            justify-content: center;
+            padding: 10px 0;
+            width: 80px;
+        }
+
+        #sidebar.collapsed ul li a i:first-child {
+            margin-right: 0;
             width: 20px;
             text-align: center;
             font-size: 18px;
         }
 
-        #sidebar.collapsed ul li a {
-            justify-content: center;
-            padding: 8px 0;
-        }
-
-        #sidebar.collapsed ul li a i:first-child {
-            margin-right: 0;
-            font-size: 18px;
-        }
-
         #sidebar.collapsed ul li a span {
-            display: none;
+            display: none !important;
         }
 
         #sidebar.collapsed .collapse {
@@ -355,53 +404,46 @@
         /* Fixed logout button */
         #sidebar ul li.logout {
             position: fixed;
-            bottom: 20px;
+            bottom: 0;
             left: 0;
             width: 300px;
             background-color: #343a40;
-            padding: 10px 0;
+            padding: 0;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 1002;
+            transition: width 0.3s ease;
         }
 
         #sidebar.collapsed ul li.logout {
             width: 80px;
         }
 
-        /* Hide logout text when collapsed */
+        #sidebar ul li.logout a {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 20px;
+        }
+
         #sidebar.collapsed ul li.logout a {
-            justify-content: center !important;
-            padding: 8px 0 !important;
-            width: 80px !important;
-            text-align: center !important;
+            justify-content: center;
+            padding: 0;
         }
 
-        #sidebar.collapsed ul li.logout a i {
-            margin: 0 !important;
-            font-size: 18px !important;
-            display: inline-block !important;
-        }
-
-        #sidebar.collapsed ul li.logout a span {
-            display: none !important;
-        }
-
-        /* Ensure proper spacing in collapsed state */
-        #sidebar.collapsed ul {
-            margin-bottom: 80px;
+        /* Remove any margin/padding from the last menu item */
+        #sidebar ul li:last-child:not(.logout) {
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
         /* Style for nested items */
         .collapse .nav-item a {
             padding-left: 45px;
-            font-size: 13px;
-            padding-top: 2px;
-            padding-bottom: 2px;
-            margin: 0;
-            height: 28px;
-            line-height: 28px;
-            display: flex;
-            align-items: center;
+            font-size: 14px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            margin-bottom: 2px;
         }
 
         .collapse .nav-item {
@@ -411,60 +453,9 @@
             line-height: 28px;
         }
 
-        /* Reduce space after dropdown when collapsed */
+        /* Remove transition from collapse */
         .collapse {
-            margin: 0;
-            padding: 0;
-            display: none;
-            height: auto;
-            overflow: visible;
-            max-height: none;
-            position: relative;
-        }
-
-        .collapse.show {
-            background-color: rgba(255, 255, 255, 0.1);
-            margin: 0;
-            padding: 0;
-            display: block;
-            height: auto;
-            overflow: visible;
-            max-height: none;
-            position: relative;
-        }
-
-        /* Ensure last item in dropdown has no bottom margin */
-        .collapse .nav-item:last-child {
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Remove all transitions and animations */
-        .collapse, .collapse.show, .nav-item a, .nav-item a[data-bs-toggle="collapse"] {
             transition: none !important;
-            animation: none !important;
-        }
-
-        /* Ensure dropdown items stay compact */
-        #sidebar .collapse .nav-item a {
-            padding: 2px 15px;
-            margin: 0;
-            height: 28px;
-            min-height: 28px;
-            max-height: 28px;
-        }
-
-        #sidebar .collapse .nav-item {
-            margin: 0;
-            padding: 0;
-            height: 28px;
-            min-height: 28px;
-            max-height: 28px;
-        }
-
-        /* Remove Bootstrap's default collapse transition */
-        .collapse:not(.show) {
-            display: none;
         }
 
         .collapsing {
@@ -474,87 +465,100 @@
             overflow: visible !important;
         }
 
-        /* Ensure dropdown content is visible */
-        #sidebar .collapse ul {
-            overflow: visible;
-            height: auto;
-            max-height: none;
+        /* Remove Bootstrap's default collapse transition */
+        .collapse:not(.show) {
+            display: none;
         }
 
-        /* Styling for the sidebar */
+        /* Keep hover transitions for menu items */
+        #sidebar .collapse .nav-item a {
+            transition: all 0.2s ease !important;
+        }
+
+        #sidebar.collapsed .collapse .nav-item a {
+            transition: all 0.2s ease !important;
+        }
+
+        /* Remove animation from slideIn */
+        @keyframes slideIn {
+            from {
+                opacity: 1;
+                transform: none;
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* Sidebar header styling */
         #sidebar .sidebar-header {
-            padding: 0;
-            height: 50px;
-            margin-bottom: 5px;
+            padding: 0 15px;
+            height: 60px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         #sidebar .sidebar-header img {
-            max-width: 80px;
-            padding: 0 10px;
-            transform: translateY(-15px);
+            max-width: 50px;
+            padding: 0;
+            margin: 0;
+            transform: none;
         }
 
         .sidebar-header .company-title {
-            transform: translateY(-15px);
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            white-space: nowrap;
+            margin: 0;
+            padding: 0;
+            transform: none;
         }
 
-        #sidebar.collapsed .sidebar-header {
-            height: 60px;
+        /* Sidebar styling */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: width 0.3s ease;
+            color: white;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        #sidebar ul {
+            flex: 1;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+        /* Collapsed state styles */
+        #sidebar.collapsed .sidebar-header {
+            padding: 0 20px;
+            height: 60px;
+            justify-content: center;
         }
 
         #sidebar.collapsed .sidebar-header img {
-            max-width: 50px;
-            padding: 0 5px;
-            transform: translateY(-20px);
+            max-width: 40px;
+            padding: 0;
+            margin: 0;
+            transform: none;
         }
 
-        #sidebar ul li {
-            padding: 4px 8px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            display: flex;
-            align-items: center;
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            padding: 8px 18px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        #sidebar.collapsed ul li a {
-            justify-content: center;
-            padding: 8px 0;
-        }
-
-        #sidebar.collapsed ul li a i:first-child {
-            margin-right: 0;
-            font-size: 18px;
-        }
-
-        #sidebar ul li.logout {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            width: 300px;
-            background-color: #343a40;
-            padding: 10px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #sidebar.collapsed ul li.logout {
-            width: 80px;
-        }
-
-        /* Style for nested items */
-        .collapse .nav-item a {
-            padding-left: 40px;
-            font-size: 13px;
-            padding-top: 6px;
-            padding-bottom: 6px;
+        #sidebar.collapsed .sidebar-header .company-title {
+            display: none;
         }
 
         /* Notification dropdown */
@@ -663,19 +667,24 @@
 
         #content h2 {
             font-size: 28px;
+            margin: 0;
+            padding: 20px;
         }
 
         /* Additional Styling for the charts */
         .chart-container {
-            margin-top: 30px;
+            margin-top: 20px;
+            padding: 0 20px;
         }
 
         .kpi-card {
             margin: 10px 0;
+            height: 100%;
         }
 
-        .chart-container {
-            margin-top: 20px;
+        .row {
+            margin: 0;
+            padding: 0;
         }
 
         /* Update dropdown indicator styles */
@@ -756,23 +765,13 @@
             border-radius: 0 4px 4px 0;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
             z-index: 1000;
+            margin-top: 0;
+            padding: 4px 0;
         }
 
+        /* Show dropdown on hover in collapsed state */
         #sidebar.collapsed .nav-item:hover .collapse {
             display: block !important;
-        }
-
-        #sidebar.collapsed .collapse .nav-item a {
-            padding: 8px 15px;
-            justify-content: flex-start;
-        }
-
-        #sidebar.collapsed .collapse .nav-item a i {
-            margin-right: 10px;
-        }
-
-        #sidebar.collapsed .collapse .nav-item a span {
-            display: inline-block;
         }
 
         /* Adjust hover area for collapsed state */
@@ -780,341 +779,424 @@
             position: relative;
         }
 
-        /* Ensure proper spacing in collapsed hover state */
-        #sidebar.collapsed .collapse .nav-item {
-            margin: 0;
-            padding: 0;
-        }
-
-        #sidebar.collapsed .collapse .nav-item a {
-            padding-left: 15px;
-            font-size: 13px;
-        }
-
-        /* Add transition for smooth hover effect */
-        #sidebar.collapsed .collapse {
-            transition: all 0.3s ease;
-        }
-
         /* Ensure dropdowns don't overlap with other elements */
         #sidebar.collapsed .nav-item:hover {
             z-index: 1001;
         }
 
-        /* Adjust main menu list to prevent overlap with logout */
-        #sidebar ul {
-            flex: 1;
-            padding: 0;
-            list-style: none;
-            margin-bottom: 80px;
-            overflow-y: auto;
+        /* Style for dropdown items in collapsed state */
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 8px 15px;
+            justify-content: flex-start;
+            white-space: nowrap;
+            height: 32px;
+            min-height: 32px;
+            max-height: 32px;
+            line-height: 16px;
         }
 
-        /* Ensure proper spacing in collapsed state */
-        #sidebar.collapsed ul {
-            margin-bottom: 80px;
-        }
-
-        /* Adjust main menu items spacing */
-        #sidebar ul li {
-            padding: 4px 8px;
-            text-align: left;
-            margin-left: auto;
-            margin-bottom: 25px;
-        }
-
-        #sidebar ul li a {
-            display: flex;
-            align-items: center;
-            color: white;
-            text-decoration: none;
-            font-size: 15px;
-            padding: 15px 20px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            margin-bottom: 0;
-        }
-
-        #sidebar ul li a i:first-child {
-            margin-right: 15px;
+        #sidebar.collapsed .collapse .nav-item a i {
+            margin-right: 10px;
             width: 20px;
             text-align: center;
-            font-size: 18px;
         }
 
-        /* Style for nested items */
-        .collapse .nav-item a {
-            padding-left: 45px;
-            font-size: 14px;
-            padding-top: 4px;
-            padding-bottom: 4px;
-            margin-bottom: 0;
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block;
         }
 
-        .collapse .nav-item {
-            margin-bottom: 0;
-            padding-bottom: 0;
+        /* Add transition for smooth hover effect */
+        #sidebar.collapsed .collapse {
+            transition: opacity 0.2s ease;
+            opacity: 0;
+            visibility: hidden;
         }
 
-        .collapse .nav-item + .nav-item {
-            margin-top: 0;
-            padding-top: 0;
+        #sidebar.collapsed .nav-item:hover .collapse {
+            opacity: 1;
+            visibility: visible;
         }
 
-        /* Reduce space after dropdown when collapsed */
-        .collapse {
-            margin-bottom: 0;
-        }
-
-        .collapse.show {
-            background-color: rgba(255, 255, 255, 0.1);
-            margin-bottom: 0;
-        }
-
-        /* Ensure last item in dropdown has no bottom margin */
-        .collapse .nav-item:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        /* Reduce space between main menu items */
-        #sidebar ul li.nav-item {
-            margin-bottom: 25px;
-            padding-bottom: 0;
-        }
-
-        #sidebar ul li.nav-item + li.nav-item {
-            margin-top: 25px;
-            padding-top: 0;
-        }
-
-        /* Ensure proper spacing for collapsed state */
-        #sidebar.collapsed ul li.nav-item {
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Consistent icon size in collapsed state */
-        #sidebar.collapsed ul li a {
-            justify-content: center;
-            padding: 15px 0;
-        }
-
-        #sidebar.collapsed ul li a i:first-child {
-            margin-right: 0;
-            font-size: 18px;
-            width: auto;
-        }
-
-        /* Hover effect for menu items */
-        #sidebar ul li a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        /* Specific styles for all collapsible menus */
-        #Attendance, #Payroll, #Employee, #Recruitment {
-            overflow: visible !important;
-            max-height: none !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 2px 0 !important;
-        }
-
-        #Attendance.show, #Payroll.show, #Employee.show, #Recruitment.show {
-            overflow: visible !important;
-            max-height: none !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 2px 0 !important;
-        }
-
-        #Attendance .nav-item, #Payroll .nav-item, #Employee .nav-item, #Recruitment .nav-item {
-            margin: 0 !important;
-            padding: 0 !important;
+        /* Ensure proper positioning of dropdowns */
+        #sidebar.collapsed .nav-item {
             position: relative;
         }
 
-        #Attendance .nav-item a, #Payroll .nav-item a, #Employee .nav-item a, #Recruitment .nav-item a {
-            height: 28px !important;
-            min-height: 28px !important;
-            max-height: 28px !important;
-            line-height: 28px !important;
-            padding: 2px 15px !important;
-            margin: 0 !important;
+        #sidebar.collapsed .nav-item .collapse {
+            position: fixed !important;
+            left: 80px !important;
+            top: 0 !important;
+            width: 300px !important;
+            background: #343a40 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+            z-index: 9999 !important;
+            display: none !important;
+            border-radius: 4px !important;
+            padding: 8px 0 !important;
+            margin-top: -8px !important;
         }
 
-        /* Remove all transitions and animations for collapsible menus */
-        #Attendance, #Payroll, #Employee, #Recruitment,
-        #Attendance.show, #Payroll.show, #Employee.show, #Recruitment.show {
-            transition: none !important;
-            animation: none !important;
+        /* Calculate top position for each submenu based on parent position */
+        #sidebar.collapsed .nav-item:nth-child(1) .collapse { top: 60px !important; } /* Dashboard */
+        #sidebar.collapsed .nav-item:nth-child(2) .collapse { top: 100px !important; } /* Attendance */
+        #sidebar.collapsed .nav-item:nth-child(3) .collapse { top: 140px !important; } /* Payroll */
+        #sidebar.collapsed .nav-item:nth-child(4) .collapse { top: 180px !important; } /* Employee */
+        #sidebar.collapsed .nav-item:nth-child(5) .collapse { top: 220px !important; } /* Recruitment */
+
+        /* Keep the critical hover trigger */
+        #sidebar.collapsed .nav-item:hover .collapse {
+            display: block !important;
+            animation: slideIn 0.2s ease forwards !important;
         }
 
-        /* Ensure dropdown content is visible */
-        #sidebar .collapse ul {
+        /* Ensure proper z-index stacking */
+        #sidebar.collapsed .nav-item {
+            z-index: 1 !important;
+        }
+
+        #sidebar.collapsed .nav-item:hover {
+            z-index: 1001 !important;
+        }
+
+        /* Ensure the submenu stays above other content */
+        #sidebar.collapsed .collapse {
+            z-index: 9999 !important;
+        }
+
+        /* Animation for collapsed state */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Ensure proper overflow handling */
+        #sidebar.collapsed {
             overflow: visible !important;
-            height: auto !important;
-            max-height: none !important;
+        }
+
+        /* Adjust main content to prevent overlap */
+        #sidebar.collapsed + .topbar + #content {
+            margin-left: 80px !important;
+            width: calc(100% - 80px) !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+
+        /* Update submenu item styles for consistent spacing and text visibility */
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 10px 20px !important;
+            margin: 2px 8px !important;
+            border-radius: 4px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            max-height: 36px !important;
+            line-height: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 14px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 16px) !important; /* Ensure full width minus margins */
+        }
+
+        /* Ensure text is always visible in submenu items */
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: auto !important;
+            margin-left: 10px !important;
+        }
+
+        /* Consistent icon styling */
+        #sidebar.collapsed .collapse .nav-item a i {
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 10px !important;
+            font-size: 14px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Adjust specific menu positions for better alignment */
+        #sidebar.collapsed .nav-item:nth-child(1) .collapse { top: 60px !important; } /* Dashboard */
+        #sidebar.collapsed .nav-item:nth-child(2) .collapse { top: 100px !important; } /* Attendance */
+        #sidebar.collapsed .nav-item:nth-child(3) .collapse { top: 140px !important; } /* Payroll */
+        #sidebar.collapsed .nav-item:nth-child(4) .collapse { top: 180px !important; } /* Employee */
+        #sidebar.collapsed .nav-item:nth-child(5) .collapse { top: 220px !important; } /* Recruitment */
+
+        /* Ensure submenu container has proper width and padding */
+        #sidebar.collapsed .collapse {
+            position: fixed !important;
+            left: 80px !important;
+            width: 280px !important; /* Increased width */
+            background: #343a40 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important; /* Enhanced shadow */
+            z-index: 9999 !important;
+            padding: 12px 0 !important; /* Increased padding */
+            border-radius: 6px !important; /* Slightly larger radius */
+            margin-top: -12px !important; /* Adjust for new padding */
+        }
+
+        /* Consistent spacing between submenu items */
+        #sidebar.collapsed .collapse .nav-item {
+            margin: 4px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        /* Ensure proper hover state */
+        #sidebar.collapsed .collapse .nav-item a:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            transform: translateX(6px) !important; /* Slightly larger movement */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Add shadow on hover */
+        }
+
+        /* Update separator style */
+        #sidebar.collapsed .collapse .nav-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            margin-bottom: 4px !important;
+        }
+
+        /* Ensure proper text alignment and spacing */
+        #sidebar.collapsed .collapse .nav-item a {
+            justify-content: flex-start !important;
+            gap: 10px !important;
+        }
+
+        /* Keep the critical hover trigger */
+        #sidebar.collapsed .nav-item:hover .collapse {
+            display: block !important;
+            animation: slideIn 0.2s ease forwards !important;
+        }
+
+        /* Update animation for smoother appearance */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Styles for expanded sidebar submenu */
+        #sidebar:not(.collapsed) .collapse {
+            background: linear-gradient(to right, #343a40, #2c3136) !important;
+            margin: 4px 0 !important;
+            padding: 12px 0 !important;
+            border-radius: 6px !important;
+            position: relative !important;
+            left: 0 !important;
+            width: 100% !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Update expanded state submenu items */
+        #sidebar:not(.collapsed) .collapse .nav-item a {
+            padding: 12px 24px !important;
+            margin: 4px 12px !important;
+            border-radius: 6px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
+            line-height: 18px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 15px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 24px) !important;
+        }
+
+        /* Enhanced hover effect for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            transform: translateX(6px) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Icon styling for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a i {
+            width: 24px !important;
+            text-align: center !important;
+            margin-right: 12px !important;
+            font-size: 16px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Text styling for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a span {
+            margin-left: 12px !important;
+            font-weight: 500 !important;
+            letter-spacing: 0.3px !important;
+        }
+
+        /* Separator for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            margin-bottom: 4px !important;
+        }
+
+        /* Consistent spacing for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item {
+            margin: 4px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        /* Ensure proper text alignment and spacing */
+        #sidebar:not(.collapsed) .collapse .nav-item a {
+            justify-content: flex-start !important;
+            gap: 10px !important;
+        }
+
+        /* Update submenu item styles for both collapsed and expanded states */
+        #sidebar .collapse .nav-item a,
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 8px 20px !important;
+            margin: 2px 8px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            line-height: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 14px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 16px) !important;
+        }
+
+        /* Consistent icon styling for both states */
+        #sidebar .collapse .nav-item a i,
+        #sidebar.collapsed .collapse .nav-item a i {
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 10px !important;
+            font-size: 14px !important;
+            flex-shrink: 0 !important;
+            line-height: 1 !important;
+            vertical-align: middle !important;
+        }
+
+        /* Text alignment for both states */
+        #sidebar .collapse .nav-item a span,
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block !important;
+            line-height: 1 !important;
+            vertical-align: middle !important;
             margin: 0 !important;
             padding: 0 !important;
         }
 
-        /* Remove any gaps between menu items */
-        #sidebar ul li + li {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+        /* Ensure proper vertical alignment */
+        #sidebar .collapse .nav-item,
+        #sidebar.collapsed .collapse .nav-item {
+            margin: 2px 0 !important;
+            padding: 0 !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
-        #sidebar ul li.nav-item + li.nav-item {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+        /* Adjust spacing between items */
+        #sidebar .collapse .nav-item:not(:last-child),
+        #sidebar.collapsed .collapse .nav-item:not(:last-child) {
+            margin-bottom: 2px !important;
         }
 
-        /* Profile specific styles */
-        .profile-container {
-            padding: 20px;
+        /* Ensure container has proper spacing */
+        #sidebar .collapse,
+        #sidebar.collapsed .collapse {
+            padding: 8px 0 !important;
         }
 
-        .profile-header {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Logout container styling */
+        .logout-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 300px;
+            background-color: #343a40;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1002;
+            transition: width 0.3s ease;
         }
 
-        .profile-info {
-            margin-top: 20px;
+        #sidebar.collapsed .logout-container {
+            width: 80px;
         }
 
-        .profile-info h3 {
-            margin-bottom: 15px;
-            color: #333;
+        /* Logout link styling */
+        .logout-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            color: white !important;
+            text-decoration: none !important;
+            height: 60px !important;
+            transition: all 0.2s ease !important;
+            background: transparent !important;
         }
 
-        .profile-info p {
-            margin-bottom: 10px;
-            color: #666;
+        #sidebar.collapsed .logout-link {
+            justify-content: center !important;
+            padding: 12px 0 !important;
         }
 
-        .profile-actions {
-            margin-top: 20px;
+        /* Logout icon styling */
+        .logout-link i {
+            font-size: 18px !important;
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 15px !important;
+            transition: margin 0.3s ease !important;
         }
 
-        .profile-actions button {
-            margin-right: 10px;
+        #sidebar.collapsed .logout-link i {
+            margin-right: 0 !important;
         }
 
-        /* Form styles */
-        .form-group {
-            margin-bottom: 20px;
+        /* Logout text styling */
+        .logout-text {
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            transition: opacity 0.3s ease !important;
         }
 
-        .form-group label {
-            font-weight: 500;
-            margin-bottom: 5px;
+        #sidebar.collapsed .logout-text {
+            display: none !important;
         }
 
-        .form-control {
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            padding: 8px 12px;
+        /* Hover effect for logout */
+        .logout-link:hover {
+            background-color: #dc3545 !important;
+            color: white !important;
+            transform: translateX(6px) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
 
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-        }
-
-        /* Button styles */
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-        }
-
-        /* Alert styles */
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-        }
-
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-
-        .alert-danger {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-        }
-
-        /* Modal styles */
-        .modal-content {
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #dee2e6;
-            padding: 15px 20px;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #dee2e6;
-            padding: 15px 20px;
-        }
-
-        /* Responsive styles */
-        @media (max-width: 768px) {
-            .profile-container {
-                padding: 10px;
-            }
-            
-            .profile-header {
-                padding: 15px;
-            }
-            
-            .profile-actions button {
-                margin-bottom: 10px;
-            }
-        }
-
-        /* Wrapper styling */
-        #wrapper {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
+        #sidebar.collapsed .logout-link:hover {
+            transform: translateX(0) !important;
         }
     </style>
     
@@ -1139,7 +1221,9 @@
                         <div class="profile-name"></div>
                         <div class="profile-position"></div>
                     </div>
-                    <img src="/images/default-profile.png" alt="Profile" class="profile-picture">
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
                 </div>
             </div>
             
@@ -1188,7 +1272,7 @@
         <!-- Sidebar -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <img src="/public/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
                 <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
@@ -1256,15 +1340,14 @@
                         <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
                     </ul>
                 </li>    
-                <!-- Move Logout to bottom -->
-                <li class="logout nav-item">
-                    <a href="/logout">
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
                         <i class="fas fa-sign-out-alt"></i>
                         <span class="logout-text">Logout</span>
                     </a>
-                </li>
-            </ul>
-            
+            </div>
         </div>
         
 
@@ -1372,105 +1455,7 @@
                 chevronIcon.classList.toggle('rotate');
             }
         }
-    </script>
-    <script>
-        // Function to fetch user info
-        async function getUserInfo() {
-            try {
-                const response = await fetch('/hr/check-session', {
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user info');
-                }
-
-                const data = await response.json();
-                console.log('Session data:', data);
-
-                if (!data.user) {
-                    throw new Error('No user data in session');
-                }
-
-                const user = data.user;
-
-                // Update profile section
-                const profileName = document.querySelector('.profile-name');
-                const profilePosition = document.querySelector('.profile-position');
-
-                if (profileName && profilePosition) {
-                    profileName.textContent = user.full_name || 'Not Set';
-                    profilePosition.textContent = user.role_name || 'Not Set';
-                }
-            } catch (error) {
-                console.error('Error fetching user info:', error);
-            }
-        }
-
-        // Function to toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            const menuToggle = document.querySelector('.menu-toggle i');
-            
-            sidebar.classList.toggle('collapsed');
-            menuToggle.classList.toggle('fa-bars');
-            menuToggle.classList.toggle('fa-times');
-            
-            if (sidebar.classList.contains('collapsed')) {
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set initial state
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-
-            // Fetch user info
-            getUserInfo();
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                sidebar.classList.remove('collapsed');
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
-        });
-    </script>
-        <script>
+        
         // Sample data for charts (use real data)
         const employeeDistributionData = {
             labels: [ 'HR', 'Finance', 'Manufacturing', 'CRM', 'SCM'],
@@ -1549,8 +1534,7 @@
             type: 'line',
             data: employeeRetentionData
         });
-    </script>
-    <script>
+    
         // Add notification toggle functionality
         function toggleNotifications() {
             const dropdown = document.getElementById('notificationDropdown');
@@ -1631,7 +1615,158 @@
                 content.style.width = 'calc(100% - 300px)';
             }
         });
+ 
+        // Function to fetch user info
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+                console.log('User active status from session:', sessionData.user?.is_active);
+                console.log('User role from session:', sessionData.user?.role_name);
+
+                if (!sessionData.user || !sessionData.user.employee_id) {
+                    throw new Error('No employee ID in session');
+                }
+
+                // Fetch employee details
+                const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
+                    credentials: 'include'
+                });
+
+                if (!employeeResponse.ok) {
+                    throw new Error('Failed to fetch employee details');
+                }
+
+                const employeeData = await employeeResponse.json();
+                console.log('Full employee data:', employeeData);
+
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                if (profileName && profilePosition) {
+                    profileName.textContent = employeeData.full_name || 'Not Set';
+                    profilePosition.textContent = employeeData.role_name || 'Not Set';
+                }
+
+                // Update profile picture with proper path handling
+                if (employeeData.profile_picture) {
+                    // Extract just the filename if it's a full path
+                    const filename = employeeData.profile_picture.includes('/') 
+                        ? employeeData.profile_picture.split('/').pop() 
+                        : employeeData.profile_picture;
+                    
+                    // Add timestamp to prevent caching
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                    console.log('Loading profile picture from:', imageUrl);
+                    
+                    topbarProfilePicture.src = imageUrl;
+
+                    // If the path was a full path, update it in the database
+                    if (employeeData.profile_picture.includes('/')) {
+                        try {
+                            const updateResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}/profile-picture`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ profile_picture: filename }),
+                                credentials: 'include'
+                            });
+
+                            if (!updateResponse.ok) {
+                                console.error('Failed to update profile picture path in database');
+                            } else {
+                                console.log('Successfully updated profile picture path in database');
+                            }
+                        } catch (error) {
+                            console.error('Error updating profile picture path:', error);
+                        }
+                    }
+                } else {
+                    console.log('No profile picture found, using default');
+                    topbarProfilePicture.src = '/hr/default-profile-picture';
+                }
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+            }
+        }
+
+        // Function to toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            const menuToggle = document.querySelector('.menu-toggle i');
+            
+            sidebar.classList.toggle('collapsed');
+            menuToggle.classList.toggle('fa-bars');
+            menuToggle.classList.toggle('fa-times');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial state
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+
+            // Fetch user info
+            getUserInfo();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                sidebar.classList.remove('collapsed');
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        });
     </script>
 </body>
 
-</html>
+</html> 
