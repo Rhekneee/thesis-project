@@ -250,6 +250,14 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_profile.html')); // Adjusted path
   });
 
+  app.get('/hr/security_questions', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'security_questions.html')); // Adjusted path
+  });
+
+  app.get('/hr/change-password', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'change_password.html')); // Adjusted path
+  });
+
 // ====================
   // finance admin Routes
   // ====================  

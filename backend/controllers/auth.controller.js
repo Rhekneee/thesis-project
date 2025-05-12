@@ -1,4 +1,5 @@
 const db = require("../db");
+const bcrypt = require('bcrypt');
 
 // Helper function to authenticate user
 const authenticateUser = async (email, password) => {
@@ -6,16 +7,23 @@ const authenticateUser = async (email, password) => {
         SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
         FROM users 
         JOIN roles ON users.role_id = roles.id
-        WHERE users.email = ? AND users.password = ?;
+        WHERE users.email = ?;
     `;
 
-    const [users] = await db.query(SQL_COMMAND, [email, password]);
+    const [users] = await db.query(SQL_COMMAND, [email]);
 
     if (users.length === 0) {
         throw new Error("Invalid email or password");
     }
 
-    return users[0];
+    const user = users[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+        throw new Error("Invalid email or password");
+    }
+
+    return user;
 };
 
 // Function to fetch permissions based on role_id
@@ -34,7 +42,7 @@ const getPermissionsForRole = async (role_id) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log("🔍 Login attempt with:", { email, password });
+        console.log("🔍 Login attempt with:", { email });
 
         // First check if user exists
         const checkUserSQL = `
@@ -58,13 +66,12 @@ exports.login = async (req, res) => {
         console.log("🔍 Found user:", { 
             id: user.id, 
             email: user.email, 
-            role: user.role_name,
-            storedPassword: user.password,
-            providedPassword: password
+            role: user.role_name
         });
 
-        // Now check password
-        if (user.password !== password) {
+        // Now check password using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
             console.log("❌ Password mismatch");
             return res.status(401).json({ message: "Invalid password." });
         }
