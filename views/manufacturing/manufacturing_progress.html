@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Progress</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+            z-index: 1000;
+        }
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        #sidebar ul li.logout {
+            margin-top: 350px;
+        }
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        #sidebar ul li a:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+        #sidebar ul li.active a {
+            background-color: #007bff;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+        }
+        .search-container label {
+            margin-bottom: 0;
+        }
+        #filterDropdown {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 30px 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            min-width: 150px;
+        }
+        #filterDropdown:hover {
+            background-color: #0056b3;
+        }
+        #filterDropdown option {
+            background-color: white;
+            color: black;
+            padding: 10px;
+        }
+        .entries-per-page {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            gap: 10px;
+        }
+        .table {
+            width: 100%;
+            margin-top: 30px;
+        }
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sort-icon {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        .sort-icon:hover {
+            color: #007bff;
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            transition: width 0.6s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 30px 30px;
+            animation: progress-animation 1s linear infinite;
+        }
+        @keyframes progress-animation {
+            0% { background-position: 0 0; }
+            100% { background-position: 30px 0; }
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: white;
+        }
+        .view-btn {
+            background-color: #0d6efd;
+        }
+        .view-btn:hover {
+            background-color: #0b5ed7;
+        }
+        .edit-btn {
+            background-color: #198754;
+        }
+        .edit-btn:hover {
+            background-color: #157347;
+        }
+        .project-img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 5px;
+            background: #222;
+            display: block;
+            margin: 0 auto 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            min-height: 300px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .modal-xl {
+            max-width: 1200px;
+        }
+        .badge {
+            font-size: 0.9em;
+            padding: 8px 12px;
+        }
+        .meta-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .meta-value {
+            color: #212529;
+        }
+        /* Enhanced Modal Styles */
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem;
+        }
+        
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .project-details {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .project-details h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            min-width: 100px;
+        }
+        
+        .meta-value {
+            color: #212529;
+            font-weight: 500;
+        }
+        
+        .project-info-item {
+            margin-bottom: 1.2rem;
+            padding: 0.8rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .project-info-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .progress-section {
+            background: white;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            margin: 0.5rem 0;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            padding: 1.5rem;
+        }
+        
+        .modal-footer .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .project-image-container {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .project-image-container img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .project-image-container:hover img {
+            transform: scale(1.05);
+        }
+        
+        .project-status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .progress-form, .division-table {
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .division-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            background: #222;
+        }
+        .container-fluid {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Welcome, Admin</h3>
+                <p class="text-light mb-0">Manufacturing Management</p>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="manufacturing_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="manufacturing_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="manufacturing_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="manufacturing_early_out.html"><i class="fas fa-clock"></i> Early Out</a></li>
+                        <li class="nav-item"><a href="manufacturing_overtime.html"><i class="fas fa-business-time"></i> Overtime</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Projects" aria-expanded="false">
+                        <i class="fas fa-project-diagram"></i> Projects <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="collapse" id="Projects">
+                        <li class="nav-item"><a href="manufacturing_projects.html"><i class="fas fa-code-branch"></i> Developer Projects</a></li>
+                        <li class="nav-item"><a href="manufacturing_approved_project.html"><i class="fas fa-check-circle"></i> Approved Projects</a></li>
+                        <li class="nav-item active"><a href="manufacturing_progress.html"><i class="fas fa-tasks"></i> Project Progress</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="manufacturing_request_materials.html"><i class="fas fa-box"></i> Request Materials</a>
+                </li>
+                <li class="nav-item">
+                    <a href="manufacturing_ratings.html"><i class="fas fa-star"></i> Ratings & Feedback</a>
+                </li>
+                <li class="nav-item">
+                    <a href="manufacturing_foremen.html"><i class="fas fa-hard-hat"></i> Foremen List</a>
+                </li>
+                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+            <!-- Button to toggle sidebar with icon -->
+            <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <h2>Project Progress</h2>
+
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
+                <select id="filterDropdown" class="form-select" title="Filter projects by status">
+                    <option value="all">All Projects</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="finished">Finished</option>
+                </select>
+                <div class="entries-per-page">
+                    <label for="entriesPerPage">Entries per page:</label>
+                    <select id="entriesPerPage" class="form-select" title="Select number of entries to display per page">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Project Table -->
+            <div class="table-responsive">
+                <table class="table table-striped" id="projectsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Image</th>
+                            <th onclick="sortTable(2)">Developer <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(3)">Foreman <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(4)">Location <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(7)">Progress <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsList"></tbody>
+                </table>
+            </div>
+
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+
+            <!-- Update Progress Content -->
+            <div id="updateProgressContent" class="container-fluid mt-4" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Update Project Progress</h3>
+                    <button class="btn btn-secondary" onclick="closeUpdateProgress()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+                <div class="row g-4 mb-4">
+                    <!-- Left: Project Details -->
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="text-center mb-4">
+                                    <img id="updateProjectImage" src="" class="project-img mb-3" alt="Project Image">
+                                    <h4 id="updateProjectName" class="card-title mb-0"></h4>
+                                    <span id="updateProjectStatus" class="badge mt-2"></span>
+                                </div>
+                                <div class="project-meta">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <i class="fas fa-clock text-warning me-2"></i>
+                                            <strong>Deadline:</strong>
+                                        </div>
+                                        <span id="updateDeadline"></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                            <strong>Location:</strong>
+                                        </div>
+                                        <span id="updateLocation"></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <i class="fas fa-user-tie text-info me-2"></i>
+                                            <strong>Foreman:</strong>
+                                        </div>
+                                        <span id="updateForeman"></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <i class="fas fa-chart-line text-success me-2"></i>
+                                            <strong>Total Progress:</strong>
+                                        </div>
+                                        <span id="updateTotalProgress">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right: Chart -->
+                    <div class="col-md-8">
+                        <div class="chart-container bg-white p-3 rounded shadow-sm">
+                            <canvas id="progressChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Progress Form -->
+                <div class="progress-form mb-4">
+                    <h5>-- New Progress --</h5>
+                    <form id="newProgressForm">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <label for="divisionSelect" class="form-label">Division:</label>
+                                <select class="form-select" id="divisionSelect" required>
+                                    <option value="">SELECT DIVISION</option>
+                                    <option value="Floor">Floor</option>
+                                    <option value="Layout">Layout</option>
+                                    <option value="Sample">Sample</option>
+                                    <option value="Windows">Windows</option>
+                                    <option value="Roof">Roof</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="progressInput" class="form-label">Progress:</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="progressInput" min="0" max="100" required>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="progressImage" class="form-label">Image:</label>
+                                <input type="file" class="form-control" id="progressImage" accept="image/*">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Add Progress</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Division Progress Table -->
+                <div class="division-table">
+                    <h5>Divisions</h5>
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Image</th>
+                                <th>Division</th>
+                                <th>Progress</th>
+                                <th>Date Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="divisionProgressBody">
+                            <!-- Sample rows will be inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Details Modal -->
+    <div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectModalLabel">Project Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="project-image-container">
+                                <img id="modalProjectImage" src="" alt="Project Image" class="img-fluid rounded">
+                                <span id="modalStatus" class="project-status-badge"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="project-details">
+                                <h4 id="modalProjectName" class="mb-4"></h4>
+                                <div class="project-info-item">
+                                    <span class="meta-label"><i class="fas fa-building"></i> Developer:</span>
+                                    <span id="modalDeveloper" class="meta-value"></span>
+                                </div>
+                                <div class="project-info-item">
+                                    <span class="meta-label"><i class="fas fa-user-tie"></i> Foreman:</span>
+                                    <span id="modalForeman" class="meta-value"></span>
+                                </div>
+                                <div class="project-info-item">
+                                    <span class="meta-label"><i class="fas fa-map-marker-alt"></i> Location:</span>
+                                    <span id="modalLocation" class="meta-value"></span>
+                                </div>
+                                <div class="project-info-item">
+                                    <span class="meta-label"><i class="fas fa-calendar-alt"></i> Deadline:</span>
+                                    <span id="modalDeadline" class="meta-value"></span>
+                                </div>
+                                <div class="progress-section">
+                                    <span class="meta-label"><i class="fas fa-tasks"></i> Progress:</span>
+                                    <div class="progress-bar mt-2">
+                                        <div id="modalProgressBar" class="progress-bar-fill"></div>
+                                    </div>
+                                    <small id="modalProgressText" class="text-muted"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, Chart.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Sample data for projects
+        const projects = [
+            {
+                id: 1,
+                name: 'Residential Complex A',
+                developer: 'John Smith',
+                foreman: 'Michael Brown',
+                location: 'Manila',
+                deadline: '2024-12-31',
+                status: 'On Going',
+                progress: 0,
+                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
+                submissionDate: '2024-01-01',
+                manufacturingCost: 30000000,
+                divisionProgress: []
+            },
+            {
+                id: 2,
+                name: 'Commercial Building B',
+                developer: 'Maria Garcia',
+                foreman: 'David Wilson',
+                location: 'Makati',
+                deadline: '2025-06-30',
+                status: 'Finished',
+                progress: 100,
+                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
+                submissionDate: '2024-02-01',
+                manufacturingCost: 45000000,
+                divisionProgress: []
+            },
+            {
+                id: 3,
+                name: 'Office Tower C',
+                developer: 'Robert Johnson',
+                foreman: 'James Anderson',
+                location: 'Quezon City',
+                deadline: '2025-08-20',
+                status: 'On Going',
+                progress: 0,
+                image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D',
+                submissionDate: '2024-03-01',
+                manufacturingCost: 60000000,
+                divisionProgress: []
+            }
+        ];
+
+        // Global variables
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let currentSortColumn = 0;
+        let currentSortDirection = 'asc';
+        let filteredProjects = [...projects];
+        let currentProjectId = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSidebar();
+            initializeEventListeners();
+            renderTable();
+        });
+
+        // Initialize sidebar
+        function initializeSidebar() {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+
+            sidebarToggle.addEventListener('click', function() {
+                if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                    sidebar.style.display = 'block';
+                    content.style.marginLeft = '300px';
+                } else {
+                    sidebar.style.display = 'none';
+                    content.style.marginLeft = '0';
+                }
+            });
+
+            // Handle submenu toggles
+            document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('data-bs-target'));
+                    target.classList.toggle('show');
+                });
+            });
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            document.getElementById('searchBar').addEventListener('input', filterProjects);
+            document.getElementById('filterDropdown').addEventListener('change', filterProjects);
+            document.getElementById('entriesPerPage').addEventListener('change', function() {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+        }
+
+        // Filter projects based on search and filter criteria
+        function filterProjects() {
+            const searchValue = document.getElementById('searchBar').value.toLowerCase();
+            const filterValue = document.getElementById('filterDropdown').value;
+
+            filteredProjects = projects.filter(project => {
+                const matchesSearch = 
+                    project.name.toLowerCase().includes(searchValue) ||
+                    project.developer.toLowerCase().includes(searchValue) ||
+                    project.foreman.toLowerCase().includes(searchValue) ||
+                    project.location.toLowerCase().includes(searchValue);
+
+                const matchesFilter = filterValue === 'all' || 
+                    (filterValue === 'ongoing' && project.status === 'On Going') ||
+                    (filterValue === 'finished' && project.status === 'Finished');
+
+                return matchesSearch && matchesFilter;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Sort table
+        function sortTable(columnIndex) {
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnIndex;
+                currentSortDirection = 'asc';
+            }
+
+            filteredProjects.sort((a, b) => {
+                let valueA = a[getColumnKey(columnIndex)];
+                let valueB = b[getColumnKey(columnIndex)];
+
+                if (columnIndex === 4) { // Deadline column
+                    valueA = new Date(valueA);
+                    valueB = new Date(valueB);
+                }
+
+                if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable();
+        }
+
+        // Get column key based on index
+        function getColumnKey(index) {
+            const keys = ['id', 'name', 'developer', 'foreman', 'location', 'deadline', 'status', 'progress'];
+            return keys[index];
+        }
+
+        // Render table with pagination
+        function renderTable() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredProjects.length);
+            const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('projectsList');
+            tbody.innerHTML = '';
+
+            paginatedProjects.forEach(project => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
+                    <td>${project.name}</td>
+                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                    <td>${project.developer}</td>
+                    <td>${project.foreman}</td>
+                    <td>${project.location}</td>
+                    <td>${project.deadline}</td>
+                    <td><span class="badge bg-${getStatusColor(project.status)}">${project.status}</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
+                        </div>
+                        <small class="text-muted">${project.progress}%</small>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn edit-btn" onclick="updateProject(${project.id})" title="Update Progress">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updatePagination();
+            updateEntriesMessage();
+        }
+
+        // Get status color
+        function getStatusColor(status) {
+            switch (status) {
+                case 'On Going': return 'primary';
+                case 'Finished': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        // Change page
+        function changePage(newPage) {
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderTable();
+            }
+        }
+
+        // Update entries message
+        function updateEntriesMessage() {
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, filteredProjects.length);
+            const message = `Showing ${startIndex} to ${endIndex} of ${filteredProjects.length} entries`;
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        // View project details
+        function viewProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            // Update modal content
+            document.getElementById('modalProjectImage').src = project.image;
+            document.getElementById('modalProjectName').textContent = project.name;
+            document.getElementById('modalDeveloper').textContent = project.developer;
+            document.getElementById('modalForeman').textContent = project.foreman;
+            document.getElementById('modalLocation').textContent = project.location;
+            document.getElementById('modalDeadline').textContent = project.deadline;
+            
+            const statusBadge = document.getElementById('modalStatus');
+            statusBadge.textContent = project.status;
+            statusBadge.className = `project-status-badge bg-${getStatusColor(project.status)}`;
+            
+            const progressBar = document.getElementById('modalProgressBar');
+            progressBar.style.width = `${project.progress}%`;
+            document.getElementById('modalProgressText').textContent = `${project.progress}%`;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+            modal.show();
+        }
+
+        // Add these new functions after the existing script
+        let divisionProgress = [];
+        let progressChart;
+
+        // Initialize chart
+        function initializeChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            progressChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Floor', 'Layout', 'Sample', 'Windows', 'Roof', 'Total'],
+                    datasets: [{
+                        label: 'Progress (%)',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: ['#f8b195', '#f8b195', '#f8b195', '#f8b195', '#f8b195', '#90ee90'],
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed.y}%`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '-- Project Progress --',
+                            font: { size: 18 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: 'Progress (%)' },
+                            ticks: { stepSize: 10 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load division progress
+        function loadDivisionProgress() {
+            if (!currentProjectId) return;
+            
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
+
+            // Use the project's stored division progress
+            divisionProgress = [...project.divisionProgress];
+            renderDivisionTable();
+            updateChart();
+        }
+
+        // Render division table
+        function renderDivisionTable() {
+            const tbody = document.getElementById('divisionProgressBody');
+            tbody.innerHTML = '';
+            
+            divisionProgress.forEach((division, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><img src="${division.img}" class="division-img" alt="Division Image"></td>
+                    <td>${division.division}</td>
+                    <td>${division.progress}%</td>
+                    <td>${division.date}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editDivision(${index})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update chart with current progress
+        function updateChart() {
+            const progressData = [0, 0, 0, 0, 0, 0];
+            const divisions = ['Floor', 'Layout', 'Sample', 'Windows', 'Roof'];
+            
+            divisionProgress.forEach(division => {
+                const index = divisions.indexOf(division.division);
+                if (index !== -1) {
+                    progressData[index] = division.progress;
+                }
+            });
+
+            // Calculate total progress
+            progressData[5] = Math.round(progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5);
+            
+            // Update total progress display
+            document.getElementById('updateTotalProgress').textContent = `${progressData[5]}%`;
+
+            // Update progress in the main table
+            if (currentProjectId) {
+                const project = projects.find(p => p.id === currentProjectId);
+                if (project) {
+                    project.progress = progressData[5];
+                    project.divisionProgress = [...divisionProgress];
+                    renderTable();
+                }
+            }
+
+            progressChart.data.datasets[0].data = progressData;
+            progressChart.update();
+        }
+
+        // Update project button click handler
+        function updateProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            currentProjectId = projectId;
+
+            // Update project details
+            document.getElementById('updateProjectImage').src = project.image;
+            document.getElementById('updateProjectName').textContent = project.name;
+            document.getElementById('updateProjectName').setAttribute('data-project-id', project.id);
+            const statusBadge = document.getElementById('updateProjectStatus');
+            statusBadge.textContent = project.status;
+            statusBadge.className = `badge bg-${getStatusColor(project.status)}`;
+            document.getElementById('updateDeadline').textContent = project.deadline;
+            document.getElementById('updateLocation').textContent = project.location;
+            document.getElementById('updateForeman').textContent = project.foreman;
+            document.getElementById('updateTotalProgress').textContent = `${project.progress}%`;
+
+            // Show update progress content
+            const updateContent = document.getElementById('updateProgressContent');
+            updateContent.style.display = 'block';
+            
+            // Scroll to the content
+            updateContent.scrollIntoView({ behavior: 'smooth' });
+
+            // Initialize chart if not already initialized
+            if (!progressChart) {
+                initializeChart();
+            }
+
+            // Load division progress
+            loadDivisionProgress();
+        }
+
+        // Initialize form handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('newProgressForm');
+            const progressInput = document.getElementById('progressInput');
+
+            // Validate progress input
+            progressInput.addEventListener('input', function() {
+                let value = parseInt(this.value);
+                if (value < 0) this.value = 0;
+                if (value > 100) this.value = 100;
+            });
+
+            // Handle form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const division = document.getElementById('divisionSelect').value;
+                const progress = parseInt(progressInput.value);
+                const date = new Date().toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: '2-digit' 
+                });
+
+                // Handle image upload
+                const file = document.getElementById('progressImage').files[0];
+                let imgUrl = 'https://via.placeholder.com/60x60?text=Img';
+                
+                if (file) {
+                    try {
+                        imgUrl = await handleImageUpload(file);
+                    } catch (error) {
+                        alert('Error uploading image. Using placeholder instead.');
+                    }
+                }
+
+                // Add new progress
+                divisionProgress.push({ img: imgUrl, division, progress, date });
+                renderDivisionTable();
+                updateChart();
+                form.reset();
+            });
+        });
+
+        // Handle image upload
+        async function handleImageUpload(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Edit division progress
+        function editDivision(index) {
+            const division = divisionProgress[index];
+            const newProgress = prompt('Enter new progress (0-100):', division.progress);
+            
+            if (newProgress !== null) {
+                const progress = parseInt(newProgress);
+                if (!isNaN(progress) && progress >= 0 && progress <= 100) {
+                    division.progress = progress;
+                    division.date = new Date().toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: '2-digit' 
+                    });
+                    renderDivisionTable();
+                    updateChart();
+                } else {
+                    alert('Please enter a valid progress value between 0 and 100');
+                }
+            }
+        }
+
+        // Close update progress
+        function closeUpdateProgress() {
+            document.getElementById('updateProgressContent').style.display = 'none';
+            currentProjectId = null;
+        }
+    </script>
+</body>
+</html>
