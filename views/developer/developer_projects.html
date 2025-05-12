@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Projects</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Styling for the sidebar */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        #sidebar ul li.logout {
+            margin-top: 350px;
+        }
+
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #sidebar ul li a:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+
+        #sidebar ul li.active a {
+            background-color: #007bff;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0;
+        }
+
+        #filterDropdown {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 30px 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            min-width: 150px;
+            margin-right: 10px;
+        }
+
+        #filterDropdown:hover {
+            background-color: #0056b3;
+        }
+
+        #filterDropdown option {
+            background-color: white;
+            color: black;
+            padding: 10px;
+        }
+
+        .entries-per-page {
+            display: flex;
+            align-self: end;
+            margin-left: auto;
+        }
+
+        #addProjectBtn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        #addProjectBtn:hover {
+            background-color: #218838;
+        }
+
+        .modal-content {
+            padding: 20px;
+        }
+
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        .sort-icon:hover {
+            color: #007bff;
+        }
+
+        .project-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .status-approved {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .status-rejected {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .status-in-progress {
+            background-color: #17a2b8;
+            color: #fff;
+        }
+
+        .status-pending-decision {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: white;
+        }
+
+        .view-btn {
+            background-color: #0d6efd;
+        }
+
+        .view-btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        .send-btn {
+            background-color: #198754;
+        }
+
+        .send-btn:hover {
+            background-color: #157347;
+        }
+
+        .edit-btn {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .edit-btn:hover {
+            background-color: #e0a800;
+        }
+
+        .approve-btn {
+            background-color: #198754;
+        }
+
+        .approve-btn:hover {
+            background-color: #157347;
+        }
+
+        .reject-btn {
+            background-color: #dc3545;
+        }
+
+        .reject-btn:hover {
+            background-color: #bb2d3b;
+        }
+
+        .approved-projects-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .approved-projects-section h3 {
+            color: #28a745;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .approved-projects-section .table {
+            margin-top: 0;
+        }
+
+        .approved-projects-section .project-status {
+            font-size: 0.85em;
+            padding: 4px 8px;
+        }
+
+        .approved-projects-section .action-buttons {
+            gap: 8px;
+        }
+
+        .approved-projects-section .action-btn {
+            padding: 6px 10px;
+        }
+
+        .approved-projects-section .view-btn {
+            background-color: #0d6efd;
+        }
+
+        .approved-projects-section .approve-btn {
+            background-color: #198754;
+        }
+
+        .approved-projects-section .reject-btn {
+            background-color: #dc3545;
+        }
+
+        /* Modal Styling */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .modal-header .btn-close {
+            color: white;
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #343a40;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+        }
+
+        .image-preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        #imagePreview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .alert {
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Welcome, Developer</h3>
+                <p class="text-light mb-0">Project Management</p>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item active">
+                    <a class="nav-item" href="developer_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="developer_projects.html"><i class="fas fa-project-diagram"></i> Projects</a>
+                </li>
+                <li class="nav-item">
+                    <a href="developer_project_progress.html"><i class="fas fa-chart-line"></i> Project Progress</a>
+                </li>
+                <li class="nav-item">
+                    <a href="developer_finished_projects.html"><i class="fas fa-check-circle"></i> Completed Projects</a>
+                </li>
+                <li class="nav-item">
+                    <a href="developer_manufacturing_cost.html"><i class="fas fa-money-bill-wave"></i> Manufacturing Cost</a>
+                </li>
+    
+                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+            <button class="btn" id="sidebar-toggle" aria-label="Toggle Sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <h2>My Projects</h2>
+
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
+                <button id="addProjectBtn" data-bs-toggle="modal" data-bs-target="#addProjectModal" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Add New Project
+                </button>
+                <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
+                    <option value="all">All Projects</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="in-progress">In Progress</option>
+                </select>
+                <div id="entriesPerPageContainer" class="entries-per-page">
+                    <label for="entriesPerPageSelect">Entries per page:</label>
+                    <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Project Table -->
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Image</th>
+                        <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="projectsList"></tbody>
+            </table>
+
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding New Project -->
+    <div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProjectModalLabel">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Project
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProjectForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="projectName" class="form-label">Project Name</label>
+                                    <input type="text" class="form-control" id="projectName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="projectLocation" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="projectLocation" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="projectDeadline" class="form-label">Deadline</label>
+                                    <input type="date" class="form-control" id="projectDeadline" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="projectImage" class="form-label">Project Image</label>
+                                    <input type="file" class="form-control" id="projectImage" accept="image/*" onchange="previewImage(event)">
+                                    <div class="image-preview-container">
+                                        <img id="imagePreview" src="#" alt="Image Preview">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="projectDocuments" class="form-label">Project Documents</label>
+                                    <input type="file" class="form-control" id="projectDocuments" multiple>
+                                    <small class="text-muted">You can select multiple files</small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitProjectBtn">
+                        <i class="fas fa-save me-2"></i>Submit Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Editing Project -->
+    <div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProjectModalLabel">
+                        <i class="fas fa-edit me-2"></i>Edit Project
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProjectForm">
+                        <input type="hidden" id="editProjectId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editProjectName" class="form-label">Project Name</label>
+                                    <input type="text" class="form-control" id="editProjectName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editProjectLocation" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="editProjectLocation" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editProjectDeadline" class="form-label">Deadline</label>
+                                    <input type="date" class="form-control" id="editProjectDeadline" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editProjectImage" class="form-label">Project Image</label>
+                                    <input type="file" class="form-control" id="editProjectImage" accept="image/*" onchange="previewEditImage(event)">
+                                    <div class="image-preview-container">
+                                        <img id="editImagePreview" src="#" alt="Image Preview">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editProjectDocuments" class="form-label">Project Documents</label>
+                                    <input type="file" class="form-control" id="editProjectDocuments" multiple>
+                                    <small class="text-muted">You can select multiple files</small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="updateProjectBtn">
+                        <i class="fas fa-save me-2"></i>Update Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Project -->
+    <div class="modal fade" id="viewProjectModal" tabindex="-1" aria-labelledby="viewProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewProjectModalLabel">
+                        <i class="fas fa-eye me-2"></i>Project Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="form-label">Project Image</h6>
+                                <img id="viewProjectImage" src="#" alt="Project Image" class="img-fluid rounded">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="form-label">Project Name</h6>
+                                <p id="viewProjectName" class="form-control-plaintext"></p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="form-label">Location</h6>
+                                <p id="viewProjectLocation" class="form-control-plaintext"></p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="form-label">Submission Date</h6>
+                                <p id="viewProjectSubmissionDate" class="form-control-plaintext"></p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="form-label">Deadline</h6>
+                                <p id="viewProjectDeadline" class="form-control-plaintext"></p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="form-label">Status</h6>
+                                <p id="viewProjectStatus" class="form-control-plaintext"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="successMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Message Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="warningMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Sample data for projects
+        let projects = [
+            {
+                id: 1,
+                name: 'Residential Complex A',
+                location: 'Manila',
+                submissionDate: '2024-03-15',
+                deadline: '2024-12-31',
+                status: 'pending',
+                image: 'https://via.placeholder.com/60x60?text=Img'
+            },
+            {
+                id: 2,
+                name: 'Commercial Building B',
+                location: 'Makati',
+                submissionDate: '2024-03-10',
+                deadline: '2025-06-30',
+                status: 'approved',
+                image: 'https://via.placeholder.com/60x60?text=Img'
+            }
+        ];
+
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+
+        // Sidebar toggle functionality
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        });
+
+        // Image preview functionality
+        function previewImage(event) {
+            const preview = document.getElementById('imagePreview');
+            const file = event.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // Function to show success message
+        function showSuccessMessage(message) {
+            document.getElementById('successMessage').textContent = message;
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+            setTimeout(() => {
+                successModal.hide();
+            }, 2000);
+        }
+
+        // Function to show warning message
+        function showWarningMessage(message) {
+            document.getElementById('warningMessage').textContent = message;
+            const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+            warningModal.show();
+            setTimeout(() => {
+                warningModal.hide();
+            }, 2000);
+        }
+
+        // Submit project functionality
+        document.getElementById('submitProjectBtn').addEventListener('click', function () {
+            const name = document.getElementById('projectName').value;
+            const location = document.getElementById('projectLocation').value;
+            const deadline = document.getElementById('projectDeadline').value;
+            const imageFile = document.getElementById('projectImage').files[0];
+
+            if (!name || !location || !deadline) {
+                showWarningMessage('All fields are required!');
+                return;
+            }
+
+            const newProject = {
+                id: projects.length + 1,
+                name: name,
+                location: location,
+                submissionDate: new Date().toISOString().split('T')[0],
+                deadline: deadline,
+                status: 'pending',
+                image: imageFile ? URL.createObjectURL(imageFile) : 'https://via.placeholder.com/60x60?text=Img'
+            };
+
+            projects.push(newProject);
+            renderProjects();
+            
+            showSuccessMessage('Project submitted successfully!');
+            
+            setTimeout(() => {
+                $('#addProjectModal').modal('hide');
+                document.getElementById('addProjectForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
+            }, 2000);
+        });
+
+        // Function to render projects
+        function renderProjects(filteredProjects = null) {
+            const projectsList = document.getElementById('projectsList');
+            projectsList.innerHTML = '';
+
+            const projectsToRender = filteredProjects || projects;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, projectsToRender.length);
+            const paginatedProjects = projectsToRender.slice(startIndex, endIndex);
+
+            paginatedProjects.forEach(project => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
+                    <td>${project.name}</td>
+                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                    <td>${project.location}</td>
+                    <td>${project.submissionDate}</td>
+                    <td>${project.deadline}</td>
+                    <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Project">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn send-btn" onclick="sendProject(${project.id})" title="Send to Manufacturing">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                            <button class="action-btn edit-btn" onclick="editProject(${project.id})" title="Edit Project">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                projectsList.appendChild(row);
+            });
+
+            updatePagination(projectsToRender.length);
+        }
+
+        // View project function
+        function viewProject(id) {
+            const project = projects.find(p => p.id === id);
+            if (project) {
+                document.getElementById('viewProjectImage').src = project.image;
+                document.getElementById('viewProjectName').textContent = project.name;
+                document.getElementById('viewProjectLocation').textContent = project.location;
+                document.getElementById('viewProjectSubmissionDate').textContent = project.submissionDate;
+                document.getElementById('viewProjectDeadline').textContent = project.deadline;
+                document.getElementById('viewProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
+                
+                const viewModal = new bootstrap.Modal(document.getElementById('viewProjectModal'));
+                viewModal.show();
+            }
+        }
+
+        // Edit project function
+        function editProject(id) {
+            const project = projects.find(p => p.id === id);
+            if (project) {
+                if (project.status === 'pending') {
+                    document.getElementById('editProjectId').value = project.id;
+                    document.getElementById('editProjectName').value = project.name;
+                    document.getElementById('editProjectLocation').value = project.location;
+                    document.getElementById('editProjectDeadline').value = project.deadline;
+                    document.getElementById('editImagePreview').src = project.image;
+                    document.getElementById('editImagePreview').style.display = 'block';
+                    
+                    const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
+                    editModal.show();
+                } else {
+                    showWarningMessage('Only pending projects can be edited.');
+                }
+            }
+        }
+
+        // Update project functionality
+        document.getElementById('updateProjectBtn').addEventListener('click', function() {
+            const projectId = parseInt(document.getElementById('editProjectId').value);
+            const project = projects.find(p => p.id === projectId);
+            
+            if (project) {
+                project.name = document.getElementById('editProjectName').value;
+                project.location = document.getElementById('editProjectLocation').value;
+                project.deadline = document.getElementById('editProjectDeadline').value;
+
+                const imageFile = document.getElementById('editProjectImage').files[0];
+                if (imageFile) {
+                    project.image = URL.createObjectURL(imageFile);
+                }
+
+                renderProjects();
+                showSuccessMessage('Project updated successfully!');
+                
+                setTimeout(() => {
+                    $('#editProjectModal').modal('hide');
+                    document.getElementById('editProjectForm').reset();
+                    document.getElementById('editImagePreview').style.display = 'none';
+                }, 2000);
+            }
+        });
+
+        // Send project function
+        function sendProject(id) {
+            const project = projects.find(p => p.id === id);
+            if (project) {
+                if (project.status === 'pending') {
+                    if (confirm('Are you sure you want to send this project to manufacturing?')) {
+                        project.status = 'in-progress';
+                        renderProjects();
+                        showSuccessMessage('Project has been sent to manufacturing successfully!');
+                    }
+                } else {
+                    showWarningMessage('Only pending projects can be sent to manufacturing.');
+                }
+            }
+        }
+
+        // Preview edit image function
+        function previewEditImage(event) {
+            const preview = document.getElementById('editImagePreview');
+            const file = event.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // Update pagination function
+        function updatePagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+
+            updateEntriesMessage();
+        }
+
+        // Change page function
+        function changePage(newPage) {
+            const totalPages = Math.ceil(projects.length / itemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderProjects();
+            }
+            return false;
+        }
+
+        // Update entries message function
+        function updateEntriesMessage() {
+            const startIndex = projects.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, projects.length);
+            
+            let message;
+            if (projects.length === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${projects.length} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${projects.length} entries`;
+            }
+            
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        // Set entries per page function
+        function setEntriesPerPage() {
+            itemsPerPage = parseInt(document.getElementById('entriesPerPageSelect').value);
+            currentPage = 1;
+            renderProjects();
+        }
+
+        // Sort table function
+        function sortTable(columnIndex) {
+            // Map column indices to their corresponding property names
+            const columnMap = {
+                0: 'id',
+                1: 'name',
+                3: 'location',
+                4: 'submissionDate',
+                5: 'deadline',
+                6: 'status'
+            };
+
+            const columnName = columnMap[columnIndex];
+            if (!columnName) return; // Exit if column index is not mapped
+
+            // Toggle sort direction if clicking the same column
+            if (currentSortColumn === columnName) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnName;
+                currentSortDirection = 'asc';
+            }
+
+            // Sort the projects array
+            projects.sort((a, b) => {
+                let valueA = a[columnName];
+                let valueB = b[columnName];
+
+                // Handle different data types
+                switch (columnName) {
+                    case 'id':
+                        valueA = parseInt(valueA);
+                        valueB = parseInt(valueB);
+                        break;
+                    case 'submissionDate':
+                    case 'deadline':
+                        valueA = new Date(valueA).getTime();
+                        valueB = new Date(valueB).getTime();
+                        break;
+                    case 'status':
+                        const statusOrder = {
+                            'pending': 0,
+                            'in-progress': 1,
+                            'approved': 2,
+                            'rejected': 3
+                        };
+                        valueA = statusOrder[valueA] || 0;
+                        valueB = statusOrder[valueB] || 0;
+                        break;
+                    case 'name':
+                    case 'location':
+                        valueA = valueA.toLowerCase();
+                        valueB = valueB.toLowerCase();
+                        break;
+                }
+
+                // Compare values based on sort direction
+                if (currentSortDirection === 'asc') {
+                    return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+                } else {
+                    return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+                }
+            });
+
+            // Update the table display
+            renderProjects();
+        }
+
+        // Handle filter change function
+        function handleFilterChange() {
+            const filter = document.getElementById('filterDropdown').value;
+            const filteredProjects = filter === 'all' 
+                ? [...projects] 
+                : projects.filter(p => p.status === filter);
+            
+            // Apply current sort if exists
+            if (currentSortColumn) {
+                const columnName = currentSortColumn;
+                filteredProjects.sort((a, b) => {
+                    let valueA = a[columnName];
+                    let valueB = b[columnName];
+
+                    switch (columnName) {
+                        case 'id':
+                            valueA = parseInt(valueA);
+                            valueB = parseInt(valueB);
+                            break;
+                        case 'submissionDate':
+                        case 'deadline':
+                            valueA = new Date(valueA).getTime();
+                            valueB = new Date(valueB).getTime();
+                            break;
+                        case 'status':
+                            const statusOrder = {
+                                'pending': 0,
+                                'in-progress': 1,
+                                'approved': 2,
+                                'rejected': 3
+                            };
+                            valueA = statusOrder[valueA] || 0;
+                            valueB = statusOrder[valueB] || 0;
+                            break;
+                        case 'name':
+                        case 'location':
+                            valueA = valueA.toLowerCase();
+                            valueB = valueB.toLowerCase();
+                            break;
+                    }
+
+                    if (currentSortDirection === 'asc') {
+                        return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+                    } else {
+                        return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+                    }
+                });
+            }
+            
+            renderProjects(filteredProjects);
+        }
+
+        // Initialize the table
+        renderProjects();
+    </script>
+</body>
+</html>
