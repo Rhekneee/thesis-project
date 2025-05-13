@@ -2,25 +2,26 @@ const db = require("../db");
 const bcrypt = require('bcrypt');
 
 // Helper function to authenticate user
-const authenticateUser = async (email, password) => {
+const authenticateUser = async (employee_id, password) => {
     const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
+        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
         FROM users 
         JOIN roles ON users.role_id = roles.id
-        WHERE users.email = ?;
+        JOIN employees ON users.id = employees.user_id
+        WHERE employees.employee_id = ?;
     `;
 
-    const [users] = await db.query(SQL_COMMAND, [email]);
+    const [users] = await db.query(SQL_COMMAND, [employee_id]);
 
     if (users.length === 0) {
-        throw new Error("Invalid email or password");
+        throw new Error("Invalid employee ID or password");
     }
 
     const user = users[0];
     const isPasswordValid = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
-        throw new Error("Invalid email or password");
+        throw new Error("Invalid employee ID or password");
     }
 
     return user;
@@ -41,8 +42,8 @@ const getPermissionsForRole = async (role_id) => {
 // Login function
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        console.log("🔍 Login attempt with:", { email });
+        const { employee_id, password } = req.body;
+        console.log("🔍 Login attempt with employee ID:", employee_id);
 
         // First check if user exists
         const checkUserSQL = `
@@ -50,22 +51,22 @@ exports.login = async (req, res) => {
             FROM users
             JOIN roles ON users.role_id = roles.id
             JOIN employees ON users.id = employees.user_id
-            WHERE LOWER(users.email) = LOWER(?);
+            WHERE employees.employee_id = ?;
         `;
         
         console.log("🔍 Checking if user exists...");
-        const [users] = await db.query(checkUserSQL, [email]);
+        const [users] = await db.query(checkUserSQL, [employee_id]);
         console.log("🔍 User check result:", users);
 
         if (users.length === 0) {
             console.log("❌ User not found");
-            return res.status(401).json({ message: "Invalid email address." });
+            return res.status(401).json({ message: "Invalid employee ID." });
         }
 
         const user = users[0];
         console.log("🔍 Found user:", { 
             id: user.id, 
-            email: user.email, 
+            employee_id: user.employee_id, 
             role: user.role_name
         });
 
@@ -76,7 +77,7 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "Invalid password." });
         }
 
-        console.log("✅ Login successful for user:", user.email);
+        console.log("✅ Login successful for employee:", user.employee_id);
 
         // Set session data
         req.session.user = {
