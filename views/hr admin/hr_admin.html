@@ -1368,12 +1368,13 @@
             <h2>Admin HR Dashboard</h2>
             
             <div class="container-fluid">
+                <!-- KPI Cards -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="card kpi-card">
                             <div class="card-body text-center">
                                 <h5>Total Employees</h5>
-                                <h2>150</h2>
+                                <h2 id="totalEmployees">-</h2>
                             </div>
                         </div>
                     </div>
@@ -1381,7 +1382,7 @@
                         <div class="card kpi-card">
                             <div class="card-body text-center">
                                 <h5>New Hires</h5>
-                                <h2>10</h2>
+                                <h2 id="newHires">-</h2>
                             </div>
                         </div>
                     </div>
@@ -1389,7 +1390,7 @@
                         <div class="card kpi-card">
                             <div class="card-body text-center">
                                 <h5>Leave Requests</h5>
-                                <h2>5</h2>
+                                <h2 id="pendingLeaveRequests">-</h2>
                             </div>
                         </div>
                     </div>
@@ -1397,7 +1398,7 @@
                         <div class="card kpi-card">
                             <div class="card-body text-center">
                                 <h5>Pending Approvals</h5>
-                                <h2>3</h2>
+                                <h2 id="totalPendingApprovals">-</h2>
                             </div>
                         </div>
                     </div>
@@ -1710,67 +1711,38 @@
             }
         }
 
-        // Function to toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            const menuToggle = document.querySelector('.menu-toggle i');
-            
-            sidebar.classList.toggle('collapsed');
-            menuToggle.classList.toggle('fa-bars');
-            menuToggle.classList.toggle('fa-times');
-            
-            if (sidebar.classList.contains('collapsed')) {
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
+        // Function to fetch and update dashboard KPIs
+        async function updateDashboardKPIs() {
+            try {
+                const response = await fetch('/hr/dashboard-kpis');
+                if (!response.ok) throw new Error('Failed to fetch dashboard KPIs');
+                
+                const data = await response.json();
+                
+                // Update KPI cards with the fetched data
+                document.getElementById('totalEmployees').textContent = data.totalEmployees;
+                document.getElementById('newHires').textContent = data.newHires;
+                document.getElementById('pendingLeaveRequests').textContent = data.pendingLeaveRequests;
+                document.getElementById('totalPendingApprovals').textContent = data.totalPendingApprovals;
+            } catch (error) {
+                console.error('Error updating dashboard KPIs:', error);
+                // Set error state in KPI cards
+                ['totalEmployees', 'newHires', 'pendingLeaveRequests', 'totalPendingApprovals'].forEach(id => {
+                    document.getElementById(id).textContent = 'Error';
+                });
             }
         }
 
-        // Initialize on page load
+        // Update the DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', function() {
-            // Set initial state
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
+            // ... existing initialization code ...
 
-            // Fetch user info
+            // Fetch user info and dashboard KPIs
             getUserInfo();
-        });
+            updateDashboardKPIs();
 
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            const sidebar = document.getElementById('sidebar');
-            const topbar = document.querySelector('.topbar');
-            const content = document.getElementById('content');
-            
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('collapsed');
-                topbar.style.left = '80px';
-                content.style.marginLeft = '80px';
-                content.style.width = 'calc(100% - 80px)';
-            } else {
-                sidebar.classList.remove('collapsed');
-                topbar.style.left = '300px';
-                content.style.marginLeft = '300px';
-                content.style.width = 'calc(100% - 300px)';
-            }
+            // Set up periodic refresh of KPIs (every 5 minutes)
+            setInterval(updateDashboardKPIs, 5 * 60 * 1000);
         });
     </script>
 </body>
