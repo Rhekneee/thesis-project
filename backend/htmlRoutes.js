@@ -106,10 +106,6 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_admin.html')); // Adjusted path
   });
 
-  app.get('/crm/attendance', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'daily_attendance.html')); // Adjusted path
-  });
-
   app.get('/crm/edit_properties', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'edit_properties.html')); // Adjusted path
   });
@@ -125,7 +121,24 @@ app.get('/hr_manager/employee_list', (req, res) => {
   app.get('/crm/transactions', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'transactions.html')); // Adjusted path
   });
+
+  app.get('/crm/crm_work_adjustment', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_halfday_request.html')); // Adjusted path
+  }); 
+
+  app.get('/crm/crm_daily_attendance', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_daily_attendance.html')); // Adjusted path
+  });
+
+  app.get('/crm/crm_leave_request', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_leave_request.html')); // Adjusted path
+  });
+
+  app.get('/crm/job_posting', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
+  });
   
+
   // ====================
   // SCM admin Routes
   // ====================
