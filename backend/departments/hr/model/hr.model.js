@@ -542,11 +542,6 @@ const HRModel = {
             if (status === 'Half Day') {
                 // For half day, cap the hours at 4
                 adjustedHours = Math.min(totalHours, 4);
-            } else if (hourPHT < 18) {
-                // Early out - calculate deduction based on hours before 6 PM
-                const minutesBefore6PM = (18 * 60) - (hourPHT * 60 + minutesPHT);
-                adjustedHours = totalHours - (minutesBefore6PM / 60);
-                status = 'Early Out';
             } else if (hourPHT >= 18) {
                 // Overtime - calculate hours after 6 PM
                 overtimeHours = (hourPHT * 60 + minutesPHT - 18 * 60) / 60;
@@ -1577,6 +1572,423 @@ const HRModel = {
         } catch (error) {
             console.error("❌ Error in updateUserPassword:", error);
             throw error;
+        }
+    },
+
+    // Leave Management Functions
+    applyLeave: async (userId, leaveTypeId, startDate, endDate, reason) => {
+        try {
+            // Calculate total days (including weekends)
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+            // Insert leave request
+            const [result] = await db.query(`
+                INSERT INTO leave_request 
+                (user_id, leave_type_id, start_date, end_date, total_days, reason, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending')
+            `, [userId, leaveTypeId, startDate, endDate, totalDays, reason]);
+
+            return { success: true, requestId: result.insertId };
+        } catch (error) {
+            console.error("❌ Error applying for leave:", error);
+            throw error;
+        }
+    },
+
+    getLeaveTypes: async () => {
+        try {
+            const [types] = await db.query(`
+                SELECT * FROM leave_types 
+                WHERE is_active = TRUE
+            `);
+            return types;
+        } catch (error) {
+            console.error("❌ Error fetching leave types:", error);
+            throw error;
+        }
+    },
+
+    getLeaveBalance: async (userId, leaveTypeId, year) => {
+        try {
+            const [balance] = await db.query(`
+                SELECT * FROM leave_balance
+                WHERE user_id = ? AND leave_type_id = ? AND year = ?
+            `, [userId, leaveTypeId, year]);
+            return balance[0] || null;
+        } catch (error) {
+            console.error("❌ Error fetching leave balance:", error);
+            throw error;
+        }
+    },
+
+    getLeaveRequests: async (userId = null) => {
+        try {
+            let query = `
+                SELECT 
+                    lr.id,
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate,
+                    lr.toDate,
+                    lr.reason,
+                    lr.status,
+                    lr.remarks,
+                    lr.created_at,
+                    lr.updated_at,
+                    lt.leaveType as leave_type_name,
+                    e.full_name as employee_name
+                FROM leave_request lr
+                JOIN leave_types lt ON lr.leaveTypeId = lt.id
+                JOIN employees e ON lr.employeeId = e.employee_id
+            `;
+            
+            if (userId) {
+                query += ' WHERE lr.employeeId = ?';
+                const [requests] = await db.query(query, [userId]);
+                return requests;
+            } else {
+                const [requests] = await db.query(query);
+                return requests;
+            }
+        } catch (error) {
+            console.error("❌ Error fetching leave requests:", error);
+            throw error;
+        }
+    },
+
+    handleLeaveRequest: async (requestId, status, remarks = null) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the leave request details first
+            const [request] = await connection.query(`
+                SELECT 
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate,
+                    lr.toDate,
+                    lr.status
+                FROM leave_request lr
+                WHERE lr.id = ?
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Leave request not found');
+            }
+
+            const currentStatus = request[0].status;
+            if (currentStatus !== 'pending') {
+                throw new Error('Leave request is not in pending status');
+            }
+
+            // Update leave request status
+            await connection.query(`
+                UPDATE leave_request
+                SET status = ?, remarks = ?
+                WHERE id = ?
+            `, [status, remarks, requestId]);
+
+            // Only update leave balance if the request is approved
+            if (status === 'approved') {
+                // Calculate number of days (excluding weekends)
+                const start = new Date(request[0].fromDate);
+                const end = new Date(request[0].toDate);
+                let days = 0;
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const day = d.getDay();
+                    if (day !== 0 && day !== 6) { // Skip Sunday (0) and Saturday (6)
+                        days++;
+                    }
+                }
+
+                // Get current balance
+                const [balance] = await connection.query(`
+                    SELECT 
+                        lt.initial_balance,
+                        COALESCE(lb.remainingBalance, lt.initial_balance) as remainingBalance
+                    FROM leave_types lt
+                    LEFT JOIN leave_balance lb ON 
+                        lt.id = lb.leaveTypeId AND 
+                        lb.employeeId = ?
+                    WHERE lt.id = ?
+                `, [request[0].employeeId, request[0].leaveTypeId]);
+
+                if (!balance || balance.length === 0) {
+                    throw new Error('Leave type not found');
+                }
+
+                // Update leave balance
+                await connection.query(`
+                    INSERT INTO leave_balance 
+                    (employeeId, leaveTypeId, totalBalance, usedBalance, remainingBalance)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                    usedBalance = usedBalance + ?,
+                    remainingBalance = totalBalance - (usedBalance + ?)
+                `, [
+                    request[0].employeeId,
+                    request[0].leaveTypeId,
+                    balance[0].initial_balance,
+                    days,
+                    balance[0].remainingBalance - days,
+                    days,
+                    days
+                ]);
+            }
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error handling leave request:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Apply for leave
+    applyForLeave: async (employeeId, leaveTypeId, fromDate, toDate, reason) => {
+        if (!employeeId) {
+            throw new Error('Employee ID is required');
+        }
+
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Check if employee has sufficient balance
+            const [balance] = await connection.query(`
+                SELECT 
+                    lt.initial_balance,
+                    COALESCE(lb.remainingBalance, lt.initial_balance) as remainingBalance
+                FROM leave_types lt
+                LEFT JOIN leave_balance lb ON 
+                    lt.id = lb.leaveTypeId AND 
+                    lb.employeeId = ?
+                WHERE lt.id = ?
+            `, [employeeId, leaveTypeId]);
+
+            if (!balance || balance.length === 0) {
+                throw new Error('Leave type not found');
+            }
+
+            // Calculate number of days (excluding weekends)
+            const start = new Date(fromDate);
+            const end = new Date(toDate);
+            let days = 0;
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const day = d.getDay();
+                if (day !== 0 && day !== 6) { // Skip Sunday (0) and Saturday (6)
+                    days++;
+                }
+            }
+
+            if (days > balance[0].remainingBalance) {
+                throw new Error('Insufficient leave balance');
+            }
+
+            // Insert leave request without affecting balance
+            const [requestResult] = await connection.query(`
+                INSERT INTO leave_request 
+                (employeeId, leaveTypeId, fromDate, toDate, remarks, status)
+                VALUES (?, ?, ?, ?, ?, 'pending')
+            `, [employeeId, leaveTypeId, fromDate, toDate, reason]);
+
+            await connection.commit();
+            return { success: true, requestId: requestResult.insertId };
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error applying for leave:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Cancel leave request
+    cancelLeaveRequest: async (requestId, employeeId) => {
+        if (!employeeId) {
+            throw new Error('Employee ID is required');
+        }
+
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the leave request details
+            const [request] = await connection.query(`
+                SELECT leaveTypeId, fromDate, toDate, status
+                FROM leave_request
+                WHERE id = ? AND employeeId = ? AND status = 'pending'
+            `, [requestId, employeeId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Leave request not found or cannot be cancelled');
+            }
+
+            // Only update status to cancelled, no need to restore balance since it wasn't deducted
+            await connection.query(`
+                UPDATE leave_request
+                SET status = 'cancelled'
+                WHERE id = ? AND employeeId = ?
+            `, [requestId, employeeId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error cancelling leave request:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get leave requests for an employee
+    getEmployeeLeaveRequests: async (employeeId) => {
+        try {
+            if (!employeeId) {
+                throw new Error('Employee ID is required');
+            }
+
+            const query = `
+                SELECT 
+                    lr.id,
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate,
+                    lr.toDate,
+                    lr.remarks,
+                    lr.status,
+                    lt.leaveType as leave_type_name
+                FROM leave_request lr
+                JOIN leave_types lt ON lr.leaveTypeId = lt.id
+                WHERE lr.employeeId = ?
+                ORDER BY lr.fromDate DESC
+            `;
+
+            const [rows] = await db.query(query, [employeeId]);
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching employee leave requests:", error);
+            throw error;
+        }
+    },
+
+    // Get leave types with balances for an employee
+    getLeaveTypesWithBalances: async (employeeId) => {
+        try {
+            if (!employeeId) {
+                throw new Error('Employee ID is required');
+            }
+
+            const query = `
+                SELECT 
+                    lt.id,
+                    lt.leaveType,
+                    lt.initial_balance,
+                    COALESCE(lb.usedBalance, 0) as usedBalance,
+                    COALESCE(lb.remainingBalance, lt.initial_balance) as remainingBalance
+                FROM leave_types lt
+                LEFT JOIN leave_balance lb ON 
+                    lt.id = lb.leaveTypeId AND 
+                    lb.employeeId = ?
+                ORDER BY lt.leaveType
+            `;
+
+            const [rows] = await db.query(query, [employeeId]);
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching leave types with balances:", error);
+            throw error;
+        }
+    },
+
+    // Restore a leave request
+    restoreLeaveRequest: async (requestId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the leave request details first
+            const [request] = await connection.query(`
+                SELECT 
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate,
+                    lr.toDate,
+                    lr.status
+                FROM leave_request lr
+                WHERE lr.id = ? AND lr.status = 'cancelled'
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Leave request not found or not in cancelled status');
+            }
+
+            // Update leave request status back to pending
+            await connection.query(`
+                UPDATE leave_request
+                SET status = 'pending'
+                WHERE id = ?
+            `, [requestId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error restoring leave request:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Permanently delete a leave request
+    permanentlyDeleteLeaveRequest: async (requestId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the leave request details first
+            const [request] = await connection.query(`
+                SELECT 
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate,
+                    lr.toDate,
+                    lr.status
+                FROM leave_request lr
+                WHERE lr.id = ?
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Leave request not found');
+            }
+
+            // Only allow deletion of cancelled or rejected requests
+            if (!['cancelled', 'rejected'].includes(request[0].status)) {
+                throw new Error('Only cancelled or rejected leave requests can be permanently deleted');
+            }
+
+            // Permanently delete the leave request
+            await connection.query(`
+                DELETE FROM leave_request
+                WHERE id = ?
+            `, [requestId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error permanently deleting leave request:", error);
+            throw error;
+        } finally {
+            connection.release();
         }
     }
 };

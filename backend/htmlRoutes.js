@@ -224,9 +224,6 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_list.html')); // Adjusted path
   });
 
-  app.get('/hr/hr_halfday_request', (req, res) => {    
-    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_halfday_request.html')); // Adjusted path
-  });
   
   app.get('/hr/hr_interview', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_interview.html')); // Adjusted path
@@ -256,6 +253,14 @@ app.get('/hr_manager/employee_list', (req, res) => {
 
   app.get('/hr/change-password', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'change_password.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_work_adjustment', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_work_adjustment.html')); // Adjusted path
+  });
+
+  app.get('/hr/hr_work_adjustment_request', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_work_adjustment_request.html')); // Adjusted path
   });
 
 // ====================

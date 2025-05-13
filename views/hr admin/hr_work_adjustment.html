@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Requests</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+        .pagination {
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .sort-icon.active {
+            color: #007bff;
+        }
+
+        .sort-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0;
+        }
+
+        /* Bottom message */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table {
+            margin-top: 20px;
+        }
+
+        /* Table styling */
+        th,
+        td {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Modal Styling */
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Custom styling for modal button alignment */
+        .modal-footer .btn {
+            width: 48%;
+        }
+
+        /* Confirm modal spacing adjustments */
+        .modal-footer button {
+            font-size: 16px;
+            padding: 10px;
+        }
+
+        /* Cancel button styling */
+        .btn-danger{
+            background-color: #dc3545;
+            border-color: #dc3545;
+            float: right;
+            margin-bottom: 10px;
+            margin-right: 5px;
+
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #c82333;
+        }
+        .btn-secondary {
+            margin-bottom: 10px;
+        }
+
+        /* Add custom alert styles */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .custom-alert.error {
+            background-color: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/hr/hr_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item">
+                            <a href="/hr/hr_daily_attendance">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Daily Attendance</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_history_attendance">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Attendance Logs</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_leave_request">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Request Leave</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_work_adjustment">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Work Adjustment</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Payroll Management</span>
+                    </a>
+                    <ul class="collapse" id="Payroll">
+                        <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                        <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Employee Management</span>
+                    </a>
+                    <ul class="collapse" id="Employee">
+                        <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                        <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Recruitment</span>
+                    </a>
+                    <ul class="collapse" id="Recruitment">
+                        <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                        <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+                    </ul>
+                </li>    
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+        <!-- Main content area -->
+        <div id="content">
+            <!-- ========== Work Adjustment Request Content ========== -->
+            <h2>Work Adjustment Request</h2>
+
+            <!-- Search Bar and Entries Per Page -->
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search work adjustment requests..." onkeyup="filterRequests()">
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <label for="entriesPerPage" class="form-label">Entries per page:</label>
+                        <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apply Work Adjustment Button -->
+            <div class="d-flex justify-content-between">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addWorkAdjustmentModal">
+                    <i class="fas fa-plus"></i> Apply Work Adjustment
+                </button>
+            </div>
+
+            <!-- Work Adjustment Request Table -->
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Type <i class="fas fa-sort sort-icon" id="sortType"></i></th>
+                        <th onclick="sortTable(1)">Date <i class="fas fa-sort sort-icon" id="sortDate"></i></th>
+                        <th onclick="sortTable(2)">Time <i class="fas fa-sort sort-icon" id="sortTime"></i></th>
+                        <th onclick="sortTable(3)">Remarks <i class="fas fa-sort sort-icon" id="sortRemarks"></i></th>
+                        <th onclick="sortTable(4)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="workAdjustmentList">
+                    <!-- Work adjustment request rows will be dynamically inserted here -->
+                </tbody>
+            </table>
+
+            <!-- Bottom message: Showing entries -->
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+            </div>
+
+            <!-- Pagination -->
+            <nav>
+                <ul class="pagination" id="paginationControls"></ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Add Work Adjustment Modal -->
+    <div class="modal fade" id="addWorkAdjustmentModal" tabindex="-1" aria-labelledby="addWorkAdjustmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWorkAdjustmentModalLabel">Request Work Adjustment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="workAdjustmentForm">
+                        <div class="form-group mb-3">
+                            <label for="requestType" class="form-label">Request Type</label>
+                            <select id="requestType" class="form-select" onchange="handleRequestTypeChange()" required>
+                                <option value="">Select Request Type</option>
+                                <option value="halfday">Half-Day Leave</option>
+                                <option value="overtime">Overtime</option>
+                            </select>
+                        </div>
+
+                        <!-- Half-Day Options (initially hidden) -->
+                        <div id="halfDayOptions" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Time Slot</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="halfDaySlot" id="morningSlot" value="morning">
+                                    <label class="form-check-label" for="morningSlot">
+                                        Morning (9:00 AM - 12:00 PM)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="halfDaySlot" id="afternoonSlot" value="afternoon">
+                                    <label class="form-check-label" for="afternoonSlot">
+                                        Afternoon (1:00 PM - 6:00 PM)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overtime Options (initially hidden) -->
+                        <div id="overtimeOptions" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label for="overtimeFrom" class="form-label">From</label>
+                                <input type="time" id="overtimeFrom" class="form-control" min="17:00" max="23:59">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="overtimeTo" class="form-label">To</label>
+                                <input type="time" id="overtimeTo" class="form-control" min="17:00" max="23:59">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="adjustmentDate" class="form-label">Date</label>
+                            <input type="date" id="adjustmentDate" class="form-control" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea id="remarks" class="form-control" rows="3" required></textarea>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Work Adjustment Modal -->
+    <div class="modal fade" id="viewWorkAdjustmentModal" tabindex="-1" aria-labelledby="viewWorkAdjustmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewWorkAdjustmentModalLabel">View Work Adjustment Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="workAdjustmentDetails">
+                    <!-- Request details will be dynamically inserted here -->
+                </div>
+                <div id="cancelButtonContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelConfirmationModalLabel">Cancel Work Adjustment Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this work adjustment request?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Request</button>
+                    <button type="button" class="btn btn-danger" id="confirmCancelBtn">Yes, Cancel Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add custom alert div -->
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script>
+        const API_URL = "http://localhost:4000/hr";
+        let workAdjustments = [];
+        let itemsPerPage = 5;
+        let currentPage = 1;
+        let filteredRequests = null;
+        let currentRequestId = null;
+
+        // Function to handle request type change
+        function handleRequestTypeChange() {
+            const requestType = document.getElementById('requestType').value;
+            const halfDayOptions = document.getElementById('halfDayOptions');
+            const overtimeOptions = document.getElementById('overtimeOptions');
+
+            // Hide all options first
+            halfDayOptions.style.display = 'none';
+            overtimeOptions.style.display = 'none';
+
+            // Show relevant options based on selection
+            if (requestType === 'halfday') {
+                halfDayOptions.style.display = 'block';
+            } else if (requestType === 'overtime') {
+                overtimeOptions.style.display = 'block';
+            }
+
+            // Reset form fields
+            document.getElementById('workAdjustmentForm').reset();
+        }
+
+        // Function to validate overtime times
+        function validateOvertimeTimes() {
+            const from = document.getElementById('overtimeFrom').value;
+            const to = document.getElementById('overtimeTo').value;
+            
+            if (!from || !to) return false;
+            
+            const fromTime = new Date(`2000-01-01T${from}`);
+            const toTime = new Date(`2000-01-01T${to}`);
+            
+            // Check if times are after 5 PM
+            const minTime = new Date('2000-01-01T17:00');
+            if (fromTime < minTime || toTime < minTime) {
+                showAlert('Overtime must start after 5:00 PM', true);
+                return false;
+            }
+            
+            // Check if end time is after start time
+            if (toTime <= fromTime) {
+                showAlert('End time must be after start time', true);
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Function to render work adjustments
+        function renderWorkAdjustments() {
+            const list = filteredRequests || workAdjustments;
+            const workAdjustmentList = document.getElementById('workAdjustmentList');
+            workAdjustmentList.innerHTML = '';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = currentPage * itemsPerPage;
+            const currentRequests = list.slice(start, end);
+
+            currentRequests.forEach(request => {
+                const row = document.createElement('tr');
+                const timeDisplay = request.type === 'halfday' 
+                    ? (request.timeSlot === 'morning' ? '9:00 AM - 12:00 PM' : '1:00 PM - 6:00 PM')
+                    : `${request.from} - ${request.to}`;
+
+                row.innerHTML = `
+                    <td>${request.type === 'halfday' ? 'Half-Day Leave' : 'Overtime'}</td>
+                    <td>${formatDate(request.date)}</td>
+                    <td>${timeDisplay}</td>
+                    <td>${request.remarks}</td>
+                    <td><span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-info btn-sm" onclick="viewWorkAdjustment(${request.id})" title="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${request.status === 'pending' ? 
+                                `<button class="btn btn-warning btn-sm" onclick="cancelWorkAdjustment(${request.id})" title="Cancel Request">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>` : 
+                                ''}
+                        </div>
+                    </td>
+                `;
+                workAdjustmentList.appendChild(row);
+            });
+
+            renderPagination();
+            updateEntriesMessage();
+        }
+
+        // Function to format date
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        // Function to get status badge color
+        function getStatusBadgeColor(status) {
+            switch(status.toLowerCase()) {
+                case 'approved': return 'success';
+                case 'rejected': return 'danger';
+                case 'pending': return 'warning';
+                case 'cancelled': return 'secondary';
+                default: return 'secondary';
+            }
+        }
+
+        // Function to show alert
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'custom-alert' + (isError ? ' error' : '');
+            alertMessage.textContent = message;
+            alert.style.display = 'block';
+
+            setTimeout(() => {
+                alert.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                    alert.style.animation = 'slideIn 0.5s ease-out';
+                }, 500);
+            }, 3000);
+        }
+
+        // Form submission handler
+        document.getElementById('workAdjustmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const requestType = document.getElementById('requestType').value;
+            const date = document.getElementById('adjustmentDate').value;
+            const remarks = document.getElementById('remarks').value;
+
+            let requestData = {
+                type: requestType,
+                date: date,
+                remarks: remarks
+            };
+
+            if (requestType === 'halfday') {
+                const timeSlot = document.querySelector('input[name="halfDaySlot"]:checked')?.value;
+                if (!timeSlot) {
+                    showAlert('Please select a time slot for half-day leave', true);
+                    return;
+                }
+                requestData.timeSlot = timeSlot;
+            } else if (requestType === 'overtime') {
+                if (!validateOvertimeTimes()) return;
+                requestData.from = document.getElementById('overtimeFrom').value;
+                requestData.to = document.getElementById('overtimeTo').value;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/work-adjustments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to submit request');
+                }
+
+                $('#addWorkAdjustmentModal').modal('hide');
+                await fetchWorkAdjustments();
+                showAlert('Work adjustment request submitted successfully!');
+                this.reset();
+            } catch (error) {
+                console.error('Error submitting request:', error);
+                showAlert(error.message || 'Failed to submit request. Please try again.', true);
+            }
+        });
+
+        // Function to view work adjustment details
+        function viewWorkAdjustment(id) {
+            const request = workAdjustments.find(req => req.id === id);
+            if (request) {
+                const timeDisplay = request.type === 'halfday' 
+                    ? (request.timeSlot === 'morning' ? '9:00 AM - 12:00 PM' : '1:00 PM - 6:00 PM')
+                    : `${request.from} - ${request.to}`;
+
+                const details = `
+                    <div class="mb-3">
+                        <h6>Request Details</h6>
+                        <p><strong>Type:</strong> ${request.type === 'halfday' ? 'Half-Day Leave' : 'Overtime'}</p>
+                        <p><strong>Date:</strong> ${formatDate(request.date)}</p>
+                        <p><strong>Time:</strong> ${timeDisplay}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        <p><strong>Remarks:</strong> ${request.remarks}</p>
+                    </div>
+                `;
+                document.getElementById('workAdjustmentDetails').innerHTML = details;
+
+                // Show cancel button only for pending requests
+                const cancelButtonHTML = request.status === 'pending' ? 
+                    `<button class="btn btn-danger" onclick="cancelWorkAdjustment(${request.id})">Cancel Request</button>` : 
+                    '';
+                document.getElementById('cancelButtonContainer').innerHTML = cancelButtonHTML;
+
+                $('#viewWorkAdjustmentModal').modal('show');
+            }
+        }
+
+        // Function to cancel work adjustment
+        function cancelWorkAdjustment(id) {
+            currentRequestId = id;
+            $('#cancelConfirmationModal').modal('show');
+        }
+
+        // Add event listener for cancel confirmation
+        document.getElementById('confirmCancelBtn').addEventListener('click', async function() {
+            if (!currentRequestId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/work-adjustments/${currentRequestId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to cancel request');
+                }
+
+                await fetchWorkAdjustments();
+                $('#cancelConfirmationModal').modal('hide');
+                $('#viewWorkAdjustmentModal').modal('hide');
+                showAlert('Work adjustment request cancelled successfully!');
+            } catch (error) {
+                console.error('Error cancelling request:', error);
+                showAlert(error.message || 'Failed to cancel request. Please try again.', true);
+            } finally {
+                currentRequestId = null;
+            }
+        });
+
+        // Function to fetch work adjustments
+        async function fetchWorkAdjustments() {
+            try {
+                const response = await fetch(`${API_URL}/work-adjustments`);
+                if (!response.ok) throw new Error('Failed to fetch work adjustments');
+                const data = await response.json();
+                workAdjustments = data.requests || [];
+                renderWorkAdjustments();
+            } catch (error) {
+                console.error('Error fetching work adjustments:', error);
+                showAlert('Failed to load work adjustments. Please try again.', true);
+            }
+        }
+
+        // Function to filter requests
+        function filterRequests() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+            
+            if (searchTerm) {
+                filteredRequests = workAdjustments.filter(request =>
+                    request.type.toLowerCase().includes(searchTerm) ||
+                    request.remarks.toLowerCase().includes(searchTerm) ||
+                    request.status.toLowerCase().includes(searchTerm)
+                );
+            } else {
+                filteredRequests = null;
+            }
+
+            currentPage = 1;
+            renderWorkAdjustments();
+        }
+
+        // Function to sort table
+        function sortTable(columnIndex) {
+            const list = filteredRequests || workAdjustments;
+            const sortOrder = document.getElementById(`sort${['Type', 'Date', 'Time', 'Remarks', 'Status'][columnIndex]}`).classList.toggle('active') ? 1 : -1;
+            
+            list.sort((a, b) => {
+                let aValue = a[Object.keys(a)[columnIndex]];
+                let bValue = b[Object.keys(b)[columnIndex]];
+                
+                // Special handling for time display
+                if (columnIndex === 2) {
+                    aValue = a.type === 'halfday' ? (a.timeSlot === 'morning' ? '9:00' : '13:00') : a.from;
+                    bValue = b.type === 'halfday' ? (b.timeSlot === 'morning' ? '9:00' : '13:00') : b.from;
+                }
+                
+                if (aValue < bValue) return -1 * sortOrder;
+                if (aValue > bValue) return 1 * sortOrder;
+                return 0;
+            });
+            
+            currentPage = 1;
+            renderWorkAdjustments();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchWorkAdjustments();
+            
+            // Set min date to today for date input
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('adjustmentDate').min = today;
+        });
+
+        // ... rest of the existing code (pagination, entries per page, etc.) ...
+    </script>
+</body>
+
+</html>
