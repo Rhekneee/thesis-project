@@ -127,6 +127,45 @@
         .btn-secondary {
             margin-bottom: 10px;
         }
+
+        /* Add custom alert styles */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .custom-alert.error {
+            background-color: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -234,6 +273,12 @@
                                 <span>Request Leave</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_work_adjustment">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Work Adjustment</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -255,7 +300,7 @@
                         <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
                         <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
                         <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
-                        
+                        <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -280,57 +325,120 @@
         <!-- Main content area -->
         <div id="content">
             <!-- ========== Leave Request Content ========== -->
-            <h2>Leave Request</h2>
+            <h2>My Leave Balance</h2>
 
-            <!-- Search Bar and Entries Per Page -->
-            <div class="search-container">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search leave requests..." onkeyup="filterLeaveRequests()">
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div>
-                        <label for="entriesPerPage" class="form-label">Entries per page:</label>
-                        <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="15">15</option>
-                            <option value="20">20</option>
-                        </select>
+            <!-- Leave Types and Balances Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Leave Type</th>
+                            <th>Initial Balance</th>
+                            <th>Used Balance</th>
+                            <th>Remaining Balance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaveTypesList">
+                        <!-- Leave types will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Leave Request History -->
+            <h3 class="mt-4">My Leave Requests</h3>
+            
+            <!-- Tabs for Active/Archived Requests -->
+            <ul class="nav nav-tabs mb-3" id="leaveRequestTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">Active Requests</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab" aria-controls="archived" aria-selected="false">Archived Requests</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="leaveRequestTabsContent">
+                <!-- Active Requests Tab -->
+                <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Status</th>
+                                    <th>Remarks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeLeaveRequestsList">
+                                <!-- Active leave requests will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Archived Requests Tab -->
+                <div class="tab-pane fade" id="archived" role="tabpanel" aria-labelledby="archived-tab">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Status</th>
+                                    <th>Remarks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="archivedLeaveRequestsList">
+                                <!-- Archived leave requests will be dynamically inserted here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Apply Leave Request Button placed below the search bar -->
-            <div class="d-flex justify-content-between">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLeaveModal">
-                    Apply Leave Request
-                </button>
+    <!-- Apply Leave Modal -->
+    <div class="modal fade" id="applyLeaveModal" tabindex="-1" aria-labelledby="applyLeaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="applyLeaveModalLabel">Apply for Leave</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="leaveRequestForm">
+                        <input type="hidden" id="leaveTypeId">
+                        <div class="mb-3">
+                            <label class="form-label">Leave Type</label>
+                            <input type="text" id="leaveTypeName" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fromDate" class="form-label">From Date</label>
+                            <input type="date" id="fromDate" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="toDate" class="form-label">To Date</label>
+                            <input type="date" id="toDate" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason</label>
+                            <textarea id="reason" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <!-- Leave Request Table -->
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Leave Type <i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
-                        <th onclick="sortTable(1)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
-                        <th onclick="sortTable(2)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
-                        <th onclick="sortTable(3)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="leaveRequestsList">
-                    <!-- Leave request rows will be dynamically inserted here -->
-                </tbody>
-            </table>
-
-            <!-- Bottom message: Showing entries -->
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-            </div>
-
-            <!-- Pagination -->
-            <nav>
-                <ul class="pagination" id="paginationControls"></ul>
-            </nav>
-
         </div>
     </div>
 
@@ -345,36 +453,72 @@
                 <div class="modal-body" id="leaveDetails">
                     <!-- Leave details will be dynamically inserted here -->
                 </div>
-                <!-- Add this container where the cancel button will be inserted -->
                 <div id="cancelButtonContainer"></div>
             </div>
         </div>
     </div>
 
-    <!-- Add Leave Modal -->
-    <div class="modal fade" id="addLeaveModal" tabindex="-1" aria-labelledby="addLeaveModalLabel" aria-hidden="true">
+    <!-- Add custom alert div -->
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addLeaveModalLabel">Request New Leave</h5>
+                    <h5 class="modal-title" id="cancelConfirmModalLabel">Confirm Cancellation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="leaveForm">
-                        <div class="form-group">
-                            <label for="leaveType">Leave Type</label>
-                            <input type="text" id="leaveType" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="leaveFrom">From</label>
-                            <input type="date" id="leaveFrom" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="leaveTo">To</label>
-                            <input type="date" id="leaveTo" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit Leave Request</button>
-                    </form>
+                    <p>Are you sure you want to cancel this leave request?</p>
+                    <p class="text-muted">This will move the request to the archive section.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Request</button>
+                    <button type="button" class="btn btn-warning" id="confirmCancelBtn">Yes, Cancel Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Confirmation Modal -->
+    <div class="modal fade" id="restoreConfirmModal" tabindex="-1" aria-labelledby="restoreConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="restoreConfirmModalLabel">Confirm Restoration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to restore this leave request?</p>
+                    <p class="text-muted">This will move the request back to active requests.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Archived</button>
+                    <button type="button" class="btn btn-success" id="confirmRestoreBtn">Yes, Restore Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to permanently delete this leave request?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Archived</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Permanently</button>
                 </div>
             </div>
         </div>
@@ -383,187 +527,344 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="/public/css/side_top.css">
+    <script src="/public/js/side_top.js"></script>
     <script>
+        const API_URL = "http://localhost:4000/hr";
+        let leaveTypes = [];
+        let leaveRequests = [];
 
-        // Sample Leave Requests
-        let leaveRequests = [
-            { id: 1, leaveType: 'Sick Leave', from: '2025-05-01', to: '2025-05-03', status: 'Pending' },
-            { id: 2, leaveType: 'Vacation Leave', from: '2025-06-15', to: '2025-06-20', status: 'Approved' },
-            { id: 3, leaveType: 'Emergency Leave', from: '2025-07-10', to: '2025-07-12', status: 'Rejected' },
-            { id: 4, leaveType: 'Maternity Leave', from: '2025-08-01', to: '2025-08-30', status: 'Pending' },
-            { id: 5, leaveType: 'Paternity Leave', from: '2025-09-05', to: '2025-09-10', status: 'Approved' }
-        ];
-
-        let itemsPerPage = 5;
-        let currentPage = 1;
-        let filteredLeaveRequests = null;
-        let sortDirection = {};  // To track sort direction for each column
-
-        function renderLeaveRequests() {
-            const list = filteredLeaveRequests || leaveRequests;
-            const leaveRequestsList = document.getElementById('leaveRequestsList');
-            leaveRequestsList.innerHTML = '';
-
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = currentPage * itemsPerPage;
-            const currentLeaveRequests = list.slice(start, end);
-
-            currentLeaveRequests.forEach(request => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${request.leaveType}</td>
-                    <td>${request.from}</td>
-                    <td>${request.to}</td>
-                    <td>${request.status}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm" onclick="viewLeaveRequest(${request.id})">View</button>
-                    </td>
-                `;
-                leaveRequestsList.appendChild(row);
-            });
-
-            renderPagination();
-            updateEntriesMessage();
-        }
-
-        function renderPagination() {
-            const list = filteredLeaveRequests || leaveRequests;
-            const paginationControls = document.getElementById('paginationControls');
-            const totalPages = Math.ceil(list.length / itemsPerPage);
-            paginationControls.innerHTML = '';
-
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = document.createElement('li');
-                pageButton.classList.add('page-item');
-                if (i === currentPage) pageButton.classList.add('active');
-                pageButton.innerHTML = `
-                    <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
-                `;
-                paginationControls.appendChild(pageButton);
+        // Fetch leave types and balances
+        async function fetchLeaveTypes() {
+            try {
+                const response = await fetch(`${API_URL}/leave-types`);
+                if (!response.ok) throw new Error('Failed to fetch leave types');
+                const data = await response.json();
+                leaveTypes = data.leaveTypes || []; // Extract leaveTypes from response
+                renderLeaveTypes();
+            } catch (error) {
+                console.error('Error fetching leave types:', error);
+                document.getElementById('leaveTypesList').innerHTML = 
+                    '<tr><td colspan="5" class="text-center">Error loading leave types</td></tr>';
             }
         }
 
-        function goToPage(page) {
-            currentPage = page;
-            renderLeaveRequests();
+        // Fetch leave requests
+        async function fetchLeaveRequests() {
+            try {
+                const response = await fetch(`${API_URL}/leave-requests`);
+                if (!response.ok) throw new Error('Failed to fetch leave requests');
+                const data = await response.json();
+                leaveRequests = data.requests || [];
+                
+                // Separate active and archived requests
+                const activeRequests = leaveRequests.filter(req => req.status !== 'cancelled');
+                const archivedRequests = leaveRequests.filter(req => req.status === 'cancelled');
+                
+                renderLeaveRequests(activeRequests, 'activeLeaveRequestsList');
+                renderLeaveRequests(archivedRequests, 'archivedLeaveRequestsList', true);
+            } catch (error) {
+                console.error('Error fetching leave requests:', error);
+                document.getElementById('activeLeaveRequestsList').innerHTML = 
+                    '<tr><td colspan="6" class="text-center">Error loading leave requests</td></tr>';
+                document.getElementById('archivedLeaveRequestsList').innerHTML = 
+                    '<tr><td colspan="6" class="text-center">Error loading archived requests</td></tr>';
+            }
         }
 
-        function setEntriesPerPage() {
-            itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
-            currentPage = 1;
-            renderLeaveRequests();
+        function renderLeaveTypes() {
+            const leaveTypesList = document.getElementById('leaveTypesList');
+            leaveTypesList.innerHTML = '';
+
+            if (leaveTypes.length === 0) {
+                leaveTypesList.innerHTML = '<tr><td colspan="5" class="text-center">No leave types found</td></tr>';
+                return;
+            }
+
+            leaveTypes.forEach(type => {
+                // For new employees or if no leave balance record exists
+                const usedBalance = type.usedBalance || 0;
+                const remainingBalance = type.remainingBalance || type.initial_balance;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${type.leaveType}</td>
+                    <td>${type.initial_balance}</td>
+                    <td>${usedBalance}</td>
+                    <td>${remainingBalance}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="openApplyLeaveModal(${type.id}, '${type.leaveType}', ${remainingBalance})"
+                                ${remainingBalance <= 0 ? 'disabled' : ''}>
+                            Apply
+                        </button>
+                    </td>
+                `;
+                leaveTypesList.appendChild(row);
+            });
         }
 
-        function updateEntriesMessage() {
-            const list = filteredLeaveRequests || leaveRequests;
-            const start = (currentPage - 1) * itemsPerPage + 1;
-            const end = Math.min(currentPage * itemsPerPage, list.length);
-            const message = `Showing ${start} to ${end} of ${list.length} entries`;
-            document.getElementById('showingEntries').textContent = message;
+        function renderLeaveRequests(requests, containerId, isArchived = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            if (requests.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" class="text-center">No leave requests found</td></tr>';
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                let actionButtons = '';
+
+                if (isArchived) {
+                    // For archived requests (cancelled status)
+                    actionButtons = `
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-success btn-sm" onclick="restoreLeaveRequest(${request.id})" title="Restore Request">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteLeaveRequest(${request.id})" title="Delete Permanently">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>`;
+                } else {
+                    // For active requests
+                    actionButtons = `
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-info btn-sm" onclick="viewLeaveRequest(${request.id})" title="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${request.status === 'pending' ? 
+                                `<button class="btn btn-warning btn-sm" onclick="cancelLeaveRequest(${request.id})" title="Cancel Request">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>` : 
+                                ''}
+                        </div>`;
+                }
+
+                row.innerHTML = `
+                    <td>${request.leave_type_name || 'N/A'}</td>
+                    <td>${formatDate(request.fromDate)}</td>
+                    <td>${formatDate(request.toDate)}</td>
+                    <td><span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></td>
+                    <td>${request.remarks || '-'}</td>
+                    <td>${actionButtons}</td>
+                `;
+                container.appendChild(row);
+            });
         }
 
-        function viewLeaveRequest(id) {
-            const request = leaveRequests.find(req => req.id === id);
+        function openApplyLeaveModal(leaveTypeId, leaveTypeName, remainingBalance) {
+            document.getElementById('leaveTypeId').value = leaveTypeId;
+            document.getElementById('leaveTypeName').value = leaveTypeName;
+            
+            // Set min date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fromDate').min = today;
+            document.getElementById('toDate').min = today;
+            
+            // Reset form
+            document.getElementById('leaveRequestForm').reset();
+            
+            // Set the leave type name again after form reset
+            document.getElementById('leaveTypeName').value = leaveTypeName;
+            
+            $('#applyLeaveModal').modal('show');
+        }
+
+        // Add showAlert function
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'custom-alert' + (isError ? ' error' : '');
+            alertMessage.textContent = message;
+            alert.style.display = 'block';
+
+            // Hide the alert after 3 seconds
+            setTimeout(() => {
+                alert.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                    alert.style.animation = 'slideIn 0.5s ease-out';
+                }, 500);
+            }, 3000);
+        }
+
+        // Update the leave request form submission
+        document.getElementById('leaveRequestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const leaveTypeId = document.getElementById('leaveTypeId').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const reason = document.getElementById('reason').value;
+
+            try {
+                const response = await fetch(`${API_URL}/leave-requests`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        leaveTypeId,
+                        fromDate,
+                        toDate,
+                        reason
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to submit leave request');
+
+                // Close modal and refresh data
+                $('#applyLeaveModal').modal('hide');
+                await fetchLeaveRequests();
+                
+                showAlert('Leave request submitted successfully!');
+            } catch (error) {
+                console.error('Error submitting leave request:', error);
+                showAlert('Failed to submit leave request. Please try again.', true);
+            }
+        });
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        function getStatusBadgeColor(status) {
+            switch(status.toLowerCase()) {
+                case 'approved': return 'success';
+                case 'rejected': return 'danger';
+                case 'pending': return 'warning';
+                default: return 'secondary';
+            }
+        }
+
+        // Update cancel leave request function to use modal
+        let currentRequestId = null;
+
+        function cancelLeaveRequest(requestId) {
+            currentRequestId = requestId;
+            $('#cancelConfirmModal').modal('show');
+        }
+
+        // Function to handle restore request
+        function restoreLeaveRequest(requestId) {
+            currentRequestId = requestId;
+            $('#restoreConfirmModal').modal('show');
+        }
+
+        // Function to handle delete request
+        function deleteLeaveRequest(requestId) {
+            currentRequestId = requestId;
+            $('#deleteConfirmModal').modal('show');
+        }
+
+        // Add event listeners for the confirmation buttons
+        document.getElementById('confirmCancelBtn').addEventListener('click', async function() {
+            if (!currentRequestId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/leave-requests/${currentRequestId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to cancel leave request');
+                }
+
+                await fetchLeaveRequests();
+                $('#cancelConfirmModal').modal('hide');
+                showAlert('Leave request cancelled successfully!');
+            } catch (error) {
+                console.error('Error cancelling leave request:', error);
+                showAlert(error.message || 'Failed to cancel leave request. Please try again.', true);
+            } finally {
+                currentRequestId = null;
+            }
+        });
+
+        document.getElementById('confirmRestoreBtn').addEventListener('click', async function() {
+            if (!currentRequestId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/leave-requests/${currentRequestId}/restore`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to restore leave request');
+                }
+
+                await fetchLeaveRequests();
+                $('#restoreConfirmModal').modal('hide');
+                showAlert('Leave request restored successfully!');
+            } catch (error) {
+                console.error('Error restoring leave request:', error);
+                showAlert(error.message || 'Failed to restore leave request. Please try again.', true);
+            } finally {
+                currentRequestId = null;
+            }
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            if (!currentRequestId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/leave-requests/${currentRequestId}/permanent`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to delete leave request');
+                }
+
+                await fetchLeaveRequests();
+                $('#deleteConfirmModal').modal('hide');
+                showAlert('Leave request permanently deleted!');
+            } catch (error) {
+                console.error('Error deleting leave request:', error);
+                showAlert(error.message || 'Failed to delete leave request. Please try again.', true);
+            } finally {
+                currentRequestId = null;
+            }
+        });
+
+        function viewLeaveRequest(requestId) {
+            const request = leaveRequests.find(req => req.id === requestId);
             if (request) {
                 const leaveDetails = `
-                    <p><strong>Leave Type:</strong> ${request.leaveType}</p>
-                    <p><strong>From:</strong> ${request.from}</p>
-                    <p><strong>To:</strong> ${request.to}</p>
-                    <p><strong>Status:</strong> ${request.status}</p>
+                    <div class="mb-3">
+                        <h6>Leave Details</h6>
+                        <p><strong>Leave Type:</strong> ${request.leave_type_name || 'N/A'}</p>
+                        <p><strong>From Date:</strong> ${formatDate(request.fromDate)}</p>
+                        <p><strong>To Date:</strong> ${formatDate(request.toDate)}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        ${request.reason ? `<p><strong>Reason:</strong> ${request.reason}</p>` : ''}
+                        ${request.remarks ? `<p><strong>Remarks:</strong> ${request.remarks}</p>` : ''}
+                    </div>
                 `;
                 document.getElementById('leaveDetails').innerHTML = leaveDetails;
-
-                // Only show cancel button if status is 'Pending'
-                const cancelButtonHTML = request.status === 'Pending' ?
-                    `<button class="btn btn-danger" onclick="showCancelConfirmation(${request.id})">Cancel Leave Request</button>` :
-                    '';
-
-                document.getElementById('cancelButtonContainer').innerHTML = cancelButtonHTML;
-
                 $('#viewLeaveModal').modal('show');
             }
         }
 
-        function showCancelConfirmation(id) {
-            // Show a confirmation modal to confirm cancellation
-            const confirmationModalHTML = `
-                <div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelConfirmationModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="cancelConfirmationModalLabel">Cancel Leave Request</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Are you sure you want to cancel this leave request?</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-danger" onclick="cancelLeaveRequest(${id})">Yes, Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
-            $('#cancelConfirmationModal').modal('show');
-        }
-
-        function cancelLeaveRequest(id) {
-            // Find the leave request and update the status to 'Cancelled'
-            const request = leaveRequests.find(req => req.id === id);
-            if (request) {
-                request.status = 'Cancelled';
-            }
-
-            // Remove the confirmation modal from DOM after use
-            $('#cancelConfirmationModal').modal('hide');
-            document.getElementById('cancelConfirmationModal').remove();
-
-            // Re-render the leave requests to reflect the updated status
-            renderLeaveRequests();
-        }
-
-        function filterLeaveRequests() {
-            const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
-
-            if (searchTerm) {
-                filteredLeaveRequests = leaveRequests.filter(request =>
-                    request.leaveType.toLowerCase().includes(searchTerm) ||
-                    request.status.toLowerCase().includes(searchTerm)
-                );
-            } else {
-                filteredLeaveRequests = null;
-            }
-
-            currentPage = 1;
-            renderLeaveRequests();
-        }
-        
-        //sorting function
-        function sortTable(columnIndex) {
-            const list = filteredLeaveRequests || leaveRequests;
-            const columnNames = ['leaveType', 'from', 'to', 'status'];
-            const columnName = columnNames[columnIndex];
-
-            // Toggle sort direction
-            sortDirection[columnName] = !sortDirection[columnName];
-
-            list.sort((a, b) => {
-                if (a[columnName] < b[columnName]) return sortDirection[columnName] ? -1 : 1;
-                if (a[columnName] > b[columnName]) return sortDirection[columnName] ? 1 : -1;
-                return 0;
-            });
-
-            renderLeaveRequests();
-        }
-        // Event listener for the leave form submission
-        renderLeaveRequests();
-        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLeaveTypes();
+            fetchLeaveRequests();
+        });
     </script>
-    <!-- Add side_top.js -->
-    <script src="/public/js/side_top.js"></script>
 </body>
 
 </html>
