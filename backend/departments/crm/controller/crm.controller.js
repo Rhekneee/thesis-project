@@ -148,6 +148,132 @@ const CRMController = {
             console.error("Error uploading resume:", error);
             res.status(500).json({ error: `Failed to upload resume: ${error.message}` });
         }
+    },
+
+    // Job Posting Controllers
+    getAllJobPostings: async (req, res) => {
+        try {
+            const { page = 1, search = '' } = req.query;
+            const result = await CRMModel.getAllJobPostings(parseInt(page), 10, search);
+            res.json(result);
+        } catch (error) {
+            console.error("Error fetching job postings:", error);
+            res.status(500).json({ error: "Failed to fetch job postings" });
+        }
+    },
+
+    getJobPostingById: async (req, res) => {
+        try {
+            const jobId = req.params.id;
+            const jobPosting = await CRMModel.getJobPostingById(jobId);
+            
+            if (!jobPosting) {
+                return res.status(404).json({ error: "Job posting not found" });
+            }
+            
+            res.json(jobPosting);
+        } catch (error) {
+            console.error("Error fetching job posting:", error);
+            res.status(500).json({ error: "Failed to fetch job posting" });
+        }
+    },
+
+    createJobPosting: async (req, res) => {
+        try {
+            const {
+                position_id,
+                job_description,
+                qualifications,
+                location,
+                application_deadline,
+                how_to_apply
+            } = req.body;
+
+            // Validate required fields
+            if (!position_id || !job_description || !qualifications || !location || 
+                !application_deadline || !how_to_apply) {
+                return res.status(400).json({ error: "All fields are required" });
+            }
+
+            const jobId = await CRMModel.createJobPosting({
+                position_id,
+                job_description,
+                qualifications,
+                location,
+                application_deadline,
+                how_to_apply
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Job posting created successfully",
+                jobId 
+            });
+        } catch (error) {
+            console.error("Error creating job posting:", error);
+            res.status(500).json({ error: "Failed to create job posting" });
+        }
+    },
+
+    updateJobPosting: async (req, res) => {
+        try {
+            const jobId = req.params.id;
+            const {
+                position_id,
+                job_description,
+                qualifications,
+                location,
+                application_deadline,
+                how_to_apply
+            } = req.body;
+
+            // Validate required fields
+            if (!position_id || !job_description || !qualifications || !location || 
+                !application_deadline || !how_to_apply) {
+                return res.status(400).json({ error: "All fields are required" });
+            }
+
+            await CRMModel.updateJobPosting(jobId, {
+                position_id,
+                job_description,
+                qualifications,
+                location,
+                application_deadline,
+                how_to_apply
+            });
+
+            res.json({ 
+                success: true, 
+                message: "Job posting updated successfully" 
+            });
+        } catch (error) {
+            console.error("Error updating job posting:", error);
+            res.status(500).json({ error: "Failed to update job posting" });
+        }
+    },
+
+    deleteJobPosting: async (req, res) => {
+        try {
+            const jobId = req.params.id;
+            await CRMModel.deleteJobPosting(jobId);
+            res.json({ 
+                success: true, 
+                message: "Job posting deleted successfully" 
+            });
+        } catch (error) {
+            console.error("Error deleting job posting:", error);
+            res.status(500).json({ error: "Failed to delete job posting" });
+        }
+    },
+
+    getAllPositions: async (req, res) => {
+        try {
+            const positions = await CRMModel.getAllPositions();
+            res.json(positions);
+        } catch (error) {
+            console.error("Error fetching positions:", error);
+            res.status(500).json({ error: "Failed to fetch positions" });
+        }
     }
 };
 

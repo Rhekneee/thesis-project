@@ -11,92 +11,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
-        /* Styling for the sidebar */
-        #sidebar {
-            width: 300px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none; /* Sidebar is hidden by default */
-        }
-
-        #sidebar .sidebar-header {
-            text-align: center;
-            padding: 10px;
-        }
-
-        #sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        #sidebar ul li {
-            padding: 15px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        #sidebar ul li.logout {
-            margin-top: 350px;
-        }
-
-        /* Hover effect for the Logout item */
-        #sidebar ul li.logout a:hover {
-            background-color: #dc3545; /* Red background on hover */
-            color: white; /* Ensure the text stays white */
-        }
-
-        /* Other sidebar item hover effects */
-        #sidebar ul li a:hover {
-            background-color: #5a6268;
-            color: white;
-        }
-
-        #sidebar ul li.active a {
-            background-color: #007bff; /* Blue background for active link */
-            color: white; /* Ensure text is white */
-        }
-
-        /* Media Query for smaller screens */
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 200px;
-            }
-        }
-        
-        /* Icon styling for sidebar toggle */
-        #sidebar-toggle {
-            font-size: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sidebar-toggle:hover {
-            background-color: #0056b3;
-        }
-
-        /* Rotate the icon when the dropdown is open */
-        .rotate {
-            transform: rotate(180deg);
-            transition: transform 0.3s ease;
-        }
-
+       
         /* Main content styles */
         #content {
             margin-left: 0;
@@ -236,73 +153,148 @@
 
 <body>
     <div id="wrapper">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-          <div class="sidebar-header">
-              <h3>Admin Dashboard</h3>
-          </div>
-          <ul class="list-unstyled">
-              <li class="nav-item">
-                  <a class="nav-item" href="/crm/crm_admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-              </li>
-              <li class="nav-item"><a href="/crm/attendance"><i class="fas fa-calendar-check"></i> Attendance</a></li>
-              <li class="nav-item">
-                  <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                      <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
-                  </a>
-                  <ul class="collapse" id="Attendance">
-                      <li class="nav-item"><a href="crm_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
-                      <li class="nav-item"><a href="crm_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+          <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
         
-                  </ul>
-              </li>
-              <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> Clients</a></li>
-              <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> Inquiries</a></li>
-              <!-- Properties Section with sub-options -->
-              <li>
-                  <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false" id="properties-toggle">
-                      <i class="fas fa-home"></i> Properties <i class="fas fa-chevron-down" id="chevron-icon"></i>
-                  </a>
-                  <ul class="collapse" id="properties">
-                      <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> View Properties</a></li>
-                      <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> Add New Property</a></li>
-                  </ul>
-              </li>
-              <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> Transactions</a></li>
-              <!-- Move Logout to bottom -->
-              <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-          </ul>
-          
-      </div>
-        <!-- Sidebar end -->
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/crm/crm_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/crm/crm_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/crm/crm_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="/crm/crm_work_adjustment"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
+                <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li> 
+                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
+                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <!-- Properties Section with sub-options -->
+                 <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
+                        <i class="fas fa-home"></i>
+                        <span>Properties</span>
+                    </a>
+                    <ul class="collapse" id="properties">
+                        <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> <span>View Properties</span></a></li>
+                        <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> <span>Add New Property</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> <span>Transactions</span></a></li>
+               
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+    
 
         <!-- Main content area -->
         <div id="content">
-            <!-- Button to toggle sidebar with icon -->
-            <button class="btn" id="sidebar-toggle">
-                <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
-            </button>
-        <!-- ========== Attendance Section ========== -->
-        <h2>Attendance</h2>
+          
+       <!-- ========== Attendance Section ========== -->
+       <h2>Attendance</h2>
 
 
        <!-- Entries per page aligned to the right -->
-<div class="d-flex justify-content-end mb-3">
-    <label for="entriesPerPage" class="form-label mr-2">Entries per page:</label>
-    <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="15">15</option>
-        <option value="20">20</option>
-    </select>
-</div>
+        <div class="d-flex justify-content-end mb-3">
+            <label for="entriesPerPage" class="form-label mr-2">Entries per page:</label>
+            <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+        </div>
 
 
         <!-- Attendance Buttons -->
         <div class="attendance-buttons">
-            <button class="btn btn-secondary mx-3" id="checkLocation">Check Location</button> <!-- New Check Location Button -->
-            <button class="btn btn-primary mx-3" id="checkIn" disabled>Check-in</button>
-            <button class="btn btn-danger mx-3" id="checkOut" disabled>Check-out</button> <!-- Initially disabled -->
+            <button class="btn btn-primary mx-3" id="checkIn">Check-in</button>
+            <button class="btn btn-danger mx-3" id="checkOut">Check-out</button> <!-- Initially disabled -->
+            <p id="status">🔄 Waiting for location check...</p>
         </div>
         <!-- Modal for Location Status -->
 <div class="modal fade" id="locationModal" tabindex="-1" role="dialog" aria-labelledby="locationModalLabel" aria-hidden="true">
@@ -316,6 +308,7 @@
             <!-- Modal Body -->
             <div class="modal-body" id="modalMessage">
                 <!-- Message will be dynamically displayed here -->
+                <p id="status">🔄 Waiting for location check...</p>
             </div>
 
             <!-- Modal Footer -->
@@ -340,16 +333,17 @@
          </thead>
          <tbody id="attendanceBody">
 
-            <!-- Attendance rows will be dynamically inserted here -->
         </tbody>
-        </table>
+    </table>
         </div>
     </div>    
 </body>
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
     <script>
+        
         // JavaScript for toggling the sidebar visibility
         document.getElementById('sidebar-toggle').addEventListener('click', function () {
             var sidebar = document.getElementById('sidebar');
@@ -365,181 +359,218 @@
             }
         });
 
-        // JavaScript for toggling the chevron icon rotation
-        document.getElementById('properties-toggle').addEventListener('click', function () {
-            var chevronIcon = document.getElementById('chevron-icon');
-            chevronIcon.classList.toggle('rotate');
-        });
-        
-
-        const officeLat = 14.320467850051003;
-    const officeLng = 120.89765105270317;
-    const allowedRadius = 500;
-
-    document.getElementById("checkLocation").addEventListener("click", function () {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      function (position) {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-        const distance = getDistance(officeLat, officeLng, userLat, userLng);
-        console.log("Distance: ", distance);  // For debugging
-
-        // Show modal with appropriate message and enable the "Check-in" button if within range
-        if (distance <= allowedRadius) {
-          document.getElementById("modalMessage").textContent = "✅ You are within the allowed radius. You can check in!";
-          document.getElementById("checkIn").disabled = false; // Enable the check-in button
-          console.log("Check-in button enabled");
-        } else {
-          document.getElementById("modalMessage").textContent = `❌ You are too far! Distance: ${Math.round(distance)} meters.`;
-          document.getElementById("checkIn").disabled = true; // Keep the check-in button disabled
-          console.log("Check-in button disabled");
-        }
-
-        // Show the modal
-        $('#locationModal').modal('show');
-      },
-      function () {
-        document.getElementById("status").textContent = "⚠️ Location access denied!";
-      }
-    );
-  } else {
-    document.getElementById("status").textContent = "❌ Geolocation is not supported by this browser.";
-  }
-});
-
-    
-
-
-document.getElementById("checkIn").addEventListener("click", function () {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(async function (position) {
-      const userLat = position.coords.latitude;
-      const userLng = position.coords.longitude;
-      const employeeId = getEmployeeId(); // Fetch the employee ID
-
-      // Prepare data for check-in
-      const checkInData = {
-        employee_id: employeeId,
-        latitude: userLat,
-        longitude: userLng,
-        check_in_time: new Date().toISOString(), // You can format this as needed
-      };
-
-      try {
-        // Send check-in data to the backend
-        const response = await fetch("/check-in", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(checkInData),
+            document.addEventListener('DOMContentLoaded', function () {
+            const propertiesToggle = document.getElementById('properties-toggle');
+            if (propertiesToggle) {
+                propertiesToggle.addEventListener('click', function () {
+                    var chevronIcon = document.getElementById('chevron-icon');
+                    chevronIcon.classList.toggle('rotate');
+                });
+            } else {
+                console.error('properties-toggle element not found');
+            }
         });
 
-        const data = await response.json();
-        if (response.ok) {
-          document.getElementById("status").textContent = "✅ Check-in successful!";
-          checkInTime = new Date();  // Save check-in time for later use in check-out
-          document.getElementById("checkOut").disabled = false; // Enable check-out button
-          loadAttendanceData();  // Reload the attendance data to update the table
-        } else {
-          document.getElementById("status").textContent = "❌ Error: " + data.error;
+         // Function to get user location (latitude and longitude)
+         function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
+
+          // Function to get the user ID from session (via API)
+          async function getUserId() {
+              try {
+                  const employeeId = await getEmployeeIdFromSession();
+                  if (!employeeId) {
+                      alert("HR ID is missing.");
+                      return;
+                  }
+                  return employeeId;
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
+
+          // Function to fetch HR ID from session
+          async function getEmployeeIdFromSession() {
+              try {
+                  const response = await fetch('http://localhost:4000/hr/check-session', {
+                      credentials: 'include',
+                  });
+
+                  if (!response.ok) {
+                      throw new Error('Failed to fetch HR ID');
+                  }
+
+                  const data = await response.json();
+                  return data.user.id; // Return the HR ID from session
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
+
+           const checkInButton = document.getElementById("checkIn");
+          checkInButton.addEventListener('click', async () => {
+              const userId = await getUserId(); // Get the employee ID dynamically
+              if (!userId) return; // Exit if no user ID
+
+              // Get the user's location
+              const userLocation = await getUserLocation(); // Get the user's latitude and longitude
+              const date = new Date().toISOString().slice(0, 10); // Get today's date
+              const checkInTime = new Date().toISOString(); // Get current check-in time
+
+              console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
+
+              // Send the check-in request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId,
+                      date,
+                      checkInTime,
+                      userLat: userLocation.lat,
+                      userLng: userLocation.lng,
+                  }),
+              });
+
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
+
+              // Handle response error or success
+              if (result.error) {
+                  statusParagraph.textContent = result.error; // Show error message if any
+              } else {
+                  statusParagraph.textContent = result.message; // Show success message
+                  loadEmployeeAttendanceData(userId); // Reload attendance data
+              }
+          });
+
+
+          // Check-out functionality
+          const checkOutButton = document.getElementById("checkOut");
+            checkOutButton.addEventListener('click', async () => {
+                const userId = await getUserId();  // Get the employee ID dynamically
+                if (!userId) return;  // Exit if no user ID
+
+                const date = new Date().toISOString().slice(0, 10);  // Get today's date
+                const checkOutTime = new Date().toISOString();  // Get current check-out time
+
+                console.log("Sending check-out request with:", userId, date, checkOutTime);
+
+                // Send the check-out request to the backend
+                const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, checkOutTime, date }),
+                });
+
+                const result = await response.json();
+                const statusParagraph = document.getElementById("status");
+                if (result.error) {
+                    statusParagraph.textContent = result.error;  // Show any errors
+                } else {
+                    statusParagraph.textContent = result.message;  // Show success message
+                    loadEmployeeAttendanceData(userId);  // Reload attendance data
+                }
+            });
+
+          // Load today's attendance from the database
+          async function loadEmployeeAttendanceData(employeeId) {
+            try {
+                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
+                const data = await response.json();
+
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '';  // Clear previous data
+
+                // Check if there are any records to display for today
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No records found for today</td></tr>';
+                } else {
+                    // Populate table with employee attendance data
+                    data.forEach(record => {
+                        const formattedDate = new Date(record.date).toISOString().split('T')[0]; // Format: YYYY-MM-DD
+                        const statusClass = record.status === 'Missed Check-Out' ? 'text-danger fw-bold' : '';
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td>${formatTimeTo12Hour(record.check_in) || '-'}</td>
+                            <td>${formatTimeTo12Hour(record.check_out) || '-'}</td>
+                            <td class="${statusClass}">${record.status || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading attendance data:', error);
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+            }
         }
-      } catch (error) {
-        document.getElementById("status").textContent = "❌ Failed to check in!";
-        console.error("Error:", error);
-      }
-    });
-  }
-});
 
-document.getElementById("checkOut").addEventListener("click", async function () {
-  if (checkInTime) {
-    const employeeId = getEmployeeId(); // Fetch the employee ID
-    const checkOutTime = new Date().toISOString();  // Get the current time for check-out
+        function formatTimeTo12Hour(timeString) {
+            if (!timeString || timeString === '-') return '-';
+            const [hour, minute] = timeString.split(':');
+            const date = new Date();
+            date.setHours(parseInt(hour), parseInt(minute));
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+          function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  document.getElementById("status").textContent = "🔄 Waiting for location check..."; // Update status while waiting for location
 
-    const checkOutData = {
-      employee_id: employeeId,
-      check_out_time: checkOutTime,
-    };
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              console.log("Location fetched:", position.coords.latitude, position.coords.longitude); // Log the location
+                              document.getElementById("status").textContent = "✅ Location fetched."; // Update status when location is fetched
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              console.error("Error fetching location:", error); // Log any errors
+                              document.getElementById("status").textContent = "❌ Error fetching location."; // Update status on error
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      document.getElementById("status").textContent = "❌ Geolocation is not supported."; // Update status if geolocation is not supported
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
 
-    try {
-      // Send check-out data to the backend
-      const response = await fetch("/check-out", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(checkOutData),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        document.getElementById("status").textContent = "✅ Check-out successful!";
-        loadAttendanceData();  // Reload the attendance data to update the table
-      } else {
-        document.getElementById("status").textContent = "❌ Error: " + data.error;
-      }
-    } catch (error) {
-      document.getElementById("status").textContent = "❌ Failed to check out!";
-      console.error("Error:", error);
-    }
-  }
-});
-
-// Calculate the distance between two geographical points
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Earth radius in meters
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Load today's attendance data from the server and update the table
-async function loadAttendanceData() {
-  try {
-    const response = await fetch(`/today/${getEmployeeId()}`);
-    const data = await response.json();
-    const tbody = document.getElementById("attendanceBody");
-    tbody.innerHTML = ""; // Clear existing rows
-
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
-      return;
-    }
-
-    data.forEach(record => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${new Date(record.check_in_time).toLocaleString()}</td>
-        <td>${record.check_in_time}</td>
-        <td>${record.check_out_time || "N/A"}</td>
-        <td>${record.status}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (error) {
-    console.error("❌ Failed to load attendance data:", error);
-  }
-}
-
-// Get the employee ID (can be modified based on your authentication system)
-function getEmployeeId() {
-  return 123; // Replace with actual logic if needed
-}
-
-document.addEventListener("DOMContentLoaded", loadAttendanceData);
-
-document.getElementById('logout-button').addEventListener('click', (event) => {
-  event.preventDefault();
-  if (confirm("Are you sure you want to logout?")) {
-    window.location.href = "/index.html";
-  }
-});
-
+          // On page load, fetch the employee ID and load attendance data
+          window.onload = async () => {
+              const employeeId = await getUserId(); // Get the employee ID dynamically
+              if (employeeId) {
+                  loadEmployeeAttendanceData(employeeId); // Load the attendance data for the employee
+              }
+          };
 
         
     </script>
