@@ -1230,6 +1230,155 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             });
         }
     },
+
+    // Leave Management Controllers
+    getLeaveTypesWithBalances: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(400).json({ error: "Employee ID not found in session" });
+            }
+
+            const leaveTypes = await HRModel.getLeaveTypesWithBalances(employeeId);
+            res.json({ leaveTypes });
+        } catch (error) {
+            console.error("❌ Error in getLeaveTypesWithBalances controller:", error);
+            res.status(500).json({ error: "Failed to fetch leave types and balances" });
+        }
+    },
+
+    getEmployeeLeaveRequests: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(400).json({ error: "Employee ID not found in session" });
+            }
+
+            const requests = await HRModel.getEmployeeLeaveRequests(employeeId);
+            res.json({ requests });
+        } catch (error) {
+            console.error("❌ Error in getEmployeeLeaveRequests controller:", error);
+            res.status(500).json({ error: "Failed to fetch leave requests" });
+        }
+    },
+
+    applyForLeave: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const { leaveTypeId, fromDate, toDate, reason } = req.body;
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(400).json({ error: "Employee ID not found in session" });
+            }
+
+            // Validate required fields
+            if (!leaveTypeId || !fromDate || !toDate || !reason) {
+                return res.status(400).json({ error: "All fields are required" });
+            }
+
+            // Validate dates
+            const start = new Date(fromDate);
+            const end = new Date(toDate);
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                return res.status(400).json({ error: "Invalid date format" });
+            }
+            if (start > end) {
+                return res.status(400).json({ error: "Start date cannot be after end date" });
+            }
+
+            const result = await HRModel.applyForLeave(employeeId, leaveTypeId, fromDate, toDate, reason);
+            res.status(201).json({ message: "Leave request submitted successfully", ...result });
+        } catch (error) {
+            console.error("❌ Error in applyForLeave controller:", error);
+            if (error.message === 'Insufficient leave balance') {
+                return res.status(400).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to submit leave request" });
+        }
+    },
+
+    cancelLeaveRequest: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const { requestId } = req.params;
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(400).json({ error: "Employee ID not found in session" });
+            }
+
+            const result = await HRModel.cancelLeaveRequest(requestId, employeeId);
+            res.json({ message: "Leave request cancelled successfully", ...result });
+        } catch (error) {
+            console.error("❌ Error in cancelLeaveRequest controller:", error);
+            if (error.message === 'Leave request not found or cannot be cancelled') {
+                return res.status(404).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to cancel leave request" });
+        }
+    },
+
+    // Restore a leave request
+    restoreLeaveRequest: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const { requestId } = req.params;
+            if (!requestId) {
+                return res.status(400).json({ error: "Request ID is required" });
+            }
+
+            const result = await HRModel.restoreLeaveRequest(requestId);
+            res.json({ message: "Leave request restored successfully", ...result });
+        } catch (error) {
+            console.error("❌ Error in restoreLeaveRequest controller:", error);
+            if (error.message === 'Leave request not found or not in cancelled status') {
+                return res.status(404).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to restore leave request" });
+        }
+    },
+
+    // Permanently delete a leave request
+    permanentlyDeleteLeaveRequest: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: "Unauthorized: No session found" });
+            }
+
+            const { requestId } = req.params;
+            if (!requestId) {
+                return res.status(400).json({ error: "Request ID is required" });
+            }
+
+            const result = await HRModel.permanentlyDeleteLeaveRequest(requestId);
+            res.json({ message: "Leave request permanently deleted successfully", ...result });
+        } catch (error) {
+            console.error("❌ Error in permanentlyDeleteLeaveRequest controller:", error);
+            if (error.message === 'Leave request not found') {
+                return res.status(404).json({ error: error.message });
+            }
+            if (error.message === 'Only cancelled or rejected leave requests can be permanently deleted') {
+                return res.status(400).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to permanently delete leave request" });
+        }
+    }
 };
 
 module.exports = HRController;
