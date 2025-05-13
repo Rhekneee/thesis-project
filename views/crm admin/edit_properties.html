@@ -11,94 +11,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
+
     
     <style>
-        /* Styling for the sidebar */
-        #sidebar {
-            width: 250px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none; /* Sidebar is hidden by default */
-        }
 
-        #sidebar .sidebar-header {
-            text-align: center;
-            padding: 10px;
-        }
-
-        #sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        #sidebar ul li {
-            padding: 15px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-        #sidebar ul li.logout {
-        margin-top: 350px; 
-        }
-
-        /* Hover effect for the Logout item */
-        #sidebar ul li.logout a:hover {
-        background-color: #dc3545; /* Red background on hover */
-        color: white; /* Ensure the text stays white */
-        }
-        
-        
-        /* Other sidebar item hover effects */
-        #sidebar ul li a:hover {
-        background-color: #5a6268;
-        color: white;
-        }
-
-        #sidebar ul li.active a {
-        background-color: #007bff; /* Blue background for active link */
-        color: white; /* Ensure text is white */
-        }
-         
-    
-
-        /* Media Query for smaller screens */
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 200px;
-            }
-        }
-
-        /* Icon styling for sidebar toggle */
-        #sidebar-toggle {
-            font-size: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sidebar-toggle:hover {
-            background-color: #0056b3;
-        }
-
-        /* Rotate the icon when the dropdown is open */
-        .rotate {
-            transform: rotate(180deg);
-            transition: transform 0.3s ease;
-        }
 
         /* Main content styles */
         #content {
@@ -190,52 +107,126 @@
 
 <body>
     <div id="wrapper">
+                <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
+        <div id="sidebar">
             <div class="sidebar-header">
-                <h3>CRM Admin</h3>
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
                 <li class="nav-item">
-                    <a class="nav-item" href="/crm/crm_admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a class="nav-item" href="/crm/crm_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
                 </li>
-                <li class="nav-item"><a href="/crm/attendance"><i class="fas fa-calendar-check"></i> Attendance</a></li>
+                
                 <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                        <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
                     </a>
                     <ul class="collapse" id="Attendance">
-                        <li class="nav-item"><a href="crm_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
-                        <li class="nav-item"><a href="crm_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
-          
+                        <li class="nav-item"><a href="/crm/crm_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/crm/crm_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="/crm/crm_work_adjustment"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
                     </ul>
                 </li>
-                <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> Clients</a></li>
-                <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> Inquiries</a></li>
+                <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
+                <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>   
+                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
+                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
                 <!-- Properties Section with sub-options -->
-                <li>
-                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false" id="properties-toggle">
-                        <i class="fas fa-home"></i> Properties <i class="fas fa-chevron-down" id="chevron-icon"></i>
+                 <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
+                        <i class="fas fa-home"></i>
+                        <span>Properties</span>
                     </a>
                     <ul class="collapse" id="properties">
-                        <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> View Properties</a></li>
-                        <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> Add New Property</a></li>
+                        <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> <span>View Properties</span></a></li>
+                        <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> <span>Add New Property</span></a></li>
                     </ul>
                 </li>
-                <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> Transactions</a></li>
-                <!-- Move Logout to bottom -->
-                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> <span>Transactions</span></a></li>
+               
             </ul>
-            
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
         </div>
 
         <!-- Main content area -->
         <div id="content">
-            <!-- Button to toggle sidebar with icon -->
-            <button class="btn" id="sidebar-toggle">
-                <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
-            </button>
-
+           
             <!-- ========== Edit Property Content ========== -->
             <h2>Edit Property</h2>
 
@@ -375,28 +366,10 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
 
     <script>
-        // JavaScript for toggling the sidebar visibility
-        document.getElementById('sidebar-toggle').addEventListener('click', function () {
-            var sidebar = document.getElementById('sidebar');
-            var content = document.getElementById('content');
-            
-            // Toggle sidebar visibility
-            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                sidebar.style.display = 'block';
-                content.style.marginLeft = '250px';  // Shift content to the right
-            } else {
-                sidebar.style.display = 'none';
-                content.style.marginLeft = '0';  // No shift
-            }
-        });
-
-        // JavaScript for toggling the chevron icon rotation
-        document.getElementById('properties-toggle').addEventListener('click', function () {
-            var chevronIcon = document.getElementById('chevron-icon');
-            chevronIcon.classList.toggle('rotate');
-        });
+    
 
         // Handle Confirmation Modal Submit
         document.getElementById('editPropertyBtn').addEventListener('click', function () {
