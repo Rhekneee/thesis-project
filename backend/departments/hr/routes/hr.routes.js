@@ -130,4 +130,12 @@
         }
     });
 
+    // Leave Management Routes
+    router.get('/leave-types', HRController.getLeaveTypesWithBalances);
+    router.get('/leave-requests', HRController.getEmployeeLeaveRequests);
+    router.post('/leave-requests', HRController.applyForLeave);
+    router.delete('/leave-requests/:requestId', HRController.cancelLeaveRequest);
+    router.put('/leave-requests/:requestId/restore', HRController.restoreLeaveRequest);
+    router.delete('/leave-requests/:requestId/permanent', HRController.permanentlyDeleteLeaveRequest);
+
     module.exports = router;
