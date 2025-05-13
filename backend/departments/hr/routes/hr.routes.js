@@ -36,11 +36,9 @@
     router.get('/attendance/:userId', HRController.getAttendanceByUserId);
 
 // Routes for Early Out and Half-Day Requests
-    router.post('/earlyOut-request/:id', HRController.requestEarlyOutRequest); // Submit early out request
-    router.post('/halfDay-request/:id', HRController.requestHalfDayRequest);    // Submit half-day request
-    router.post('/overtime-request/:id', HRController.requestOvertimeRequest);
+    router.post('/earlyOut-request/:employeeId', HRController.requestEarlyOutRequest);
     router.get('/requests', HRController.getAllPendingRequests);
-    router.get('/requests/:userId', HRController.getPendingRequestsByUserId);
+    router.get('/requests/:employeeId', HRController.getPendingRequestsByUserId);
     router.post('/approve', HRController.handleRequestApproval);
     router.post('/payroll/generate', HRController.generatePayroll);
     router.post('/payroll/cancel', HRController.cancelPayroll);
@@ -133,9 +131,25 @@
     // Leave Management Routes
     router.get('/leave-types', HRController.getLeaveTypesWithBalances);
     router.get('/leave-requests', HRController.getEmployeeLeaveRequests);
+    router.get('/all-leave-requests', authMiddleware.verifySession, HRController.getAllLeaveRequests);  // New route for all leave requests
     router.post('/leave-requests', HRController.applyForLeave);
     router.delete('/leave-requests/:requestId', HRController.cancelLeaveRequest);
     router.put('/leave-requests/:requestId/restore', HRController.restoreLeaveRequest);
     router.delete('/leave-requests/:requestId/permanent', HRController.permanentlyDeleteLeaveRequest);
+
+    // Work Adjustment Routes
+    router.get('/work-adjustments/:employeeId', HRController.getAllWorkAdjustments);
+    router.get('/all-work-adjustments', authMiddleware.verifySession, HRController.getAllWorkAdjustmentRequests);  // New route for all work adjustment requests
+    router.post('/halfday-request/:employeeId', HRController.requestHalfDay);
+    router.post('/overtime-request/:employeeId', HRController.requestOvertime);
+    router.delete('/work-adjustments/:requestId', HRController.cancelWorkAdjustment);
+    router.put('/work-adjustments/:requestId/restore', HRController.restoreWorkAdjustment);
+    router.delete('/work-adjustments/:requestId/permanent', HRController.permanentlyDeleteWorkAdjustment);
+
+    // User data route
+    router.get('/user-data', HRController.getUserData);
+
+    // Dashboard KPI route
+    router.get('/dashboard-kpis', HRController.getDashboardKPIs);
 
     module.exports = router;

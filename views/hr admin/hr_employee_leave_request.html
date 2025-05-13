@@ -68,19 +68,143 @@
 
         .table {
             margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        /* Table styling */
-        th,
-        td {
+        .table th,
+        .table td {
             text-align: center;
-            padding: 15px;
+            padding: 12px 15px;
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
         }
 
-        .table-actions {
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Column widths */
+        .table th:nth-child(1), /* Employee Name */
+        .table td:nth-child(1) {
+            width: 20%;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .table th:nth-child(2), /* Leave Type */
+        .table td:nth-child(2) {
+            width: 15%;
+        }
+
+        .table th:nth-child(3), /* From Date */
+        .table td:nth-child(3),
+        .table th:nth-child(4), /* To Date */
+        .table td:nth-child(4) {
+            width: 15%;
+            white-space: nowrap;
+        }
+
+        .table th:nth-child(5), /* Status */
+        .table td:nth-child(5) {
+            width: 10%;
+        }
+
+        .table th:nth-child(6), /* Actions */
+        .table td:nth-child(6) {
+            width: 25%;
+        }
+
+        /* Action buttons styling */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        /* Status badge styling */
+        .badge {
+            padding: 0.5em 0.75em;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        /* Modal content alignment */
+        .modal-body p {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .modal-body .mb-3 {
+            margin-bottom: 1.5rem !important;
+        }
+
+        .modal-body h6 {
+            color: #495057;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        /* Search and filter container */
+        .search-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-container .form-control {
+            min-width: 250px;
+        }
+
+        .search-container .form-select {
+            width: auto;
+        }
+
+        /* Pagination improvements */
+        .pagination {
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .page-link {
+            padding: 0.5rem 0.75rem;
+            margin: 0 2px;
+            border-radius: 4px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .table th,
+            .table td {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+
+            .btn-sm {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.8rem;
+            }
+
+            .search-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container .form-control,
+            .search-container .form-select {
+                width: 100%;
+            }
         }
 
         /* Modal Styling */
@@ -309,10 +433,11 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable(0)">Employee Name <i class="fas fa-sort sort-icon" id="sortEmployeeName"></i></th>
-                        <th onclick="sortTable(1)">Leave Type <i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
-                        <th onclick="sortTable(2)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
-                        <th onclick="sortTable(3)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
-                        <th onclick="sortTable(4)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                        <th onclick="sortTable(1)">Department <i class="fas fa-sort sort-icon" id="sortDepartment"></i></th>
+                        <th onclick="sortTable(2)">Leave Type <i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
+                        <th onclick="sortTable(3)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
+                        <th onclick="sortTable(4)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
+                        <th onclick="sortTable(5)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -368,7 +493,7 @@
         // Fetch leave requests from the server
         async function fetchLeaveRequests() {
             try {
-                const response = await fetch(`${API_URL}/leave-requests`);
+                const response = await fetch(`${API_URL}/all-leave-requests`);
                 if (!response.ok) throw new Error('Failed to fetch leave requests');
                 leaveRequests = await response.json();
                 renderLeaveRequests();
@@ -397,16 +522,25 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${request.employee_name}</td>
+                    <td>${request.department_name}</td>
                     <td>${request.leave_type_name}</td>
                     <td>${formatDate(request.start_date)}</td>
                     <td>${formatDate(request.end_date)}</td>
                     <td><span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="viewLeaveRequest(${request.id})">View</button>
-                        ${request.status === 'pending' ? `
-                            <button class="btn btn-success btn-sm" onclick="handleLeaveRequest(${request.id}, 'approved')">Approve</button>
-                            <button class="btn btn-danger btn-sm" onclick="handleLeaveRequest(${request.id}, 'rejected')">Reject</button>
-                        ` : ''}
+                        <div class="btn-group">
+                            <button class="btn btn-primary btn-sm" onclick="viewLeaveRequest(${request.id})" title="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${request.status === 'pending' ? `
+                                <button class="btn btn-success btn-sm" onclick="handleLeaveRequest(${request.id}, 'approved')" title="Approve Request">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="handleLeaveRequest(${request.id}, 'rejected')" title="Reject Request">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            ` : ''}
+                        </div>
                     </td>
                 `;
                 leaveRequestsList.appendChild(row);
@@ -437,15 +571,14 @@
                     <div class="mb-3">
                         <h6>Employee Information</h6>
                         <p><strong>Name:</strong> ${request.employee_name}</p>
-                        <p><strong>Department:</strong> ${request.department_name}</p>
+                        <p><strong>Department:</strong> ${request.department_name || 'N/A'}</p>
                     </div>
                     <div class="mb-3">
                         <h6>Leave Details</h6>
                         <p><strong>Leave Type:</strong> ${request.leave_type_name}</p>
                         <p><strong>From:</strong> ${formatDate(request.start_date)}</p>
                         <p><strong>To:</strong> ${formatDate(request.end_date)}</p>
-                        <p><strong>Total Days:</strong> ${request.total_days}</p>
-                        <p><strong>Reason:</strong> ${request.reason}</p>
+                        <p><strong>Total Days:</strong> ${request.total_days || 'N/A'}</p>
                         <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
                         ${request.remarks ? `<p><strong>Remarks:</strong> ${request.remarks}</p>` : ''}
                     </div>
@@ -456,13 +589,23 @@
                 const approvalButtons = document.getElementById('approvalButtons');
                 if (request.status === 'pending') {
                     approvalButtons.innerHTML = `
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-success" onclick="handleLeaveRequest(${request.id}, 'approved')">Approve</button>
-                        <button type="button" class="btn btn-danger" onclick="handleLeaveRequest(${request.id}, 'rejected')">Reject</button>
+                        <div class="btn-group w-100">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Close
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="handleLeaveRequest(${request.id}, 'approved')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="handleLeaveRequest(${request.id}, 'rejected')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
                     `;
                 } else {
                     approvalButtons.innerHTML = `
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Close
+                        </button>
                     `;
                 }
 

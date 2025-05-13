@@ -597,17 +597,23 @@ const HRModel = {
         }
     },
         
-    requestHalfDay: async (userId, requestDate, remarks) => {
-        if (!userId || !requestDate || !remarks) {
-            throw new Error('Invalid input: userId, requestDate, and remarks are required.');
+    requestHalfDay: async (employeeId, requestDate, timeSlot, remarks) => {
+        if (!employeeId || !requestDate || !timeSlot || !remarks) {
+            throw new Error('Invalid input: employeeId, requestDate, timeSlot, and remarks are required.');
         }
-    
-        // Insert half-day request into the requests table with status as 'pending'
-        const sql = `INSERT INTO requests (user_id, request_date, request_type, remarks, status)
-                     VALUES (?, ?, 'halfDay', ?, 'pending')`;
-    
+
+        // Insert half-day request into the requests table
+        const sql = `INSERT INTO requests (
+            employee_id, 
+            request_type, 
+            request_date, 
+            time_slot, 
+            remarks, 
+            status
+        ) VALUES (?, 'halfday', ?, ?, ?, 'pending')`;
+
         try {
-            const [result] = await db.execute(sql, [userId, requestDate, remarks]);
+            const [result] = await db.execute(sql, [employeeId, requestDate, timeSlot, remarks]);
             console.log("Half-day request submitted successfully:", result);
             return { success: true };
         } catch (error) {
@@ -616,38 +622,23 @@ const HRModel = {
         }
     },
     
-    // Request Early Out
-    requestEarlyOut: async (userId, requestDate, remarks) => {
-        if (!userId || !requestDate || !remarks) {
-            throw new Error('Invalid input: userId, requestDate, and remarks are required.');
+    requestOvertime: async (employeeId, requestDate, overtimeHours, remarks) => {
+        if (!employeeId || !requestDate || !overtimeHours || !remarks) {
+            throw new Error('Invalid input: employeeId, requestDate, overtimeHours, and remarks are required.');
         }
 
-        // Insert early-out request into the requests table with status as 'pending'
-        const sql = `INSERT INTO requests (user_id, request_date, request_type, remarks, status)
-                     VALUES (?, ?, 'earlyOut', ?, 'pending')`;
+        // Insert overtime request into the requests table
+        const sql = `INSERT INTO requests (
+            employee_id, 
+            request_type, 
+            request_date, 
+            overtime_hours, 
+            remarks, 
+            status
+        ) VALUES (?, 'overtime', ?, ?, ?, 'pending')`;
 
         try {
-            const [result] = await db.execute(sql, [userId, requestDate, remarks]);
-            console.log("Early-out request submitted successfully:", result);
-            return { success: true };
-        } catch (error) {
-            console.error('Error submitting early-out request:', error);
-            throw new Error('Failed to submit early-out request.');
-        }
-    },
-
-    requestOvertime: async (userId, requestDate, remarks) => {
-        // Validate input (check if all required fields are provided)
-        if (!userId || !requestDate || !remarks) {
-            throw new Error('Invalid input: userId, requestDate, and remarks are required.');
-        }
-    
-        // Insert overtime request into the requests table with status as 'pending'
-        const sql = `INSERT INTO requests (user_id, request_date, request_type, remarks, status)
-                     VALUES (?, ?, 'overtime', ?, 'pending')`;
-    
-        try {
-            const [result] = await db.execute(sql, [userId, requestDate, remarks]);
+            const [result] = await db.execute(sql, [employeeId, requestDate, overtimeHours, remarks]);
             console.log("Overtime request submitted successfully:", result);
             return { success: true };
         } catch (error) {
@@ -655,7 +646,6 @@ const HRModel = {
             throw new Error('Failed to submit overtime request.');
         }
     },
-
     
     checkRequestApproval: async (userId, date, requestType) => {
         const sql = `
@@ -1990,7 +1980,348 @@ const HRModel = {
         } finally {
             connection.release();
         }
-    }
+    },
+
+    // Work Adjustment Model Functions
+    getAllWorkAdjustments: async (employeeId) => {
+        try {
+            const query = `
+                SELECT 
+                    r.id as request_id,
+                    r.employee_id,
+                    r.request_date,
+                    r.request_type,
+                    r.time_slot,
+                    r.overtime_hours,
+                    r.remarks,
+                    r.status,
+                    r.created_at,
+                    e.full_name as employee_name
+                FROM requests r
+                JOIN employees e ON r.employee_id = e.employee_id
+                WHERE r.request_type IN ('halfday', 'overtime')
+                AND r.employee_id = ?
+                ORDER BY r.request_date DESC, r.created_at DESC
+            `;
+            const [requests] = await db.query(query, [employeeId]);
+            return requests;
+        } catch (error) {
+            console.error('Error fetching work adjustments:', error);
+            throw new Error('Failed to fetch work adjustments');
+        }
+    },
+
+    cancelWorkAdjustment: async (requestId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the request details first
+            const [request] = await connection.query(`
+                SELECT status
+                FROM requests
+                WHERE id = ? AND request_type IN ('halfday', 'overtime')
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Work adjustment request not found');
+            }
+
+            if (request[0].status !== 'pending') {
+                throw new Error('Only pending requests can be cancelled');
+            }
+
+            // Update request status to cancelled
+            await connection.query(`
+                UPDATE requests
+                SET status = 'cancelled'
+                WHERE id = ?
+            `, [requestId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error cancelling work adjustment:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Restore a work adjustment request
+    restoreWorkAdjustment: async (requestId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the request details first
+            const [request] = await connection.query(`
+                SELECT status
+                FROM requests
+                WHERE id = ? AND request_type IN ('halfday', 'overtime')
+                AND status = 'cancelled'
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Work adjustment request not found or not in cancelled status');
+            }
+
+            // Update request status back to pending
+            await connection.query(`
+                UPDATE requests
+                SET status = 'pending'
+                WHERE id = ?
+            `, [requestId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error restoring work adjustment:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Permanently delete a work adjustment request
+    permanentlyDeleteWorkAdjustment: async (requestId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get the request details first
+            const [request] = await connection.query(`
+                SELECT status
+                FROM requests
+                WHERE id = ? AND request_type IN ('halfday', 'overtime')
+            `, [requestId]);
+
+            if (!request || request.length === 0) {
+                throw new Error('Work adjustment request not found');
+            }
+
+            // Only allow deletion of cancelled or rejected requests
+            if (!['cancelled', 'rejected'].includes(request[0].status)) {
+                throw new Error('Only cancelled or rejected work adjustment requests can be permanently deleted');
+            }
+
+            // Permanently delete the request
+            await connection.query(`
+                DELETE FROM requests
+                WHERE id = ?
+            `, [requestId]);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error permanently deleting work adjustment:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get pending requests by employee ID
+    getPendingRequestsByEmployeeId: async (employeeId) => {
+        try {
+            const [requests] = await db.query(`
+                SELECT r.*, e.first_name, e.last_name
+                FROM requests r
+                JOIN employees e ON r.employee_id = e.employee_id
+                WHERE r.employee_id = ? AND r.status = 'pending'
+                ORDER BY r.created_at DESC
+            `, [employeeId]);
+            return requests;
+        } catch (error) {
+            console.error('Error fetching pending requests:', error);
+            throw error;
+        }
+    },
+
+    // Request early out
+    requestEarlyOut: async (employeeId, date, reason) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Check if there's already a pending request for this date
+            const [existing] = await connection.query(`
+                SELECT id FROM requests 
+                WHERE employee_id = ? 
+                AND request_date = ? 
+                AND status = 'pending'
+                AND request_type = 'earlyout'
+            `, [employeeId, date]);
+
+            if (existing.length > 0) {
+                throw new Error('You already have a pending early out request for this date');
+            }
+
+            // Insert the early out request
+            const [result] = await connection.query(`
+                INSERT INTO requests (
+                    employee_id, 
+                    request_type, 
+                    request_date, 
+                    reason, 
+                    status, 
+                    created_at
+                ) VALUES (?, 'earlyout', ?, ?, 'pending', NOW())
+            `, [employeeId, date, reason]);
+
+            await connection.commit();
+            return { 
+                success: true, 
+                message: 'Early out request submitted successfully',
+                requestId: result.insertId 
+            };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error submitting early out request:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    getAllLeaveRequestsWithDetails: async () => {
+        try {
+            const query = `
+                SELECT 
+                    lr.id,
+                    lr.employeeId,
+                    lr.leaveTypeId,
+                    lr.fromDate as start_date,
+                    lr.toDate as end_date,
+                    lr.remarks,
+                    lr.status,
+                    lt.leaveType as leave_type_name,
+                    e.full_name as employee_name,
+                    d.name as department_name,
+                    DATEDIFF(lr.toDate, lr.fromDate) + 1 as total_days
+                FROM leave_request lr
+                JOIN leave_types lt ON lr.leaveTypeId = lt.id
+                JOIN employees e ON lr.employeeId = e.employee_id
+                LEFT JOIN roles r ON e.role_id = r.id
+                LEFT JOIN departments d ON r.department_id = d.id
+                ORDER BY lr.id DESC
+            `;
+            
+            const [requests] = await db.query(query);
+            return requests;
+        } catch (error) {
+            console.error("❌ Error fetching all leave requests:", error);
+            // Log the full error details
+            console.error("SQL Error details:", {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            throw error;
+        }
+    },
+
+    getAllWorkAdjustmentRequestsWithDetails: async () => {
+        try {
+            const query = `
+                SELECT 
+                    wa.id,
+                    wa.employee_id,
+                    wa.request_date,
+                    wa.time_slot,
+                    wa.remarks,
+                    wa.status,
+                    wa.request_type,
+                    wa.overtime_hours,
+                    e.full_name as employee_name,
+                    d.name as department_name,
+                    r.name as role_name
+                FROM requests wa
+                JOIN employees e ON wa.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                JOIN departments d ON r.department_id = d.id
+                WHERE wa.status = 'pending'
+                ORDER BY wa.id DESC
+            `;
+            
+            const [requests] = await db.query(query);
+            return requests;
+        } catch (error) {
+            console.error("❌ Error fetching all work adjustment requests:", error);
+            console.error("SQL Error details:", {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            throw error;
+        }
+    },
+
+    // Get total active employees count
+    getTotalActiveEmployees: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM employees
+                WHERE is_deleted = 0
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting total active employees:', error);
+            throw error;
+        }
+    },
+
+    // Get new hires count (accepted applications)
+    getNewHiresCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM applications
+                WHERE status = 'Accepted'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting new hires count:', error);
+            throw error;
+        }
+    },
+
+    // Get pending leave requests count
+    getPendingLeaveRequestsCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM leave_request
+                WHERE status = 'pending'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting pending leave requests count:', error);
+            throw error;
+        }
+    },
+
+    // Get total pending approvals count (work adjustments + leave requests)
+    getTotalPendingApprovalsCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT (
+                    (SELECT COUNT(*) FROM requests WHERE status = 'pending' AND request_type IN ('halfday', 'overtime')) +
+                    (SELECT COUNT(*) FROM leave_request WHERE status = 'pending')
+                ) as total
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting total pending approvals count:', error);
+            throw error;
+        }
+    },
 };
 
 module.exports = HRModel;

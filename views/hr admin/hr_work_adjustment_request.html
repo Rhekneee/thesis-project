@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Half-Day Leave Requests</title>
+    <title>Work Adjustment Requests</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
@@ -13,9 +13,12 @@
     <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
         #content {
-            margin-left: 0;
-            transition: margin-left 0.3s;
+            margin-left: 250px; /* Match sidebar width */
+            margin-top: 60px; /* Match topbar height */
             padding: 20px;
+            min-height: calc(100vh - 60px); /* Full height minus topbar */
+            background-color: #f8f9fa;
+            transition: margin-left 0.3s;
         }
 
         #content h2 {
@@ -41,49 +44,104 @@
             color: #0056b3;
         }
 
-        /* Flexbox styling for search and entries per page */
+        /* Search container styling */
         .search-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .search-container .form-select,
         .search-container .form-control {
+            min-width: 250px;
+        }
+
+        .search-container .form-select {
             width: auto;
-            margin-left: 10px;
-        }
-
-        .search-container label {
-            margin-bottom: 0;
-        }
-
-        /* Bottom message */
-        #entriesMessage {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .table {
-            margin-top: 20px;
         }
 
         /* Table styling */
-        th,
-        td {
-            text-align: center;
-            padding: 15px;
+        .table {
+            margin-top: 0;
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .table-actions {
+        .table th,
+        .table td {
+            padding: 12px 15px;
+            white-space: nowrap;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Column widths */
+        .table th:nth-child(1), /* Employee Name */
+        .table td:nth-child(1) {
+            width: 20%;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .table th:nth-child(2), /* Department */
+        .table td:nth-child(2) {
+            width: 15%;
+        }
+
+        .table th:nth-child(3), /* Request Type */
+        .table td:nth-child(3) {
+            width: 15%;
+        }
+
+        .table th:nth-child(4), /* Date */
+        .table td:nth-child(4),
+        .table th:nth-child(5), /* Time */
+        .table td:nth-child(5) {
+            width: 15%;
+            white-space: nowrap;
+        }
+
+        .table th:nth-child(6), /* Status */
+        .table td:nth-child(6) {
+            width: 10%;
+        }
+
+        .table th:nth-child(7), /* Actions */
+        .table td:nth-child(7) {
+            width: 20%;
+        }
+
+        /* Action buttons styling */
+        .btn-group {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 5px;
+            justify-content: center;
         }
 
-        /* Modal Styling */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        /* Status badge styling */
+        .badge {
+            padding: 0.5em 0.75em;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        /* Modal styling */
         .modal-body {
             padding: 20px;
         }
@@ -98,33 +156,82 @@
             justify-content: space-between;
         }
 
-        /* Custom styling for modal button alignment */
         .modal-footer .btn {
             width: 48%;
         }
 
-        /* Confirm modal spacing adjustments */
-        .modal-footer button {
-            font-size: 16px;
-            padding: 10px;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .search-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container .form-control,
+            .search-container .form-select {
+                width: 100%;
+            }
+
+            .table th,
+            .table td {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
         }
 
-        /* Cancel button styling */
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            float: right;
-            margin-bottom: 10px;
-            margin-right: 5px;
+        /* When sidebar is collapsed */
+        body.sidebar-collapsed #content {
+            margin-left: 60px;
         }
 
-        .btn-danger:hover {
-            background-color: #c82333;
-            border-color: #c82333;
+        /* Adjust table container for better fit */
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
         }
 
-        .btn-secondary {
-            margin-bottom: 10px;
+        /* Make table responsive */
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        /* Adjust pagination container */
+        .pagination-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        /* Bottom message */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .entries-message {
+            color: #666;
+            font-size: 0.9rem;
+            padding: 8px 0;
+        }
+        
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 0 15px;
         }
     </style>
 </head>
@@ -284,110 +391,71 @@
 </div>
         <!-- Main content area -->
         <div id="content">
-
-            <!-- ========== Half-Day Leave Request Content ========== -->
-            <h2>Half-Day Leave Request</h2>
+            <h2>Work Adjustment Requests</h2>
 
             <!-- Search Bar and Entries Per Page -->
             <div class="search-container">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search half-day leave requests..." onkeyup="filterHalfDayRequests()">
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div>
-                        <label for="entriesPerPage" class="form-label">Entries per page:</label>
-                        <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="15">15</option>
-                            <option value="20">20</option>
-                        </select>
+                <input type="text" id="searchBar" class="form-control" placeholder="Search work adjustment requests..." onkeyup="filterRequests()">
+                <div class="d-flex align-items-center">
+                    <label for="entriesPerPage" class="form-label me-2">Entries per page:</label>
+                    <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Employee Name <i class="fas fa-sort sort-icon" id="sortEmployeeName"></i></th>
+                                <th onclick="sortTable(1)">Department <i class="fas fa-sort sort-icon" id="sortDepartment"></i></th>
+                                <th onclick="sortTable(2)">Request Type <i class="fas fa-sort sort-icon" id="sortRequestType"></i></th>
+                                <th onclick="sortTable(3)">Date <i class="fas fa-sort sort-icon" id="sortDate"></i></th>
+                                <th onclick="sortTable(4)">Time Slot <i class="fas fa-sort sort-icon" id="sortTimeSlot"></i></th>
+                                <th onclick="sortTable(5)">Overtime Hours <i class="fas fa-sort sort-icon" id="sortOvertimeHours"></i></th>
+                                <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsList">
+                            <!-- Requests will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bottom message and pagination -->
+                <div class="pagination-container">
+                    <div id="showingEntries" class="entries-message"></div>
+                    <nav>
+                        <ul class="pagination" id="paginationControls"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Request Modal -->
+    <div class="modal fade" id="viewRequestModal" tabindex="-1" aria-labelledby="viewRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewRequestModalLabel">View Work Adjustment Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="requestDetails">
+                    <!-- Request details will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <div id="approvalButtons">
+                        <!-- Approval buttons will be dynamically inserted here -->
                     </div>
                 </div>
-            </div>
-
-            <!-- Apply Half-Day Request Button placed below the search bar -->
-            <div class="d-flex justify-content-between">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addHalfDayModal">
-                    Apply Half-Day Request
-                </button>
-            </div>
-
-            <!-- Half-Day Leave Request Table -->
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Remarks <i class="fas fa-sort sort-icon" id="sortRemarks"></i></th>
-                        <th onclick="sortTable(1)">Date <i class="fas fa-sort sort-icon" id="sortDate"></i></th>
-                        <th onclick="sortTable(2)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
-                        <th onclick="sortTable(3)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
-                        <th onclick="sortTable(4)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="halfDayRequestsList">
-                    <!-- Half-day leave request rows will be dynamically inserted here -->
-                </tbody>
-            </table>
-
-            <!-- Bottom message: Showing entries -->
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-            </div>
-
-            <!-- Pagination -->
-            <nav>
-                <ul class="pagination" id="paginationControls"></ul>
-            </nav>
-
-        </div>
-    </div>
-
-    <!-- Add Half-Day Leave Modal -->
-    <div class="modal fade" id="addHalfDayModal" tabindex="-1" aria-labelledby="addHalfDayModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addHalfDayModalLabel">Request Half-Day Leave</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="halfDayForm">
-                        <div class="form-group">
-                            <label for="remarks">Remarks</label>
-                            <input type="text" id="remarks" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="date">Date</label>
-                            <input type="date" id="halfDayDate" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="from">From</label>
-                            <input type="time" id="halfDayFrom" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="to">To</label>
-                            <input type="time" id="halfDayTo" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit Half-Day Request</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-
-    <!-- View Half-Day Leave Request Modal (with Cancel Button) -->
-    <div class="modal fade" id="viewHalfDayModal" tabindex="-1" aria-labelledby="viewHalfDayModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewHalfDayModalLabel">View Half-Day Leave Request</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="halfDayDetails">
-                    <!-- Leave details will be dynamically inserted here -->
-                </div>
-                <!-- Cancel button (only appears if the status is 'Pending') -->
-                <div id="cancelButtonContainer"></div>
             </div>
         </div>
     </div>
@@ -397,61 +465,201 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
-        // JavaScript for toggling the sidebar visibility
-        document.getElementById('sidebar-toggle').addEventListener('click', function () {
-            var sidebar = document.getElementById('sidebar');
-            var content = document.getElementById('content');
-            
-            // Toggle sidebar visibility
-            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                sidebar.style.display = 'block';
-                content.style.marginLeft = '300px';  // Shift content to the right
-            } else {
-                sidebar.style.display = 'none';
-                content.style.marginLeft = '0';  // No shift
-            }
-        });
-        
-        let halfDayRequests = [
-            { id: 1, remarks: 'Doctor appointment', date: '2025-05-01', from: '09:00', to: '12:00', status: 'Pending' },
-            { id: 2, remarks: 'Family event', date: '2025-06-15', from: '13:00', to: '17:00', status: 'Approved' },
-            { id: 3, remarks: 'Urgent personal matter', date: '2025-07-10', from: '08:00', to: '12:00', status: 'Rejected' }
-        ];
-
+        const API_URL = "http://localhost:4000/hr";
+        let requests = [];
         let itemsPerPage = 5;
         let currentPage = 1;
-        let filteredHalfDayRequests = null;
+        let filteredRequests = null;
+        let sortDirection = {};
 
-        function renderHalfDayRequests() {
-            const list = filteredHalfDayRequests || halfDayRequests;
-            const halfDayRequestsList = document.getElementById('halfDayRequestsList');
-            halfDayRequestsList.innerHTML = '';
+        // Fetch work adjustment requests
+        async function fetchRequests() {
+            try {
+                const response = await fetch(`${API_URL}/all-work-adjustments`);
+                if (!response.ok) throw new Error('Failed to fetch work adjustment requests');
+                
+                requests = await response.json();
+                if (Array.isArray(requests)) {
+                    renderRequests();
+                } else {
+                    console.error('Invalid response format:', requests);
+                    document.getElementById('requestsList').innerHTML = 
+                        '<tr><td colspan="8" class="text-center">Error: Invalid data format received</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error fetching work adjustment requests:', error);
+                const requestsList = document.getElementById('requestsList');
+                if (requestsList) {
+                    requestsList.innerHTML = 
+                        '<tr><td colspan="8" class="text-center">Error loading work adjustment requests</td></tr>';
+                }
+                updateEntriesMessage();
+            }
+        }
+
+        function renderRequests() {
+            const list = filteredRequests || requests;
+            const requestsList = document.getElementById('requestsList');
+            if (!requestsList) return;
+
+            requestsList.innerHTML = '';
 
             const start = (currentPage - 1) * itemsPerPage;
             const end = currentPage * itemsPerPage;
-            const currentHalfDayRequests = list.slice(start, end);
+            const currentRequests = list.slice(start, end);
 
-            currentHalfDayRequests.forEach(request => {
+            if (currentRequests.length === 0) {
+                requestsList.innerHTML = '<tr><td colspan="8" class="text-center">No work adjustment requests found</td></tr>';
+                updateEntriesMessage();
+                return;
+            }
+
+            currentRequests.forEach(request => {
                 const row = document.createElement('tr');
+                // Format time slot based on request type
+                const timeSlot = request.request_type === 'halfday' 
+                    ? (request.time_slot === 'morning' ? '9:00 AM - 12:00 PM' : 
+                       request.time_slot === 'afternoon' ? '1:00 PM - 6:00 PM' : '-')
+                    : '-';
+                
+                // Format overtime hours
+                const overtimeHours = request.request_type === 'overtime' 
+                    ? `${request.overtime_hours} hours`
+                    : '-';
+
                 row.innerHTML = `
-                    <td>${request.remarks}</td>
-                    <td>${request.date}</td>
-                    <td>${request.from}</td>
-                    <td>${request.to}</td>
-                    <td>${request.status}</td>
+                    <td>${request.employee_name}</td>
+                    <td>${request.department_name || 'N/A'}</td>
+                    <td>${request.request_type === 'halfday' ? 'Half Day' : 'Overtime'}</td>
+                    <td>${formatDate(request.request_date)}</td>
+                    <td>${timeSlot}</td>
+                    <td>${overtimeHours}</td>
+                    <td><span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="viewHalfDayRequest(${request.id})">View</button>
+                        <div class="btn-group">
+                            <button class="btn btn-primary btn-sm" onclick="viewRequest(${request.id})" title="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${request.status === 'pending' ? `
+                                <button class="btn btn-success btn-sm" onclick="handleRequest(${request.id}, 'approved')" title="Approve Request">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="handleRequest(${request.id}, 'rejected')" title="Reject Request">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            ` : ''}
+                        </div>
                     </td>
                 `;
-                halfDayRequestsList.appendChild(row);
+                requestsList.appendChild(row);
             });
 
             renderPagination();
             updateEntriesMessage();
         }
 
+        function getStatusBadgeColor(status) {
+            switch(status.toLowerCase()) {
+                case 'approved': return 'success';
+                case 'rejected': return 'danger';
+                case 'pending': return 'warning';
+                case 'cancelled': return 'secondary';
+                default: return 'secondary';
+            }
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        function viewRequest(id) {
+            const request = requests.find(req => req.id === id);
+            if (request) {
+                // Format time slot for display
+                const timeSlot = request.request_type === 'halfday' 
+                    ? (request.time_slot === 'morning' ? '9:00 AM - 12:00 PM' : 
+                       request.time_slot === 'afternoon' ? '1:00 PM - 6:00 PM' : '-')
+                    : '-';
+                
+                // Format overtime hours for display
+                const overtimeHours = request.request_type === 'overtime' 
+                    ? `${request.overtime_hours} hours`
+                    : '-';
+
+                const requestDetails = `
+                    <div class="mb-3">
+                        <h6>Employee Information</h6>
+                        <p><strong>Name:</strong> ${request.employee_name}</p>
+                        <p><strong>Department:</strong> ${request.department_name || 'N/A'}</p>
+                        <p><strong>Position:</strong> ${request.role_name || 'N/A'}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Request Details</h6>
+                        <p><strong>Type:</strong> ${request.request_type === 'halfday' ? 'Half Day' : 'Overtime'}</p>
+                        <p><strong>Date:</strong> ${formatDate(request.request_date)}</p>
+                        <p><strong>Time Slot:</strong> ${timeSlot}</p>
+                        <p><strong>Overtime Hours:</strong> ${overtimeHours}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        ${request.remarks ? `<p><strong>Remarks:</strong> ${request.remarks}</p>` : ''}
+                    </div>
+                `;
+                document.getElementById('requestDetails').innerHTML = requestDetails;
+
+                // Show approval buttons only for pending requests
+                const approvalButtons = document.getElementById('approvalButtons');
+                if (request.status === 'pending') {
+                    approvalButtons.innerHTML = `
+                        <div class="btn-group w-100">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Close
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="handleRequest(${request.id}, 'approved')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="handleRequest(${request.id}, 'rejected')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    approvalButtons.innerHTML = `
+                        <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    `;
+                }
+
+                $('#viewRequestModal').modal('show');
+            }
+        }
+
+        async function handleRequest(requestId, status) {
+            try {
+                const response = await fetch(`${API_URL}/work-adjustments/${requestId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status, remarks: '' })
+                });
+
+                if (!response.ok) throw new Error('Failed to update work adjustment request');
+
+                // Close the modal and refresh the list
+                $('#viewRequestModal').modal('hide');
+                await fetchRequests();
+                
+                // Show success message
+                alert(`Work adjustment request ${status} successfully!`);
+            } catch (error) {
+                console.error('Error handling work adjustment request:', error);
+                alert('Failed to update work adjustment request. Please try again.');
+            }
+        }
+
         function renderPagination() {
-            const list = filteredHalfDayRequests || halfDayRequests;
+            const list = filteredRequests || requests;
             const paginationControls = document.getElementById('paginationControls');
             const totalPages = Math.ceil(list.length / itemsPerPage);
             paginationControls.innerHTML = '';
@@ -469,115 +677,80 @@
 
         function goToPage(page) {
             currentPage = page;
-            renderHalfDayRequests();
+            renderRequests();
         }
 
         function setEntriesPerPage() {
             itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
             currentPage = 1;
-            renderHalfDayRequests();
+            renderRequests();
         }
 
         function updateEntriesMessage() {
-            const list = filteredHalfDayRequests || halfDayRequests;
+            const list = filteredRequests || requests;
             const start = (currentPage - 1) * itemsPerPage + 1;
             const end = Math.min(currentPage * itemsPerPage, list.length);
-            const message = `Showing ${start} to ${end} of ${list.length} entries`;
-            document.getElementById('showingEntries').textContent = message;
-        }
-
-        function viewHalfDayRequest(id) {
-            const request = halfDayRequests.find(req => req.id === id);
-            if (request) {
-                const halfDayDetails = `
-                    <p><strong>Remarks:</strong> ${request.remarks}</p>
-                    <p><strong>Date:</strong> ${request.date}</p>
-                    <p><strong>From:</strong> ${request.from}</p>
-                    <p><strong>To:</strong> ${request.to}</p>
-                    <p><strong>Status:</strong> ${request.status}</p>
-                `;
-                document.getElementById('halfDayDetails').innerHTML = halfDayDetails;
-
-                // Only show cancel button if status is 'Pending'
-                const cancelButtonHTML = request.status === 'Pending' ? 
-                    `<button class="btn btn-danger" onclick="showCancelConfirmation(${request.id})">Cancel Half-Day Request</button>` : 
-                    '';
-
-                document.getElementById('cancelButtonContainer').innerHTML = cancelButtonHTML;
-
-                $('#viewHalfDayModal').modal('show');
+            const total = list.length;
+            
+            const message = total === 0 
+                ? 'No entries to display'
+                : `Showing ${start} to ${end} of ${total} entries`;
+            
+            const entriesElement = document.getElementById('showingEntries');
+            if (entriesElement) {
+                entriesElement.textContent = message;
             }
         }
 
-        function showCancelConfirmation(id) {
-            const confirmationModalHTML = `
-                <div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelConfirmationModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="cancelConfirmationModalLabel">Cancel Half-Day Leave Request</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Are you sure you want to cancel this half-day leave request?</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-danger" onclick="cancelHalfDayRequest(${id})">Yes, Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
-            $('#cancelConfirmationModal').modal('show');
-        }
-
-        function cancelHalfDayRequest(id) {
-            const request = halfDayRequests.find(req => req.id === id);
-            if (request) {
-                request.status = 'Cancelled';
-            }
-
-            // Remove the confirmation modal from DOM after use
-            $('#cancelConfirmationModal').modal('hide');
-            document.getElementById('cancelConfirmationModal').remove();
-
-            // Re-render the half-day leave requests to reflect the updated status
-            renderHalfDayRequests();
-        }
-
-        function filterHalfDayRequests() {
+        function filterRequests() {
             const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
 
             if (searchTerm) {
-                filteredHalfDayRequests = halfDayRequests.filter(request =>
-                    request.remarks.toLowerCase().includes(searchTerm) ||
+                filteredRequests = requests.filter(request =>
+                    request.employee_name.toLowerCase().includes(searchTerm) ||
+                    request.department_name?.toLowerCase().includes(searchTerm) ||
+                    request.request_type.toLowerCase().includes(searchTerm) ||
                     request.status.toLowerCase().includes(searchTerm)
                 );
             } else {
-                filteredHalfDayRequests = null;
+                filteredRequests = null;
             }
 
             currentPage = 1;
-            renderHalfDayRequests();
+            renderRequests();
         }
-        //sorting function
+
         function sortTable(columnIndex) {
-            const list = filteredHalfDayRequests || halfDayRequests;
-            const sortOrder = document.getElementById(`sort${['Remarks', 'Date', 'From', 'To', 'Status'][columnIndex]}`).classList.toggle('active') ? 1 : -1;
+            const list = filteredRequests || requests;
+            const columnNames = ['employee_name', 'department_name', 'request_type', 'request_date', 'time_slot', 'overtime_hours', 'status'];
+            const columnName = columnNames[columnIndex];
+
+            // Toggle sort direction
+            sortDirection[columnName] = !sortDirection[columnName];
+
             list.sort((a, b) => {
-                if (a[Object.keys(a)[columnIndex]] < b[Object.keys(b)[columnIndex]]) return -1 * sortOrder;
-                if (a[Object.keys(a)[columnIndex]] > b[Object.keys(b)[columnIndex]]) return 1 * sortOrder;
+                let valueA = a[columnName];
+                let valueB = b[columnName];
+
+                // Handle date sorting
+                if (columnName === 'request_date') {
+                    valueA = new Date(valueA);
+                    valueB = new Date(valueB);
+                }
+
+                if (valueA < valueB) return sortDirection[columnName] ? -1 : 1;
+                if (valueA > valueB) return sortDirection[columnName] ? 1 : -1;
                 return 0;
             });
-            currentPage = 1;
-            renderHalfDayRequests();
+
+            renderRequests();
         }
-        renderHalfDayRequests();
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRequests();
+        });
     </script>
-    <!-- Add side_top.js -->
-    <script src="/public/js/side_top.js"></script>
 </body>
 
 </html>

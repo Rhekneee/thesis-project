@@ -305,51 +305,38 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
     // Request early out
     requestHalfDayRequest: async (req, res) => {
-        const userId = req.params.id;  // Get userId from the URL parameter
-        const { date, remarks } = req.body;  // Get date and remarks from the request body
-    
-        console.log("Received Half-Day Request:", { userId, date, remarks });
-    
         try {
-            const result = await HRModel.requestHalfDay(userId, date, remarks);  // Use 'date' instead of 'requestDate'
-            res.json({ success: true, message: "Half-day request submitted successfully." });
+            const { employeeId } = req.params;
+            const { date, reason, type } = req.body;
+
+            if (!employeeId || !date || !reason || !type) {
+                return res.status(400).json({ error: 'Employee ID, date, reason, and type are required' });
+            }
+
+            const result = await HRModel.requestHalfDay(employeeId, date, reason, type);
+            res.json(result);
         } catch (error) {
-            console.error('Error submitting half-day request:', error);
-            res.status(500).json({ error: "Internal Server Error" });
+            console.error('Error submitting half day request:', error);
+            res.status(500).json({ error: 'Failed to submit half day request' });
         }
     },
     
 
     // Handle Early-Out Request Submission
     requestEarlyOutRequest: async (req, res) => {
-        const userId = req.params.id;  // Get userId from the URL parameter
-        const { date, remarks } = req.body;  // Get date and remarks from the request body
-
-        console.log("Received Early-Out Request:", { userId, date, remarks });  // Log the data for debugging
-
         try {
-            // Call HRModel to process the early-out request
-            const result = await HRModel.requestEarlyOut(userId, date, remarks);
-            res.json({ success: true, message: "Early-out request submitted successfully." });
-        } catch (error) {
-            console.error('Error submitting early-out request:', error);
-            res.status(500).json({ error: "Internal Server Error" });
-        }
-    },
+            const { employeeId } = req.params;
+            const { date, reason } = req.body;
 
-    requestOvertimeRequest: async (req, res) => {
-        const userId = req.params.id;  // Get userId from the URL parameter
-        const { date, remarks } = req.body;  // Get date and remarks from the request body
-    
-        console.log("Received Overtime Request:", { userId, date, remarks });  // Log the data for debugging
-    
-        try {
-            // Call HRModel to process the overtime request
-            const result = await HRModel.requestOvertime(userId, date, remarks);
-            res.json({ success: true, message: "Overtime request submitted successfully." });
+            if (!employeeId || !date || !reason) {
+                return res.status(400).json({ error: 'Employee ID, date, and reason are required' });
+            }
+
+            const result = await HRModel.requestEarlyOut(employeeId, date, reason);
+            res.json(result);
         } catch (error) {
-            console.error('Error submitting overtime request:', error);
-            res.status(500).json({ error: "Internal Server Error" });
+            console.error('Error submitting early out request:', error);
+            res.status(500).json({ error: 'Failed to submit early out request' });
         }
     },
 
@@ -366,13 +353,17 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
     // Get all pending requests by user_id (for HR head to view specific user's pending requests)
     getPendingRequestsByUserId: async (req, res) => {
-        const { userId } = req.params;  // Get the userId from URL parameter
         try {
-            const requests = await HRModel.getPendingRequestsByUserId(userId); // Fetch pending requests for specific user
-            res.json({ requests });
+            const { employeeId } = req.params;
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            const requests = await HRModel.getPendingRequestsByEmployeeId(employeeId);
+            res.json(requests);
         } catch (error) {
-            console.error('Error fetching pending requests by userId:', error);
-            res.status(500).json({ message: 'Failed to fetch pending requests by userId.' });
+            console.error('Error fetching pending requests:', error);
+            res.status(500).json({ error: 'Failed to fetch pending requests' });
         }
     },
     // Handle request approval/rejection (halfDay, earlyOut, overtime)
@@ -1378,7 +1369,237 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             }
             res.status(500).json({ error: "Failed to permanently delete leave request" });
         }
-    }
+    },
+
+    // Work Adjustment Controller Functions
+    getAllWorkAdjustments: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const employeeId = req.params.employeeId;
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            const requests = await HRModel.getAllWorkAdjustments(employeeId);
+            res.json({ requests });
+        } catch (error) {
+            console.error('Error fetching work adjustments:', error);
+            res.status(500).json({ error: 'Failed to fetch work adjustments' });
+        }
+    },
+
+    requestHalfDay: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const employeeId = req.params.employeeId;
+            const { requestDate, timeSlot, remarks } = req.body;
+
+            if (!employeeId || !requestDate || !timeSlot || !remarks) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+            const result = await HRModel.requestHalfDay(employeeId, requestDate, timeSlot, remarks);
+            res.json(result);
+        } catch (error) {
+            console.error('Error submitting half-day request:', error);
+            res.status(500).json({ error: error.message || 'Failed to submit half-day request' });
+        }
+    },
+
+    requestOvertime: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const employeeId = req.params.employeeId;
+            const { requestDate, overtimeHours, remarks } = req.body;
+
+            if (!employeeId || !requestDate || !overtimeHours || !remarks) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+            const result = await HRModel.requestOvertime(employeeId, requestDate, overtimeHours, remarks);
+            res.json(result);
+        } catch (error) {
+            console.error('Error submitting overtime request:', error);
+            res.status(500).json({ error: error.message || 'Failed to submit overtime request' });
+        }
+    },
+
+    cancelWorkAdjustment: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const { requestId, employeeId } = req.params;
+            if (!requestId || !employeeId) {
+                return res.status(400).json({ error: 'Request ID and Employee ID are required' });
+            }
+
+            const result = await HRModel.cancelWorkAdjustment(requestId, employeeId);
+            res.json(result);
+        } catch (error) {
+            console.error('Error cancelling work adjustment:', error);
+            res.status(500).json({ error: error.message || 'Failed to cancel work adjustment' });
+        }
+    },
+
+    // Restore a work adjustment request
+    restoreWorkAdjustment: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const { requestId } = req.params;
+            if (!requestId) {
+                return res.status(400).json({ error: 'Request ID is required' });
+            }
+
+            const result = await HRModel.restoreWorkAdjustment(requestId);
+            res.json({ message: "Work adjustment request restored successfully", ...result });
+        } catch (error) {
+            console.error('Error restoring work adjustment:', error);
+            if (error.message === 'Work adjustment request not found or not in cancelled status') {
+                return res.status(404).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to restore work adjustment request" });
+        }
+    },
+
+    // Permanently delete a work adjustment request
+    permanentlyDeleteWorkAdjustment: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const { requestId } = req.params;
+            if (!requestId) {
+                return res.status(400).json({ error: 'Request ID is required' });
+            }
+
+            const result = await HRModel.permanentlyDeleteWorkAdjustment(requestId);
+            res.json({ message: "Work adjustment request permanently deleted successfully", ...result });
+        } catch (error) {
+            console.error('Error permanently deleting work adjustment:', error);
+            if (error.message === 'Work adjustment request not found') {
+                return res.status(404).json({ error: error.message });
+            }
+            if (error.message === 'Only cancelled or rejected work adjustment requests can be permanently deleted') {
+                return res.status(400).json({ error: error.message });
+            }
+            res.status(500).json({ error: "Failed to permanently delete work adjustment request" });
+        }
+    },
+
+    // Get user data including employee ID
+    getUserData: async (req, res) => {
+        try {
+            // Check if user is authenticated
+            if (!req.session || !req.session.user) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            // Get employee ID directly from session
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(404).json({ error: 'Employee ID not found in session' });
+            }
+
+            // Return both IDs
+            res.json({
+                userId: req.session.user.id,
+                employeeId: employeeId
+            });
+        } catch (error) {
+            console.error("❌ Error in getUserData:", error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    getAllLeaveRequests: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const requests = await HRModel.getAllLeaveRequestsWithDetails();
+            res.json(requests);
+        } catch (error) {
+            console.error('Error getting all leave requests:', error);
+            // Log the full error details
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            res.status(500).json({ 
+                error: 'Failed to fetch leave requests',
+                details: error.sqlMessage || error.message 
+            });
+        }
+    },
+
+    getAllWorkAdjustmentRequests: async (req, res) => {
+        try {
+            if (!req.session.user) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+
+            const requests = await HRModel.getAllWorkAdjustmentRequestsWithDetails();
+            res.json(requests);
+        } catch (error) {
+            console.error('Error getting all work adjustment requests:', error);
+            // Log the full error details
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            res.status(500).json({ 
+                error: 'Failed to fetch work adjustment requests',
+                details: error.sqlMessage || error.message 
+            });
+        }
+    },
+
+    // Get dashboard KPI counts
+    getDashboardKPIs: async (req, res) => {
+        try {
+            const [
+                totalEmployees,
+                newHires,
+                pendingLeaveRequests,
+                totalPendingApprovals
+            ] = await Promise.all([
+                HRModel.getTotalActiveEmployees(),
+                HRModel.getNewHiresCount(),
+                HRModel.getPendingLeaveRequestsCount(),
+                HRModel.getTotalPendingApprovalsCount()
+            ]);
+
+            res.json({
+                totalEmployees,
+                newHires,
+                pendingLeaveRequests,
+                totalPendingApprovals
+            });
+        } catch (error) {
+            console.error('Error getting dashboard KPIs:', error);
+            res.status(500).json({ error: 'Failed to fetch dashboard KPIs' });
+        }
+    },
 };
 
 module.exports = HRController;
