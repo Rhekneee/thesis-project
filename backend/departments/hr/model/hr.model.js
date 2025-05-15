@@ -241,7 +241,7 @@ const HRModel = {
     // 🔹 Get all permissions
     getAllRoles: async () => {
         try {
-            const query = "SELECT id, name FROM roles";
+            const query = "SELECT id, name FROM roles WHERE name!='Owner'";
     
             const [roles] = await db.query(query);
     

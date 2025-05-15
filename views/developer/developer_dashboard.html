@@ -9,82 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
     <style>
-        /* Sidebar styling */
-        #sidebar {
-            width: 300px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none;
-        }
-
-        #sidebar .sidebar-header {
-            text-align: center;
-            padding: 10px;
-        }
-
-        #sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        #sidebar ul li {
-            padding: 15px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        #sidebar ul li.logout {
-            margin-top: 350px;
-        }
-
-        #sidebar ul li.logout a:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #sidebar ul li a:hover {
-            background-color: #5a6268;
-            color: white;
-        }
-
-        #sidebar ul li.active a {
-            background-color: #007bff;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 200px;
-            }
-        }
-
-        #sidebar-toggle {
-            font-size: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sidebar-toggle:hover {
-            background-color: #0056b3;
-        }
-
+        
         #content {
             margin-left: 0;
             transition: margin-left 0.3s;
@@ -161,6 +88,8 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: none;
+            overflow: visible;
         }
 
         .project-item {
@@ -169,30 +98,67 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 80px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .project-item:last-child {
-            border-bottom: none;
+        .project-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .project-info {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 1;
+            min-width: 0;
         }
 
         .project-image {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 8px;
             object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .project-info > div {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .project-info h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #343a40;
+            white-space: normal;
+            word-break: break-word;
         }
 
         .project-status {
-            padding: 5px 10px;
+            display: inline-block;
+            padding: 5px 12px;
             border-radius: 15px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .progress {
+            width: 120px !important;
+            height: 8px;
+            margin: 0 15px;
+            flex-shrink: 0;
+        }
+
+        .progress-bar {
+            font-size: 0.75rem;
+            line-height: 8px;
+            padding: 0 5px;
         }
 
         .status-pending {
@@ -227,38 +193,100 @@
 
 <body>
     <div id="wrapper">
+                        <!-- Topbar -->
+                        <div class="topbar">
+                            <div class="topbar-left">
+                                <div class="menu-toggle" onclick="toggleSidebar()">
+                                    <i class="fas fa-bars"></i>
+                                </div>
+                            </div>
+                            <div class="topbar-right">
+                                <div class="notification-icon" onclick="toggleNotifications()">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="notification-badge"></span>
+                                </div>
+                                <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
+                                    <div class="profile-info">
+                                        <div class="profile-name"></div>
+                                        <div class="profile-position"></div>
+                                    </div>
+                                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                                        <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Dropdown -->
+                            <div class="notification-dropdown" id="notificationDropdown">
+                                <div class="notification-header">
+                                    <span>Notifications</span>
+                                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">New Leave Request</div>
+                                    <div class="notification-time">5 minutes ago</div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">Payroll Processed</div>
+                                    <div class="notification-time">1 hour ago</div>
+                                </div>
+                                <div class="notification-item">
+                                        <span class="profile-name">John Doe</span>
+                                        <span class="profile-position">HR Manager</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Notification Dropdown -->
+                                <div class="notification-dropdown" id="notificationDropdown">
+                                    <div class="notification-header">
+                                        <span>Notifications</span>
+                                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Leave Request</div>
+                                        <div class="notification-time">5 minutes ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">Payroll Processed</div>
+                                        <div class="notification-time">1 hour ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Employee Added</div>
+                                        <div class="notification-time">2 hours ago</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h3>Welcome, Developer</h3>
-                <p class="text-light mb-0">Project Management</p>
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span> </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i><span> Projects</span> </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i><span> Project Progress</span> </a>
+                </li>
                 <li class="nav-item active">
-                    <a class="nav-item" href="developer_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i><span> Completed Projects</span> </a>
                 </li>
                 <li class="nav-item">
-                    <a href="developer_projects.html"><i class="fas fa-project-diagram"></i> Projects</a>
+                    <a href="/developer/developer_manufacturing"><i class="fas fa-money-bill-wave"></i><span> Manufacturing Cost</span> </a>
                 </li>
-                <li class="nav-item">
-                    <a href="developer_project_progress.html"><i class="fas fa-chart-line"></i> Project Progress</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_finished_projects.html"><i class="fas fa-check-circle"></i> Completed Projects</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_manufacturing_cost.html"><i class="fas fa-money-bill-wave"></i> Manufacturing Cost</a>
-                </li>
-    
-                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i><span> Logout</span> </a></li>
             </ul>
         </div>
 
         <!-- Main content area -->
         <div id="content">
-            <button class="btn" id="sidebar-toggle" aria-label="Toggle Sidebar">
-                <i class="fas fa-bars"></i>
-            </button>
+   
 
             <h2 class="mb-4">Dashboard Overview</h2>
 
@@ -344,6 +372,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/side_top.js"></script>
 
     <script>
         // Sample data
@@ -383,15 +412,16 @@
             initializeSidebar();
             initializeCharts();
             renderRecentProjects();
+            getUserInfo();
         });
 
         // Sidebar functionality
         function initializeSidebar() {
-            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const menuToggle = document.querySelector('.menu-toggle');
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
 
-            sidebarToggle.addEventListener('click', function() {
+            menuToggle.addEventListener('click', function() {
                 if (sidebar.style.display === 'none' || sidebar.style.display === '') {
                     sidebar.style.display = 'block';
                     content.style.marginLeft = '300px';
@@ -535,21 +565,131 @@
                     <div class="project-info">
                         <img src="${project.image}" alt="${project.name}" class="project-image">
                         <div>
-                            <h5 class="mb-1">${project.name}</h5>
+                            <h5>${project.name}</h5>
                             <span class="project-status status-${project.status}">
                                 ${project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                             </span>
                         </div>
                     </div>
-                    <div class="progress" style="width: 100px;">
-                        <div class="progress-bar" role="progressbar" style="width: ${project.progress}%"
-                             aria-valuenow="${project.progress}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress">
+                        <div class="progress-bar bg-${project.status === 'completed' ? 'success' : project.status === 'in-progress' ? 'info' : 'warning'}" 
+                             role="progressbar" 
+                             style="width: ${project.progress}%"
+                             aria-valuenow="${project.progress}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
                             ${project.progress}%
                         </div>
                     </div>
                 `;
                 projectsList.appendChild(projectItem);
             });
+        }
+
+        // Update getUserInfo function to handle nested user data in session
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+
+                if (!sessionData.id) {
+                    throw new Error('No user ID in session');
+                }
+
+                // Fetch developer details using id from CRM routes
+                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
+                    credentials: 'include'
+                });
+
+                if (!developerResponse.ok) {
+                    throw new Error('Failed to fetch developer details');
+                }
+
+                const responseData = await developerResponse.json();
+                console.log('Developer response data:', responseData);
+
+                if (!responseData.success || !responseData.profile) {
+                    throw new Error('Invalid developer data received');
+                }
+
+                const developerData = responseData.profile;
+                console.log('Developer data:', developerData);
+
+                // Update profile pictures
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                // Simple function to set profile picture
+                const setProfilePicture = (imgElement, imagePath) => {
+                    if (!imgElement) return;
+                    
+                    if (imagePath) {
+                        const filename = imagePath.includes('/') 
+                            ? imagePath.split('/').pop() 
+                            : imagePath;
+                        
+                        const timestamp = new Date().getTime();
+                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                        
+                        imgElement.src = imageUrl;
+                        
+                        imgElement.onerror = () => {
+                            console.error('Failed to load image:', imageUrl);
+                            imgElement.src = '/crm/default-profile-picture';
+                        };
+                    } else {
+                        imgElement.src = '/crm/default-profile-picture';
+                    }
+                };
+
+                // Set both profile pictures
+                const imagePath = developerData.profile_picture;
+                console.log('Setting profile pictures with path:', imagePath);
+                
+                setProfilePicture(profilePicture, imagePath);
+                setProfilePicture(topbarProfilePicture, imagePath);
+
+                // Update profile information
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const statusBadge = document.getElementById('statusBadge');
+
+                if (profileName && profilePosition) {
+                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
+                    profileName.textContent = fullName || 'Developer';
+                    profilePosition.textContent = developerData.position || 'Developer';
+                }
+
+                // Update status badge
+                if (statusBadge) {
+                    const isActive = developerData.status === 'active';
+                    if (isActive) {
+                        statusBadge.className = 'status-badge status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'status-badge status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+                // Set default images on error
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                if (profilePicture) profilePicture.src = '/crm/default-profile-picture';
+                if (topbarProfilePicture) topbarProfilePicture.src = '/crm/default-profile-picture';
+            }
         }
     </script>
 </body>
