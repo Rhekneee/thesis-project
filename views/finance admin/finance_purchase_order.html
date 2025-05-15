@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Purchase Orders</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+        }
+        #sidebar .sidebar-header { text-align: center; padding: 10px; }
+        #sidebar ul { padding: 0; list-style: none; }
+        #sidebar ul li { padding: 15px; text-align: left; }
+        #sidebar ul li a { color: white; text-decoration: none; font-size: 18px; }
+        #sidebar ul li.logout { margin-top: 350px; }
+        #sidebar ul li.logout a:hover { background-color: #dc3545; color: white; }
+        #sidebar ul li a:hover { background-color: #5a6268; color: white; }
+        #sidebar ul li.active a { background-color: #007bff; color: white; }
+        @media (max-width: 768px) { #sidebar { width: 200px; } }
+        #sidebar-toggle { font-size: 20px; background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        #sidebar-toggle:hover { background-color: #0056b3; }
+        #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
+        .table { width: 100%; margin-top: 30px; }
+        .po-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
+        .status-to-deliver { background-color: #ffc107; color: #000; }
+        .status-received { background-color: #28a745; color: #fff; }
+        .status-paid { background-color: #0d6efd; color: #fff; }
+        .action-buttons { display: flex; gap: 5px; }
+        .action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
+        .view-btn { background-color: #0d6efd; }
+        .view-btn:hover { background-color: #0b5ed7; }
+        .pay-btn { background-color: #198754; }
+        .pay-btn:hover { background-color: #157347; }
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-container .form-control {
+            min-width: 260px;
+            max-width: 320px;
+            height: 40px;
+        }
+        .search-container .form-select {
+            width: 160px;
+            height: 40px;
+        }
+        .entries-per-page {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .entries-per-page label {
+            margin-bottom: 0;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .entries-per-page .form-select {
+            width: 80px;
+            height: 36px;
+        }
+        @media (max-width: 900px) {
+            .search-container { flex-direction: column; align-items: stretch; gap: 8px; }
+            .entries-per-page { margin-left: 0; justify-content: flex-start; }
+        }
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            padding: 1.75rem 2rem;
+            border-bottom: none;
+            border-radius: 16px 16px 0 0;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+        .modal-title i {
+            margin-right: 12px;
+            font-size: 1.3em;
+            color: #fff;
+        }
+        .modal-body {
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .order-info {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e9ecef;
+        }
+        .order-info .row {
+            margin-bottom: 1.25rem;
+        }
+        .order-info .row:last-child {
+            margin-bottom: 0;
+        }
+        .info-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .invoice-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e9ecef;
+        }
+        .invoice-section h6 {
+            color: #1a237e;
+            font-weight: 600;
+            font-size: 1.2em;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .invoice-section h6 i {
+            color: #5c6bc0;
+        }
+        .invoice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .invoice-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .invoice-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .invoice-grid::-webkit-scrollbar-thumb {
+            background: #c5cae9;
+            border-radius: 10px;
+        }
+        .invoice-grid::-webkit-scrollbar-thumb:hover {
+            background: #9fa8da;
+        }
+        .invoice-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .invoice-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #c5cae9;
+        }
+        .invoice-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .invoice-icon {
+            width: 40px;
+            height: 40px;
+            background: #e8eaf6;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5c6bc0;
+            font-size: 1.2em;
+        }
+        .invoice-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #1a237e;
+            flex: 1;
+        }
+        .invoice-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .invoice-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .detail-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e9ecef;
+            background: #fff;
+            border-radius: 0 0 16px 16px;
+        }
+        .modal-footer .btn {
+            padding: 0.7rem 1.75rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .modal-footer .btn i {
+            font-size: 1.1em;
+        }
+        .modal-footer .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+        .btn-close:hover {
+            opacity: 1;
+        }
+        .fullscreen-invoice {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+        }
+        .fullscreen-invoice.active {
+            display: flex;
+        }
+        .fullscreen-header {
+            padding: 1rem 2rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .fullscreen-content {
+            flex: 1;
+            overflow: hidden;
+        }
+        .fullscreen-invoice iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+        .close-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .close-btn:hover {
+            background: #bb2d3b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Welcome, Admin</h3>
+            <p class="text-light mb-0">Finance Management</p>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
+                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="finance_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="finance_purchase_request.html"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
+                    <li class="nav-item"><a href="finance_purchase_order.html"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+    <div id="content">
+        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Purchase Order Management</h2>
+        <div class="search-container mb-2">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by order ID or supplier...">
+            <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
+                <option value="all">All Status</option>
+                <option value="to-deliver">To Deliver</option>
+                <option value="received">Received</option>
+                <option value="paid">Paid</option>
+            </select>
+            <div class="entries-per-page ms-auto d-flex align-items-center">
+                <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
+                <select id="entriesPerPageSelect" class="form-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="poTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPO('orderId')">Order ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPO('supplier')">Supplier <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPO('receivedDate')">Received Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Invoice</th>
+                        <th onclick="sortPO('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="poList"></tbody>
+            </table>
+        </div>
+        <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
+            <span id="showingEntries"></span>
+            <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+        </div>
+    </div>
+
+    <!-- View Purchase Order Modal -->
+    <div class="modal fade" id="viewPOModal" tabindex="-1" aria-labelledby="viewPOModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewPOModalLabel">
+                        <i class="fas fa-file-invoice"></i> Purchase Order Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="container-fluid">
+                        <div class="row g-0">
+                            <!-- Order Details Section -->
+                            <div class="col-md-4 border-end">
+                                <div class="p-4">
+                                    <div class="order-info">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="info-label">Order ID</div>
+                                                <div id="modalOrderId" class="info-value"></div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="info-label">Supplier</div>
+                                                <div id="modalSupplier" class="info-value"></div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="info-label">Received Date</div>
+                                                <div id="modalReceivedDate" class="info-value"></div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="info-label">Status</div>
+                                                <div id="modalStatus" class="po-status"></div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="info-label">Total Amount</div>
+                                                <div id="modalTotalAmount" class="info-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Invoice PDF Section -->
+                            <div class="col-md-8">
+                                <div class="p-4 h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0"><i class="fas fa-file-pdf"></i> Supplier Invoice</h6>
+                                        <button type="button" id="modalViewInvoiceBtn" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-expand"></i> Fullscreen
+                                        </button>
+                                    </div>
+                                    <div id="invoiceViewer" class="border rounded" style="height: calc(100vh - 300px);">
+                                        <iframe id="invoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button type="button" id="modalPayBtn" class="btn btn-success">
+                        <i class="fas fa-money-bill-wave"></i> Mark as Paid
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Invoice View -->
+    <div id="fullscreenInvoice" class="fullscreen-invoice">
+        <div class="fullscreen-header">
+            <div class="d-flex align-items-center">
+                <h4 class="mb-0" id="fullscreenInvoiceTitle">
+                    <i class="fas fa-file-pdf"></i> Supplier Invoice
+                </h4>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="printFullscreenInvoice()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="downloadFullscreenInvoice()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button class="close-btn" onclick="closeFullscreenInvoice()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div id="fullscreenInvoiceContent" class="fullscreen-content">
+            <iframe id="fullscreenInvoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <!-- Invoice View Modal -->
+    <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="invoiceModalLabel">
+                        <i class="fas fa-file-pdf"></i> Supplier Invoice
+                    </h5>
+                    <div class="ms-auto me-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="printInvoice()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="downloadInvoice()">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="invoiceViewer" class="border rounded" style="height: calc(100vh - 200px);">
+                        <iframe id="invoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-5">
+                    <div id="confirmIcon" class="mb-3">
+                        <i class="fas fa-check-circle fa-3x text-success"></i>
+                    </div>
+                    <h4 id="confirmTitle" class="mb-3">Mark as Paid?</h4>
+                    <div id="confirmModalBody" class="mb-4">
+                        <span class="text-success fw-bold">Are you sure you want to mark this purchase order as paid? This action cannot be undone.</span>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="confirmActionBtn" class="btn btn-success px-4">
+                            <i class="fas fa-check"></i> Yes, Mark as Paid
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample purchase order data
+        let purchaseOrders = [
+            {
+                orderId: 'PO-2024-001',
+                supplier: 'ABC Construction Supplies',
+                receivedDate: '2024-03-15',
+                status: 'received',
+                totalAmount: 150000,
+                invoiceFile: 'invoice_po_2024_001.pdf',
+                invoice: {
+                    items: [
+                        {
+                            name: 'Cement',
+                            quantity: 100,
+                            unit: 'bags',
+                            price: 500,
+                            total: 50000
+                        },
+                        {
+                            name: 'Steel Bars',
+                            quantity: 50,
+                            unit: 'pieces',
+                            price: 2000,
+                            total: 100000
+                        }
+                    ]
+                }
+            },
+            {
+                orderId: 'PO-2024-002',
+                supplier: 'XYZ Building Materials',
+                receivedDate: '2024-03-16',
+                status: 'paid',
+                totalAmount: 75000,
+                invoiceFile: 'invoice_po_2024_002.pdf',
+                invoice: {
+                    items: [
+                        {
+                            name: 'Lumber',
+                            quantity: 200,
+                            unit: 'pieces',
+                            price: 375,
+                            total: 75000
+                        }
+                    ]
+                }
+            },
+            {
+                orderId: 'PO-2024-003',
+                supplier: 'Best Construction Supplies',
+                receivedDate: '',
+                status: 'to-deliver',
+                totalAmount: 120000,
+                invoiceFile: '',
+                invoice: {
+                    items: [
+                        {
+                            name: 'Paint',
+                            quantity: 20,
+                            unit: 'gallons',
+                            price: 6000,
+                            total: 120000
+                        }
+                    ]
+                }
+            }
+        ];
+
+        // --- Purchase Order Table Logic ---
+        let poCurrentPage = 1;
+        let poItemsPerPage = 5;
+        let poSortColumn = null;
+        let poSortDirection = 'asc';
+        let poSearchValue = '';
+        let poStatusFilter = 'all';
+
+        function filterAndSortPOs() {
+            let filtered = purchaseOrders.filter(po => {
+                // Status filter
+                if (poStatusFilter !== 'all' && po.status !== poStatusFilter) return false;
+                // Search filter
+                const search = poSearchValue.toLowerCase();
+                return (
+                    po.orderId.toLowerCase().includes(search) ||
+                    po.supplier.toLowerCase().includes(search)
+                );
+            });
+            // Sorting
+            if (poSortColumn) {
+                filtered.sort((a, b) => {
+                    let valueA = a[poSortColumn];
+                    let valueB = b[poSortColumn];
+                    if (poSortColumn === 'receivedDate') {
+                        valueA = new Date(valueA || '9999-12-31');
+                        valueB = new Date(valueB || '9999-12-31');
+                    } else {
+                        valueA = valueA.toString().toLowerCase();
+                        valueB = valueB.toString().toLowerCase();
+                    }
+                    if (valueA < valueB) return poSortDirection === 'asc' ? -1 : 1;
+                    if (valueA > valueB) return poSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            return filtered;
+        }
+
+        function renderPOs() {
+            const poList = document.getElementById('poList');
+            poList.innerHTML = '';
+            const filtered = filterAndSortPOs();
+            const startIndex = (poCurrentPage - 1) * poItemsPerPage;
+            const endIndex = Math.min(startIndex + poItemsPerPage, filtered.length);
+            const paginated = filtered.slice(startIndex, endIndex);
+            paginated.forEach((po, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${po.orderId}</td>
+                    <td>${po.supplier}</td>
+                    <td>${po.receivedDate || '-'}</td>
+                    <td>
+                        ${po.invoiceFile ? 
+                            `<button onclick="viewInvoice('${po.invoiceFile}', ${purchaseOrders.indexOf(po)})" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-file-pdf"></i> View Invoice
+                            </button>` : 
+                            '<span class="text-muted">No invoice</span>'
+                        }
+                    </td>
+                    <td><span class="po-status status-${po.status}">${po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPO(${purchaseOrders.indexOf(po)})" title="View"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </td>
+                `;
+                poList.appendChild(row);
+            });
+            updatePOEntriesMessage(filtered.length);
+            updatePOPagination(filtered.length);
+        }
+
+        function updatePOEntriesMessage(totalEntries) {
+            const startIndex = totalEntries === 0 ? 0 : (poCurrentPage - 1) * poItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + poItemsPerPage - 1, totalEntries);
+            let message;
+            if (totalEntries === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${totalEntries} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${totalEntries} entries`;
+            }
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        function updatePOPagination(totalEntries) {
+            const totalPages = Math.ceil(totalEntries / poItemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+            // Previous
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${poCurrentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePOPage(${poCurrentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${poCurrentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePOPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+            // Next
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${poCurrentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePOPage(${poCurrentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function changePOPage(newPage) {
+            const filtered = filterAndSortPOs();
+            const totalPages = Math.ceil(filtered.length / poItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                poCurrentPage = newPage;
+                renderPOs();
+            }
+            return false;
+        }
+
+        function sortPO(column) {
+            if (poSortColumn === column) {
+                poSortDirection = poSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                poSortColumn = column;
+                poSortDirection = 'asc';
+            }
+            renderPOs();
+        }
+
+        // Modal state
+        let currentPOIdx = null;
+
+        function viewPO(idx) {
+            currentPOIdx = idx;
+            const po = purchaseOrders[idx];
+            
+            // Update order info
+            document.getElementById('modalOrderId').textContent = po.orderId;
+            document.getElementById('modalSupplier').textContent = po.supplier;
+            document.getElementById('modalReceivedDate').textContent = po.receivedDate || 'Not yet received';
+            document.getElementById('modalStatus').textContent = po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            document.getElementById('modalStatus').className = 'po-status status-' + po.status;
+            document.getElementById('modalTotalAmount').textContent = '₱' + po.totalAmount.toLocaleString();
+
+            // Load invoice PDF if available
+            const invoiceFrame = document.getElementById('invoiceFrame');
+            if (po.invoiceFile) {
+                invoiceFrame.src = `/invoices/${po.invoiceFile}`;
+            } else {
+                invoiceFrame.src = 'about:blank';
+            }
+
+            // Enable/disable pay button
+            document.getElementById('modalPayBtn').disabled = po.status !== 'received';
+
+            // Show modal
+            var viewModal = new bootstrap.Modal(document.getElementById('viewPOModal'));
+            viewModal.show();
+        }
+
+        document.getElementById('modalPayBtn').onclick = function() {
+            if (currentPOIdx !== null) {
+                const po = purchaseOrders[currentPOIdx];
+                // Show confirmation modal
+                var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                confirmModal.show();
+            }
+        };
+
+        document.getElementById('confirmActionBtn').onclick = function() {
+            if (currentPOIdx !== null) {
+                purchaseOrders[currentPOIdx].status = 'paid';
+                renderPOs();
+                // Hide both modals
+                var confirmModalEl = document.getElementById('confirmModal');
+                var viewModalEl = document.getElementById('viewPOModal');
+                bootstrap.Modal.getInstance(confirmModalEl).hide();
+                bootstrap.Modal.getInstance(viewModalEl).hide();
+                currentPOIdx = null;
+            }
+        };
+
+        document.getElementById('modalViewInvoiceBtn').onclick = function() {
+            if (currentPOIdx !== null) {
+                viewFullscreenInvoice(purchaseOrders[currentPOIdx].invoiceFile, currentPOIdx);
+            }
+        };
+
+        function viewFullscreenInvoice(fileName, poIndex) {
+            const po = purchaseOrders[poIndex];
+            currentInvoiceFile = fileName;
+            
+            // Update title with order ID
+            document.getElementById('fullscreenInvoiceTitle').innerHTML = `
+                <i class="fas fa-file-pdf"></i> Supplier Invoice - ${po.orderId}
+            `;
+            
+            // Load invoice in iframe
+            const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+            invoiceFrame.src = `/invoices/${fileName}`;
+            
+            // Show fullscreen view
+            document.getElementById('fullscreenInvoice').classList.add('active');
+        }
+
+        function closeFullscreenInvoice() {
+            document.getElementById('fullscreenInvoice').classList.remove('active');
+            const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+            invoiceFrame.src = 'about:blank';
+        }
+
+        function printFullscreenInvoice() {
+            const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+            if (invoiceFrame.contentWindow) {
+                invoiceFrame.contentWindow.print();
+            }
+        }
+
+        function downloadFullscreenInvoice() {
+            if (currentInvoiceFile) {
+                const link = document.createElement('a');
+                link.href = `/invoices/${currentInvoiceFile}`;
+                link.download = currentInvoiceFile;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchBar').addEventListener('input', function(e) {
+            poSearchValue = e.target.value;
+            poCurrentPage = 1;
+            renderPOs();
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', function(e) {
+            poStatusFilter = e.target.value;
+            poCurrentPage = 1;
+            renderPOs();
+        });
+
+        document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
+            poItemsPerPage = parseInt(e.target.value);
+            poCurrentPage = 1;
+            renderPOs();
+        });
+
+        // Sidebar toggle logic
+        document.getElementById('sidebar-toggle').onclick = function() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        };
+
+        // Add these new functions after the existing JavaScript code
+        let currentInvoiceFile = null;
+
+        function viewInvoice(fileName, poIndex) {
+            viewFullscreenInvoice(fileName, poIndex);
+        }
+
+        function printInvoice() {
+            const invoiceFrame = document.getElementById('invoiceFrame');
+            if (invoiceFrame.contentWindow) {
+                invoiceFrame.contentWindow.print();
+            }
+        }
+
+        function downloadInvoice() {
+            if (currentInvoiceFile) {
+                const link = document.createElement('a');
+                link.href = `/invoices/${currentInvoiceFile}`;
+                link.download = currentInvoiceFile;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Initial render
+        renderPOs();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
