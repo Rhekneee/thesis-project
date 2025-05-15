@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Purchase Requests</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+        }
+        #sidebar .sidebar-header { text-align: center; padding: 10px; }
+        #sidebar ul { padding: 0; list-style: none; }
+        #sidebar ul li { padding: 15px; text-align: left; }
+        #sidebar ul li a { color: white; text-decoration: none; font-size: 18px; }
+        #sidebar ul li.logout { margin-top: 350px; }
+        #sidebar ul li.logout a:hover { background-color: #dc3545; color: white; }
+        #sidebar ul li a:hover { background-color: #5a6268; color: white; }
+        #sidebar ul li.active a { background-color: #007bff; color: white; }
+        @media (max-width: 768px) { #sidebar { width: 200px; } }
+        #sidebar-toggle { font-size: 20px; background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        #sidebar-toggle:hover { background-color: #0056b3; }
+        #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
+        .table { width: 100%; margin-top: 30px; }
+        .pr-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-approved { background-color: #28a745; color: #fff; }
+        .status-rejected { background-color: #dc3545; color: #fff; }
+        .action-buttons { display: flex; gap: 5px; }
+        .action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
+        .approve-btn { background-color: #198754; }
+        .approve-btn:hover { background-color: #157347; }
+        .reject-btn { background-color: #dc3545; }
+        .reject-btn:hover { background-color: #bb2d3b; }
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-container .form-control {
+            min-width: 260px;
+            max-width: 320px;
+            height: 40px;
+        }
+        .search-container .form-select {
+            width: 160px;
+            height: 40px;
+        }
+        .entries-per-page {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .entries-per-page label {
+            margin-bottom: 0;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .entries-per-page .form-select {
+            width: 80px;
+            height: 36px;
+        }
+        @media (max-width: 900px) {
+            .search-container { flex-direction: column; align-items: stretch; gap: 8px; }
+            .entries-per-page { margin-left: 0; justify-content: flex-start; }
+        }
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            padding: 1.75rem 2rem;
+            border-bottom: none;
+            border-radius: 16px 16px 0 0;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+        .modal-title i {
+            margin-right: 12px;
+            font-size: 1.3em;
+            color: #fff;
+        }
+        .modal-body {
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .request-info {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e9ecef;
+        }
+        .request-info .row {
+            margin-bottom: 1.25rem;
+        }
+        .request-info .row:last-child {
+            margin-bottom: 0;
+        }
+        .info-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .materials-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e9ecef;
+        }
+        .materials-section h6 {
+            color: #1a237e;
+            font-weight: 600;
+            font-size: 1.2em;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .materials-section h6 i {
+            color: #5c6bc0;
+        }
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .materials-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .materials-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .materials-grid::-webkit-scrollbar-thumb {
+            background: #c5cae9;
+            border-radius: 10px;
+        }
+        .materials-grid::-webkit-scrollbar-thumb:hover {
+            background: #9fa8da;
+        }
+        .material-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .material-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #c5cae9;
+        }
+        .material-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .material-icon {
+            width: 40px;
+            height: 40px;
+            background: #e8eaf6;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5c6bc0;
+            font-size: 1.2em;
+        }
+        .material-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #1a237e;
+            flex: 1;
+        }
+        .material-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .material-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .detail-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e9ecef;
+            background: #fff;
+            border-radius: 0 0 16px 16px;
+        }
+        .modal-footer .btn {
+            padding: 0.7rem 1.75rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .modal-footer .btn i {
+            font-size: 1.1em;
+        }
+        .modal-footer .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+        .btn-close:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Welcome, Admin</h3>
+            <p class="text-light mb-0">Finance Management</p>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
+                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="finance_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="finance_purchase_request.html"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
+                    <li class="nav-item"><a href="finance_purchase_order.html"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+    <div id="content">
+        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Purchase Request Management</h2>
+        <div class="search-container mb-2">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by request ID or manager...">
+            <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <div class="entries-per-page ms-auto d-flex align-items-center">
+                <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
+                <select id="entriesPerPageSelect" class="form-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="prTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPR('requestId')">Request ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('manager')">Manager <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('requestDate')">Request Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('approvalDate')">Approval Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="prList"></tbody>
+            </table>
+        </div>
+        <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
+            <span id="showingEntries"></span>
+            <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+        </div>
+    </div>
+
+    <!-- View Purchase Request Modal -->
+    <div class="modal fade" id="viewPRModal" tabindex="-1" aria-labelledby="viewPRModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewPRModalLabel">
+                        <i class="fas fa-file-invoice"></i> Purchase Request Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="request-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-label">Request ID</div>
+                                    <div id="modalRequestId" class="info-value"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Manager</div>
+                                    <div id="modalManager" class="info-value"></div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-label">Request Date</div>
+                                    <div id="modalRequestDate" class="info-value"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Status</div>
+                                    <div id="modalStatus" class="pr-status"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="materials-section">
+                            <h6><i class="fas fa-boxes"></i>Requested Materials</h6>
+                            <div id="modalMaterials" class="materials-grid"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button type="button" id="modalApproveBtn" class="btn btn-success">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button type="button" id="modalRejectBtn" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-5">
+                    <div id="confirmIcon" class="mb-3"></div>
+                    <h4 id="confirmTitle" class="mb-3"></h4>
+                    <div id="confirmModalBody" class="mb-4"></div>
+                    <div id="remarksFormContainer" class="mb-3" style="display:none;">
+                        <textarea id="remarksInput" class="form-control" rows="3" placeholder="Enter remarks (required)"></textarea>
+                        <div id="remarksError" class="text-danger small mt-1" style="display:none;">Remarks are required to reject purchase request.</div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="confirmActionBtn" class="btn px-4"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample purchase request data
+        let purchaseRequests = [
+            {
+                requestId: 'PR-2024-001',
+                manager: 'John Smith',
+                requestDate: '2024-03-15',
+                approvalDate: '',
+                status: 'pending',
+                materials: [
+                    {
+                        name: 'Cement',
+                        quantity: 100,
+                        unit: 'bags'
+                    },
+                    {
+                        name: 'Steel Bars',
+                        quantity: 50,
+                        unit: 'pieces'
+                    }
+                ]
+            },
+            {
+                requestId: 'PR-2024-002',
+                manager: 'Sarah Johnson',
+                requestDate: '2024-03-16',
+                approvalDate: '2024-03-17',
+                status: 'approved',
+                materials: [
+                    {
+                        name: 'Lumber',
+                        quantity: 200,
+                        unit: 'pieces'
+                    }
+                ]
+            },
+            {
+                requestId: 'PR-2024-003',
+                manager: 'Michael Brown',
+                requestDate: '2024-03-14',
+                approvalDate: '2024-03-15',
+                status: 'rejected',
+                materials: [
+                    {
+                        name: 'Paint',
+                        quantity: 20,
+                        unit: 'gallons'
+                    }
+                ]
+            }
+        ];
+
+        // --- Purchase Request Table Logic ---
+        let prCurrentPage = 1;
+        let prItemsPerPage = 5;
+        let prSortColumn = null;
+        let prSortDirection = 'asc';
+        let prSearchValue = '';
+        let prStatusFilter = 'all';
+
+        function filterAndSortPRs() {
+            let filtered = purchaseRequests.filter(pr => {
+                // Status filter
+                if (prStatusFilter !== 'all' && pr.status !== prStatusFilter) return false;
+                // Search filter
+                const search = prSearchValue.toLowerCase();
+                return (
+                    pr.requestId.toLowerCase().includes(search) ||
+                    pr.manager.toLowerCase().includes(search)
+                );
+            });
+            // Sorting
+            if (prSortColumn) {
+                filtered.sort((a, b) => {
+                    let valueA = a[prSortColumn];
+                    let valueB = b[prSortColumn];
+                    if (prSortColumn === 'requestDate' || prSortColumn === 'approvalDate') {
+                        valueA = new Date(valueA);
+                        valueB = new Date(valueB);
+                    } else {
+                        valueA = valueA.toString().toLowerCase();
+                        valueB = valueB.toString().toLowerCase();
+                    }
+                    if (valueA < valueB) return prSortDirection === 'asc' ? -1 : 1;
+                    if (valueA > valueB) return prSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            return filtered;
+        }
+
+        function renderPRs() {
+            const prList = document.getElementById('prList');
+            prList.innerHTML = '';
+            const filtered = filterAndSortPRs();
+            const startIndex = (prCurrentPage - 1) * prItemsPerPage;
+            const endIndex = Math.min(startIndex + prItemsPerPage, filtered.length);
+            const paginated = filtered.slice(startIndex, endIndex);
+            paginated.forEach((pr, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pr.requestId}</td>
+                    <td>${pr.manager}</td>
+                    <td>${pr.requestDate}</td>
+                    <td>${pr.approvalDate || '-'}</td>
+                    <td><span class="pr-status status-${pr.status}">${pr.status.charAt(0).toUpperCase() + pr.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPR(${purchaseRequests.indexOf(pr)})" title="View"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </td>
+                `;
+                prList.appendChild(row);
+            });
+            updatePREntriesMessage(filtered.length);
+            updatePRPagination(filtered.length);
+        }
+
+        function updatePREntriesMessage(totalEntries) {
+            const startIndex = totalEntries === 0 ? 0 : (prCurrentPage - 1) * prItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + prItemsPerPage - 1, totalEntries);
+            let message;
+            if (totalEntries === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${totalEntries} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${totalEntries} entries`;
+            }
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        function updatePRPagination(totalEntries) {
+            const totalPages = Math.ceil(totalEntries / prItemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+            // Previous
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${prCurrentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePRPage(${prCurrentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${prCurrentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePRPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+            // Next
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${prCurrentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePRPage(${prCurrentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function changePRPage(newPage) {
+            const filtered = filterAndSortPRs();
+            const totalPages = Math.ceil(filtered.length / prItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                prCurrentPage = newPage;
+                renderPRs();
+            }
+            return false;
+        }
+
+        function sortPR(column) {
+            if (prSortColumn === column) {
+                prSortDirection = prSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                prSortColumn = column;
+                prSortDirection = 'asc';
+            }
+            renderPRs();
+        }
+
+        // Modal state
+        let currentPRIdx = null;
+        let pendingAction = null;
+
+        function viewPR(idx) {
+            currentPRIdx = idx;
+            const pr = purchaseRequests[idx];
+            
+            // Update request info
+            document.getElementById('modalRequestId').textContent = pr.requestId;
+            document.getElementById('modalManager').textContent = pr.manager;
+            document.getElementById('modalRequestDate').textContent = pr.requestDate;
+            document.getElementById('modalStatus').textContent = pr.status.charAt(0).toUpperCase() + pr.status.slice(1);
+            document.getElementById('modalStatus').className = 'pr-status status-' + pr.status;
+
+            // Render materials
+            const materialsContainer = document.getElementById('modalMaterials');
+            materialsContainer.innerHTML = '';
+            pr.materials.forEach(material => {
+                const materialDiv = document.createElement('div');
+                materialDiv.className = 'material-item';
+                materialDiv.innerHTML = `
+                    <div class="material-header">
+                        <div class="material-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="material-name">${material.name}</div>
+                    </div>
+                    <div class="material-details">
+                        <div class="material-detail">
+                            <span class="detail-label">Quantity</span>
+                            <span class="detail-value">${material.quantity} ${material.unit}</span>
+                        </div>
+                    </div>
+                `;
+                materialsContainer.appendChild(materialDiv);
+            });
+
+            // Enable/disable approve/reject
+            document.getElementById('modalApproveBtn').disabled = pr.status !== 'pending';
+            document.getElementById('modalRejectBtn').disabled = pr.status !== 'pending';
+
+            // Show modal
+            var viewModal = new bootstrap.Modal(document.getElementById('viewPRModal'));
+            viewModal.show();
+        }
+
+        document.getElementById('modalApproveBtn').onclick = function() {
+            pendingAction = 'approved';
+            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-check-circle fa-3x text-success"></i>';
+            document.getElementById('confirmTitle').textContent = 'Approve Purchase Request?';
+            document.getElementById('confirmModalBody').innerHTML = '<span class="text-success fw-bold">Are you sure you want to approve this purchase request? This action cannot be undone.</span>';
+            document.getElementById('remarksFormContainer').style.display = 'none';
+            var confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.className = 'btn btn-success px-4';
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Yes, Approve';
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        };
+
+        document.getElementById('modalRejectBtn').onclick = function() {
+            pendingAction = 'rejected';
+            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-times-circle fa-3x text-danger"></i>';
+            document.getElementById('confirmTitle').textContent = 'Reject Purchase Request?';
+            document.getElementById('confirmModalBody').innerHTML = '<span class="text-danger fw-bold">Are you sure you want to reject this purchase request? This action cannot be undone.</span>';
+            document.getElementById('remarksFormContainer').style.display = 'block';
+            document.getElementById('remarksInput').value = '';
+            document.getElementById('remarksError').style.display = 'none';
+            var confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.className = 'btn btn-danger px-4';
+            confirmBtn.innerHTML = '<i class="fas fa-times"></i> Yes, Reject';
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        };
+
+        document.getElementById('confirmActionBtn').onclick = function() {
+            if (currentPRIdx !== null && pendingAction) {
+                if (pendingAction === 'rejected') {
+                    var remarks = document.getElementById('remarksInput').value.trim();
+                    if (!remarks) {
+                        document.getElementById('remarksError').style.display = 'block';
+                        return;
+                    }
+                    document.getElementById('remarksError').style.display = 'none';
+                    purchaseRequests[currentPRIdx].remarks = remarks;
+                }
+                purchaseRequests[currentPRIdx].status = pendingAction;
+                purchaseRequests[currentPRIdx].approvalDate = new Date().toISOString().split('T')[0];
+                renderPRs();
+                // Hide both modals
+                var confirmModalEl = document.getElementById('confirmModal');
+                var viewModalEl = document.getElementById('viewPRModal');
+                bootstrap.Modal.getInstance(confirmModalEl).hide();
+                bootstrap.Modal.getInstance(viewModalEl).hide();
+                currentPRIdx = null;
+                pendingAction = null;
+            }
+        };
+
+        // Event listeners
+        document.getElementById('searchBar').addEventListener('input', function(e) {
+            prSearchValue = e.target.value;
+            prCurrentPage = 1;
+            renderPRs();
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', function(e) {
+            prStatusFilter = e.target.value;
+            prCurrentPage = 1;
+            renderPRs();
+        });
+
+        document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
+            prItemsPerPage = parseInt(e.target.value);
+            prCurrentPage = 1;
+            renderPRs();
+        });
+
+        // Sidebar toggle logic
+        document.getElementById('sidebar-toggle').onclick = function() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        };
+
+        // Initial render
+        renderPRs();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
