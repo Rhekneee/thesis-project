@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Payroll</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+        }
+        #sidebar .sidebar-header { text-align: center; padding: 10px; }
+        #sidebar ul { padding: 0; list-style: none; }
+        #sidebar ul li { padding: 15px; text-align: left; }
+        #sidebar ul li a { color: white; text-decoration: none; font-size: 18px; }
+        #sidebar ul li.logout { margin-top: 350px; }
+        #sidebar ul li.logout a:hover { background-color: #dc3545; color: white; }
+        #sidebar ul li a:hover { background-color: #5a6268; color: white; }
+        #sidebar ul li.active a { background-color: #007bff; color: white; }
+        @media (max-width: 768px) { #sidebar { width: 200px; } }
+        #sidebar-toggle { font-size: 20px; background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        #sidebar-toggle:hover { background-color: #0056b3; }
+        #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
+        .table { width: 100%; margin-top: 30px; }
+        .payroll-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-approved { background-color: #28a745; color: #fff; }
+        .status-rejected { background-color: #dc3545; color: #fff; }
+        .action-buttons { display: flex; gap: 5px; }
+        .action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
+        .approve-btn { background-color: #198754; }
+        .approve-btn:hover { background-color: #157347; }
+        .reject-btn { background-color: #dc3545; }
+        .reject-btn:hover { background-color: #bb2d3b; }
+        /* --- Payroll search/filter row --- */
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-container .form-control {
+            min-width: 260px;
+            max-width: 320px;
+            height: 40px;
+        }
+        .search-container .form-select {
+            width: 160px;
+            height: 40px;
+        }
+        .entries-per-page {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .entries-per-page label {
+            margin-bottom: 0;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .entries-per-page .form-select {
+            width: 80px;
+            height: 36px;
+        }
+        @media (max-width: 900px) {
+            .search-container { flex-direction: column; align-items: stretch; gap: 8px; }
+            .entries-per-page { margin-left: 0; justify-content: flex-start; }
+        }
+        @media print {
+            body * { visibility: hidden !important; }
+            #payrollSummaryPrintArea, #payrollSummaryPrintArea * { visibility: visible !important; }
+            #payrollSummaryPrintArea {
+                position: absolute !important;
+                left: 0; top: 0; width: 100vw; min-height: 100vh;
+                background: #fff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            #payrollSummaryPrintArea .payroll-header {
+                background: #000 !important;
+                color: #fff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            #payrollSummaryPrintArea img[alt="MDB Construction Logo"] {
+                display: block !important;
+                visibility: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                max-height: 60px !important;
+                max-width: 100px !important;
+            }
+            #payrollSummaryPrintArea table thead tr {
+                background: #11336b !important;
+                color: #fff !important;
+            }
+            #payrollSummaryPrintArea table thead th {
+                background: #11336b !important;
+                color: #fff !important;
+            }
+            #payrollSummaryPrintArea table tbody tr:nth-child(even) {
+                background: #f1f6ff !important;
+            }
+            #payrollSummaryPrintArea table tbody tr:nth-child(odd) {
+                background: #f8f9fa !important;
+            }
+            #payrollSummaryPrintArea table td, #payrollSummaryPrintArea table th {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            #payrollSummaryPrintArea .signature-line {
+                border-bottom: 2.5px solid #1976d2 !important;
+            }
+        }
+        .payroll-summary-professional {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 32px 32px 48px 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1.5px solid #e0e0e0;
+            position: relative;
+        }
+        .payroll-summary-professional .summary-logo {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .payroll-summary-professional .summary-logo img {
+            height: 48px;
+        }
+        .payroll-summary-professional .summary-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+            color: #1a237e;
+        }
+        .payroll-summary-professional .summary-meta {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            color: #555;
+        }
+        .payroll-summary-professional table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            background: #fafbfc;
+        }
+        .payroll-summary-professional th, .payroll-summary-professional td {
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 1.08rem;
+        }
+        .payroll-summary-professional th {
+            background: #f4f6fa;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+            width: 60%;
+        }
+        .payroll-summary-professional td {
+            font-weight: 500;
+            color: #222;
+        }
+        .payroll-summary-professional tr:not(:last-child) td {
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .payroll-summary-professional .summary-footer {
+            margin-top: 32px;
+            text-align: right;
+            font-size: 1rem;
+            color: #888;
+        }
+        .payroll-summary-professional .summary-signature {
+            margin-top: 48px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .payroll-summary-professional .summary-signature .sig-line {
+            border-bottom: 1.5px solid #222;
+            width: 220px;
+            margin-right: 16px;
+            height: 2px;
+        }
+        .payroll-summary-professional .summary-signature .sig-label {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Welcome, Admin</h3>
+            <p class="text-light mb-0">Finance Management</p>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
+                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="finance_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="finance_purchase_request.html"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
+                    <li class="nav-item"><a href="finance_purchase_order.html"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+    <div id="content">
+        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Payroll Management</h2>
+        <div class="search-container mb-2">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by name, position, or ID...">
+            <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <button id="printSummaryBtn" class="btn btn-outline-primary ms-2" disabled><i class="fas fa-print"></i> Payroll Summary</button>
+            <div class="entries-per-page ms-auto d-flex align-items-center">
+                <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
+                <select id="entriesPerPageSelect" class="form-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="payrollTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPayroll('id')">Employee ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('name')">Full Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('position')">Position <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('startDate')">Start Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('endDate')">End Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('daysPresent')">Days Present <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalHours')">Total Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('overtimeHours')">Overtime Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('fixedSalary')">Fixed Salary <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('salaryBeforeTax')">Salary Before Tax <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalDeductions')">Total Deductions <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('netPay')">Net Pay <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollList"></tbody>
+            </table>
+        </div>
+        <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
+            <span id="showingEntries"></span>
+            <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+        </div>
+    </div>
+
+    <!-- View Payroll Modal -->
+    <div class="modal fade" id="viewPayrollModal" tabindex="-1" aria-labelledby="viewPayrollModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="viewPayrollModalLabel"><i class="fas fa-user"></i> Payroll Details</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="row mb-3">
+                <div class="col-md-4 text-center">
+                  <div class="mx-auto mb-2" style="width:80px;height:80px;">
+                    <img id="modalProfilePic" src="" alt="Profile" class="rounded-circle border border-2" style="width:80px;height:80px;object-fit:cover;">
+                  </div>
+                  <h5 id="modalFullName" class="fw-bold mb-0"></h5>
+                  <div id="modalPosition" class="text-muted"></div>
+                  <span id="modalStatus" class="payroll-status mt-2"></span>
+                </div>
+                <div class="col-md-8">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <small class="text-muted">Employee ID</small>
+                      <div id="modalEmployeeId" class="fw-semibold"></div>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Period</small>
+                      <div><span id="modalStartDate"></span> - <span id="modalEndDate"></span></div>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted">Days Present</small>
+                      <div id="modalDaysPresent"></div>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted">Total Hours</small>
+                      <div id="modalTotalHours"></div>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted">Overtime Hours</small>
+                      <div id="modalOvertimeHours"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <hr>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-2"><i class="fas fa-money-bill-wave me-2 text-success"></i> <span class="fw-bold">Fixed Salary</span></div>
+                      <div id="modalFixedSalary" class="fs-5"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-2"><i class="fas fa-coins me-2 text-warning"></i> <span class="fw-bold">Salary Before Tax</span></div>
+                      <div id="modalSalaryBeforeTax" class="fs-5"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-2"><i class="fas fa-minus-circle me-2 text-danger"></i> <span class="fw-bold">Total Deductions</span></div>
+                      <div id="modalTotalDeductions" class="fs-5"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12 mt-3">
+                  <div class="card border-0 shadow">
+                    <div class="card-body bg-success bg-opacity-10 rounded">
+                      <div class="d-flex align-items-center mb-2"><i class="fas fa-wallet me-2 text-success"></i> <span class="fw-bold">Net Pay</span></div>
+                      <div id="modalNetPay" class="fs-4 fw-bold text-success"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" id="modalApproveBtn" class="btn btn-success"><i class="fas fa-check"></i> Approve</button>
+            <button type="button" id="modalRejectBtn" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+          <div class="modal-body text-center p-5">
+            <div id="confirmIcon" class="mb-3"></div>
+            <h4 id="confirmTitle" class="mb-3"></h4>
+            <div id="confirmModalBody" class="mb-4"></div>
+            <div id="remarksFormContainer" class="mb-3" style="display:none;">
+              <textarea id="remarksInput" class="form-control" rows="3" placeholder="Enter remarks (required)"></textarea>
+              <div id="remarksError" class="text-danger small mt-1" style="display:none;">Remarks are required to reject payroll.</div>
+            </div>
+            <div class="d-flex justify-content-center gap-3">
+              <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" id="confirmActionBtn" class="btn px-4"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payroll Summary Modal -->
+    <div class="modal fade" id="payrollSummaryModal" tabindex="-1" aria-labelledby="payrollSummaryModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="payrollSummaryModalLabel"><i class="fas fa-file-invoice-dollar"></i> Payroll Summary</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="payrollSummaryContent" class="payroll-summary-professional"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" id="printPayrollSummaryBtn" class="btn btn-primary"><i class="fas fa-print"></i> Print</button>
+            <button type="button" id="downloadPayrollSummaryBtn" class="btn btn-success"><i class="fas fa-download"></i> Download PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        // Sidebar toggle logic
+        document.getElementById('sidebar-toggle').onclick = function() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        };
+
+        // Sample payroll data
+        let payrolls = [
+            {
+                id: 'EMP001',
+                name: 'Juan Dela Cruz',
+                position: 'Accountant',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 22,
+                totalHours: 176,
+                overtimeHours: 10,
+                fixedSalary: 30000,
+                salaryBeforeTax: 32000,
+                totalDeductions: 2000,
+                netPay: 30000,
+                status: 'pending',
+                profilePic: 'https://randomuser.me/api/portraits/men/1.jpg'
+            },
+            {
+                id: 'EMP002',
+                name: 'Maria Santos',
+                position: 'Clerk',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 20,
+                totalHours: 160,
+                overtimeHours: 5,
+                fixedSalary: 20000,
+                salaryBeforeTax: 21000,
+                totalDeductions: 1500,
+                netPay: 19500,
+                status: 'pending',
+                profilePic: 'https://randomuser.me/api/portraits/women/2.jpg'
+            },
+            {
+                id: 'EMP003',
+                name: 'Pedro Reyes',
+                position: 'Supervisor',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 23,
+                totalHours: 184,
+                overtimeHours: 12,
+                fixedSalary: 35000,
+                salaryBeforeTax: 37000,
+                totalDeductions: 2500,
+                netPay: 34500,
+                status: 'pending',
+                profilePic: '' // No image, will use placeholder
+            }
+        ];
+
+        // --- Payroll Table Logic ---
+        let payrollCurrentPage = 1;
+        let payrollItemsPerPage = 5;
+        let payrollSortColumn = null;
+        let payrollSortDirection = 'asc';
+        let payrollSearchValue = '';
+        let payrollStatusFilter = 'all';
+
+        function filterAndSortPayrolls() {
+            let filtered = payrolls.filter(p => {
+                // Status filter
+                if (payrollStatusFilter !== 'all' && p.status !== payrollStatusFilter) return false;
+                // Search filter
+                const search = payrollSearchValue.toLowerCase();
+                return (
+                    p.id.toLowerCase().includes(search) ||
+                    p.name.toLowerCase().includes(search) ||
+                    p.position.toLowerCase().includes(search)
+                );
+            });
+            // Sorting
+            if (payrollSortColumn) {
+                filtered.sort((a, b) => {
+                    let valueA = a[payrollSortColumn];
+                    let valueB = b[payrollSortColumn];
+                    // Numeric sort for numbers
+                    if ([
+                        'daysPresent','totalHours','overtimeHours','fixedSalary','salaryBeforeTax','totalDeductions','netPay'
+                    ].includes(payrollSortColumn)) {
+                        valueA = Number(valueA);
+                        valueB = Number(valueB);
+                    } else if (payrollSortColumn === 'startDate' || payrollSortColumn === 'endDate') {
+                        valueA = new Date(valueA);
+                        valueB = new Date(valueB);
+                    } else {
+                        valueA = valueA.toString().toLowerCase();
+                        valueB = valueB.toString().toLowerCase();
+                    }
+                    if (valueA < valueB) return payrollSortDirection === 'asc' ? -1 : 1;
+                    if (valueA > valueB) return payrollSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            return filtered;
+        }
+
+        function renderPayrolls() {
+            const payrollList = document.getElementById('payrollList');
+            payrollList.innerHTML = '';
+            const filtered = filterAndSortPayrolls();
+            const startIndex = (payrollCurrentPage - 1) * payrollItemsPerPage;
+            const endIndex = Math.min(startIndex + payrollItemsPerPage, filtered.length);
+            const paginated = filtered.slice(startIndex, endIndex);
+            paginated.forEach((p, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.position}</td>
+                    <td>${p.startDate}</td>
+                    <td>${p.endDate}</td>
+                    <td>${p.daysPresent}</td>
+                    <td>${p.totalHours}</td>
+                    <td>${p.overtimeHours}</td>
+                    <td>₱${p.fixedSalary.toLocaleString()}</td>
+                    <td>₱${p.salaryBeforeTax.toLocaleString()}</td>
+                    <td>₱${p.totalDeductions.toLocaleString()}</td>
+                    <td>₱${p.netPay.toLocaleString()}</td>
+                    <td><span class="payroll-status status-${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPayroll(${payrolls.indexOf(p)})" title="View"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </td>
+                `;
+                payrollList.appendChild(row);
+            });
+            updatePayrollEntriesMessage(filtered.length);
+            updatePayrollPagination(filtered.length);
+            updatePrintSummaryBtn();
+        }
+
+        function updatePayrollEntriesMessage(totalEntries) {
+            const startIndex = totalEntries === 0 ? 0 : (payrollCurrentPage - 1) * payrollItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + payrollItemsPerPage - 1, totalEntries);
+            let message;
+            if (totalEntries === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${totalEntries} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${totalEntries} entries`;
+            }
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        function updatePayrollPagination(totalEntries) {
+            const totalPages = Math.ceil(totalEntries / payrollItemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+            // Previous
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${payrollCurrentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${payrollCurrentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${payrollCurrentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+            // Next
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${payrollCurrentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${payrollCurrentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function changePayrollPage(newPage) {
+            const filtered = filterAndSortPayrolls();
+            const totalPages = Math.ceil(filtered.length / payrollItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                payrollCurrentPage = newPage;
+                renderPayrolls();
+            }
+            return false;
+        }
+
+        function sortPayroll(column) {
+            if (payrollSortColumn === column) {
+                payrollSortDirection = payrollSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                payrollSortColumn = column;
+                payrollSortDirection = 'asc';
+            }
+            renderPayrolls();
+        }
+
+        document.getElementById('searchBar').addEventListener('input', function(e) {
+            payrollSearchValue = e.target.value;
+            payrollCurrentPage = 1;
+            renderPayrolls();
+        });
+        document.getElementById('statusFilter').addEventListener('change', function(e) {
+            payrollStatusFilter = e.target.value;
+            payrollCurrentPage = 1;
+            renderPayrolls();
+        });
+        document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
+            payrollItemsPerPage = parseInt(e.target.value);
+            payrollCurrentPage = 1;
+            renderPayrolls();
+        });
+
+        // Modal state
+        let currentPayrollIdx = null;
+        let pendingAction = null;
+
+        function viewPayroll(idx) {
+            currentPayrollIdx = idx;
+            const p = payrolls[idx];
+            // Set profile picture or placeholder
+            const profilePic = p.profilePic && p.profilePic.trim() !== '' ? p.profilePic : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(p.name) + '&background=0D8ABC&color=fff&size=80';
+            document.getElementById('modalProfilePic').src = profilePic;
+            document.getElementById('modalEmployeeId').textContent = p.id;
+            document.getElementById('modalFullName').textContent = p.name;
+            document.getElementById('modalPosition').textContent = p.position;
+            document.getElementById('modalStatus').textContent = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+            document.getElementById('modalStatus').className = 'payroll-status status-' + p.status + ' mt-2';
+            // Calculate 15-day period
+            const start = new Date(p.startDate);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 14);
+            document.getElementById('modalStartDate').textContent = p.startDate;
+            document.getElementById('modalEndDate').textContent = end.toISOString().slice(0, 10);
+            document.getElementById('modalDaysPresent').textContent = p.daysPresent;
+            document.getElementById('modalTotalHours').textContent = p.totalHours;
+            document.getElementById('modalOvertimeHours').textContent = p.overtimeHours;
+            document.getElementById('modalFixedSalary').textContent = '₱' + p.fixedSalary.toLocaleString();
+            document.getElementById('modalSalaryBeforeTax').textContent = '₱' + p.salaryBeforeTax.toLocaleString();
+            document.getElementById('modalTotalDeductions').textContent = '₱' + p.totalDeductions.toLocaleString();
+            document.getElementById('modalNetPay').textContent = '₱' + p.netPay.toLocaleString();
+            // Enable/disable approve/reject
+            document.getElementById('modalApproveBtn').disabled = p.status !== 'pending';
+            document.getElementById('modalRejectBtn').disabled = p.status !== 'pending';
+            // Show modal
+            var viewModal = new bootstrap.Modal(document.getElementById('viewPayrollModal'));
+            viewModal.show();
+        }
+
+        document.getElementById('modalApproveBtn').onclick = function() {
+            pendingAction = 'approved';
+            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-check-circle fa-3x text-success"></i>';
+            document.getElementById('confirmTitle').textContent = 'Approve Payroll?';
+            document.getElementById('confirmModalBody').innerHTML = '<span class="text-success fw-bold">Are you sure you want to approve this payroll? This action cannot be undone.</span>';
+            document.getElementById('remarksFormContainer').style.display = 'none';
+            var confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.className = 'btn btn-success px-4';
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Yes, Approve';
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        };
+        document.getElementById('modalRejectBtn').onclick = function() {
+            pendingAction = 'rejected';
+            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-times-circle fa-3x text-danger"></i>';
+            document.getElementById('confirmTitle').textContent = 'Reject Payroll?';
+            document.getElementById('confirmModalBody').innerHTML = '<span class="text-danger fw-bold">Are you sure you want to reject this payroll? This action cannot be undone.</span>';
+            document.getElementById('remarksFormContainer').style.display = 'block';
+            document.getElementById('remarksInput').value = '';
+            document.getElementById('remarksError').style.display = 'none';
+            var confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.className = 'btn btn-danger px-4';
+            confirmBtn.innerHTML = '<i class="fas fa-times"></i> Yes, Reject';
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        };
+        document.getElementById('confirmActionBtn').onclick = function() {
+            if (currentPayrollIdx !== null && pendingAction) {
+                if (pendingAction === 'rejected') {
+                    var remarks = document.getElementById('remarksInput').value.trim();
+                    if (!remarks) {
+                        document.getElementById('remarksError').style.display = 'block';
+                        return;
+                    }
+                    document.getElementById('remarksError').style.display = 'none';
+                    payrolls[currentPayrollIdx].remarks = remarks;
+                }
+                payrolls[currentPayrollIdx].status = pendingAction;
+                renderPayrolls();
+                // Hide both modals
+                var confirmModalEl = document.getElementById('confirmModal');
+                var viewModalEl = document.getElementById('viewPayrollModal');
+                bootstrap.Modal.getInstance(confirmModalEl).hide();
+                bootstrap.Modal.getInstance(viewModalEl).hide();
+                currentPayrollIdx = null;
+                pendingAction = null;
+            }
+        };
+
+        function updatePrintSummaryBtn() {
+            const filtered = filterAndSortPayrolls();
+            const hasPending = filtered.some(p => p.status === 'pending');
+            const btn = document.getElementById('printSummaryBtn');
+            btn.disabled = filtered.length === 0 || hasPending;
+        }
+
+        // Update print summary button on initial render
+        updatePrintSummaryBtn();
+
+        // Payroll Summary Modal logic
+        function getPayrollSummaryHTML(filtered) {
+            let totalNetPay = 0, totalDeductions = 0, totalSalary = 0, totalBeforeTax = 0, totalOvertime = 0;
+            filtered.forEach(p => {
+                totalNetPay += Number(p.netPay);
+                totalDeductions += Number(p.totalDeductions);
+                totalSalary += Number(p.fixedSalary);
+                totalBeforeTax += Number(p.salaryBeforeTax);
+                totalOvertime += Number(p.overtimeHours);
+            });
+            const period = filtered.length > 0 ? `${filtered[0].startDate} to ${filtered[0].endDate}` : '';
+            return `
+              <div id="payrollSummaryPrintArea" style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto; background: #fff; padding: 0;">
+                <div class="payroll-header" style="background: #000; padding: 32px 40px 24px 40px; display: flex; align-items: center; border-radius: 18px 18px 0 0; box-shadow: 0 4px 16px rgba(26,35,126,0.08); justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 22px;">
+                    <img src="/public/image/mdb.jpg" alt="MDB Construction Logo" style="height: 60px; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
+                    <div>
+                      <div style="font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #fff; font-family: 'Segoe UI', Arial, sans-serif;">MDB Construction</div>
+                      <div style="font-size: 1.2rem; font-weight: 500; color: #fff; opacity: 0.95;">Payroll Summary Report</div>
+                      <div style="font-size: 1.05rem; color: #e3eafc; margin-top: 2px;">Period: <span style="color: #fff; font-weight: 600;">${period}</span></div>
+                    </div>
+                  </div>
+                  <div style="text-align: right; color: #fff; font-size: 1.1rem; font-weight: 400; min-width: 120px;">
+                    <div style="font-size: 1rem; opacity: 0.85;">Generated:</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; letter-spacing: 1px;">${new Date().toLocaleDateString()}</div>
+                  </div>
+                </div>
+                <div style="padding: 48px 40px 40px 40px; background: #fff; border-radius: 0 0 18px 18px;">
+                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 48px;">
+                    <thead>
+                      <tr style="background: #11336b; color: #fff;">
+                        <th style="padding: 16px; font-size: 1.1rem; font-weight: 700; text-align: left; border-top-left-radius: 8px; background: #11336b; color: #fff;">Description</th>
+                        <th style="padding: 16px; font-size: 1.1rem; font-weight: 700; text-align: right; border-top-right-radius: 8px; background: #11336b; color: #fff;">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody style="color: #222;">
+                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Employees</td><td style="padding: 14px; text-align: right;">${filtered.length}</td></tr>
+                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Net Pay</td><td style="padding: 14px; text-align: right; color: #388e3c; font-weight: 700;">₱${totalNetPay.toLocaleString()}</td></tr>
+                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Deductions</td><td style="padding: 14px; text-align: right; color: #dc3545; font-weight: 700;">₱${totalDeductions.toLocaleString()}</td></tr>
+                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Fixed Salary</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">₱${totalSalary.toLocaleString()}</td></tr>
+                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Salary Before Tax</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">₱${totalBeforeTax.toLocaleString()}</td></tr>
+                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Overtime Hours</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">${totalOvertime.toLocaleString()}</td></tr>
+                    </tbody>
+                  </table>
+                  <div style="margin-top: 56px; display: flex; justify-content: flex-end; align-items: center;">
+                    <div style="text-align: right;">
+                      <div class="signature-line" style="border-bottom: 2.5px solid #1976d2; width: 260px; margin-bottom: 10px;"></div>
+                      <div style="font-size: 1.2rem; color: #1a237e; font-weight: 700; font-family: 'Segoe UI', Arial, sans-serif;">Finance Administrator</div>
+                      <div style="font-size: 1rem; color: #888;">Authorized Signature</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+        }
+
+        document.getElementById('printPayrollSummaryBtn').addEventListener('click', function() {
+            const printContents = document.getElementById('payrollSummaryPrintArea').outerHTML;
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+            window.location.reload(); // To restore event listeners and modal state
+        });
+
+        document.getElementById('downloadPayrollSummaryBtn').addEventListener('click', function() {
+            const filtered = filterAndSortPayrolls();
+            const doc = new window.jspdf.jsPDF();
+            // Add header background (solid black)
+            doc.setFillColor(0, 0, 0); // #000
+            doc.rect(0, 0, 210, 45, 'F');
+            // Add logo
+            doc.addImage('/public/image/mdb.jpg', 'JPEG', 15, 8, 22, 22);
+            // Add company name and report title, period, and generated date
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('MDB Construction', 42, 20);
+            doc.setFontSize(13);
+            doc.text('Payroll Summary Report', 42, 28);
+            const period = filtered.length > 0 ? `${filtered[0].startDate} to ${filtered[0].endDate}` : '';
+            doc.setFontSize(10);
+            doc.text(`Period: ${period}`, 42, 35);
+            // Generated date right-aligned
+            doc.setFontSize(11);
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 200, 15, {align: 'right'});
+            // Reset text color for content
+            doc.setTextColor(33, 33, 33);
+            // Calculate totals
+            let totalNetPay = 0, totalDeductions = 0, totalSalary = 0, totalBeforeTax = 0, totalOvertime = 0;
+            filtered.forEach(p => {
+                totalNetPay += Number(p.netPay);
+                totalDeductions += Number(p.totalDeductions);
+                totalSalary += Number(p.fixedSalary);
+                totalBeforeTax += Number(p.salaryBeforeTax);
+                totalOvertime += Number(p.overtimeHours);
+            });
+            // Table headers
+            let y = 55;
+            doc.setFillColor(17, 51, 107); // #11336b
+            doc.setTextColor(255,255,255);
+            doc.rect(20, y, 170, 10, 'F');
+            doc.setFontSize(12);
+            doc.text('Description', 25, y + 7);
+            doc.text('Amount', 170, y + 7, {align: 'right'});
+            // Table rows with zebra striping and color highlights
+            y += 10;
+            doc.setFontSize(11);
+            const rows = [
+                ['Total Employees', filtered.length, '#f8f9fa', '#212121'],
+                ['Total Net Pay', `₱${totalNetPay.toLocaleString()}`, '#f1f6ff', '#388e3c'],
+                ['Total Deductions', `₱${totalDeductions.toLocaleString()}`, '#f8f9fa', '#dc3545'],
+                ['Total Fixed Salary', `₱${totalSalary.toLocaleString()}`, '#f1f6ff', '#1976d2'],
+                ['Total Salary Before Tax', `₱${totalBeforeTax.toLocaleString()}`, '#f8f9fa', '#1976d2'],
+                ['Total Overtime Hours', totalOvertime.toLocaleString(), '#f1f6ff', '#1976d2']
+            ];
+            rows.forEach((row, i) => {
+                // Row background
+                const rgb = row[2] === '#f1f6ff' ? [241,246,255] : [248,249,250];
+                doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+                doc.rect(20, y, 170, 10, 'F');
+                // Description
+                doc.setTextColor(33,33,33);
+                doc.text(row[0], 25, y + 7);
+                // Amount with color
+                let color = row[3];
+                if (color === '#388e3c') doc.setTextColor(56, 142, 60); // green
+                else if (color === '#dc3545') doc.setTextColor(220, 53, 69); // red
+                else if (color === '#1976d2') doc.setTextColor(25, 118, 210); // blue
+                else doc.setTextColor(33,33,33);
+                doc.text(String(row[1]), 170, y + 7, {align: 'right'});
+                y += 10;
+            });
+            // Add signature
+            y += 20;
+            doc.setDrawColor(25, 118, 210);
+            doc.line(120, y, 180, y);
+            doc.setFontSize(12);
+            doc.setTextColor(26, 35, 126);
+            doc.text('Finance Administrator', 150, y + 10, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setTextColor(136, 136, 136);
+            doc.text('Authorized Signature', 150, y + 18, { align: 'center' });
+            doc.save('payroll_summary.pdf');
+        });
+
+        document.getElementById('printSummaryBtn').addEventListener('click', function() {
+            const filtered = filterAndSortPayrolls();
+            document.getElementById('payrollSummaryContent').innerHTML = getPayrollSummaryHTML(filtered);
+            var summaryModal = new bootstrap.Modal(document.getElementById('payrollSummaryModal'));
+            summaryModal.show();
+        });
+
+        // Initial render
+        renderPayrolls();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</body>
+</html>
