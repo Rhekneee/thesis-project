@@ -9,82 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
     <style>
-        /* Styling for the sidebar */
-        #sidebar {
-            width: 300px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none;
-        }
-
-        #sidebar .sidebar-header {
-            text-align: center;
-            padding: 10px;
-        }
-
-        #sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        #sidebar ul li {
-            padding: 15px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        #sidebar ul li.logout {
-            margin-top: 350px;
-        }
-
-        #sidebar ul li.logout a:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #sidebar ul li a:hover {
-            background-color: #5a6268;
-            color: white;
-        }
-
-        #sidebar ul li.active a {
-            background-color: #007bff;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 200px;
-            }
-        }
-
-        #sidebar-toggle {
-            font-size: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sidebar-toggle:hover {
-            background-color: #0056b3;
-        }
-
+     
         #content {
             margin-left: 0;
             transition: margin-left 0.3s;
@@ -413,44 +340,144 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
         }
+
+        /* Custom Alert Styles */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .custom-alert.error {
+            background-color: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div id="wrapper">
+                        <!-- Topbar -->
+                        <div class="topbar">
+                            <div class="topbar-left">
+                                <div class="menu-toggle" onclick="toggleSidebar()">
+                                    <i class="fas fa-bars"></i>
+                                </div>
+                            </div>
+                            <div class="topbar-right">
+                                <div class="notification-icon" onclick="toggleNotifications()">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="notification-badge"></span>
+                                </div>
+                                <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
+                                    <div class="profile-info">
+                                        <div class="profile-name"></div>
+                                        <div class="profile-position"></div>
+                                    </div>
+                                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                                        <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Dropdown -->
+                            <div class="notification-dropdown" id="notificationDropdown">
+                                <div class="notification-header">
+                                    <span>Notifications</span>
+                                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">New Leave Request</div>
+                                    <div class="notification-time">5 minutes ago</div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">Payroll Processed</div>
+                                    <div class="notification-time">1 hour ago</div>
+                                </div>
+                                <div class="notification-item">
+                                        <span class="profile-name">John Doe</span>
+                                        <span class="profile-position">HR Manager</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Notification Dropdown -->
+                                <div class="notification-dropdown" id="notificationDropdown">
+                                    <div class="notification-header">
+                                        <span>Notifications</span>
+                                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Leave Request</div>
+                                        <div class="notification-time">5 minutes ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">Payroll Processed</div>
+                                        <div class="notification-time">1 hour ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Employee Added</div>
+                                        <div class="notification-time">2 hours ago</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h3>Welcome, Developer</h3>
-                <p class="text-light mb-0">Project Management</p>
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span> </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i><span></span> Projects</span> </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i><span> Project Progress</span> </a>
+                </li>
                 <li class="nav-item active">
-                    <a class="nav-item" href="developer_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i><span> Completed Projects</span> </a>
                 </li>
                 <li class="nav-item">
-                    <a href="developer_projects.html"><i class="fas fa-project-diagram"></i> Projects</a>
+                    <a href="/developer/developer_manufacturing"><i class="fas fa-money-bill-wave"></i><span> Manufacturing Cost</span> </a>
                 </li>
-                <li class="nav-item">
-                    <a href="developer_project_progress.html"><i class="fas fa-chart-line"></i> Project Progress</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_finished_projects.html"><i class="fas fa-check-circle"></i> Completed Projects</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_manufacturing_cost.html"><i class="fas fa-money-bill-wave"></i> Manufacturing Cost</a>
-                </li>
-    
-                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i><span> Logout</span> </a></li>
             </ul>
         </div>
 
         <!-- Main content area -->
         <div id="content">
-            <button class="btn" id="sidebar-toggle" aria-label="Toggle Sidebar">
-                <i class="fas fa-bars"></i>
-            </button>
-
+        
             <h2>My Projects</h2>
 
             <div class="search-container">
@@ -524,6 +551,7 @@
                                 <div class="mb-3">
                                     <label for="projectDeadline" class="form-label">Deadline</label>
                                     <input type="date" class="form-control" id="projectDeadline" required>
+                                    <small class="text-muted">Please select a current or future date</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -581,6 +609,7 @@
                                 <div class="mb-3">
                                     <label for="editProjectDeadline" class="form-label">Deadline</label>
                                     <input type="date" class="form-control" id="editProjectDeadline" required>
+                                    <small class="text-muted">Please select a current or future date</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -687,10 +716,16 @@
         </div>
     </div>
 
+    <!-- Add this right after the body tag opens -->
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="/js/side_top.js"></script>
     <script>
         // Sample data for projects
         let projects = [
@@ -770,15 +805,85 @@
             }, 2000);
         }
 
-        // Submit project functionality
+        // Add showAlert function
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'custom-alert' + (isError ? ' error' : '');
+            alertMessage.textContent = message;
+            alert.style.display = 'block';
+
+            // Hide the alert after 3 seconds
+            setTimeout(() => {
+                alert.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                    alert.style.animation = 'slideIn 0.5s ease-out';
+                }, 500);
+            }, 3000);
+        }
+
+        // Add function to set minimum date for deadline inputs
+        function setMinDateForDeadlines() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Set min date for new project deadline
+            const projectDeadline = document.getElementById('projectDeadline');
+            if (projectDeadline) {
+                projectDeadline.min = today;
+                projectDeadline.addEventListener('change', function() {
+                    if (this.value < today) {
+                        showAlert('Please select a current or future date', true);
+                        this.value = today;
+                    }
+                });
+            }
+
+            // Set min date for edit project deadline
+            const editProjectDeadline = document.getElementById('editProjectDeadline');
+            if (editProjectDeadline) {
+                editProjectDeadline.min = today;
+                editProjectDeadline.addEventListener('change', function() {
+                    if (this.value < today) {
+                        showAlert('Please select a current or future date', true);
+                        this.value = today;
+                    }
+                });
+            }
+        }
+
+        // Call setMinDateForDeadlines when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setMinDateForDeadlines();
+            
+            // Also set min date when modals are shown
+            const addProjectModal = document.getElementById('addProjectModal');
+            const editProjectModal = document.getElementById('editProjectModal');
+            
+            if (addProjectModal) {
+                addProjectModal.addEventListener('show.bs.modal', setMinDateForDeadlines);
+            }
+            if (editProjectModal) {
+                editProjectModal.addEventListener('show.bs.modal', setMinDateForDeadlines);
+            }
+        });
+
+        // Update the submit project functionality to include date validation
         document.getElementById('submitProjectBtn').addEventListener('click', function () {
             const name = document.getElementById('projectName').value;
             const location = document.getElementById('projectLocation').value;
             const deadline = document.getElementById('projectDeadline').value;
             const imageFile = document.getElementById('projectImage').files[0];
+            const today = new Date().toISOString().split('T')[0];
 
             if (!name || !location || !deadline) {
-                showWarningMessage('All fields are required!');
+                showAlert('All fields are required!', true);
+                return;
+            }
+
+            if (deadline < today) {
+                showAlert('Please select a current or future date for the deadline', true);
                 return;
             }
 
@@ -795,7 +900,7 @@
             projects.push(newProject);
             renderProjects();
             
-            showSuccessMessage('Project submitted successfully!');
+            showAlert('Project submitted successfully!');
             
             setTimeout(() => {
                 $('#addProjectModal').modal('hide');
@@ -875,7 +980,7 @@
                     const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
                     editModal.show();
                 } else {
-                    showWarningMessage('Only pending projects can be edited.');
+                    showAlert('Only pending projects can be edited.', true);
                 }
             }
         }
@@ -884,11 +989,19 @@
         document.getElementById('updateProjectBtn').addEventListener('click', function() {
             const projectId = parseInt(document.getElementById('editProjectId').value);
             const project = projects.find(p => p.id === projectId);
+            const today = new Date().toISOString().split('T')[0];
             
             if (project) {
+                const deadline = document.getElementById('editProjectDeadline').value;
+                
+                if (deadline < today) {
+                    showAlert('Please select a current or future date for the deadline', true);
+                    return;
+                }
+
                 project.name = document.getElementById('editProjectName').value;
                 project.location = document.getElementById('editProjectLocation').value;
-                project.deadline = document.getElementById('editProjectDeadline').value;
+                project.deadline = deadline;
 
                 const imageFile = document.getElementById('editProjectImage').files[0];
                 if (imageFile) {
@@ -896,7 +1009,7 @@
                 }
 
                 renderProjects();
-                showSuccessMessage('Project updated successfully!');
+                showAlert('Project updated successfully!');
                 
                 setTimeout(() => {
                     $('#editProjectModal').modal('hide');
@@ -914,10 +1027,10 @@
                     if (confirm('Are you sure you want to send this project to manufacturing?')) {
                         project.status = 'in-progress';
                         renderProjects();
-                        showSuccessMessage('Project has been sent to manufacturing successfully!');
+                        showAlert('Project has been sent to manufacturing successfully!');
                     }
                 } else {
-                    showWarningMessage('Only pending projects can be sent to manufacturing.');
+                    showAlert('Only pending projects can be sent to manufacturing.', true);
                 }
             }
         }
@@ -1123,6 +1236,321 @@
 
         // Initialize the table
         renderProjects();
+
+        // Update getUserInfo function to use user_id for developers
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+
+                if (!sessionData.id) {
+                    throw new Error('No user ID in session');
+                }
+
+                // Fetch developer details using id from CRM routes
+                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
+                    credentials: 'include'
+                });
+
+                if (!developerResponse.ok) {
+                    throw new Error('Failed to fetch developer details');
+                }
+
+                const responseData = await developerResponse.json();
+                console.log('Developer response data:', responseData);
+
+                if (!responseData.success || !responseData.profile) {
+                    throw new Error('Invalid developer data received');
+                }
+
+                const developerData = responseData.profile;
+                console.log('Developer data:', developerData);
+
+                // Update profile pictures
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                // Simple function to set profile picture
+                const setProfilePicture = (imgElement, imagePath) => {
+                    if (!imgElement) return;
+                    
+                    if (imagePath) {
+                        const filename = imagePath.includes('/') 
+                            ? imagePath.split('/').pop() 
+                            : imagePath;
+                        
+                        const timestamp = new Date().getTime();
+                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                        
+                        imgElement.src = imageUrl;
+                        
+                        imgElement.onerror = () => {
+                            console.error('Failed to load image:', imageUrl);
+                            imgElement.src = '/crm/default-profile-picture';
+                        };
+                    } else {
+                        imgElement.src = '/crm/default-profile-picture';
+                    }
+                };
+
+                // Set both profile pictures
+                const imagePath = developerData.profile_picture;
+                console.log('Setting profile pictures with path:', imagePath);
+                
+                setProfilePicture(profilePicture, imagePath);
+                setProfilePicture(topbarProfilePicture, imagePath);
+
+                // Update profile information
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const statusBadge = document.getElementById('statusBadge');
+
+                if (profileName && profilePosition) {
+                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
+                    profileName.textContent = fullName || 'Developer';
+                    profilePosition.textContent = developerData.position || 'Developer';
+                }
+
+                // Update status badge
+                if (statusBadge) {
+                    const isActive = developerData.status === 'active';
+                    if (isActive) {
+                        statusBadge.className = 'status-badge status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'status-badge status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+                // Set default images on error
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                if (profilePicture) profilePicture.src = '/crm/default-profile-picture';
+                if (topbarProfilePicture) topbarProfilePicture.src = '/crm/default-profile-picture';
+            }
+        }
+
+        // Update populateProfileData function to use user_id
+        async function populateProfileData() {
+            showLoading();
+            try {
+                // Fetch session data
+                const response = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const data = await response.json();
+                console.log('Session data:', data);
+
+                if (!data.user) {
+                    throw new Error('No user data in session');
+                }
+
+                const user = data.user;
+
+                // Fetch developer details using user_id
+                const developerResponse = await fetch(`/developer/profile/${user.user_id}`, {
+                    credentials: 'include'
+                });
+
+                if (!developerResponse.ok) {
+                    throw new Error('Failed to fetch developer details');
+                }
+
+                const developerData = await developerResponse.json();
+                console.log('Developer data:', developerData);
+
+                // Update status badge
+                const isActive = developerData.status === 'active';
+                const statusBadge = document.getElementById('statusBadge');
+                if (statusBadge) {
+                    if (isActive) {
+                        statusBadge.className = 'status-badge status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'status-badge status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
+                }
+
+                // Populate profile fields
+                const fullName = developerData.full_name || 'N/A';
+                document.getElementById('profileHeaderName').textContent = fullName;
+                document.getElementById('profileName').textContent = fullName;
+                document.getElementById('profileDepartment').textContent = 'Development';
+                document.getElementById('profilePosition').textContent = developerData.position || 'Developer';
+                document.getElementById('profileEducation').textContent = developerData.education || 'N/A';
+                document.getElementById('profileStatus').textContent = developerData.status || 'N/A';
+                document.getElementById('profileBirthday').textContent = formatDate(developerData.birthday);
+                document.getElementById('profileAddress').textContent = developerData.address || 'N/A';
+                document.getElementById('profileContact').textContent = developerData.contact || 'N/A';
+                document.getElementById('profileEmergencyName').textContent = developerData.emergency_contact_name || 'N/A';
+                document.getElementById('profileEmergencyRelationship').textContent = developerData.emergency_contact_relationship || 'N/A';
+                document.getElementById('profileEmergencyPhone').textContent = developerData.emergency_contact_phone || 'N/A';
+
+                // Populate edit fields
+                document.getElementById('editBirthday').value = developerData.birthday || '';
+                document.getElementById('editAddress').value = developerData.address || '';
+                document.getElementById('editContact').value = developerData.contact || '';
+                document.getElementById('editEmergencyName').value = developerData.emergency_contact_name || '';
+                document.getElementById('editEmergencyRelationship').value = developerData.emergency_contact_relationship || '';
+                document.getElementById('editEmergencyPhone').value = developerData.emergency_contact_phone || '';
+
+                showProfile();
+            } catch (error) {
+                console.error('Error populating profile data:', error);
+                showError();
+            }
+        }
+
+        // Update saveContactInfo function to use user_id
+        async function saveContactInfo() {
+            try {
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+                
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+                
+                const sessionData = await sessionResponse.json();
+                if (!sessionData.user || !sessionData.user.user_id) {
+                    throw new Error('No user ID in session');
+                }
+
+                const userId = sessionData.user.user_id;
+                
+                // Get the relationship value, handling the "Other" case
+                const relationshipSelect = document.getElementById('editEmergencyRelationship');
+                let relationship = relationshipSelect.value;
+                if (relationship === 'Other') {
+                    relationship = document.getElementById('editEmergencyRelationshipOther').value.trim();
+                    if (!relationship) {
+                        throw new Error('Please specify the relationship');
+                    }
+                }
+
+                const contactData = {
+                    birthday: document.getElementById('editBirthday').value,
+                    address: document.getElementById('editAddress').value,
+                    contact: document.getElementById('editContact').value,
+                    emergency_contact_name: document.getElementById('editEmergencyName').value,
+                    emergency_contact_relationship: relationship,
+                    emergency_contact_phone: document.getElementById('editEmergencyPhone').value
+                };
+
+                const response = await fetch(`/developer/profile/${userId}/contact`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(contactData),
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    // Update displayed values
+                    document.getElementById('profileBirthday').textContent = convertToDisplayDate(contactData.birthday);
+                    document.getElementById('profileAddress').textContent = contactData.address;
+                    document.getElementById('profileContact').textContent = contactData.contact;
+                    document.getElementById('profileEmergencyName').textContent = contactData.emergency_contact_name;
+                    document.getElementById('profileEmergencyRelationship').textContent = contactData.emergency_contact_relationship;
+                    document.getElementById('profileEmergencyPhone').textContent = contactData.emergency_contact_phone;
+            
+                    // Reset edit mode
+                    document.getElementById('editEmergencyRelationshipOther').style.display = 'none';
+                    document.getElementById('editEmergencyRelationshipOther').value = '';
+                    document.getElementById('editEmergencyRelationship').value = '';
+
+                    const contactSection = document.getElementById('contactSection');
+                    const emergencySection = document.getElementById('emergencySection');
+                    
+                    contactSection.classList.remove('edit-mode');
+                    emergencySection.classList.remove('edit-mode');
+                    
+                    contactSection.querySelector('.button-group').style.display = 'none';
+                    emergencySection.querySelector('.button-group').style.display = 'none';
+            
+                    showAlert('Contact information updated successfully!');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update contact information');
+                }
+            } catch (error) {
+                showAlert(error.message, true);
+            }
+        }
+
+        // Update handleImageSelect function to use user_id
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('Image size should be less than 5MB', true);
+                return;
+            }
+
+            if (!file.type.match('image.*')) {
+                showAlert('Please select an image file', true);
+                return;
+            }
+
+            try {
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+                
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+                
+                const sessionData = await sessionResponse.json();
+                if (!sessionData.user || !sessionData.user.user_id) {
+                    throw new Error('No user ID in session');
+                }
+
+                const userId = sessionData.user.user_id;
+                const formData = new FormData();
+                formData.append('profile_picture', file);
+
+                const response = await fetch(`/developer/profile/${userId}/upload-picture`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to upload profile picture');
+                }
+
+                window.location.reload();
+
+            } catch (error) {
+                console.error('Error uploading profile picture:', error);
+                showAlert(error.message, true);
+                event.target.value = '';
+            }
+        }
     </script>
 </body>
 </html>

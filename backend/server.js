@@ -54,51 +54,50 @@ app.get('/', (req, res) => {
 
 // Dashboard Route
 app.get('/dashboard', (req, res) => {
-    console.log(" Session at /dashboard:", req.session);
+    console.log("Session at /dashboard:", req.session);
 
     if (!req.session.user) {
         return res.redirect('/');  // If no session, redirect to login
     }
 
-     // Access the employee_id from session
-     const employeeId = req.session.user.employee_id;
-     console.log('Employee ID from session:', employeeId);
+    // Get user info from session
+    const userRole = req.session.user.role_name;
+    const isEmployee = req.session.user.employee_id !== undefined;
+    const identifier = isEmployee ? req.session.user.employee_id : req.session.user.username;
+    
+    console.log('User type:', isEmployee ? 'Employee' : 'External User');
+    console.log('Role:', userRole);
+    console.log('Identifier:', identifier);
 
-    // Ensure the user has permission to access their dashboard
+    // Role-based dashboard mapping
     const roleDashboards = {
+        // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
         'finance_accounting': '/finance admin/manager_finance.html',
-        'general_foreman': 'manager_manufacturing.html',
+        'general_foreman': '/manufacturing/manufacturing_dashboard.html',
         'corporate_secretary': 'manager_corporate_secretary.html',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
         'logistics': '/scm admin/scm_dashboard.html',
-        'agents': '/agents/agent_dashboard.html'
+        'agents': '/agents/agent_dashboard.html',
+        // External user dashboards (using username)
+        'developer': '/developer/developer_dashboard',
+        'customer': '/customer/dashboard'
     };
 
-    const userRole = req.session.user.role_name; // Get the role name from session
-    const dashboardFile = roleDashboards[userRole]; // Get the corresponding dashboard
+    const dashboardFile = roleDashboards[userRole];
 
-    // If role has no associated dashboard, show an error
     if (!dashboardFile) {
-        console.error(`❌ No dashboard assigned for role: ${userRole}`);
-        return res.status(403).send("Unauthorized access.");
+        console.error('No dashboard found for role:', userRole);
+        return res.status(404).send('Dashboard not found for your role');
     }
 
-    // Serve the corresponding dashboard
-     if (dashboardFile.startsWith('/hr_employee')) {
-        // If it's a route (like /hr_employee/attendance), redirect
-        res.redirect(dashboardFile);  // Redirect to the corresponding route
-    } else {
-        // If it's an HTML file, serve the corresponding dashboard HTML file
-        const dashboardPath = path.join(__dirname, '..', 'views', dashboardFile);
-        res.sendFile(dashboardPath, (err) => {
-            if (err) {
-                console.error(`❌ Dashboard file not found: ${dashboardFile}`);
-            }
-        });
-    }
+    // Store the identifier (employee_id or username) in session for later use
+    req.session.user.identifier = identifier;
+
+    // Redirect to the appropriate dashboard
+    res.redirect(dashboardFile);
 });
 
 // Logout Route
