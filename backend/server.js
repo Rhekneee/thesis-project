@@ -9,6 +9,7 @@ const db = require("./db");
 const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
+const financeRoutes = require('./departments/finance/routes/finance.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -42,7 +43,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
-
+app.use('/api/finance', financeRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
@@ -74,7 +75,7 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/manager_finance.html',
+        'finance_accounting': '/finance admin/finance_payroll.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard.html',
         'corporate_secretary': 'manager_corporate_secretary.html',
         'admin_staff': '/hr_employee/attendance',

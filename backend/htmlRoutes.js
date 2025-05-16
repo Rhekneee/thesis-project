@@ -284,6 +284,43 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'manager_finance.html')); // Adjusted path
   });
 
+  app.get('/finance admin/finance_dashboard', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_dashboard.html')); // Adjusted path
+  });
+  
+  app.get('/finance admin/finance_payroll', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_payroll.html')); // Adjusted path
+  });
+
+  app.get('/finance-admin/finance_purchase_request', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_purchase_request.html')); // Adjusted path
+  });
+  
+  app.get('/finance-admin/finance_purchase_order', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_purchase_order.html')); // Adjusted path
+  });  
+
+  app.get('/finance admin/finance_daily_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_daily_attendance.html')); // Adjusted path
+  });
+
+  app.get('/finance admin/finance_halfday', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_halfday.html')); // Adjusted path
+  });
+  
+  app.get('/finance admin/finance_leave_request', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_leave_request.html')); // Adjusted path
+  });
+
+  app.get('/finance admin/finance_overtime', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_overtime.html')); // Adjusted path
+  });
+
+  
+
+
+
+
 
 
 
