@@ -249,7 +249,12 @@
 
 </script>
 <script>
-    // Handle the "Request Tripping" button click
+// Dynamically set API_URL based on current origin
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:4000/crm' 
+    : `${window.location.origin}/crm`;
+
+// Handle the "Request Tripping" button click
 document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
     button.addEventListener("click", function(event) {
         // Get the property name from the data attribute
@@ -286,7 +291,7 @@ document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
 
     try {
         // Send the form data as a POST request
-        let response = await fetch("http://localhost:4000/crm/submitVisitRequest", {
+        let response = await fetch(`${API_URL}/submitVisitRequest`, {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
