@@ -8,30 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
     <style>
-        #sidebar {
-            width: 300px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none;
-        }
-        #sidebar .sidebar-header { text-align: center; padding: 10px; }
-        #sidebar ul { padding: 0; list-style: none; }
-        #sidebar ul li { padding: 15px; text-align: left; }
-        #sidebar ul li a { color: white; text-decoration: none; font-size: 18px; }
-        #sidebar ul li.logout { margin-top: 350px; }
-        #sidebar ul li.logout a:hover { background-color: #dc3545; color: white; }
-        #sidebar ul li a:hover { background-color: #5a6268; color: white; }
-        #sidebar ul li.active a { background-color: #007bff; color: white; }
-        @media (max-width: 768px) { #sidebar { width: 200px; } }
-        #sidebar-toggle { font-size: 20px; background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-        #sidebar-toggle:hover { background-color: #0056b3; }
         #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
         .table { width: 100%; margin-top: 30px; }
         .pr-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
@@ -277,46 +255,107 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3>Welcome, Admin</h3>
-            <p class="text-light mb-0">Finance Management</p>
+         <!-- Topbar -->
+         <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <ul class="list-unstyled">
-            <li class="nav-item">
-                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            </li>
-            <li class="nav-item">
-                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
-                </a>
-                <ul class="collapse" id="Attendance">
-                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
-                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
-                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
-                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
-                </ul>
-            </li>
-            <li class="nav-item">
-                <a href="finance_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a>
-            </li>
-            <li class="nav-item">
-                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
-                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
-                </a>
-                <ul class="collapse" id="Purchase">
-                    <li class="nav-item"><a href="finance_purchase_request.html"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
-                    <li class="nav-item"><a href="finance_purchase_order.html"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
-                </ul>
-            </li>
-            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </div>
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/finance admin/finance_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i> <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/finance admin/finanace_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
+                        <li class="nav-item"><a href="/finance admin/finance_leave_request"><i class="fas fa-file-invoice"></i><span> Request Leave</span></a></li>
+                        <li class="nav-item"><a href="/finance admin/finance_halfday"><i class="fas fa-clock"></i><span>Request Halfday</span></a></li>
+                        <li class="nav-item"><a href="/finance admin/finance_overtime"><i class="fas fa-business-time"></i><span> Request Overtime</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="/finance admin/finance_payroll"><i class="fas fa-money-bill-wave"></i><span> Payroll</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                        <i class="fas fa-shopping-cart"></i> <span>Purchase</span>
+                    </a>
+                    <ul class="collapse" id="Purchase">
+                        <li class="nav-item"><a href="/finance-admin/finance_purchase_request"><i class="fas fa-file-invoice"></i><span> Purchase Request</span></a></li>
+                        <li class="nav-item"><a href="/finance-admin/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                    </ul>
+                </li>
+                <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i><span> Logout</span></a></li>
+            </ul>
+        </div>
     <div id="content">
-        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
         <h2>Purchase Request Management</h2>
         <div class="search-container mb-2">
             <input type="text" id="searchBar" class="form-control" placeholder="Search by request ID or manager...">
@@ -431,7 +470,7 @@
             </div>
         </div>
     </div>
-
+    <script src="/js/side_top.js"></script>
     <script>
         // Sample purchase request data
         let purchaseRequests = [
