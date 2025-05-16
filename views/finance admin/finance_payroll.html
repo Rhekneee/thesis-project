@@ -8,8 +8,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/side_top.css">
     <style>
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none;
+        }
+        #sidebar .sidebar-header { text-align: center; padding: 10px; }
+        #sidebar ul { padding: 0; list-style: none; }
+        #sidebar ul li { padding: 15px; text-align: left; }
+        #sidebar ul li a { color: white; text-decoration: none; font-size: 18px; }
+        #sidebar ul li.logout { margin-top: 350px; }
+        #sidebar ul li.logout a:hover { background-color: #dc3545; color: white; }
+        #sidebar ul li a:hover { background-color: #5a6268; color: white; }
+        #sidebar ul li.active a { background-color: #007bff; color: white; }
+        @media (max-width: 768px) { #sidebar { width: 200px; } }
+        #sidebar-toggle { font-size: 20px; background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        #sidebar-toggle:hover { background-color: #0056b3; }
         #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
         .table { width: 100%; margin-top: 30px; }
         .payroll-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
@@ -185,203 +207,49 @@
             color: #333;
             font-weight: 500;
         }
-        .table-container {
-            position: relative;
-            margin: 20px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            background: white;
-        }
-
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            /* Add smooth scrolling */
-            scroll-behavior: smooth;
-            /* Hide scrollbar for Chrome, Safari and Opera */
-            &::-webkit-scrollbar {
-                height: 8px;
-            }
-            /* Track */
-            &::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 4px;
-            }
-            /* Handle */
-            &::-webkit-scrollbar-thumb {
-                background: #888;
-                border-radius: 4px;
-            }
-            /* Handle on hover */
-            &::-webkit-scrollbar-thumb:hover {
-                background: #555;
-            }
-        }
-
-        .table-scroll table {
-            width: max-content;
-            min-width: 100%;
-            margin: 0;
-        }
-
-        .table-scroll thead {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        .table-scroll th {
-            background: #f8f9fa;
-            white-space: nowrap;
-            padding: 12px 16px;
-            border-bottom: 2px solid #dee2e6;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .table-scroll td {
-            white-space: nowrap;
-            padding: 12px 16px;
-            border-bottom: 1px solid #dee2e6;
-            text-align: center;
-        }
-
-        .table-scroll tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Ensure the action buttons column stays visible */
-        .table-scroll td:last-child {
-            position: sticky;
-            right: 0;
-            background: white;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        .table-scroll th:last-child {
-            position: sticky;
-            right: 0;
-            background: #f8f9fa;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .table-container {
-                margin: 10px 0;
-            }
-            
-            .table-scroll td,
-            .table-scroll th {
-                padding: 8px 12px;
-            }
-        }
     </style>
 </head>
 <body>
-     <!-- Topbar -->
-     <div class="topbar">
-      <div class="topbar-left">
-          <div class="menu-toggle" onclick="toggleSidebar()">
-              <i class="fas fa-bars"></i>
-          </div>
-      </div>
-      <div class="topbar-right">
-          <div class="notification-icon" onclick="toggleNotifications()">
-              <i class="fas fa-bell"></i>
-              <span class="notification-badge"></span>
-          </div>
-          <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
-              <div class="profile-info">
-                  <div class="profile-name"></div>
-                  <div class="profile-position"></div>
-              </div>
-              <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                  <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
-              </div>
-          </div>
-      </div>
-      
-      <!-- Notification Dropdown -->
-      <div class="notification-dropdown" id="notificationDropdown">
-          <div class="notification-header">
-              <span>Notifications</span>
-              <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-          </div>
-          <div class="notification-item">
-              <div class="notification-title">New Leave Request</div>
-              <div class="notification-time">5 minutes ago</div>
-          </div>
-          <div class="notification-item">
-              <div class="notification-title">Payroll Processed</div>
-              <div class="notification-time">1 hour ago</div>
-          </div>
-          <div class="notification-item">
-                  <span class="profile-name">John Doe</span>
-                  <span class="profile-position">HR Manager</span>
-              </div>
-          </div>
-          
-          <!-- Notification Dropdown -->
-          <div class="notification-dropdown" id="notificationDropdown">
-              <div class="notification-header">
-                  <span>Notifications</span>
-                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">New Leave Request</div>
-                  <div class="notification-time">5 minutes ago</div>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">Payroll Processed</div>
-                  <div class="notification-time">1 hour ago</div>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">New Employee Added</div>
-                  <div class="notification-time">2 hours ago</div>
-              </div>
-          </div>
-      </div>
-  </div>
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
-      <span class="company-title">MDB Construction</span>
-  </div>
-      <ul class="list-unstyled">
-          <li class="nav-item">
-              <a class="nav-item" href="/finance admin/finance_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-          </li>
-          <li class="nav-item">
-              <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                  <i class="fas fa-calendar-check"></i> <span>Attendance</span>
-              </a>
-              <ul class="collapse" id="Attendance">
-                  <li class="nav-item"><a href="/finance admin/finanace_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_leave_request"><i class="fas fa-file-invoice"></i><span> Request Leave</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_halfday"><i class="fas fa-clock"></i><span>Request Halfday</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_overtime"><i class="fas fa-business-time"></i><span> Request Overtime</span></a></li>
-              </ul>
-          </li>
-          <li class="nav-item">
-              <a href="/finance admin/finance_payroll"><i class="fas fa-money-bill-wave"></i><span> Payroll</span></a>
-          </li>
-          <li class="nav-item">
-              <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
-                  <i class="fas fa-shopping-cart"></i> <span>Purchase</span>
-              </a>
-              <ul class="collapse" id="Purchase">
-                  <li class="nav-item"><a href="/finance-admin/finance_purchase_request"><i class="fas fa-file-invoice"></i><span> Purchase Request</span></a></li>
-                  <li class="nav-item"><a href="/finance-admin/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i><span> Purchase Order</span></a></li>
-              </ul>
-          </li>
-          <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i><span> Logout</span></a></li>
-      </ul>
-  </div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Welcome, Admin</h3>
+            <p class="text-light mb-0">Finance Management</p>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
+                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="finance_payroll.html"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="finance_purchase_request.html"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
+                    <li class="nav-item"><a href="finance_purchase_order.html"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
     <div id="content">
+        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
         <h2>Payroll Management</h2>
         <div class="search-container mb-2">
             <input type="text" id="searchBar" class="form-control" placeholder="Search by name, position, or ID...">
@@ -401,33 +269,28 @@
                 </select>
             </div>
         </div>
-        <div class="table-container">
-            <div class="table-scroll">
-                <table class="table" id="payrollTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortPayroll('employee_id')">Employee ID <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('name')">Full Name <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('position')">Position <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('payrollPeriod')">Payroll Period <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('startDate')">Start Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('endDate')">End Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('daysPresent')">Days Present <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('daysAbsent')">Days Absent <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('totalHours')">Total Hours <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('overtimeHours')">Overtime Hours <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('fixedSalary')">Fixed Salary <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('salaryBeforeTax')">Salary Before Tax <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('totalDeductions')">Total Deductions <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('absenceDeduction')">Absence Deduction <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('netPay')">Net Pay <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('status')">Status <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payrollList"></tbody>
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="payrollTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPayroll('id')">Employee ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('name')">Full Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('position')">Position <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('startDate')">Start Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('endDate')">End Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('daysPresent')">Days Present <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalHours')">Total Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('overtimeHours')">Overtime Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('fixedSalary')">Fixed Salary <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('salaryBeforeTax')">Salary Before Tax <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalDeductions')">Total Deductions <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('netPay')">Net Pay <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollList"></tbody>
+            </table>
         </div>
         <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
             <span id="showingEntries"></span>
@@ -565,10 +428,10 @@
         </div>
       </div>
     </div>
-    <script src="/js/side_top.js"></script>
+
     <script>
         // Sidebar toggle logic
-        document.querySelector('.menu-toggle').onclick = function() {
+        document.getElementById('sidebar-toggle').onclick = function() {
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
             if (sidebar.style.display === 'none' || sidebar.style.display === '') {
@@ -580,36 +443,57 @@
             }
         };
 
-        // Replace the sample payroll data with an empty array
-        let payrolls = [];
-
-        // Add function to fetch payrolls from backend
-        async function fetchPayrolls() {
-            try {
-                const response = await fetch('/api/finance/payrolls/pending', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch payrolls');
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    payrolls = result.data;
-                    renderPayrolls();
-                } else {
-                    throw new Error(result.message || 'Failed to fetch payrolls');
-                }
-            } catch (error) {
-                console.error('Error fetching payrolls:', error);
-                // You might want to show an error message to the user here
+        // Sample payroll data
+        let payrolls = [
+            {
+                id: 'EMP001',
+                name: 'Juan Dela Cruz',
+                position: 'Accountant',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 22,
+                totalHours: 176,
+                overtimeHours: 10,
+                fixedSalary: 30000,
+                salaryBeforeTax: 32000,
+                totalDeductions: 2000,
+                netPay: 30000,
+                status: 'pending',
+                profilePic: 'https://randomuser.me/api/portraits/men/1.jpg'
+            },
+            {
+                id: 'EMP002',
+                name: 'Maria Santos',
+                position: 'Clerk',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 20,
+                totalHours: 160,
+                overtimeHours: 5,
+                fixedSalary: 20000,
+                salaryBeforeTax: 21000,
+                totalDeductions: 1500,
+                netPay: 19500,
+                status: 'pending',
+                profilePic: 'https://randomuser.me/api/portraits/women/2.jpg'
+            },
+            {
+                id: 'EMP003',
+                name: 'Pedro Reyes',
+                position: 'Supervisor',
+                startDate: '2024-05-01',
+                endDate: '2024-05-31',
+                daysPresent: 23,
+                totalHours: 184,
+                overtimeHours: 12,
+                fixedSalary: 35000,
+                salaryBeforeTax: 37000,
+                totalDeductions: 2500,
+                netPay: 34500,
+                status: 'pending',
+                profilePic: '' // No image, will use placeholder
             }
-        }
+        ];
 
         // --- Payroll Table Logic ---
         let payrollCurrentPage = 1;
@@ -626,10 +510,9 @@
                 // Search filter
                 const search = payrollSearchValue.toLowerCase();
                 return (
-                    p.employee_id.toLowerCase().includes(search) ||
+                    p.id.toLowerCase().includes(search) ||
                     p.name.toLowerCase().includes(search) ||
-                    p.position.toLowerCase().includes(search) ||
-                    (p.payrollPeriod && p.payrollPeriod.toLowerCase().includes(search))
+                    p.position.toLowerCase().includes(search)
                 );
             });
             // Sorting
@@ -668,20 +551,17 @@
             paginated.forEach((p, idx) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${p.employee_id}</td>
+                    <td>${p.id}</td>
                     <td>${p.name}</td>
                     <td>${p.position}</td>
-                    <td>${p.payrollPeriod || '-'}</td>
                     <td>${p.startDate}</td>
                     <td>${p.endDate}</td>
                     <td>${p.daysPresent}</td>
-                    <td>${p.daysAbsent}</td>
                     <td>${p.totalHours}</td>
                     <td>${p.overtimeHours}</td>
                     <td>₱${p.fixedSalary.toLocaleString()}</td>
                     <td>₱${p.salaryBeforeTax.toLocaleString()}</td>
                     <td>₱${p.totalDeductions.toLocaleString()}</td>
-                    <td>₱${p.absenceDeduction.toLocaleString()}</td>
                     <td>₱${p.netPay.toLocaleString()}</td>
                     <td><span class="payroll-status status-${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></td>
                     <td>
@@ -781,13 +661,17 @@
             // Set profile picture or placeholder
             const profilePic = p.profilePic && p.profilePic.trim() !== '' ? p.profilePic : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(p.name) + '&background=0D8ABC&color=fff&size=80';
             document.getElementById('modalProfilePic').src = profilePic;
-            document.getElementById('modalEmployeeId').textContent = p.employee_id;
+            document.getElementById('modalEmployeeId').textContent = p.id;
             document.getElementById('modalFullName').textContent = p.name;
             document.getElementById('modalPosition').textContent = p.position;
             document.getElementById('modalStatus').textContent = p.status.charAt(0).toUpperCase() + p.status.slice(1);
             document.getElementById('modalStatus').className = 'payroll-status status-' + p.status + ' mt-2';
+            // Calculate 15-day period
+            const start = new Date(p.startDate);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 14);
             document.getElementById('modalStartDate').textContent = p.startDate;
-            document.getElementById('modalEndDate').textContent = p.endDate;
+            document.getElementById('modalEndDate').textContent = end.toISOString().slice(0, 10);
             document.getElementById('modalDaysPresent').textContent = p.daysPresent;
             document.getElementById('modalTotalHours').textContent = p.totalHours;
             document.getElementById('modalOvertimeHours').textContent = p.overtimeHours;
@@ -829,57 +713,26 @@
             var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             confirmModal.show();
         };
-        document.getElementById('confirmActionBtn').onclick = async function() {
+        document.getElementById('confirmActionBtn').onclick = function() {
             if (currentPayrollIdx !== null && pendingAction) {
-                try {
-                    const payroll = payrolls[currentPayrollIdx];
-                    const remarks = pendingAction === 'rejected' ? document.getElementById('remarksInput').value.trim() : null;
-                    
-                    if (pendingAction === 'rejected' && !remarks) {
+                if (pendingAction === 'rejected') {
+                    var remarks = document.getElementById('remarksInput').value.trim();
+                    if (!remarks) {
                         document.getElementById('remarksError').style.display = 'block';
                         return;
                     }
-
-                    const response = await fetch(`/api/finance/payrolls/${payroll.id}/status`, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            status: pendingAction,
-                            remarks: remarks
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to update payroll status');
-                    }
-
-                    const result = await response.json();
-                    if (result.success) {
-                        // Update local data
-                        payrolls[currentPayrollIdx].status = pendingAction;
-                        if (remarks) {
-                            payrolls[currentPayrollIdx].remarks = remarks;
-                        }
-                        renderPayrolls();
-                        
-                        // Hide both modals
-                        var confirmModalEl = document.getElementById('confirmModal');
-                        var viewModalEl = document.getElementById('viewPayrollModal');
-                        bootstrap.Modal.getInstance(confirmModalEl).hide();
-                        bootstrap.Modal.getInstance(viewModalEl).hide();
-                        
-                        currentPayrollIdx = null;
-                        pendingAction = null;
-                    } else {
-                        throw new Error(result.message || 'Failed to update payroll status');
-                    }
-                } catch (error) {
-                    console.error('Error updating payroll status:', error);
-                    alert('Failed to update payroll status. Please try again.');
+                    document.getElementById('remarksError').style.display = 'none';
+                    payrolls[currentPayrollIdx].remarks = remarks;
                 }
+                payrolls[currentPayrollIdx].status = pendingAction;
+                renderPayrolls();
+                // Hide both modals
+                var confirmModalEl = document.getElementById('confirmModal');
+                var viewModalEl = document.getElementById('viewPayrollModal');
+                bootstrap.Modal.getInstance(confirmModalEl).hide();
+                bootstrap.Modal.getInstance(viewModalEl).hide();
+                currentPayrollIdx = null;
+                pendingAction = null;
             }
         };
 
@@ -1043,11 +896,6 @@
             document.getElementById('payrollSummaryContent').innerHTML = getPayrollSummaryHTML(filtered);
             var summaryModal = new bootstrap.Modal(document.getElementById('payrollSummaryModal'));
             summaryModal.show();
-        });
-
-        // Call fetchPayrolls when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchPayrolls();
         });
 
         // Initial render
