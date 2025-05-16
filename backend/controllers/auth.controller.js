@@ -1,21 +1,55 @@
 const db = require("../db");
+const bcrypt = require('bcrypt');
 
-// Helper function to authenticate user
-const authenticateUser = async (email, password) => {
+// Helper function to authenticate employee
+const authenticateEmployee = async (employee_id, password) => {
     const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
+        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
         FROM users 
         JOIN roles ON users.role_id = roles.id
-        WHERE users.email = ? AND users.password = ?;
+        JOIN employees ON users.id = employees.user_id
+        WHERE employees.employee_id = ?;
     `;
 
-    const [users] = await db.query(SQL_COMMAND, [email, password]);
+    const [users] = await db.query(SQL_COMMAND, [employee_id]);
 
     if (users.length === 0) {
-        throw new Error("Invalid email or password");
+        throw new Error("Invalid employee ID");
     }
 
-    return users[0];
+    const user = users[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+        throw new Error("Invalid password");
+    }
+
+    return user;
+};
+
+// Helper function to authenticate developer/customer
+const authenticateNonEmployee = async (username, password) => {
+    const SQL_COMMAND = `
+        SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name
+        FROM users 
+        JOIN roles ON users.role_id = roles.id
+        WHERE users.username = ? AND users.role_id IN (25, 26);
+    `;
+
+    const [users] = await db.query(SQL_COMMAND, [username]);
+
+    if (users.length === 0) {
+        throw new Error("Invalid username");
+    }
+
+    const user = users[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+        throw new Error("Invalid password");
+    }
+
+    return user;
 };
 
 // Function to fetch permissions based on role_id
@@ -33,57 +67,68 @@ const getPermissionsForRole = async (role_id) => {
 // Login function
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { identifier, password } = req.body;
+        console.log("🔍 Login attempt with identifier:", identifier);
 
-        // Fetch user details along with the role_name from the roles table
-        const SQL_COMMAND = `
-            SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name 
-            FROM users 
-            JOIN roles ON users.role_id = roles.id
-            WHERE users.email = ? AND users.password = ?;
-        `;
-    
-        const [users] = await db.query(SQL_COMMAND, [email, password]);
-    
-        if (users.length === 0) {
-            console.log("❌ Invalid email or password");
-            return res.status(401).json({ message: "Invalid email or password." });
+        let user;
+        let isEmployee = false;
+
+        // First try to authenticate as employee
+        try {
+            user = await authenticateEmployee(identifier, password);
+            isEmployee = true;
+            console.log("✅ Authenticated as employee");
+        } catch (employeeError) {
+            // If employee authentication fails, try as developer/customer
+            try {
+                user = await authenticateNonEmployee(identifier, password);
+                console.log("✅ Authenticated as developer/customer");
+            } catch (nonEmployeeError) {
+                // If both authentications fail, determine which error to show
+                if (employeeError.message === "Invalid password" || nonEmployeeError.message === "Invalid password") {
+                    throw new Error("Invalid password");
+                } else if (employeeError.message === "Invalid employee ID") {
+                    throw new Error("Invalid employee ID");
+                } else {
+                    throw new Error("Invalid username");
+                }
+            }
         }
-    
-        const user = users[0];
-        console.log(`✅ Login successful for ${user.role_name} (Role ID: ${user.role_id}): ${user.email}`);
-    
-        // Fetch the user's permissions based on role_id
-        const permissions = await getPermissionsForRole(user.role_id);
-        console.log(`Permissions for ${user.role_name}:`, permissions);
 
-        // Store user data and permissions in the session
+        console.log("🔍 Found user:", { 
+            id: user.id, 
+            role: user.role_name,
+            employee_id: user.employee_id || 'N/A'
+        });
+
+        // Set session data
         req.session.user = {
             id: user.id,
             email: user.email,
-            role_id: user.role_id,
             role_name: user.role_name,
-            created_at: user.created_at,
-            permissions: permissions, // Store permissions array in the session
+            employee_id: user.employee_id || null
         };
-        console.log("Session after login:", req.session.user);
+        console.log("📝 Session data set:", req.session.user);
 
-        req.session.save((err) => {
-            if (err) {
-                console.error("❌ Error saving session:", err);
-                return res.status(500).json({ message: "Session error." });
-            }
+        // Determine redirect path based on role
+        let redirectPath = '/dashboard';
+        if (user.role_id === 25) { // Developer
+            redirectPath = '/developer/developer_dashboard';
+        } else if (user.role_id === 26) { // Customer
+            redirectPath = '/customer/dashboard';
+        }
 
-            // Redirect to the dashboard after successful login
-            res.redirect('/dashboard');
+        // Send JSON response for successful login
+        return res.status(200).json({ 
+            message: "Login successful",
+            redirect: redirectPath
         });
 
     } catch (error) {
-        console.error("❌ Login Error:", error.message);
-        res.status(500).json({ message: "Internal Server Error." });
+        console.error("❌ Login error:", error);
+        return res.status(401).json({ message: error.message });
     }
 };
-
 
 // Logout function
 exports.logout = (req, res) => {

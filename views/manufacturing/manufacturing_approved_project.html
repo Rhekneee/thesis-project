@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approved Projects</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <style>
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Search and Filter Styles */
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0;
+        }
+
+        #filterDropdown {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 30px 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            min-width: 150px;
+            margin-right: 10px;
+        }
+
+        #filterDropdown:hover {
+            background-color: #0056b3;
+        }
+
+        #filterDropdown option {
+            background-color: white;
+            color: black;
+            padding: 10px;
+        }
+
+        .entries-per-page {
+            display: flex;
+            align-self: end;
+            margin-left: auto;
+        }
+
+        /* Table Styles */
+        .table {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        .sort-icon:hover {
+            color: #007bff;
+        }
+
+        .project-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-assigned {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .status-unassigned {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: white;
+        }
+
+        .view-btn {
+            background-color: #0d6efd;
+        }
+
+        .view-btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        .assign-btn {
+            background-color: #198754;
+        }
+
+        .assign-btn:hover {
+            background-color: #157347;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .modal-header .btn-close {
+            color: white;
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .foreman-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .foreman-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .foreman-card.selected {
+            background: #e3f2fd;
+            border: 2px solid #0d6efd;
+        }
+
+        .foreman-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .foreman-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .foreman-details h6 {
+            margin: 0;
+            color: #343a40;
+        }
+
+        .foreman-details p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .foreman-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #0d6efd;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        /* Detail Items */
+        .detail-item {
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .detail-item .form-control-plaintext {
+            margin-bottom: 0;
+            color: #212529;
+        }
+
+        .card {
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .image-container img {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+                <!-- Topbar -->
+                <div class="topbar">
+                    <div class="topbar-left">
+                        <div class="menu-toggle" onclick="toggleSidebar()">
+                            <i class="fas fa-bars"></i>
+                        </div>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="notification-icon" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge"></span>
+                        </div>
+                        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                            <div class="profile-info">
+                                <div class="profile-name"></div>
+                                <div class="profile-position"></div>
+                            </div>
+                            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span>Notifications</span>
+                            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-title">New Leave Request</div>
+                            <div class="notification-time">5 minutes ago</div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-title">Payroll Processed</div>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                        <div class="notification-item">
+                                <span class="profile-name">John Doe</span>
+                                <span class="profile-position">HR Manager</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <span>Notifications</span>
+                                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">New Leave Request</div>
+                                <div class="notification-time">5 minutes ago</div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">Payroll Processed</div>
+                                <div class="notification-time">1 hour ago</div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">New Employee Added</div>
+                                <div class="notification-time">2 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+         <!-- Sidebar -->
+         <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/manufacturing/manufacturing_dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i> Attendance 
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_overtime"><i class="fas fa-business-time"></i> Overtime</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Projects" aria-expanded="false">
+                        <i class="fas fa-project-diagram"></i> Projects</i>
+                    </a>
+                    <ul class="collapse" id="Projects">
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_projects"><i class="fas fa-code-branch"></i> Developer Projects</a></li>
+                        <li class="nav-item active"><a href="/manufacturing/manufacturing_approved_project"><i class="fas fa-check-circle"></i> Approved Projects</a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_progress"><i class="fas fa-tasks"></i> Project Progress</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="/manufacturing/manufacturing_request_materials"><i class="fas fa-box"></i> Request Materials</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/manufacturing/manufacturing_ratings"><i class="fas fa-star"></i> Ratings & Feedback</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/manufacturing/manufacturing_foremen"><i class="fas fa-hard-hat"></i> Foremen List</a>
+                </li>
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+
+            <h2>Approved Projects</h2>
+
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name..." onkeyup="filterProjects()">
+                
+                <!-- Filter Dropdown -->
+                <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
+                    <option value="all">All Projects</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="unassigned">Unassigned</option>
+                </select>
+              
+                <div id="entriesPerPageContainer" class="entries-per-page">
+                    <label for="entriesPerPageSelect">Entries per page:</label>
+                    <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Projects Table -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Image</th>
+                            <th onclick="sortTable(3)">Developer <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(4)">Location <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(5)">Approval Date <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(6)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(7)">Status <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Assigned Foreman</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsList"></tbody>
+                </table>
+            </div>
+
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Project Modal -->
+    <div class="modal fade" id="viewProjectModal" tabindex="-1" aria-labelledby="viewProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewProjectModalLabel">
+                        <i class="fas fa-eye me-2"></i>Project Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Project Image Section -->
+                        <div class="col-md-5">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-image me-2 text-primary"></i>Project Image
+                                    </h6>
+                                    <div class="image-container text-center">
+                                        <img id="viewProjectImage" src="#" alt="Project Image" class="img-fluid rounded" style="max-height: 300px; object-fit: cover;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Details Section -->
+                        <div class="col-md-7">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-info-circle me-2 text-primary"></i>Project Information
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Project Name</label>
+                                                <p id="viewProjectName" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Developer</label>
+                                                <p id="viewProjectDeveloper" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Location</label>
+                                                <p id="viewProjectLocation" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Status</label>
+                                                <p id="viewProjectStatus" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Section -->
+                            <div class="card border-0 shadow-sm mt-4">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-calendar-alt me-2 text-primary"></i>Timeline
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Approval Date</label>
+                                                <p id="viewProjectDate" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Manufacturing Cost</label>
+                                                <p id="viewProjectCost" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Assigned Foreman Section -->
+                            <div class="card border-0 shadow-sm mt-4" id="assignedForemanInfo">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-user-tie me-2 text-primary"></i>Assigned Foreman
+                                    </h6>
+                                    <div class="foreman-info">
+                                        <img id="viewForemanImage" src="" alt="Foreman" class="foreman-avatar">
+                                        <div class="foreman-details">
+                                            <h6 id="viewForemanName"></h6>
+                                            <p id="viewForemanContact"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Foreman Modal -->
+    <div class="modal fade" id="assignForemanModal" tabindex="-1" aria-labelledby="assignForemanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignForemanModalLabel">
+                        <i class="fas fa-user-plus me-2"></i>Assign Foreman
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6 class="mb-3">Project Details</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <label class="form-label text-muted mb-1">Project Name</label>
+                                    <p id="modalProjectName" class="form-control-plaintext fw-bold"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <label class="form-label text-muted mb-1">Location</label>
+                                    <p id="modalProjectLocation" class="form-control-plaintext fw-bold"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <label class="form-label text-muted mb-1">Manufacturing Cost</label>
+                                    <p id="modalProjectCost" class="form-control-plaintext fw-bold"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <label class="form-label text-muted mb-1">Approval Date</label>
+                                    <p id="modalProjectDate" class="form-control-plaintext fw-bold"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="mb-3">Available Foremen</h6>
+                        <div id="foremenList"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmAssignBtn">
+                        <i class="fas fa-check me-2"></i>Assign Foreman
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="successMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Message Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="warningMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/side_top.js"></script>
+
+    <script>
+        // Sample data for approved projects
+        let approvedProjects = [
+            {
+                id: 1,
+                name: 'Residential Complex A',
+                developer: 'John Smith',
+                location: 'Manila',
+                approvalDate: '2024-03-20',
+                manufacturingCost: 4500000,
+                status: 'unassigned',
+                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
+                assignedForeman: null
+            },
+            {
+                id: 2,
+                name: 'Commercial Building B',
+                developer: 'Maria Garcia',
+                location: 'Makati',
+                approvalDate: '2024-03-15',
+                manufacturingCost: 6800000,
+                status: 'assigned',
+                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
+                assignedForeman: {
+                    id: 1,
+                    name: 'Michael Johnson',
+                    contact: '+63 912 345 6789',
+                    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                    projectsCompleted: 15,
+                    currentProjects: 1
+                }
+            }
+        ];
+
+        // Sample data for available foremen
+        let availableForemen = [
+            {
+                id: 1,
+                name: 'Michael Johnson',
+                contact: '+63 912 345 6789',
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 15,
+                currentProjects: 1,
+                specialization: 'Commercial Buildings'
+            },
+            {
+                id: 2,
+                name: 'David Wilson',
+                contact: '+63 923 456 7890',
+                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 12,
+                currentProjects: 0,
+                specialization: 'Residential Projects'
+            },
+            {
+                id: 3,
+                name: 'Sarah Chen',
+                contact: '+63 934 567 8901',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 8,
+                currentProjects: 2,
+                specialization: 'Industrial Projects'
+            }
+        ];
+
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+        let selectedForemanId = null;
+        let currentProjectId = null;
+
+        // Sidebar toggle functionality
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        });
+
+        // Function to render projects
+        function renderProjects(filteredProjects = null) {
+            const projectsList = document.getElementById('projectsList');
+            projectsList.innerHTML = '';
+
+            const projectsToRender = filteredProjects || approvedProjects;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, projectsToRender.length);
+            const paginatedProjects = projectsToRender.slice(startIndex, endIndex);
+
+            paginatedProjects.forEach(project => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
+                    <td>${project.name}</td>
+                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                    <td>${project.developer}</td>
+                    <td>${project.location}</td>
+                    <td>${project.approvalDate}</td>
+                    <td>₱${project.manufacturingCost.toLocaleString()}</td>
+                    <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
+                    <td>
+                        ${project.assignedForeman ? `
+                            <div class="d-flex align-items-center">
+                                <img src="${project.assignedForeman.image}" alt="${project.assignedForeman.name}" 
+                                    style="width:30px;height:30px;object-fit:cover;border-radius:50%;margin-right:8px;">
+                                <span>${project.assignedForeman.name}</span>
+                            </div>
+                        ` : '<span class="text-muted">Not assigned</span>'}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${project.status === 'unassigned' ? `
+                                <button class="action-btn assign-btn" onclick="assignForeman(${project.id})" title="Assign Foreman">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                projectsList.appendChild(row);
+            });
+
+            updatePagination(projectsToRender.length);
+        }
+
+        // Function to update pagination
+        function updatePagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+
+            updateEntriesMessage(totalItems);
+        }
+
+        // Function to change page
+        function changePage(newPage) {
+            const totalPages = Math.ceil(approvedProjects.length / itemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderProjects();
+            }
+            return false;
+        }
+
+        // Function to update entries message
+        function updateEntriesMessage(totalItems) {
+            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+            
+            let message;
+            if (totalItems === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${totalItems} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
+            }
+            
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        // Function to set entries per page
+        function setEntriesPerPage() {
+            itemsPerPage = parseInt(document.getElementById('entriesPerPageSelect').value);
+            currentPage = 1;
+            renderProjects();
+        }
+
+        // Function to handle filter change
+        function handleFilterChange() {
+            const filter = document.getElementById('filterDropdown').value;
+            const searchValue = document.getElementById('searchBar').value.toLowerCase();
+            
+            let filteredProjects = approvedProjects;
+            
+            // Apply status filter
+            if (filter !== 'all') {
+                filteredProjects = filteredProjects.filter(p => p.status === filter);
+            }
+            
+            // Apply search filter
+            if (searchValue) {
+                filteredProjects = filteredProjects.filter(p => 
+                    p.name.toLowerCase().includes(searchValue) ||
+                    p.developer.toLowerCase().includes(searchValue) ||
+                    p.location.toLowerCase().includes(searchValue)
+                );
+            }
+            
+            currentPage = 1;
+            renderProjects(filteredProjects);
+        }
+
+        // Function to view project details
+        function viewProject(id) {
+            const project = approvedProjects.find(p => p.id === id);
+            if (project) {
+                document.getElementById('viewProjectImage').src = project.image;
+                document.getElementById('viewProjectName').textContent = project.name;
+                document.getElementById('viewProjectDeveloper').textContent = project.developer;
+                document.getElementById('viewProjectLocation').textContent = project.location;
+                document.getElementById('viewProjectDate').textContent = project.approvalDate;
+                document.getElementById('viewProjectCost').textContent = `₱${project.manufacturingCost.toLocaleString()}`;
+                document.getElementById('viewProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
+
+                const foremanInfo = document.getElementById('assignedForemanInfo');
+                if (project.assignedForeman) {
+                    foremanInfo.style.display = 'block';
+                    document.getElementById('viewForemanImage').src = project.assignedForeman.image;
+                    document.getElementById('viewForemanName').textContent = project.assignedForeman.name;
+                    document.getElementById('viewForemanContact').textContent = project.assignedForeman.contact;
+                } else {
+                    foremanInfo.style.display = 'none';
+                }
+
+                const viewModal = new bootstrap.Modal(document.getElementById('viewProjectModal'));
+                viewModal.show();
+            }
+        }
+
+        // Function to assign foreman
+        function assignForeman(id) {
+            const project = approvedProjects.find(p => p.id === id);
+            if (project) {
+                currentProjectId = id;
+                selectedForemanId = null;
+
+                // Update modal with project details
+                document.getElementById('modalProjectName').textContent = project.name;
+                document.getElementById('modalProjectLocation').textContent = project.location;
+                document.getElementById('modalProjectCost').textContent = `₱${project.manufacturingCost.toLocaleString()}`;
+                document.getElementById('modalProjectDate').textContent = project.approvalDate;
+
+                // Render available foremen
+                const foremenList = document.getElementById('foremenList');
+                foremenList.innerHTML = '';
+
+                // Filter out foremen who already have current projects
+                const availableForemenList = availableForemen.filter(f => f.currentProjects === 0);
+
+                if (availableForemenList.length === 0) {
+                    foremenList.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No available foremen at the moment. All foremen are currently assigned to projects.
+                        </div>
+                    `;
+                    document.getElementById('confirmAssignBtn').disabled = true;
+                } else {
+                    document.getElementById('confirmAssignBtn').disabled = false;
+                    availableForemenList.forEach(foreman => {
+                        const foremanCard = document.createElement('div');
+                        foremanCard.className = 'foreman-card';
+                        foremanCard.innerHTML = `
+                            <div class="foreman-info">
+                                <img src="${foreman.image}" alt="${foreman.name}" class="foreman-avatar">
+                                <div class="foreman-details">
+                                    <h6>${foreman.name}</h6>
+                                    <p>${foreman.contact}</p>
+                                    <p><small>${foreman.specialization}</small></p>
+                                </div>
+                            </div>
+                            <div class="foreman-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${foreman.projectsCompleted}</div>
+                                    <div class="stat-label">Projects Completed</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${foreman.currentProjects}</div>
+                                    <div class="stat-label">Current Projects</div>
+                                </div>
+                            </div>
+                        `;
+
+                        foremanCard.addEventListener('click', () => {
+                            document.querySelectorAll('.foreman-card').forEach(card => card.classList.remove('selected'));
+                            foremanCard.classList.add('selected');
+                            selectedForemanId = foreman.id;
+                        });
+
+                        foremenList.appendChild(foremanCard);
+                    });
+                }
+
+                const assignModal = new bootstrap.Modal(document.getElementById('assignForemanModal'));
+                assignModal.show();
+            }
+        }
+
+        // Handle foreman assignment
+        document.getElementById('confirmAssignBtn').addEventListener('click', function() {
+            if (!selectedForemanId) {
+                showWarningMessage('Please select a foreman to assign');
+                return;
+            }
+
+            const project = approvedProjects.find(p => p.id === currentProjectId);
+            const foreman = availableForemen.find(f => f.id === selectedForemanId);
+
+            if (project && foreman) {
+                // Check if foreman is already assigned
+                if (foreman.isAssigned) {
+                    showWarningMessage('This foreman is already assigned to another project');
+                    return;
+                }
+
+                // Update project
+                project.assignedForeman = foreman;
+                project.status = 'assigned';
+
+                // Update foreman status
+                foreman.currentProjects = 1;
+                foreman.isAssigned = true;
+
+                renderProjects();
+                $('#assignForemanModal').modal('hide');
+                showSuccessMessage(`Foreman ${foreman.name} has been assigned to ${project.name}`);
+            }
+        });
+
+        // Function to show success message
+        function showSuccessMessage(message) {
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            document.getElementById('successMessage').textContent = message;
+            successModal.show();
+            setTimeout(() => {
+                successModal.hide();
+            }, 2000);
+        }
+
+        // Function to show warning message
+        function showWarningMessage(message) {
+            const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+            document.getElementById('warningMessage').textContent = message;
+            warningModal.show();
+            setTimeout(() => {
+                warningModal.hide();
+            }, 2000);
+        }
+
+        // Add event listener for search input
+        document.getElementById('searchBar').addEventListener('input', handleFilterChange);
+
+        // Initialize the table
+        renderProjects();
+    </script>
+</body>
+</html>

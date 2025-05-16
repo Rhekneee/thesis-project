@@ -2,16 +2,66 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f2f2f2;
+    background: linear-gradient(135deg, #0653A6 0%, #0A6ED9 100%);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Add a blurred overlay for extra depth */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 0;
+}
+
+/* Add a subtle shadow to the body background */
+body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0) 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .container {
-    width: 400px;
-    margin: 100px auto;
-    background: #fff;
-    padding: 30px;
-    box-shadow: 0 0 10px #aaa;
-    border-radius: 8px;
+    width: 450px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 35px;
+    box-shadow: 
+        0 10px 30px rgba(6, 83, 166, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 0 20px rgba(6, 83, 166, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+    transform: translateY(0);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 15px 35px rgba(6, 83, 166, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 0 25px rgba(6, 83, 166, 0.15);
 }
 
 h2 {
@@ -20,21 +70,292 @@ h2 {
 
 input {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    border: 1px solid rgba(6, 83, 166, 0.2);
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    font-size: 15px;
+    box-shadow: 
+        0 2px 4px rgba(6, 83, 166, 0.05),
+        0 0 0 1px rgba(6, 83, 166, 0.05) inset;
+}
+
+input:focus {
+    outline: none;
+    border-color: #0653A6;
+    box-shadow: 
+        0 4px 12px rgba(6, 83, 166, 0.15),
+        0 0 0 3px rgba(6, 83, 166, 0.1),
+        0 0 0 1px rgba(6, 83, 166, 0.1) inset;
+    background: #fff;
+    transform: translateY(-1px);
 }
 
 button {
     width: 100%;
-    padding: 10px;
-    background: #007BFF;
+    padding: 14px 16px;
+    margin: 12px 0;
+    background: #0653A6;
     color: white;
     border: none;
     cursor: pointer;
+    border-radius: 8px;
+    box-sizing: border-box;
+    position: relative;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 15px;
+    box-shadow: 
+        0 4px 12px rgba(6, 83, 166, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 button:hover {
+    background: #0A6ED9;
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 16px rgba(6, 83, 166, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 
+        0 2px 8px rgba(6, 83, 166, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Loading state styles */
+button.loading {
     background: #0056b3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+button.loading span {
+    visibility: hidden;
+}
+
+button.loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin: -10px 0 0 -10px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Full page loading overlay */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(6, 83, 166, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 
+        0 0 0 100vmax rgba(6, 83, 166, 0.85),
+        0 0 0 100vmax rgba(6, 83, 166, 0.85);
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    border-top: 6px solid #fff;
+    border-radius: 50%;
+    animation: spin 3s linear infinite;
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.loading-message {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    animation: pulse 3s ease-in-out infinite;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-container {
+    width: 200px;
+    height: 4px;
+    background: #f3f3f3;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #007BFF;
+    animation: progress 3s linear forwards;
+}
+
+@keyframes progress {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.error-message {
+    display: none;
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Error Modal */
+.error-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(6, 83, 166, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.error-modal.active {
+    display: flex;
+}
+
+.error-modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 
+        0 15px 35px rgba(6, 83, 166, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 0 25px rgba(6, 83, 166, 0.15);
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    animation: modalFadeIn 0.3s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.error-modal-title {
+    color: #dc3545;
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.error-modal-message {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.error-modal-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+    box-shadow: 
+        0 4px 12px rgba(220, 53, 69, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.error-modal-button:hover {
+    background: #c82333;
+    box-shadow: 
+        0 6px 16px rgba(220, 53, 69, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Update forgot password link position */
+.forgot-password-link {
+    text-align: right;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    padding-right: 4px;
+}
+
+/* Update login header spacing */
+.login-header {
+    margin-bottom: 25px;
+}
+
+.login-header img {
+    max-width: 130px;
+    margin-bottom: 15px;
+}
+
+.login-header h2 {
+    font-size: 1.6rem;
+    margin: 0;
+    color: #222;
+    font-weight: 600;
 }

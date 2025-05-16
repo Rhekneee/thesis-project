@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/public/css/style.css">
+    <style>
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button.reject {
+            background-color: #f44336;
+        }
+
+        button.reject:hover {
+            background-color: #da190b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        .status-pending {
+            color: #f39c12;
+        }
+
+        .status-approved {
+            color: #27ae60;
+        }
+
+        .status-rejected {
+            color: #e74c3c;
+        }
+
+        .loading-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            margin-right: 5px;
+        }
+
+        .tab.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .balance-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .balance-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .balance-info {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .balance-item {
+            text-align: center;
+        }
+
+        .balance-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>HR Panel</h2>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/hr_manager/employee_management">Employee Management</a></li>
+            <li><a href="/hr_manager/leave_request" class="active">Leave Management</a></li>
+            <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+            <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+            <li><a href="/hr_manager/reports">Reports</a></li>
+            <li><a href="/hr_manager/attendance">Attendance</a></li>
+            <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+            <li><a href="/hr_manager/employee_list">Employee Directory</a></li>
+            <li><a href="/logout" id="logout-button">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('apply')">Apply Leave</div>
+            <div class="tab" onclick="switchTab('requests')">My Requests</div>
+            <div class="tab" onclick="switchTab('balance')">Leave Balance</div>
+            <div class="tab admin-only" onclick="switchTab('manage')" style="display: none;">Manage Requests</div>
+        </div>
+
+        <!-- Apply Leave Form -->
+        <div id="apply" class="tab-content section active">
+            <h2>Apply for Leave</h2>
+            <form id="leaveForm" onsubmit="submitLeaveRequest(event)">
+                <div class="form-group">
+                    <label for="leaveType">Leave Type</label>
+                    <select id="leaveType" required>
+                        <option value="">Select Leave Type</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="reason">Reason</label>
+                    <textarea id="reason" rows="4" required></textarea>
+                </div>
+                <button type="submit">Submit Request</button>
+            </form>
+        </div>
+
+        <!-- My Requests -->
+        <div id="requests" class="tab-content section">
+            <h2>My Leave Requests</h2>
+            <table id="myRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Total Days</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Leave Balance -->
+        <div id="balance" class="tab-content section">
+            <h2>Leave Balance</h2>
+            <div id="leaveBalanceContainer"></div>
+        </div>
+
+        <!-- Manage Requests (Admin Only) -->
+        <div id="manage" class="tab-content section">
+            <h2>Manage Leave Requests</h2>
+            <table id="manageRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Total Days</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="loadingPopup" class="loading-popup">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        let isAdmin = false;
+        let currentYear = new Date().getFullYear();
+
+        // Check user role and initialize page
+        async function initializePage() {
+            try {
+                const response = await fetch('/hr/check-session');
+                const data = await response.json();
+                
+                if (data.user) {
+                    isAdmin = data.user.role_name === 'office_administrator';
+                    if (isAdmin) {
+                        document.querySelector('.admin-only').style.display = 'block';
+                    }
+                }
+
+                // Load initial data
+                await Promise.all([
+                    loadLeaveTypes(),
+                    loadMyRequests(),
+                    loadLeaveBalance(),
+                    isAdmin ? loadAllRequests() : Promise.resolve()
+                ]);
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                alert('Error loading page data');
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        }
+
+        // Load leave types
+        async function loadLeaveTypes() {
+            try {
+                const response = await fetch('/hr/leave/types');
+                const data = await response.json();
+                
+                const select = document.getElementById('leaveType');
+                select.innerHTML = '<option value="">Select Leave Type</option>';
+                
+                data.leaveTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.id;
+                    option.textContent = `${type.name} (${type.max_days} days)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading leave types:', error);
+                alert('Error loading leave types');
+            }
+        }
+
+        // Submit leave request
+        async function submitLeaveRequest(event) {
+            event.preventDefault();
+            showLoading();
+
+            try {
+                const formData = {
+                    leaveTypeId: document.getElementById('leaveType').value,
+                    startDate: document.getElementById('startDate').value,
+                    endDate: document.getElementById('endDate').value,
+                    reason: document.getElementById('reason').value
+                };
+
+                const response = await fetch('/hr/leave/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Leave request submitted successfully');
+                    document.getElementById('leaveForm').reset();
+                    loadMyRequests();
+                } else {
+                    alert(data.error || 'Error submitting leave request');
+                }
+            } catch (error) {
+                console.error('Error submitting leave request:', error);
+                alert('Error submitting leave request');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load my leave requests
+        async function loadMyRequests() {
+            try {
+                const response = await fetch('/hr/leave/requests');
+                const data = await response.json();
+                
+                const tbody = document.querySelector('#myRequestsTable tbody');
+                tbody.innerHTML = '';
+                
+                data.requests.forEach(request => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${request.leave_type_name}</td>
+                        <td>${new Date(request.start_date).toLocaleDateString()}</td>
+                        <td>${new Date(request.end_date).toLocaleDateString()}</td>
+                        <td>${request.total_days}</td>
+                        <td>${request.reason}</td>
+                        <td class="status-${request.status.toLowerCase()}">${request.status}</td>
+                        <td>${request.remarks || '-'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading my requests:', error);
+                alert('Error loading leave requests');
+            }
+        }
+
+        // Load leave balance
+        async function loadLeaveBalance() {
+            try {
+                const response = await fetch('/hr/leave/types');
+                const types = await response.json();
+                
+                const container = document.getElementById('leaveBalanceContainer');
+                container.innerHTML = '';
+                
+                for (const type of types.leaveTypes) {
+                    const balanceResponse = await fetch(`/hr/leave/balance?leaveTypeId=${type.id}&year=${currentYear}`);
+                    const balanceData = await balanceResponse.json();
+                    const balance = balanceData.balance || { total_days: type.max_days, used_days: 0, remaining_days: type.max_days };
+                    
+                    const card = document.createElement('div');
+                    card.className = 'balance-card';
+                    card.innerHTML = `
+                        <h4>${type.name}</h4>
+                        <div class="balance-info">
+                            <div class="balance-item">
+                                <div>Total Days</div>
+                                <div class="balance-value">${balance.total_days}</div>
+                            </div>
+                            <div class="balance-item">
+                                <div>Used Days</div>
+                                <div class="balance-value">${balance.used_days}</div>
+                            </div>
+                            <div class="balance-item">
+                                <div>Remaining Days</div>
+                                <div class="balance-value">${balance.remaining_days}</div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Error loading leave balance:', error);
+                alert('Error loading leave balance');
+            }
+        }
+
+        // Load all requests (admin only)
+        async function loadAllRequests() {
+            if (!isAdmin) return;
+
+            try {
+                const response = await fetch('/hr/leave/requests');
+                const data = await response.json();
+                
+                const tbody = document.querySelector('#manageRequestsTable tbody');
+                tbody.innerHTML = '';
+                
+                data.requests.forEach(request => {
+                    if (request.status === 'pending') {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${request.employee_name}</td>
+                            <td>${request.leave_type_name}</td>
+                            <td>${new Date(request.start_date).toLocaleDateString()}</td>
+                            <td>${new Date(request.end_date).toLocaleDateString()}</td>
+                            <td>${request.total_days}</td>
+                            <td>${request.reason}</td>
+                            <td class="status-${request.status.toLowerCase()}">${request.status}</td>
+                            <td>
+                                <button onclick="handleRequest(${request.id}, 'approved')">Approve</button>
+                                <button class="reject" onclick="handleRequest(${request.id}, 'rejected')">Reject</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading all requests:', error);
+                alert('Error loading leave requests');
+            }
+        }
+
+        // Handle request approval/rejection (admin only)
+        async function handleRequest(requestId, status) {
+            if (!isAdmin) return;
+
+            const remarks = status === 'rejected' ? prompt('Please enter rejection remarks:') : null;
+            if (status === 'rejected' && !remarks) return;
+
+            showLoading();
+
+            try {
+                const response = await fetch('/hr/leave/handle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId, status, remarks })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(`Request ${status} successfully`);
+                    loadAllRequests();
+                    loadMyRequests();
+                    loadLeaveBalance();
+                } else {
+                    alert(data.error || `Error ${status}ing request`);
+                }
+            } catch (error) {
+                console.error('Error handling request:', error);
+                alert('Error handling request');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Loading popup functions
+        function showLoading() {
+            document.getElementById('loadingPopup').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingPopup').style.display = 'none';
+        }
+
+        // Initialize page when loaded
+        window.onload = initializePage;
+    </script>
+</body>
+</html>

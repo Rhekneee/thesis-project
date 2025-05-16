@@ -4,63 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance</title>
+    <link rel="stylesheet" href="/css/layout.css">
 <style>
-     /* layout.css */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    height: 100vh;
-    background-color: #f5f7fa;
-}
-
-.sidebar {
-    width: 200px;
-    background-color: #0052a5;
-    color: #fff;
-    padding: 20px 10px;
-}
-
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.sidebar ul {
-    list-style: none;
-}
-
-.sidebar ul li {
-    margin-bottom: 15px;
-}
-
-.sidebar ul li a {
-    color: #ffffff;
-    text-decoration: none;
-    display: block;
-    padding: 8px;
-    border-radius: 4px;
-}
-
-.sidebar ul li a:hover {
-    background-color: #003f7f;
-}
-
-.main-content {
-    flex-grow: 1;
-    background-color: #e6f4fc;
-    padding: 30px;
-}
-
-.main-content h1 {
-    margin-bottom: 20px;
-}
 
 /*Daily Attendance CSS*/
   #attendanceTable {
@@ -91,9 +37,12 @@ body {
     }
 
     #status {
-        font-size: 1rem;
-        margin-bottom: 15px;
-        color: #333;
+    margin-top: 20px;
+    font-style: italic;
+    color: #888;
+    display: block;
+    z-index: 10;
+    position: relative;
     }
 
     #checkLocation, #checkIn {
@@ -170,163 +119,371 @@ body {
 </head>
 <body>
     
-        <div class="sidebar">
-            <h2>HR Panel</h2>
-            <ul>
-                <li><a href="hr_dashboard.html">Dashboard</a></li>
-                <li><a href="employee_management.html">Employee Management</a></li>
-                <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
-                <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
-                <li><a href="/hr_manager/payroll">Payroll Management</a></li>
-                <li><a href="/hr_manager/reports">Reports</a></li>
-                <li><a href="#">Attendance</a></li>
-                <li><a href="/hr_manager/recruitment">Recruitment</a></li>
-                <li><a href="#" id="logout-button">Logout</a></li>
-            </ul>
+    <div class="sidebar">
+        <h2>HR Panel</h2>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/hr_manager/employee_management">Employee Management</a></li>
+            <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+            <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
+            <li><a href="/hr_manager/payroll">Payroll Management</a></li>
+            <li><a href="/hr_manager/reports">Reports</a></li>
+            <li><a href="/hr_manager/attendance">Attendance</a></li>
+            <li><a href="/hr_manager/recruitment">Recruitment</a></li>
+            <li><a href="/hr_manager/employee_list">Employee Directory</a></li>
+            <li><a href="/logout" id="logout-button">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="content" id="daily_attendance">
+        <div class="card">
+            <h2>Daily Attendance</h2>
+
+            <p id="status">🔄 Waiting for location check...</p>
+
+            <div class="attendance-actions">
+                <button id="checkIn">✅ Check In</button>
+                <button id="checkOut">🚪 Check Out</button>
+            </div>
+
+            <div class="requests">
+                <h3>Request:</h3>
+                <form id="requestForm">
+                    <label>
+                        <input type="radio" name="requestType" value="earlyOut" />
+                        Early Leave
+                    </label>
+                    <label>
+                        <input type="radio" name="requestType" value="halfDay" />
+                        Half Day
+                    </label>
+                    <label>
+                        <input type="radio" name="requestType" value="overtime" />
+                        Overtime
+                    </label>
+                    <!-- Add a Date Picker for selecting the date -->
+                    <label>
+                        Select Date:
+                        <input type="date" id="requestDate" name="requestDate" required />
+                    </label>
+
+                    <textarea id="remarks" placeholder="Remarks (optional)"></textarea>
+                    <button type="submit">Submit Request</button>
+                </form>
+
+                <p id="requestStatus"></p>
+            </div>
+
+            <div class="today-table">
+                <h3>Today's Attendance</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
+        <h2>Attendance History</h2>
 
-        <div class="content" id="daily_attendance">
-            <button id="checkLocation" aria-label="Check your location">Check Location</button>
-            <button id="checkIn" disabled aria-label="Check in to attendance">Check In</button>
-            <p id="status">Click "Check Location" to verify.</p>    
-        
-            <h3>Today's Attendance</h3>
-            <table id="attendanceTable">
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                        <th>Status</th>
-                        <th>Check-In Time</th>
-                    </tr>
-                </thead>
-                <tbody id="attendanceBody">
-                    <tr>
-                        <td colspan="5">No records found</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <script>
-            // Attendance Monitoring
-        const officeLat = 14.3435377;
-        const officeLng = 120.9796345;
-        const allowedRadius = 500;
+        <p id="historyStatus">Loading attendance history...</p>  <!-- Separate for history status -->
 
-        document.getElementById("checkLocation").addEventListener("click", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const userLat = position.coords.latitude;
-                        const userLng = position.coords.longitude;
-                        const distance = getDistance(officeLat, officeLng, userLat, userLng);
+        <table id="attendanceHistory" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Status</th>
+                    <th>Total Hours</th>
+                    <th>Overtime Hours</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceHistoryBody">
+                <!-- Filled dynamically -->
+            </tbody>
+        </table>
+    </div>
+          
+          <script>
+          // Function to get user location (latitude and longitude)
+          function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
 
-                        if (distance <= allowedRadius) {
-                            document.getElementById("status").textContent = "✅ Within allowed radius. You can check in!";
-                            document.getElementById("checkIn").disabled = false;
-                        } else {
-                            document.getElementById("status").textContent = `❌ Too far! Distance: ${Math.round(distance)} meters`;
-                            document.getElementById("checkIn").disabled = true;
-                        }
-                    },
-                    function(error) {
-                        document.getElementById("status").textContent = "⚠️ Location access denied!";
-                    }
-                );
-            } else {
-                document.getElementById("status").textContent = "❌ Geolocation is not supported by this browser.";
-            }
-        });
+          // Function to get the user ID from session (via API)
+          async function getUserId() {
+              try {
+                  const employeeId = await getEmployeeIdFromSession();
+                  if (!employeeId) {
+                      alert("HR ID is missing.");
+                      return;
+                  }
+                  return employeeId;
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
 
-        document.getElementById("checkIn").addEventListener("click", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
+          // Function to fetch HR ID from session
+          async function getEmployeeIdFromSession() {
+              try {
+                  const response = await fetch('http://localhost:4000/hr/check-session', {
+                      credentials: 'include',
+                  });
 
-                    try {
-                        const response = await fetch("/check-in", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ latitude: userLat, longitude: userLng })
-                        });
+                  if (!response.ok) {
+                      throw new Error('Failed to fetch HR ID');
+                  }
 
-                        const data = await response.json();
-                        if (response.ok) {
-                            document.getElementById("status").textContent = "✅ Check-in successful!";
-                            loadAttendanceData();
-                        } else {
-                            document.getElementById("status").textContent = "❌ Error: " + data.error;
-                        }
-                    } catch (error) {
-                        document.getElementById("status").textContent = "❌ Failed to check in!";
-                    }
-                });
-            }
-        });
+                  const data = await response.json();
+                  return data.user.id; // Return the HR ID from session
+              } catch (error) {
+                  console.error('Error fetching HR ID:', error);
+                  return null;
+              }
+          }
 
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const φ1 = (lat1 * Math.PI) / 180;
-            const φ2 = (lat2 * Math.PI) / 180;
-            const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-            const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+          // Check-in functionality
+          const checkInButton = document.getElementById("checkIn");
+          checkInButton.addEventListener('click', async () => {
+              const userId = await getUserId(); // Get the employee ID dynamically
+              if (!userId) return; // Exit if no user ID
 
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+              // Get the user's location
+              const userLocation = await getUserLocation(); // Get the user's latitude and longitude
+              const date = new Date().toISOString().slice(0, 10); // Get today's date
+              const checkInTime = new Date().toISOString(); // Get current check-in time
 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
+              console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
 
-        async function loadAttendanceData() {
+              // Send the check-in request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId,
+                      date,
+                      checkInTime,
+                      userLat: userLocation.lat,
+                      userLng: userLocation.lng,
+                  }),
+              });
+
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
+
+              // Handle response error or success
+              if (result.error) {
+                  statusParagraph.textContent = result.error; // Show error message if any
+              } else {
+                  statusParagraph.textContent = result.message; // Show success message
+                  loadEmployeeAttendanceData(userId); // Reload attendance data
+              }
+          });
+
+          // Check-out functionality
+          const checkOutButton = document.getElementById("checkOut");
+          checkOutButton.addEventListener('click', async () => {
+              const userId = await getUserId();  // Get the employee ID dynamically
+              if (!userId) return;  // Exit if no user ID
+
+              const date = new Date().toISOString().slice(0, 10);  // Get today's date
+              const checkOutTime = new Date().toISOString();  // Get current check-out time
+
+              console.log("Sending check-out request with:", userId, date, checkOutTime);
+
+              // Send the check-out request to the backend
+              const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, checkOutTime, date }),
+              });
+
+              const result = await response.json();
+              const statusParagraph = document.getElementById("status");
+              if (result.error) {
+                  statusParagraph.textContent = result.error;  // Show any errors
+              } else {
+                  statusParagraph.textContent = result.message;  // Show success message
+                  loadEmployeeAttendanceData(userId);  // Reload attendance data
+              }
+          });
+
+          // Handle attendance requests (early leave/half day)
+          document.addEventListener("DOMContentLoaded", function () {
+              const requestForm = document.getElementById("requestForm");
+              requestForm.addEventListener('submit', async (e) => {
+                  e.preventDefault();
+
+                  const userId = await getUserId();  // Retrieve user ID dynamically
+                  if (!userId) return;
+
+                  // Get the request date and check if the input field exists
+                  const requestDateElement = document.getElementById("requestDate");
+                  if (!requestDateElement) {
+                      console.error("Request date input field not found!");
+                      return;  // Exit early if the input field doesn't exist
+                  }
+
+                  const date = requestDateElement.value;  // Get the date selected by the user
+                  const remarks = document.getElementById("remarks").value;
+
+                  if (!date || !remarks) {
+                      alert("Please provide both the date and remarks.");
+                      return;
+                  }
+
+                  const requestType = document.querySelector('input[name="requestType"]:checked').value;
+
+                  try {
+                      const response = await fetch(`http://localhost:4000/hr/${requestType}-request/${userId}`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId, date, remarks }),
+                      });
+
+                      const result = await response.json();
+                      const requestStatusParagraph = document.getElementById("requestStatus");
+                      if (result.success) {
+                          requestStatusParagraph.textContent = `${requestType.charAt(0).toUpperCase() + requestType.slice(1)} request submitted successfully.`;
+                      } else {
+                          requestStatusParagraph.textContent = "Failed to submit request.";
+                      }
+                  } catch (error) {
+                      console.error('Error submitting request:', error);
+                      const requestStatusParagraph = document.getElementById("requestStatus");
+                      requestStatusParagraph.textContent = "An error occurred while submitting your request.";
+                  }
+              });
+          });
+
+          // Load today's attendance from the database
+        async function loadEmployeeAttendanceData(employeeId) {
             try {
-                const response = await fetch(`/today/${getEmployeeId()}`); 
+                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
                 const data = await response.json();
 
                 const tbody = document.getElementById("attendanceBody");
-                tbody.innerHTML = ""; 
+                tbody.innerHTML = '';  // Clear previous data
 
+                // Check if there are any records to display
                 if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5">No records found</td></tr>`;
-                    return;
+                    tbody.innerHTML = '<tr><td colspan="4">No records found</td></tr>';
                 }
 
+                // Populate table with employee attendance and requests
                 data.forEach(record => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                        <td>${record.employee_id}</td>
-                        <td>${record.latitude}</td>
-                        <td>${record.longitude}</td>
-                        <td>${record.status}</td>
-                        <td>${record.check_in_time}</td>
+                        <td>${record.date}</td>
+                        <td>${record.check_in || '-'}</td>  <!-- Directly display the check_in time -->
+                        <td>${record.check_out || '-'}</td> <!-- Directly display the check_out time -->
+                        <td>${record.status || '-'}</td>
                     `;
                     tbody.appendChild(row);
                 });
             } catch (error) {
-                console.error("❌ Failed to load attendance data:", error);
+                console.error('Error loading attendance data:', error);
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+            }
+        }
+        async function loadAttendanceHistory(employeeId) {
+            const historyStatus = document.getElementById("historyStatus");
+            const table = document.getElementById("attendanceHistory");
+            const tbody = document.getElementById("attendanceHistoryBody");
+
+            try {
+                const res = await fetch(`http://localhost:4000/hr/attendance/${employeeId}`);
+                const data = await res.json();
+
+                if (data.attendance?.length) {
+                    historyStatus.style.display = "none";
+                     table.style.display = "table";
+
+                data.attendance.forEach(record => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.check_in ?? '-'}</td>
+                    <td>${record.check_out ?? '-'}</td>
+                    <td>${record.status}</td>
+                    <td>${!isNaN(record.total_hours) ? parseFloat(record.total_hours).toFixed(2) : '0.00'}</td>
+                    <td>${!isNaN(record.overtime_hours) ? parseFloat(record.overtime_hours).toFixed(2) : '0.00'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                } else {
+                    historyStatus.textContent = "No attendance history found.";
+                }
+            } catch (err) {
+                console.error("Error loading attendance history:", err);
+                historyStatus.textContent = "Error fetching attendance history.";
             }
         }
 
-        function getEmployeeId() {
-            // Replace this with logic to dynamically fetch the employee ID
-            return 123;
-        }
+          function getUserLocation() {
+              return new Promise((resolve, reject) => {
+                  document.getElementById("status").textContent = "🔄 Waiting for location check..."; // Update status while waiting for location
 
-        document.addEventListener("DOMContentLoaded", loadAttendanceData);
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const logoutButton = document.getElementById('logout-button');
-                logoutButton.addEventListener('click', (event) => {
-                    event.preventDefault(); // Prevent default link behavior
-                    const confirmLogout = confirm("Are you sure you want to logout?");
-                    if (confirmLogout) {
-                        window.location.href = "/index.html"; // Redirect to login page
-                    }
-                });
-            });
-        </script>
+                  if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                              console.log("Location fetched:", position.coords.latitude, position.coords.longitude); // Log the location
+                              document.getElementById("status").textContent = "✅ Location fetched."; // Update status when location is fetched
+                              resolve({
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
+                              });
+                          },
+                          (error) => {
+                              console.error("Error fetching location:", error); // Log any errors
+                              document.getElementById("status").textContent = "❌ Error fetching location."; // Update status on error
+                              reject("Unable to retrieve your location.");
+                          }
+                      );
+                  } else {
+                      document.getElementById("status").textContent = "❌ Geolocation is not supported."; // Update status if geolocation is not supported
+                      reject("Geolocation is not supported by this browser.");
+                  }
+              });
+          }
+
+          // On page load, fetch the employee ID and load attendance data
+          window.onload = async () => {
+              const employeeId = await getUserId(); // Get the employee ID dynamically
+              if (employeeId) {
+                  loadEmployeeAttendanceData(employeeId); // Load the attendance data for the employee
+                  loadAttendanceHistory(employeeId);
+              }
+          };
+          </script>
 </body>
 </html>

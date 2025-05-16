@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Styling for the sidebar */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none; /* Sidebar is hidden by default */
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        #sidebar ul li.logout {
+        margin-top: 350px; 
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+        background-color: #dc3545; /* Red background on hover */
+        color: white; /* Ensure the text stays white */
+        }
+        
+        
+        /* Other sidebar item hover effects */
+        #sidebar ul li a:hover {
+        background-color: #5a6268;
+        color: white;
+        }
+
+        #sidebar ul li.active a {
+        background-color: #007bff; /* Blue background for active link */
+        color: white; /* Ensure text is white */
+        }
+         
+    
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+        /* Additional Styling for the charts */
+        .chart-container {
+            margin-top: 30px;
+        }
+
+        .kpi-card {
+            margin: 10px 0;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Agent</h3>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_assigned_task"><i class="fas fa-tachometer-alt"></i> Assigned Task</a>
+
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_client"><i class="fas fa-tachometer-alt"></i> Client</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_tripping"><i class="fas fa-tachometer-alt"></i>Tripping</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_transactions"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+        
+                 <!-- Move Logout to bottom -->
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+            <!-- Button to toggle sidebar with icon -->
+            <button class="btn" id="sidebar-toggle">
+                <i class="fas fa-bars"></i> <!-- Font Awesome hamburger icon -->
+            </button>
+
+            <!-- ========== HR Dashboard Content ========== -->
+            <h2>Agent Dashboard</h2>
+            
+            <div class="container">
+                <div class="row">
+                    <!-- KPI: Leads Closed -->
+                    <div class="col-md-4">
+                        <div class="card kpi-card">
+                            <div class="card-header bg-primary text-white">
+                                <h5>Leads Closed</h5>
+                            </div>
+                            <div class="card-body">
+                                <h2 id="leads-closed">128</h2> <!-- Dynamically updated value -->
+                                <p>Leads closed this month</p>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI: Pending Tasks -->
+                    <div class="col-md-4">
+                        <div class="card kpi-card">
+                            <div class="card-header bg-warning text-white">
+                                <h5>Pending Tasks</h5>
+                            </div>
+                            <div class="card-body">
+                                <h2 id="pending-tasks">75</h2> <!-- Dynamically updated value -->
+                                <p>Tasks yet to be completed</p>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            
+                    <!-- KPI: Incoming Trippings -->
+                    <div class="col-md-4">
+                        <div class="card kpi-card">
+                            <div class="card-header bg-success text-white">
+                                <h5>Incoming Trippings</h5>
+                            </div>
+                            <div class="card-body">
+                                <h2 id="incoming-trippings">15</h2> <!-- Dynamically updated value -->
+                                <p>Upcoming trippings scheduled</p>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section for Total Sales, Leads Conversion, and My Task Completion -->
+            <div class="chart-container">
+                <div class="row">
+                    <!-- Total Sales Trend Chart (Chart 1) -->
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5>Total Sales Trend</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="total-sales-trend"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leads Conversion Trend Chart (Chart 2) -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5>Leads Conversion Trend</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="leads-conversion-trend"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Task Completion Trend Chart (Chart 3) -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-white">
+                                <h5>My Task Completion Trend</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="my-task-completion"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bootstrap JS and jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // JavaScript for toggling the sidebar visibility
+            document.getElementById('sidebar-toggle').addEventListener('click', function () {
+                var sidebar = document.getElementById('sidebar');
+                var content = document.getElementById('content');
+                
+                // Toggle sidebar visibility
+                if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                    sidebar.style.display = 'block';
+                    content.style.marginLeft = '300px';  // Shift content to the right
+                } else {
+                    sidebar.style.display = 'none';
+                    content.style.marginLeft = '0';  // No shift
+                }
+            });
+
+            // Update KPIs dynamically
+            document.getElementById("leads-closed").innerText = "150";  // Example of updating KPI value
+            document.getElementById("pending-tasks").innerText = "42";
+            document.getElementById("incoming-trippings").innerText = "8";
+            
+            // Chart.js: Total Sales Trend (Chart 1)
+            var ctxSales = document.getElementById('total-sales-trend').getContext('2d');
+            var totalSalesTrend = new Chart(ctxSales, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Total Sales ($)',
+                        data: [10000, 15000, 20000, 18000, 25000, 30000],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5000
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart.js: Leads Conversion Trend (Chart 2)
+            var ctxLeads = document.getElementById('leads-conversion-trend').getContext('2d');
+            var leadsConversionTrend = new Chart(ctxLeads, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Leads Converted',
+                        data: [50, 75, 100, 80, 130, 160],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart.js: My Task Completion Trend (Chart 3)
+            var ctxTasks = document.getElementById('my-task-completion').getContext('2d');
+            var taskCompletion = new Chart(ctxTasks, {
+                type: 'line', // Line chart to show task completion over time
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],  // Example of weeks
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: [5, 8, 12, 15, 20],  // Example of tasks completed each week
+                        borderColor: '#ffc107', // Line color (yellow for tasks)
+                        backgroundColor: 'rgba(255, 193, 7, 0.2)', // Fill color
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        </script>
+    </body>
+</html>

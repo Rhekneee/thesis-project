@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/scm_style.css">
+  <script src="/public/js/app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+        <h1>SCM</h1>
+        <button id="toggleSidebar">☰</button>
+      </div>
+      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
+      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
+      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
+      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
+      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
+      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
+      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
+      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+
+  </div>
+  <div class="main-content">
+    <div class="top-bar">
+      <button id="addContractBtn" class="add-item-btn">Add Transfer</button>
+      <input type="text" id="ContractSearch" class="search-bar3" placeholder="Search transfers...">
+    </div>
+    <div class="card1">
+        <h2>Material Requests</h2>
+        
+        <table class="material-table request-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Contract Name</th>
+              <th>Location</th>
+              <th>Start Date</th>
+              <th>Client</th>
+              <th>Status</th>
+              <th>Action</th>
+              <th>View</th>
+            </tr>
+          </thead>
+          <tbody id="contractBody">
+            <tr>
+              <td>1</td>
+              <td>Subdivision 1</td>
+              <td>Cavite</td>
+              <td>01/01/2025</td>
+              <td>John Doe</td>
+              <td>Ongoing</td>
+              <td>
+                <button class="action-btn">View</button>
+                <button class="action-btn">Edit</button>
+                <button class="action-btn">Delete</button>
+              </td>
+              
+            </tr>
+  
+            <tr>
+                <td>1</td>
+                <td>Modern House</td>
+                <td>Cavite</td>
+                <td>01/01/2025</td>
+                <td>John Doe</td>
+                <td>Ongoing</td>
+              <td>
+                <button class="action-btn">View</button>
+                <button class="action-btn">Edit</button>
+                <button class="action-btn">Delete</button>
+              </td>
+            </tr>
+            <!-- You can add more sample rows here -->
+          </tbody>
+        </table>
+        <div class="pagination" id="contractPagination">
+          <a href="#" class="page-arrow">&lt;</a>
+          <a href="#" class="page-number active">1</a>
+          <a href="#" class="page-number">2</a>
+          <a href="#" class="page-number">3</a>
+          <a href="#" class="page-number">4</a>
+          <span class="dots">...</span>
+          <a href="#" class="page-arrow">&gt;</a>
+        </div>
+      </div>
+
+
+      
+      
+      
+      
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          /* Contract Pagination */
+          const contractRowsPerPage = 5;
+          const contractTableBody = document.getElementById("contractBody");
+          const contractRows = Array.from(contractTableBody?.querySelectorAll("tr") || []);
+          const contractPagination = document.getElementById("contractPagination");
+        
+          function paginateContractTable() {
+            const totalPages = Math.ceil(contractRows.length / contractRowsPerPage);
+            let currentPage = 1;
+        
+            function showPage(page) {
+              const start = (page - 1) * contractRowsPerPage;
+              const end = start + contractRowsPerPage;
+        
+              contractRows.forEach((row, index) => {
+                row.style.display = (index >= start && index < end) ? "" : "none";
+              });
+        
+              updateContractPagination(page);
+            }
+        
+            function updateContractPagination(current) {
+              contractPagination.innerHTML = "";
+        
+              // Prev
+              const prev = document.createElement("a");
+              prev.href = "#";
+              prev.className = "page-arrow";
+              prev.innerHTML = "&lt;";
+              prev.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (currentPage > 1) {
+                  currentPage--;
+                  showPage(currentPage);
+                }
+              });
+              contractPagination.appendChild(prev);
+        
+              // Page Numbers
+              for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("a");
+                btn.href = "#";
+                btn.className = "page-number" + (i === current ? " active" : "");
+                btn.textContent = i;
+                btn.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  currentPage = i;
+                  showPage(i);
+                });
+                contractPagination.appendChild(btn);
+              }
+        
+              // Next
+              const next = document.createElement("a");
+              next.href = "#";
+              next.className = "page-arrow";
+              next.innerHTML = "&gt;";
+              next.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                  currentPage++;
+                  showPage(currentPage);
+                }
+              });
+              contractPagination.appendChild(next);
+            }
+        
+            if (contractRows.length) showPage(currentPage);
+          }
+        
+          if (contractTableBody) {
+            paginateContractTable();
+          }
+        });
+        </script>
+        
+    
+  </div>
+</body>
+</html>
+
+

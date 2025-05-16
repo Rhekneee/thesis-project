@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/scm_style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/public/js/app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+        <h1>SCM</h1>
+        <button id="toggleSidebar">☰</button>
+      </div>
+      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
+      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
+      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
+      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
+      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
+      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
+      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
+      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+  </div>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <button id="addItemBtn" class="add-item-btn">+ Add Item</button>
+      <input type="text" id="searchInput" class="search-bar" placeholder="Search item...">
+    </div>
+    <div class="card1">
+      <h2>Material Inventory</h2>
+      
+      <table class="material-table">
+        
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryBody">
+          <tr>
+            <td>1</td>
+            <td>Steel Rod</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Cement Bag</td>
+            <td>50</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Wood Plank</td>
+            <td>200</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Pako</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Pintura</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Pintura</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Pintura</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Pintura</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Pintura</td>
+            <td>150</td>
+            <td>
+              <button class="action-btn">Edit</button>
+              <button class="action-btn">Delete</button>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+      <div class="pagination" id="inventoryPagination">
+        <a href="#" class="page-arrow">&lt;</a>
+        <a href="#" class="page-number active">1</a>
+        <a href="#" class="page-number">2</a>
+        <a href="#" class="page-number">3</a>
+        <a href="#" class="page-number">4</a>
+        <span class="dots">...</span>
+        <a href="#" class="page-arrow">&gt;</a>
+      </div>
+    </div>
+   
+    
+  </div>
+
+  <div id="addItemModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn">&times;</button>  <!-- Close button inside modal -->
+      <h2>Add New Item</h2>
+      <form id="addItemForm">
+        <label for="itemName">Item Name:</label>
+        <input type="text" id="itemName" required />
+        <label for="itemQuantity">Quantity:</label>
+        <input type="number" id="itemQuantity" required />
+        <button type="submit">Add Item</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      /* Inventory Pagination */
+const inventoryRowsPerPage = 5;
+const inventoryTableBody = document.getElementById("inventoryBody");
+const inventoryRows = Array.from(inventoryTableBody?.querySelectorAll("tr") || []);
+const inventoryPagination = document.getElementById("inventoryPagination");
+
+function paginateInventoryTable() {
+  const totalPages = Math.ceil(inventoryRows.length / inventoryRowsPerPage);
+  let currentPage = 1;
+
+  function showPage(page) {
+    const start = (page - 1) * inventoryRowsPerPage;
+    const end = start + inventoryRowsPerPage;
+
+    inventoryRows.forEach((row, index) => {
+      row.style.display = (index >= start && index < end) ? "" : "none";
+    });
+
+    updateInventoryPagination(page);
+  }
+
+  function updateInventoryPagination(current) {
+    inventoryPagination.innerHTML = "";
+
+    // Prev Arrow
+    const prev = document.createElement("a");
+    prev.href = "#";
+    prev.className = "page-arrow";
+    prev.innerHTML = "&lt;";
+    prev.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+      }
+    });
+    inventoryPagination.appendChild(prev);
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("a");
+      btn.href = "#";
+      btn.className = "page-number" + (i === current ? " active" : "");
+      btn.textContent = i;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        currentPage = i;
+        showPage(i);
+      });
+      inventoryPagination.appendChild(btn);
+    }
+
+    // Next Arrow
+    const next = document.createElement("a");
+    next.href = "#";
+    next.className = "page-arrow";
+    next.innerHTML = "&gt;";
+    next.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+      }
+    });
+    inventoryPagination.appendChild(next);
+  }
+
+  if (inventoryRows.length) showPage(currentPage);
+}
+
+if (inventoryTableBody) {
+  paginateInventoryTable();
+}
+
+const addItemBtn = document.getElementById("addItemBtn");
+const addItemModal = document.getElementById("addItemModal");
+const closeBtn = document.querySelector(".close-btn");
+const addItemForm = document.getElementById("addItemForm");
+
+addItemBtn.addEventListener("click", () => {
+  addItemModal.style.display = "block";
+});
+
+closeBtn.addEventListener("click", () => {
+  addItemModal.style.display = "none";
+});
+
+window.addEventListener("click", (e) => {
+  if (e.target === addItemModal) {
+    addItemModal.style.display = "none";
+  }
+});
+
+addItemForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const itemName = document.getElementById("itemName").value.trim();
+  const itemQuantity = document.getElementById("itemQuantity").value.trim();
+
+  if (itemName && itemQuantity) {
+    const newRow = document.createElement("tr");
+    const nextId = inventoryRows.length + 1;
+
+    newRow.innerHTML = `
+      <td>${nextId}</td>
+      <td>${itemName}</td>
+      <td>${itemQuantity}</td>
+      <td>
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Delete</button>
+      </td>
+    `;
+
+    inventoryTableBody.appendChild(newRow);
+    inventoryRows.push(newRow); // Update the array
+    paginateInventoryTable(); // Refresh pagination
+    addItemModal.style.display = "none";
+    addItemForm.reset();
+  }
+});
+
+
+
+
+
+    });
+  </script>
+  
+</body>
+</html>
+
+

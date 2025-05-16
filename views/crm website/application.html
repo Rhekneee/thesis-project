@@ -9,6 +9,134 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
+<style>
+  .job-card {
+    transition: all 0.3s ease;
+    height: 100%;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: white;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .job-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  .job-card .card-body {
+    padding: 2rem;
+  }
+  .job-role {
+    color: #666;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: #f8f9fa;
+    border-radius: 20px;
+  }
+  .job-title {
+    color: #1a1a1a;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid #f0f0f0;
+    position: relative;
+  }
+  .job-title::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #000;
+  }
+  .job-details {
+    margin-bottom: 1.5rem;
+  }
+  .job-details p {
+    margin-bottom: 1rem;
+    color: #4a4a4a;
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+  .job-details strong {
+    color: #1a1a1a;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .job-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #f0f0f0;
+  }
+  .job-salary {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 1.5rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .job-deadline {
+    color: #666;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .job-deadline i {
+    color: #ff6b6b;
+  }
+  .btn-apply {
+    background-color: #000;
+    color: white;
+    padding: 0.9rem 2.5rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  .btn-apply:hover {
+    background-color: #333;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  .btn-apply:active {
+    transform: translateY(0);
+  }
+  /* Add a subtle gradient background to the section */
+  .pt-5 {
+    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+    padding: 4rem 0;
+  }
+  /* Make the container slightly narrower for better readability */
+  .container {
+    max-width: 1200px;
+  }
+  /* Add some spacing between cards */
+  #jobPostingsGrid {
+    margin: 0 -1rem;
+  }
+  #jobPostingsGrid > div {
+    padding: 0 1rem;
+  }
+</style>
 <body>
 
 <!-- Navbar -->
@@ -57,33 +185,17 @@
   <div class="container">
     <h2 class="text-center mb-4 fw-bold">We Are Hiring!</h2>
 
-    <div class="row">
-      <!-- Job Post Card -->
-      <div class="col-md-6 mb-4">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title fw-bold">Site Engineer</h5>
-            <p class="card-text">We are looking for a qualified Site Engineer with experience in project supervision and field management. Must have knowledge in AutoCAD and civil works documentation.</p>
-            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#applyModal">Apply Now</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Another Job Post -->
-      <div class="col-md-6 mb-4">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title fw-bold">Architect</h5>
-            <p class="card-text">We are seeking a creative Architect to design residential homes and oversee project design phases. Proficiency in architectural software is required.</p>
-            <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#applyModal">Apply Now</button>
-          </div>
-        </div>
-      </div>
+    <!-- Job Postings Grid -->
+    <div class="row" id="jobPostingsGrid">
+      <!-- Will be populated dynamically -->
     </div>
   </div>
 </section>
 
+
+
 <!-- Modal -->
+<!-- Modal for Resume Upload -->
 <div class="modal fade" id="applyModal" tabindex="-1" aria-labelledby="applyModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
@@ -91,80 +203,248 @@
           <h5 class="modal-title" id="applyModalLabel">Submit Your Application</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="firstname" class="form-label">First Name</label>
-              <input type="text" class="form-control" id="firstname" required />
+        <form id="applicationForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <!-- First Name -->
+                <div class="mb-3">
+                    <label for="firstname" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="firstname" required />
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                    <label for="lastname" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastname" required />
+                </div>
+
+                <!-- Middle Initial -->
+                <div class="mb-3">
+                    <label for="middleinitial" class="form-label">Middle Initial</label>
+                    <input type="text" class="form-control" id="middleinitial" required />
+                </div>
+
+                <!-- Age -->
+                <div class="mb-3">
+                    <label for="age" class="form-label">Age</label>
+                    <input type="number" class="form-control" id="age" min="18" required />
+                </div>
+
+                <!-- Birthdate -->
+                <div class="mb-3">
+                    <label for="birthdate" class="form-label">Birthdate</label>
+                    <input type="date" class="form-control" id="birthdate" required />
+                </div>
+
+                <!-- Contact Number -->
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Contact Number</label>
+                    <input type="text" class="form-control" id="phone" pattern="^\+?\d{1,4}?[\d\s\-\(\)]{7,15}$" required />
+                    <small class="form-text text-muted">Enter a valid contact number.</small>
+                </div>
+
+                <!-- Email Address -->
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" required />
+                    <small class="form-text text-muted">We'll never share your email.</small>
+                </div>
+
+                <!-- Resume Upload -->
+                <div class="mb-3">
+                    <label for="resume" class="form-label">Upload Resume (PDF only)</label>
+                    <input class="form-control" type="file" id="resume" accept="application/pdf" required />
+                    <small class="form-text text-muted">Only PDF files are accepted.</small>
+                    <p id="fileError" style="color: red; display: none;">Please upload a valid PDF file.</p>
+                </div>
+
+                <!-- PDF Preview -->
+                <div id="pdfPreview" style="display: none;">
+                    <h5>Preview Your Resume:</h5>
+                    <canvas id="pdfViewer"></canvas>
+                </div>
             </div>
-            <div class="mb-3">
-              <label for="lastname" class="form-label">Last Name</label>
-              <input type="text" class="form-control" id="lastname" required />
+
+            <!-- Submit Button -->
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-dark">Submit Application</button>
             </div>
-            <div class="mb-3">
-              <label for="middleinitial" class="form-label">Middle Initial</label>
-              <input type="text" class="form-control" id="middleinitial" required />
-            </div>
-            <div class="mb-3">
-              <label for="age" class="form-label">Age</label>
-              <input type="number" class="form-control" id="age" required />
-            </div>
-            <div class="mb-3">
-              <label for="birthdate" class="form-label">Birthdate</label>
-              <input type="date" class="form-control" id="birthdate" required />
-            </div>
-            <div class="mb-3">
-              <label for="contactnumber" class="form-label">Contact Number</label>
-              <input type="text" class="form-control" id="contactnumber" required />
-            </div>
-            <div class="mb-3">
-              <label for="email" class="form-label">Email Address</label>
-              <input type="email" class="form-control" id="email" required />
-            </div>
-            <div class="mb-3">
-              <label for="resume" class="form-label">Upload Resume (PDF only)</label>
-              <input class="form-control" type="file" id="resume" accept="application/pdf" required />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-dark">Submit Application</button>
-          </div>
         </form>
       </div>
     </div>
   </div>
   
-
-<!-- Footer -->
-<footer class="bg-dark text-light pt-4 mt-5">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-5">
-        <h5>About Us</h5>
-        <p>M.D. Buendia Construction Inc. specializes in high-quality residential construction...</p>
+  <!-- Footer -->
+  <footer class="bg-dark text-light pt-4 mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-5">
+          <h5>About Us</h5>
+          <p>M.D. Buendia Construction Inc. specializes in high-quality residential construction...</p>
+        </div>
+        <div class="col-lg-4">
+          <h5>Contacts</h5>
+          <p><i class="fa fa-map-marker-alt"></i> Naic, Cavite</p>
+          <p><i class="fa fa-phone"></i> (92) 0325 12344567</p>
+          <p><i class="fa fa-envelope"></i> mdb_engineering@yahoo.com</p>
+        </div>
+        <div class="col-lg-3">
+          <h5>Stay Connected</h5>
+          <ul class="list-unstyled">
+            <li><a href="#"><i class="fab fa-facebook"></i> Facebook</a></li>
+            <li><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></li>
+            <li><a href="#"><i class="fab fa-instagram"></i> Instagram</a></li>
+            <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li>
+          </ul>
+        </div>
       </div>
-      <div class="col-lg-4">
-        <h5>Contacts</h5>
-        <p><i class="fa fa-map-marker-alt"></i> Naic, Cavite</p>
-        <p><i class="fa fa-phone"></i> (92) 0325 12344567</p>
-        <p><i class="fa fa-envelope"></i> mdb_engineering@yahoo.com</p>
-      </div>
-      <div class="col-lg-3">
-        <h5>Stay Connected</h5>
-        <ul class="list-unstyled">
-          <li><a href="#"><i class="fab fa-facebook"></i> Facebook</a></li>
-          <li><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></li>
-          <li><a href="#"><i class="fab fa-instagram"></i> Instagram</a></li>
-          <li><a href="#"><i class="fab fa-twitter"></i> Twitter</a></li>
-        </ul>
-      </div>
+      <hr />
+      <p class="text-center mb-0">© 2025 <a href="#">M.D. BUENDIA</a>. All Rights Reserved.</p>
     </div>
-    <hr />
-    <p class="text-center mb-0">© 2025 <a href="#">M.D. BUENDIA</a>. All Rights Reserved.</p>
-  </div>
-</footer>
+  </footer>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <script>
+    // Handle form submission and PDF rendering
+    document.getElementById("applicationForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    // Get the resume file
+    const resumeFile = document.getElementById("resume").files[0];
 
+    // Check if the file is a PDF
+    if (resumeFile && resumeFile.type !== "application/pdf") {
+        document.getElementById("fileError").style.display = "block";
+        return; // Stop submission if file is not PDF
+    } else {
+        document.getElementById("fileError").style.display = "none"; // Hide error if PDF is valid
+    }
+
+    // Prepare form data
+    let formData = new FormData();
+    formData.append("firstname", document.getElementById("firstname").value);
+    formData.append("lastname", document.getElementById("lastname").value);
+    formData.append("middleinitial", document.getElementById("middleinitial").value);
+    formData.append("age", document.getElementById("age").value);
+    formData.append("birthdate", document.getElementById("birthdate").value);
+    formData.append("phone", document.getElementById("phone").value);
+    formData.append("email", document.getElementById("email").value);
+    formData.append("resume", resumeFile); // Ensure you are appending the file
+
+    try {
+        // Show loading spinner (optional, can be added to improve UX)
+        let response = await fetch("http://localhost:4000/crm/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        let result = await response.json();
+
+        if (response.ok) {
+            alert(result.message); // Success message
+            $('#applyModal').modal('hide'); // Hide the modal after successful submission
+            document.getElementById("applicationForm").reset(); // Reset the form fields
+        } else {
+            alert(result.error); // Error message from backend
+        }
+    } catch (error) {
+        alert("Error uploading resume. Please try again.");
+        console.error("Error:", error);
+    }
+});
+
+  
+    // Render PDF preview on file selection
+    document.getElementById('resume').addEventListener('change', function (event) {
+    const resumeFile = event.target.files[0];
+    if (resumeFile && resumeFile.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            const pdfData = e.target.result;
+            const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+
+            try {
+                const pdfDocument = await loadingTask.promise;
+                const page = await pdfDocument.getPage(1);  // Get the first page
+                const viewport = page.getViewport({ scale: 1 });
+                const canvas = document.getElementById('pdfViewer');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Use the await keyword to ensure page.render() completes
+                await page.render({ canvasContext: context, viewport: viewport });
+
+                document.getElementById('pdfPreview').style.display = 'block'; // Show preview
+            } catch (error) {
+                console.error('Error rendering PDF:', error);
+            }
+        };
+        reader.readAsArrayBuffer(resumeFile);
+    }
+});
+
+// Add this after your existing scripts
+document.addEventListener('DOMContentLoaded', function() {
+    // Load job postings
+    function loadJobPostings() {
+        fetch('/crm/job-postings')
+            .then(response => response.json())
+            .then(data => {
+                const grid = document.getElementById('jobPostingsGrid');
+                grid.innerHTML = '';
+
+                data.jobPostings.forEach(job => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-6 col-lg-4';
+                    card.innerHTML = `
+                        <div class="card job-card">
+                            <div class="card-body">
+                                <div class="job-role">${job.role_name}</div>
+                                <h5 class="job-title">${job.position_name}</h5>
+                                <div class="job-details">
+                                    <p><strong>Description</strong>${job.job_description}</p>
+                                    <p><strong>Qualifications</strong>${job.qualifications}</p>
+                                    <p><strong>Location</strong>${job.location}</p>
+                                    <p><strong>How to Apply</strong>${job.how_to_apply}</p>
+                                </div>
+                                <div class="job-meta">
+                                    <div>
+                                        <div class="job-deadline">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Deadline: ${new Date(job.application_deadline).toLocaleDateString()}</span>
+                                        </div>
+                                        <div class="job-salary mt-3">
+                                            ₱${job.salary}
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-apply" onclick="openApplyModal('${job.role_name} - ${job.position_name}')">
+                                        Apply Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            })
+            .catch(error => console.error('Error loading job postings:', error));
+    }
+
+    // Function to open apply modal with job title
+    window.openApplyModal = function(positionName) {
+        document.getElementById('applyModalLabel').textContent = `Apply for ${positionName}`;
+        const modal = new bootstrap.Modal(document.getElementById('applyModal'));
+        modal.show();
+    };
+
+    // Initial load
+    loadJobPostings();
+});
+
+  </script>
+  
 </body>
 </html>

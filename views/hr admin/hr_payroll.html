@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applicants</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-top: 50px;
+        }
+
+        /* Table and form styles */
+        .applicants-table {
+            margin-top: 20px;
+        }
+
+        .applicants-table th, .applicants-table td {
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .applicants-form {
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        /* Search bar styling */
+        #searchBar {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease; /* Smooth transition on color change */
+        }
+
+        .sort-icon.active {
+            color: #007bff; /* Change this to your preferred active color */
+        }
+
+        .sort-icon:hover {
+            color: #0056b3; /* Optional: Hover effect */
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0; /* Fix spacing */
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+        .payroll-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .payroll-controls select {
+            width: 150px;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .payroll-controls button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .payroll-controls button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #generatePayroll {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        #generatePayroll:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* Table styling */
+        #payrollTable {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #payrollTable th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        #payrollTable td {
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        #payrollTable tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Page title styling */
+        h1 {
+            margin-bottom: 30px;
+            color: #343a40;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .payroll-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .payroll-controls select,
+            .payroll-controls button {
+                width: 100%;
+            }
+            
+            #payrollTable {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        /* Add these styles to your existing CSS */
+        .dropdown-menu {
+            min-width: 200px;
+            padding: 0.5rem 0;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        #payrollActions {
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        #payrollActions:hover {
+            background-color: #5c636a;
+            border-color: #5c636a;
+        }
+
+        #payrollActions i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-item.active {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .dropdown-item.active i {
+            color: #0d6efd;
+        }
+
+        .alert {
+            margin-bottom: 20px;
+        }
+
+        .btn-close {
+            padding: 1.25rem;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Profile section styles */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+            cursor: pointer;
+            height: 100%;
+            padding: 0;
+            position: relative;
+            gap: 15px;
+            z-index: 1001;
+        }
+
+        .profile-info {
+            margin-right: 0;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .profile-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            margin-bottom: 2px;
+        }
+
+        .profile-position {
+            color: #ccc;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .profile-picture-container {
+            width: 40px;
+            height: 40px;
+            margin: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            margin: 0;
+            padding: 0;
+            display: block; /* Ensure image is always displayed */
+        }
+
+        /* Ensure profile section stays visible in collapsed state */
+        #sidebar.collapsed ~ .topbar .profile-section {
+            display: flex;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Responsive adjustments for profile section */
+        @media (max-width: 768px) {
+            .profile-section {
+                margin-left: 10px;
+            }
+            
+            .profile-info {
+                display: none; /* Hide text on mobile but keep photo */
+            }
+            
+            .profile-picture-container {
+                width: 35px;
+                height: 35px;
+            }
+        }
+
+        /* Add these styles after your existing styles */
+        .table-container {
+            position: relative;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .table-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .table-scroll table {
+            width: max-content;
+            min-width: 100%;
+            margin: 0;
+        }
+
+        .table-scroll thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .table-scroll th {
+            background: #f8f9fa;
+            white-space: nowrap;
+            padding: 12px 16px;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .table-scroll td {
+            white-space: nowrap;
+            padding: 12px 16px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        .table-scroll tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                margin: 10px 0;
+            }
+            
+            .table-scroll td,
+            .table-scroll th {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/hr/hr_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item">
+                            <a href="/hr/hr_daily_attendance">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Daily Attendance</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_history_attendance">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Attendance Logs</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_leave_request">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Request Leave</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_work_adjustment">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Work Adjustment</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Payroll Management</span>
+                    </a>
+                    <ul class="collapse" id="Payroll">
+                        <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                        <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Employee Management</span>
+                    </a>
+                    <ul class="collapse" id="Employee">
+                        <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                        <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Recruitment</span>
+                    </a>
+                    <ul class="collapse" id="Recruitment">
+                        <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                        <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+                    </ul>
+                </li>    
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+              <!-- Main content area -->
+              <div id="content">
+                <!-- Button to toggle sidebar with icon -->
+            
+    
+                <h1>Payroll Management</h1>
+                <div class="payroll-controls">
+                    <select id="month" class="form-select">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="year" class="form-select">
+                        <!-- Will be populated dynamically -->
+                    </select>
+                    <select id="period" class="form-select">
+                        <option value="first">1st to 15th</option>
+                        <option value="second">16th to 30th/31st</option>
+                    </select>
+                    <button id="generatePayroll" class="btn btn-primary">
+                        <i class="fas fa-file-invoice"></i> Generate Payroll
+                    </button>
+                    <button id="cancelPayroll" class="btn btn-danger">
+                        <i class="fas fa-times-circle"></i> Cancel Payroll
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="payrollActions" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-clock"></i> <span id="selectedAction">Load Pending Payroll</span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="payrollActions">
+                            <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
+                            <li><a class="dropdown-item" href="#" data-action="approved" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-scroll">
+                        <table id="payrollTable" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Employee Name</th>
+                                    <th>Position</th>
+                                    <th>Start Payroll Period</th>
+                                    <th>End Payroll Period</th>
+                                    <th>Days Present</th>
+                                    <th>Days Absent</th>
+                                    <th>Total Hours</th>
+                                    <th>Overtime Hours</th>
+                                    <th>Fixed Salary</th>
+                                    <th>Absence Deduction</th>
+                                    <th>Deductions</th>
+                                    <th>Net Salary</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Filled dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Add this modal HTML before the closing body tag -->
+                <div class="modal fade" id="cancelPayrollModal" tabindex="-1" aria-labelledby="cancelPayrollModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cancelPayrollModalLabel">Confirm Payroll Cancellation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to cancel all pending payroll records? This action cannot be undone.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Records</button>
+                                <button type="button" class="btn btn-danger" id="confirmCancelPayroll">Yes, Cancel Payroll</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+            </div>
+        </div>
+    
+
+
+
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script>
+// Global base URL for the HR endpoint
+const BASE_URL = "http://localhost:4000/hr";
+
+// Add getUserInfo function
+async function getUserInfo() {
+    try {
+        console.log('=== Fetching User Info ===');
+        
+        const sessionResponse = await fetch('/hr/check-session', {
+            credentials: 'include'
+        });
+
+        if (!sessionResponse.ok) {
+            throw new Error('Failed to fetch session data');
+        }
+
+        const sessionData = await sessionResponse.json();
+        console.log('Full session data:', sessionData);
+
+        if (!sessionData.user || !sessionData.user.employee_id) {
+            throw new Error('No employee ID in session');
+        }
+
+        // Fetch employee details
+        const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
+            credentials: 'include'
+        });
+
+        if (!employeeResponse.ok) {
+            throw new Error('Failed to fetch employee details');
+        }
+
+        const employeeData = await employeeResponse.json();
+        console.log('Full employee data:', employeeData);
+
+        // Update profile info in topbar
+        const profileName = document.querySelector('.profile-name');
+        const profilePosition = document.querySelector('.profile-position');
+        const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+        if (profileName && profilePosition) {
+            profileName.textContent = employeeData.full_name || 'Not Set';
+            profilePosition.textContent = employeeData.role_name || 'Not Set';
+        }
+
+        // Update profile picture
+        if (employeeData.profile_picture) {
+            // Extract just the filename if it's a full path
+            const filename = employeeData.profile_picture.includes('/') 
+                ? employeeData.profile_picture.split('/').pop() 
+                : employeeData.profile_picture;
+            
+            // Add timestamp to prevent caching
+            const timestamp = new Date().getTime();
+            const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+            console.log('Loading profile picture from:', imageUrl);
+            
+            topbarProfilePicture.src = imageUrl;
+
+            // If the path was a full path, update it in the database
+            if (employeeData.profile_picture.includes('/')) {
+                try {
+                    const updateResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}/profile-picture`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ profile_picture: filename }),
+                        credentials: 'include'
+                    });
+
+                    if (!updateResponse.ok) {
+                        console.error('Failed to update profile picture path in database');
+                    } else {
+                        console.log('Successfully updated profile picture path in database');
+                    }
+                } catch (error) {
+                    console.error('Error updating profile picture path:', error);
+                }
+            }
+        } else {
+            console.log('No profile picture found, using default');
+            topbarProfilePicture.src = '/hr/default-profile-picture';
+        }
+
+    } catch (error) {
+        console.error('Error in getUserInfo:', error);
+    }
+}
+
+// Call getUserInfo when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    getUserInfo();
+    // Set current month as default
+    const currentMonth = new Date().getMonth() + 1;
+    const monthSelect = document.getElementById('month');
+    
+    // Set current month as selected
+    monthSelect.value = currentMonth.toString().padStart(2, '0');
+
+    // Populate year dropdown dynamically
+    const yearSelect = document.getElementById('year');
+    const currentYear = new Date().getFullYear();
+    
+    // Add current year and next 2 years
+    for(let i = 0; i < 3; i++) {
+        const year = currentYear + i;
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+    }
+
+    // Set default period based on current date
+    const currentDay = new Date().getDate();
+    document.getElementById('period').value = currentDay <= 15 ? 'first' : 'second';
+
+    // Set initial active state for dropdown
+    const defaultAction = document.querySelector('[data-action="pending"]');
+    defaultAction.classList.add('active');
+    
+    // Handle dropdown item clicks
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all items
+            document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            
+            // Add active class to clicked item
+            this.classList.add('active');
+            
+            // Update button text and icon
+            const action = this.getAttribute('data-action');
+            const icon = this.getAttribute('data-icon');
+            const text = this.textContent.trim();
+            
+            document.getElementById('selectedAction').textContent = text;
+            document.getElementById('payrollActions').querySelector('i').className = `fas ${icon}`;
+            
+            // Trigger the appropriate action
+            if (action === 'pending') {
+                handleLoadPendingPayroll();
+            } else if (action === 'approved') {
+                handleLoadApprovedPayroll();
+            }
+        });
+    });
+
+    // Handle Generate Payroll button click
+    document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
+    document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
+});
+
+// Separate the action handlers into functions
+async function handleGeneratePayroll() {
+    const month = document.getElementById('month').value;
+    const year = document.getElementById('year').value;
+    const period = document.getElementById('period').value;
+
+    // Get current date
+    const currentDate = new Date();
+    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = currentDate.getFullYear().toString();
+
+    // Check if selected month/year is current month/year
+    if (month !== currentMonth || year !== currentYear) {
+        showAlert('warning', `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`);
+        return;
+    }
+
+    try {
+        // Show loading state
+        const generateButton = document.getElementById('generatePayroll');
+        const originalText = generateButton.innerHTML;
+        generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        generateButton.disabled = true;
+
+        const response = await fetch(`${BASE_URL}/payroll/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year, period })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to generate payroll');
+        }
+
+        if (Array.isArray(data.payroll)) {
+            populateTable(data.payroll);
+            showAlert('success', 'Payroll generated successfully!');
+        } else {
+            showAlert('warning', 'No payroll data returned.');
+        }
+    } catch (error) {
+        console.error('Error generating payroll:', error);
+        showAlert('danger', error.message || 'Failed to generate payroll. Please try again.');
+    } finally {
+        // Reset button state
+        const generateButton = document.getElementById('generatePayroll');
+        generateButton.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
+        generateButton.disabled = false;
+    }
+}
+
+async function handleLoadPendingPayroll() {
+    try {
+        const response = await fetch(`${BASE_URL}/payroll/pending`);
+        if (!response.ok) {
+            throw new Error('Failed to load pending payroll');
+        }
+
+        const data = await response.json();
+        if (!data.payroll || data.payroll.length === 0) {
+            showAlert('info', 'No pending payroll records available.');
+            document.querySelector('#payrollTable tbody').innerHTML = ''; // Clear the table
+        } else {
+            populateTable(data.payroll);
+        }
+    } catch (error) {
+        console.error('Error loading pending payroll:', error);
+        showAlert('danger', 'Failed to load pending payroll. Please try again.');
+    }
+}
+
+async function handleLoadApprovedPayroll() {
+    try {
+        const response = await fetch(`${BASE_URL}/payroll/approved`);
+        if (!response.ok) {
+            throw new Error('Failed to load approved payroll');
+        }
+
+        const data = await response.json();
+        populateTableforapproved(data.payroll || []);
+    } catch (error) {
+        console.error('Error loading approved payroll:', error);
+        showAlert('danger', 'Failed to load approved payroll. Please try again.');
+    }
+}
+
+function populateTable(payrollData) {
+    const tbody = document.querySelector('#payrollTable tbody');
+    tbody.innerHTML = ''; // clear previous data
+
+    if (!payrollData || payrollData.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="15" class="text-center py-4">
+                <div class="d-flex flex-column align-items-center">
+                    <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Pending Payroll Records Found</h5>
+                    <p class="text-muted">Generate payroll to see records here.</p>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+        return;
+    }
+
+    payrollData.forEach(item => {
+        const row = document.createElement('tr');
+
+        // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
+        const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
+
+        // Handle number formatting
+        const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
+
+        row.innerHTML = `
+            <td>${item.employee_id}</td>
+            <td>${item.full_name || 'N/A'}</td>
+            <td>${item.position || 'N/A'}</td>
+            <td>${formatDate(item.start_date)}</td>
+            <td>${formatDate(item.end_date)}</td>
+            <td>${item.days_present || 0}</td>
+            <td>${item.days_absent || 0}</td>
+            <td>${formatNumber(item.total_hours)}</td>
+            <td>${formatNumber(item.overtime_hours)}</td>
+            <td>${formatNumber(item.fixed_salary)}</td>
+            <td>${formatNumber(item.absence_deduction)}</td>
+            <td>${formatNumber(item.total_deductions)}</td>
+            <td>${formatNumber(item.net_salary)}</td>
+            <td><span class="badge bg-warning">Pending</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateTableforapproved(payrollData) {
+    const tbody = document.querySelector('#payrollTable tbody');
+    tbody.innerHTML = ''; // clear previous data
+
+    if (!payrollData || payrollData.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="15" class="text-center py-4">
+                <div class="d-flex flex-column align-items-center">
+                    <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Approved Payroll Records Found</h5>
+                    <p class="text-muted">Approve pending payroll records to see them here.</p>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+        return;
+    }
+
+    payrollData.forEach(item => {
+        const row = document.createElement('tr');
+
+        // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
+        const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
+
+        // Handle number formatting
+        const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
+
+        row.innerHTML = `
+            <td>${item.employee_id}</td>
+            <td>${item.full_name || 'N/A'}</td>
+            <td>${item.position || 'N/A'}</td>
+            <td>${formatDate(item.start_date)}</td>
+            <td>${formatDate(item.end_date)}</td>
+            <td>${item.days_present || 0}</td>
+            <td>${item.days_absent || 0}</td>
+            <td>${formatNumber(item.total_hours)}</td>
+            <td>${formatNumber(item.overtime_hours)}</td>
+            <td>${formatNumber(item.fixed_salary)}</td>
+            <td>${formatNumber(item.absence_deduction)}</td>
+            <td>${formatNumber(item.total_deductions)}</td>
+            <td>${formatNumber(item.net_salary)}</td>
+            <td><span class="badge bg-success">Approved</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Add this function to show alerts
+function showAlert(type, message) {
+    // Remove any existing alerts
+    const existingAlert = document.querySelector('.alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Insert alert before the table
+    const table = document.getElementById('payrollTable');
+    table.parentNode.insertBefore(alertDiv, table);
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+async function handleCancelPayroll() {
+    // Show the modal instead of using confirm()
+    const modal = new bootstrap.Modal(document.getElementById('cancelPayrollModal'));
+    modal.show();
+}
+
+// Add event listener for the confirm button in the modal
+document.getElementById('confirmCancelPayroll').addEventListener('click', async function() {
+    try {
+        const generateButton = document.getElementById('cancelPayroll');
+        const originalText = generateButton.innerHTML;
+        generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+        generateButton.disabled = true;
+
+        const response = await fetch(`${BASE_URL}/payroll/cancel`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to cancel payroll');
+        }
+
+        // Hide the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
+        modal.hide();
+
+        showAlert('success', 'Payroll records cancelled successfully!');
+        // Clear the table
+        document.querySelector('#payrollTable tbody').innerHTML = '';
+    } catch (error) {
+        console.error('Error cancelling payroll:', error);
+        showAlert('danger', error.message || 'Failed to cancel payroll. Please try again.');
+    } finally {
+        // Reset button state
+        const generateButton = document.getElementById('cancelPayroll');
+        generateButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Payroll';
+        generateButton.disabled = false;
+    }
+});
+    </script>
+    <!-- Add side_top.js -->
+    <script src="/public/js/side_top.js"></script>
+</body>
+
+</html>

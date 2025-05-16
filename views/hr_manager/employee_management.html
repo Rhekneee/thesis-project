@@ -14,13 +14,16 @@
             <li><a href="/dashboard">Dashboard</a></li>
             <li><a href="/hr_manager/employee_management">Employee Management</a></li>
             <li><a href="/hr_manager/leave_request">Leave Requests</a></li>
+            <li><a href="/hr_manager/employee_attendance">Employee Attendance</a></li>
             <li><a href="/hr_manager/payroll">Payroll Management</a></li>
             <li><a href="/hr_manager/reports">Reports</a></li>
-            <li><a href="/hr_manager/employee_attendance">Attendance</a></li>
+            <li><a href="/hr_manager/attendance">Attendance</a></li>
             <li><a href="/hr_manager/recruitment">Recruitment</a></li>
-            <li><a href="#">Logout</a></li>
+            <li><a href="/hr_manager/employee_list">Employee Directory</a></li>
+            <li><a href="/logout" id="logout-button">Logout</a></li>
         </ul>
     </div>
+
     <div class="content">
         <h2>Add New Employee</h2>
         <form id="employeeForm">
@@ -83,8 +86,10 @@
     
             <h3>Roles</h3>
             <div class="form-group">
-                <select name="role_id" id="roleSelect" required>
-                    <!-- Permissions will be loaded dynamically -->
+                <label for="roleSelect">Select Role:</label>
+                <select name="role_id" id="roleSelect" class="form-control" required>
+                    <option value="">Choose a role...</option>
+                    <!-- Roles will be loaded dynamically -->
                 </select>
             </div>
     
@@ -107,7 +112,7 @@
                     <th>Employment Status</th>
                     <th>Education</th>
                     <th>Emergency Contact</th>
-                    <th>Department</th>
+                    <th>Role</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -197,7 +202,7 @@
             <button type="button" id="restoreButton" style="display: none;">Restore</button> <!-- Restore -->  
         </form>
         
-
+ 
         
         </div>
 
@@ -264,8 +269,8 @@ async function loadEmployees(filter) {
                 <td>${emp.birthday}</td>
                 <td>${emp.employment_status}</td>
                 <td>${emp.educational_background}</td>
-                <td>${emp.emergency_contact_name}</td>
-                <td>${emp.department_name}</td>
+                <td>${emp.emergency_contact_name} (${emp.emergency_contact_relationship}) - ${emp.emergency_contact_phone}</td>
+                <td>${emp.role_name || "N/A"}</td>
                 <td>${emp.is_deleted ? 'Deleted' : 'Active'}</td>
                 <td>
                     ${emp.is_deleted

@@ -4,16 +4,694 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/public/css/login_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/crm_style.css">
     <title>Login</title>
 </head>
 <body>
-<div class="container">
+     <!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <img src="/public/image/mdb.jpg" alt="mdb" class="img-fluid logo-img" />
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ms-auto mb-2 mg-lg-0">
+          <li class="nav-item">
+              <a class="nav-link active" href="/crm/index">Home</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="/crm/properties">Properties</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="/crm/developer">Developers</a>
+          <li class="nav-item">
+              <a class="nav-link" href="/crm/faqs">FAQ's</a>
+          </li>
+  
+          <li class="nav-item">
+              <a class="nav-link" href="/crm/contact">Contact Us</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="/crm/application">Join Us</a>
+          </li>
+  
+          <li class="nav-item">
+              <a class="nav-link" href="/">Login</a>
+          </li>
+      </ul>
+      </div>
+    </div>
+  </nav>
+<div class="container" style="width: 500px; padding: 30px;">
+    <!-- Logo and Welcome Message inside the login box -->
+    <div class="login-header" style="text-align:center; margin-bottom:20px;">
+        <img src="/public/image/mdb-removebg-preview.png" alt="MDB Logo" style="max-width:120px; width:100%; height:auto; margin-bottom:10px;">
+        <h2 style="margin:0; color:#222; font-weight:600; font-size:1.5rem;">Welcome User!</h2>
+    </div>
+
     <h2>Login</h2>
-    <form action="/auth/login" method="POST">
-        <input type="email" name="email" placeholder="Enter email">
-        <input type="password" name="password" placeholder="Enter password" required>
-        <button type="submit">Login</button>
+    <form id="loginForm" action="/auth/login" method="POST">
+        <div class="mb-3">
+            <input type="text" name="identifier" id="identifier" placeholder="Enter Employee ID or Username" required style="margin-bottom: 20px;">
+        </div>
+
+        <input type="password" name="password" id="password" placeholder="Enter password" required style="margin-bottom: 30px;">
+        <button type="submit" style="border-radius: 10px; margin-top: 10px;"><span>Login</span></button>
+        <div style="text-align:right; margin-top:10px;">
+            <a href="/hr/forgot-password" style="color:#3498db; text-decoration:none; font-size:14px;">Forgot password?</a>
+        </div>
     </form>
 </div>
+
+<!-- Add this after the login form container -->
+<div class="forgot-password-container" style="display: none;">
+    <h2>Reset Password</h2>
+    <!-- Step 1: Email Form -->
+    <form id="forgotPasswordEmailForm" style="display: block;">
+        <input type="email" id="resetEmail" placeholder="Enter your email" required>
+        <button type="submit">Verify Email</button>
+        <div class="back-to-login" style="text-align: center; margin-top: 10px;">
+            <a href="#" onclick="showLoginForm()" style="color: #3498db; text-decoration: none;">Back to Login</a>
+        </div>
+    </form>
+
+    <!-- Step 2: Security Question Form -->
+    <form id="securityQuestionForm" style="display: none;">
+        <div class="security-questions">
+            <div class="question-group">
+                <div id="securityQuestionDisplay1" class="question-display"></div>
+                <input type="text" id="securityAnswer1" placeholder="Enter your answer" required>
+            </div>
+            <div class="question-group">
+                <div id="securityQuestionDisplay2" class="question-display"></div>
+                <input type="text" id="securityAnswer2" placeholder="Enter your answer" required>
+            </div>
+            <div class="question-group">
+                <div id="securityQuestionDisplay3" class="question-display"></div>
+                <input type="text" id="securityAnswer3" placeholder="Enter your answer" required>
+            </div>
+        </div>
+        <button type="submit">Verify Answers</button>
+        <div class="back-to-login" style="text-align: center; margin-top: 10px;">
+            <a href="#" onclick="showLoginForm()" style="color: #3498db; text-decoration: none;">Back to Login</a>
+        </div>
+    </form>
+
+    <!-- Step 3: New Password Form -->
+    <form id="newPasswordForm" style="display: none;">
+        <input type="password" id="newPassword" placeholder="Enter new password" required>
+        <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+        
+        <!-- Password Requirements -->
+        <div class="password-requirements">
+            <h4>Password Requirements</h4>
+            <ul class="requirement-list">
+                <li id="length" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    At least 8 characters long
+                </li>
+                <li id="uppercase" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    Contains uppercase letter
+                </li>
+                <li id="lowercase" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    Contains lowercase letter
+                </li>
+                <li id="number" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    Contains number
+                </li>
+                <li id="special" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    Contains special character
+                </li>
+                <li id="match" class="invalid">
+                    <i class="fas fa-circle"></i>
+                    Passwords match
+                </li>
+            </ul>
+        </div>
+
+        <button type="submit" disabled>Reset Password</button>
+        <div class="back-to-login" style="text-align: center; margin-top: 10px;">
+            <a href="#" onclick="showLoginForm()" style="color: #3498db; text-decoration: none;">Back to Login</a>
+        </div>
+    </form>
+
+    <!-- Add custom alert div -->
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay">
+    <div class="loading-spinner">
+        <div class="check-mark">✓</div>
+    </div>
+    <div class="loading-message">Logging in...</div>
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="error-modal">
+    <div class="error-modal-content">
+        <div class="error-modal-title">Login Failed</div>
+        <div class="error-modal-message"></div>
+        <button class="error-modal-button">Close</button>
+    </div>
+</div>
+
+<style>
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        position: relative;
+    }
+
+    .loading-spinner.success {
+        border-color: #2ecc71;
+        animation: none;
+    }
+
+    .check-mark {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #2ecc71;
+        font-size: 30px;
+        font-weight: bold;
+    }
+
+    .loading-spinner.success .check-mark {
+        display: block;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .forgot-password-container {
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .forgot-password-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .forgot-password-container form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .forgot-password-container input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .forgot-password-container button {
+        padding: 10px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .forgot-password-container button:hover {
+        background: #2980b9;
+    }
+
+    .security-questions {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .question-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .question-display {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 5px;
+        text-align: center;
+    }
+
+    .success-message {
+        color: #28a745;
+        font-size: 14px;
+        margin-top: 5px;
+        text-align: center;
+    }
+
+    /* Password Requirements Styles */
+    .password-requirements {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 20px;
+        margin-top: 25px;
+        margin-bottom: 25px;
+        width: 100%;
+    }
+
+    .password-requirements h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 10px 0;
+    }
+
+    .requirement-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .requirement-list li {
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .requirement-list li i {
+        font-size: 12px;
+    }
+
+    .requirement-list li.valid {
+        color: #28a745;
+    }
+
+    .requirement-list li.invalid {
+        color: #dc3545;
+    }
+
+    /* Custom Alert Styles */
+    .custom-alert {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
+        background-color: #28a745;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        z-index: 9999;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    .custom-alert.error {
+        background-color: #dc3545;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+
+    /* Add these styles to your existing styles */
+    .btn-group {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+        border-radius: 5px;
+        margin: 0 5px;
+        padding: 8px 15px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #4f6ef5;
+        border-color: #4f6ef5;
+        color: white;
+    }
+
+    .btn-outline-primary {
+        color: #4f6ef5;
+        border-color: #4f6ef5;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #4f6ef5;
+        border-color: #4f6ef5;
+        color: white;
+    }
+</style>
+
+<script>
+let currentUserId = null;
+let securityQuestions = null;
+
+// Show forgot password form
+function showForgotPasswordForm() {
+    document.querySelector('.container').style.display = 'none';
+    document.querySelector('.forgot-password-container').style.display = 'block';
+    document.getElementById('forgotPasswordEmailForm').style.display = 'block';
+    document.getElementById('securityQuestionForm').style.display = 'none';
+    document.getElementById('newPasswordForm').style.display = 'none';
+}
+
+// Show login form
+function showLoginForm() {
+    document.querySelector('.container').style.display = 'block';
+    document.querySelector('.forgot-password-container').style.display = 'none';
+}
+
+// Handle email verification
+document.getElementById('forgotPasswordEmailForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value;
+
+    try {
+        const response = await fetch('/hr/verify-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentUserId = data.userId;
+            securityQuestions = data.questions;
+            
+            // Display all three questions
+            document.getElementById('securityQuestionDisplay1').textContent = securityQuestions.question1;
+            document.getElementById('securityQuestionDisplay2').textContent = securityQuestions.question2;
+            document.getElementById('securityQuestionDisplay3').textContent = securityQuestions.question3;
+            
+            // Show security question form
+            document.getElementById('forgotPasswordEmailForm').style.display = 'none';
+            document.getElementById('securityQuestionForm').style.display = 'block';
+        } else {
+            alert('Email not found. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+
+// Handle security question verification
+document.getElementById('securityQuestionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Get all three answers
+    const answers = {
+        answer1: document.getElementById('securityAnswer1').value,
+        answer2: document.getElementById('securityAnswer2').value,
+        answer3: document.getElementById('securityAnswer3').value
+    };
+
+    try {
+        const response = await fetch('/hr/verify-security-questions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: currentUserId,
+                answers: answers
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.verified) {
+            // Show new password form
+            document.getElementById('securityQuestionForm').style.display = 'none';
+            document.getElementById('newPasswordForm').style.display = 'block';
+        } else {
+            alert('One or more answers are incorrect. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+
+// Add password validation function
+function validatePassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const submitButton = document.querySelector('#newPasswordForm button[type="submit"]');
+
+    // Basic validation - all fields must have values
+    if (!newPassword || !confirmPassword) {
+        submitButton.disabled = true;
+        return;
+    }
+
+    let isValid = true;
+
+    // Check length
+    const lengthValid = newPassword.length >= 8;
+    document.getElementById('length').className = lengthValid ? 'valid' : 'invalid';
+    isValid = isValid && lengthValid;
+
+    // Check uppercase
+    const hasUpper = /[A-Z]/.test(newPassword);
+    document.getElementById('uppercase').className = hasUpper ? 'valid' : 'invalid';
+    isValid = isValid && hasUpper;
+
+    // Check lowercase
+    const hasLower = /[a-z]/.test(newPassword);
+    document.getElementById('lowercase').className = hasLower ? 'valid' : 'invalid';
+    isValid = isValid && hasLower;
+
+    // Check number
+    const hasNumber = /[0-9]/.test(newPassword);
+    document.getElementById('number').className = hasNumber ? 'valid' : 'invalid';
+    isValid = isValid && hasNumber;
+
+    // Check special character
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+    document.getElementById('special').className = hasSpecial ? 'valid' : 'invalid';
+    isValid = isValid && hasSpecial;
+
+    // Check if passwords match
+    const passwordsMatch = newPassword === confirmPassword;
+    document.getElementById('match').className = passwordsMatch ? 'valid' : 'invalid';
+    isValid = isValid && passwordsMatch;
+
+    // Enable/disable submit button
+    submitButton.disabled = !isValid;
+}
+
+// Add event listeners for password fields
+document.getElementById('newPassword').addEventListener('input', validatePassword);
+document.getElementById('confirmPassword').addEventListener('input', validatePassword);
+
+// Add showAlert function
+function showAlert(message, isError = false) {
+    const alert = document.getElementById('customAlert');
+    const alertMessage = document.getElementById('alertMessage');
+    
+    alert.className = 'custom-alert' + (isError ? ' error' : '');
+    alertMessage.textContent = message;
+    alert.style.display = 'block';
+
+    // Hide the alert after 3 seconds
+    setTimeout(() => {
+        alert.style.animation = 'fadeOut 0.5s ease-out';
+        setTimeout(() => {
+            alert.style.display = 'none';
+            alert.style.animation = 'slideIn 0.5s ease-out';
+        }, 500);
+    }, 3000);
+}
+
+// Update the password reset handler to use the new alert
+document.getElementById('newPasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+        showAlert('Passwords do not match!', true);
+        return;
+    }
+
+    try {
+        const response = await fetch('/hr/reset-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: currentUserId,
+                newPassword: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('Password reset successfully! Please login with your new password.');
+            showLoginForm();
+        } else {
+            showAlert('Failed to reset password. Please try again.', true);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('An error occurred. Please try again.', true);
+    }
+});
+
+// Update the login form submission handler
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    const errorModal = document.querySelector('.error-modal');
+    const errorMessage = errorModal.querySelector('.error-modal-message');
+    const button = this.querySelector('button');
+    
+    // Hide error modal if it's visible
+    errorModal.classList.remove('active');
+    
+    // Show loading overlay
+    loadingOverlay.classList.add('active');
+
+    // Get login data
+    const loginData = {
+        identifier: document.getElementById('identifier').value,
+        password: document.getElementById('password').value
+    };
+
+    // Wait for 3 seconds before submitting
+    setTimeout(() => {
+        console.log('Sending login data:', loginData);
+
+        fetch('/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(loginData),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json().then(data => {
+                console.log('Response data:', data);
+                if (!response.ok) {
+                    throw new Error(data.message || 'Invalid credentials');
+                }
+                return data;
+            });
+        })
+        .then(data => {
+            const spinner = document.querySelector('.loading-spinner');
+            const loadingMessage = document.querySelector('.loading-message');
+            
+            spinner.classList.add('success');
+            loadingMessage.textContent = 'Login successful!';
+            
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+                window.location.href = data.redirect || '/dashboard';
+            }, 1000);
+        })
+        .catch(error => {
+            console.log('Login error:', error);
+            loadingOverlay.classList.remove('active');
+            
+            let specificMessage = "Invalid credentials. Please try again.";
+            
+            if (error.message.toLowerCase().includes('employee')) {
+                specificMessage = "Invalid Employee ID. Please try again.";
+            } else if (error.message.toLowerCase().includes('username')) {
+                specificMessage = "Invalid username. Please try again.";
+            } else if (error.message.toLowerCase().includes('password')) {
+                specificMessage = "Incorrect password. Please try again.";
+            }
+            
+            errorMessage.textContent = specificMessage;
+            errorModal.classList.add('active');
+            button.disabled = false;
+        });
+    }, 3000);
+});
+
+// Close error modal when clicking the button
+document.querySelector('.error-modal-button').addEventListener('click', function() {
+    document.querySelector('.error-modal').classList.remove('active');
+});
+
+// Prevent browser back button from showing loading state
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        document.querySelector('.loading-overlay').classList.remove('active');
+    }
+});
+</script>
 </body>
 </html>

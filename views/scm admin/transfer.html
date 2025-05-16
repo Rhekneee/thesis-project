@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/public/css/scm_style.css">
+  <script src="/public/js/app.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+        <h1>SCM</h1>
+        <button id="toggleSidebar">☰</button>
+      </div>
+      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
+      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
+      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
+      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
+      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
+      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
+      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
+      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+
+  </div>
+  <div class="main-content">
+    <div class="top-bar">
+        <button id="addTransferBtn" class="add-item-btn">Add Transfer</button>
+        <input type="text" id="transferSearch" class="search-bar3" placeholder="Search transfers...">
+      </div>
+    <div class="card">
+        <h2>Material Transfer</h2>
+          <table class="material-table transfer-table">
+            <thead>
+              <tr>
+                <th>Transfer ID</th>
+                <th>Request ID</th>
+                <th>Material</th>
+                <th>Site</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="transferBody" >
+              <tr>
+                <td>TR001</td>
+                <td>REQ001</td>
+                <td>Steel</td>
+                <td>Site A</td>
+                <td>01/01/2025</td>
+                <td>In Transit</td>
+                <td>
+                  <button class="action-btn">View</button>
+                  <button class="action-btn">Edit</button>
+                  <button class="action-btn">Delete</button>
+                </td>
+              </tr>
+              <tr>
+                <td>TR002</td>
+                <td>REQ002</td>
+                <td>Cement</td>
+                <td>Site B</td>
+                <td>01/01/2025</td>
+                <td>Delivered</td>
+                <td>
+                  <button class="action-btn">View</button>
+                  <button class="action-btn">Edit</button>
+                  <button class="action-btn">Delete</button>
+                </td>
+              </tr>
+              <!-- Add more rows as needed -->
+            </tbody>
+          </table>
+          <div class="pagination" id="transferPagination">
+            <a href="#" class="page-arrow">&lt;</a>
+            <a href="#" class="page-number active">1</a>
+            <a href="#" class="page-number">2</a>
+            <a href="#" class="page-number">3</a>
+            <a href="#" class="page-number">4</a>
+            <span class="dots">...</span>
+            <a href="#" class="page-arrow">&gt;</a>
+          </div>
+        </div>
+      
+          <!-- Add Transfer Modal -->
+        <div id="addTransferModal" class="modal">
+          <div class="modal-content">
+            <button class="close-btn">&times;</button>
+            <h2>Add Transfer</h2><br><br>
+            <form id="addTransferForm">
+              <input type="text" id="transferID" placeholder="Transfer ID" required />
+              <input type="text" id="requestID" placeholder="Request ID" required />
+              <input type="text" id="material" placeholder="Material" required />
+              <input type="text" id="site" placeholder="Site" required />
+              <input type="date" id="transferDate" placeholder="Date" required />
+              <select id="status" required>
+                <option value="" disabled selected>Status</option>
+                <option value="In Transit">In Transit</option>
+                <option value="Delivered">Delivered</option>
+              </select>
+
+              <!-- Centered Add button -->
+              <div style="display: flex; justify-content: center; width: 100%;">
+                <button type="submit" class="action-btn">Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+            
+  
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      /* Inventory Pagination */
+      const inventoryRowsPerPage = 5;
+      const inventoryTableBody = document.getElementById("inventoryBody");
+      const inventoryRows = Array.from(inventoryTableBody?.querySelectorAll("tr") || []);
+      const inventoryPagination = document.getElementById("inventoryPagination");
+  
+      function paginateInventoryTable() {
+        const totalPages = Math.ceil(inventoryRows.length / inventoryRowsPerPage);
+        let currentPage = 1;
+  
+        function showPage(page) {
+          const start = (page - 1) * inventoryRowsPerPage;
+          const end = start + inventoryRowsPerPage;
+  
+          inventoryRows.forEach((row, index) => {
+            row.style.display = (index >= start && index < end) ? "" : "none";
+          });
+  
+          updateInventoryPagination(page);
+        }
+  
+        function updateInventoryPagination(current) {
+          inventoryPagination.innerHTML = "";
+  
+          const prev = document.createElement("a");
+          prev.href = "#";
+          prev.className = "page-arrow";
+          prev.innerHTML = "&lt;";
+          prev.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+              currentPage--;
+              showPage(currentPage);
+            }
+          });
+          inventoryPagination.appendChild(prev);
+  
+          for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement("a");
+            btn.href = "#";
+            btn.className = "page-number" + (i === current ? " active" : "");
+            btn.textContent = i;
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              currentPage = i;
+              showPage(i);
+            });
+            inventoryPagination.appendChild(btn);
+          }
+  
+          const next = document.createElement("a");
+          next.href = "#";
+          next.className = "page-arrow";
+          next.innerHTML = "&gt;";
+          next.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+              currentPage++;
+              showPage(currentPage);
+            }
+          });
+          inventoryPagination.appendChild(next);
+        }
+  
+        if (inventoryRows.length) showPage(currentPage);
+      }
+  
+      if (inventoryTableBody) {
+        paginateInventoryTable();
+      }
+  
+      /* Transfer Pagination */
+      const transferRowsPerPage = 5;
+      const transferTableBody = document.getElementById("transferBody");
+      const transferRows = Array.from(transferTableBody?.querySelectorAll("tr") || []);
+      const transferPagination = document.getElementById("transferPagination");
+  
+      function paginateTransferTable() {
+        const totalPages = Math.ceil(transferRows.length / transferRowsPerPage);
+        let currentPage = 1;
+  
+        function showPage(page) {
+          const start = (page - 1) * transferRowsPerPage;
+          const end = start + transferRowsPerPage;
+  
+          transferRows.forEach((row, index) => {
+            row.style.display = (index >= start && index < end) ? "" : "none";
+          });
+  
+          updateTransferPagination(page);
+        }
+  
+        function updateTransferPagination(current) {
+          transferPagination.innerHTML = "";
+  
+          const prev = document.createElement("a");
+          prev.href = "#";
+          prev.className = "page-arrow";
+          prev.innerHTML = "&lt;";
+          prev.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+              currentPage--;
+              showPage(currentPage);
+            }
+          });
+          transferPagination.appendChild(prev);
+  
+          for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement("a");
+            btn.href = "#";
+            btn.className = "page-number" + (i === current ? " active" : "");
+            btn.textContent = i;
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              currentPage = i;
+              showPage(i);
+            });
+            transferPagination.appendChild(btn);
+          }
+  
+          const next = document.createElement("a");
+          next.href = "#";
+          next.className = "page-arrow";
+          next.innerHTML = "&gt;";
+          next.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+              currentPage++;
+              showPage(currentPage);
+            }
+          });
+          transferPagination.appendChild(next);
+        }
+  
+        if (transferRows.length) showPage(currentPage);
+      }
+  
+      if (transferTableBody) {
+        paginateTransferTable();
+      }
+
+
+
+
+      const addTransferBtn = document.getElementById("addTransferBtn");
+      const transferModal = document.getElementById("addTransferModal");
+      const transferForm = document.getElementById("addTransferForm");
+      const closeTransferBtn = transferModal?.querySelector(".close-btn");
+    
+      if (addTransferBtn && transferModal && transferForm && closeTransferBtn) {
+        addTransferBtn.addEventListener("click", () => {
+          transferModal.style.display = "block";
+        });
+    
+        closeTransferBtn.addEventListener("click", () => {
+          transferModal.style.display = "none";
+        });
+    
+        window.addEventListener("click", (event) => {
+          if (event.target === transferModal) {
+            transferModal.style.display = "none";
+          }
+        });
+    
+        transferForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          // Add logic to handle form data here if needed
+          alert("Transfer added successfully!");
+          transferModal.style.display = "none";
+          transferForm.reset();
+        });
+      }
+
+
+
+
+
+
+    });
+
+
+
+
+
+  </script>
+  
+</body>
+</html>
+
+

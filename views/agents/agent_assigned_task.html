@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Styling for the sidebar */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: all 0.3s;
+            color: white;
+            padding-top: 30px;
+            display: none; /* Sidebar is hidden by default */
+        }
+
+        #sidebar .sidebar-header {
+            text-align: center;
+            padding: 10px;
+        }
+
+        #sidebar ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #sidebar ul li {
+            padding: 15px;
+            text-align: left;
+            margin-left: auto;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        #sidebar ul li.logout {
+            margin-top: 350px;
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Other sidebar item hover effects */
+        #sidebar ul li a:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+
+        #sidebar ul li.active a {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+        .table {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .sidebar a:hover {
+            background-color: #575757;
+            text-decoration: none;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .search-container input {
+            max-width: 300px;
+            width: 100%;
+            margin-right: 10px;
+        }
+
+        #entriesMessage {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sort-icon {
+            cursor: pointer;
+        }
+
+        .sort-icon.active {
+            color: #007bff;
+        }
+
+        .pagination {
+            justify-content: center;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Agent</h3>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_assigned_task"><i class="fas fa-tachometer-alt"></i> Assigned Task</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_client"><i class="fas fa-tachometer-alt"></i> Client</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_tripping"><i class="fas fa-tachometer-alt"></i> Tripping</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-item active" href="/agents/agent_transactions"><i class="fas fa-tachometer-alt"></i> Transactions</a>
+                </li>
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+            <!-- Button to toggle sidebar with icon -->
+            <button class="btn" id="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <h2>Assigned Task</h2>
+
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by name..." onkeyup="filterInquiries()">
+                <div>
+                    <label for="entriesPerPage">Entries per page:</label>
+                    <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(1)">Client Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(2)">Email <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(3)">Contact <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(4)">Property <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(5)">Preferred Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(6)">Pickup <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(7)">Assigned Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable(8)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="inquiryList"></tbody>
+            </table>
+
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accept Task Modal -->
+    <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="acceptModalLabel">Confirm Accept</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to accept this?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAccept">Accept</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decline Task Modal -->
+    <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="declineModalLabel">Confirm Decline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to decline this?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDecline">Decline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+
+        // JavaScript for toggling the sidebar visibility
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+            
+            // Toggle sidebar visibility
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';  // Shift content to the right
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';  // No shift
+            }
+        });
+
+        // Sample data for inquiries with assigned date
+        let inquiries = [
+            { id: 1, name: 'Alice', email: 'alice@mail.com', contact: '09171234567', property: 'Lot A', date: '2025-05-01', pickup: 'Buendia', assignedDate: '2025-04-28', status: 'New' },
+            { id: 2, name: 'Bob', email: 'bob@mail.com', contact: '09281234567', property: 'Unit B', date: '2025-05-02', pickup: 'Ayala', assignedDate: '2025-04-27', status: 'Confirmed' },
+            { id: 3, name: 'Charlie', email: 'charlie@mail.com', contact: '09391234567', property: 'House C', date: '2025-05-03', pickup: 'Ortigas', assignedDate: '2025-04-29', status: 'Done' },
+            { id: 4, name: 'Diana', email: 'diana@mail.com', contact: '09181234567', property: 'Unit D', date: '2025-05-04', pickup: 'C5', assignedDate: '2025-04-30',  status: 'New' }
+        ];
+
+        let filteredInquiries = null;
+        let itemsPerPage = 5;
+        let currentPage = 1;
+        let currentSortDirection = 'asc';
+
+        function renderInquiries() {
+            const list = filteredInquiries || inquiries;
+            const inquiryList = document.getElementById('inquiryList');
+            inquiryList.innerHTML = '';
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = currentPage * itemsPerPage;
+            const currentInquiries = list.slice(start, end);
+
+            currentInquiries.forEach(q => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${q.id}</td>
+                    <td>${q.name}</td>
+                    <td>${q.email}</td>
+                    <td>${q.contact}</td>
+                    <td>${q.property}</td>
+                    <td>${q.date}</td>
+                    <td>${q.pickup}</td>
+                    <td>${q.assignedDate}</td> <!-- Added Assigned Date -->
+                    <td>${q.status}</td>
+                    <td>
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#acceptModal">Accept</button>
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#declineModal">Decline</button>
+                    </td>
+                `;
+                inquiryList.appendChild(row);
+            });
+
+            renderPagination();
+            updateEntriesMessage();
+        }
+
+        function filterInquiries() {
+            const term = document.getElementById('searchBar').value.toLowerCase().trim();
+            filteredInquiries = term
+                ? inquiries.filter(q => q.name.toLowerCase().includes(term) || q.property.toLowerCase().includes(term))
+                : null;
+            currentPage = 1;
+            renderInquiries();
+        }
+
+        function setEntriesPerPage() {
+            itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
+            currentPage = 1;
+            renderInquiries();
+        }
+
+        function updateEntriesMessage() {
+            const list = filteredInquiries || inquiries;
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, list.length);
+            document.getElementById('showingEntries').textContent = `Showing ${start} to ${end} of ${list.length} entries`;
+        }
+
+        function renderPagination() {
+            const list = filteredInquiries || inquiries;
+            const totalPages = Math.ceil(list.length / itemsPerPage);
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.classList.add('page-item');
+                if (i === currentPage) li.classList.add('active');
+                li.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>`;
+                controls.appendChild(li);
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderInquiries();
+        }
+
+        function sortTable(colIndex) {
+            const keys = ['id', 'name', 'email', 'contact', 'property', 'date', 'pickup', 'assignedDate', 'status'];
+            const list = filteredInquiries || inquiries;
+
+            const key = keys[colIndex];
+            const sorted = [...list].sort((a, b) => {
+                const aVal = a[key].toString().toLowerCase();
+                const bVal = b[key].toString().toLowerCase();
+                return currentSortDirection === 'asc'
+                    ? aVal.localeCompare(bVal)
+                    : bVal.localeCompare(aVal);
+            });
+
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+
+            if (filteredInquiries) {
+                filteredInquiries = sorted;
+            } else {
+                inquiries = sorted;
+            }
+
+            renderInquiries();
+        }
+
+        // Initial render
+        renderInquiries();
+    </script>
+</body>
+
+</html>

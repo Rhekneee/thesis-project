@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Payroll Approval</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        button {
+            padding: 6px 12px;
+            margin: 2px;
+            cursor: pointer;
+        }
+        .remarks-box {
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Pending Payroll Approvals</h2>
+
+<table id="payrollTable">
+    <thead>
+        <tr>
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Full Name</th>
+                    <th>Position</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Days Present</th>
+                    <th>Total Hours</th>
+                    <th>Overtime Hours</th>
+                    <th>Fixed Salary</th>
+                    <th>Salary Before Tax</th>
+                    <th>Total Deductions</th>
+                    <th>Net Pay</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>            
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Rows will be inserted here -->
+    </tbody>
+</table>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+<script>
+async function loadPendingPayroll() {
+    const res = await fetch('http://localhost:4000/hr/payroll/pending');
+    const response = await res.json();
+    const data = response.payroll;
+    
+
+    const tbody = document.querySelector('#payrollTable tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.employee_id}</td>
+            <td>${item.full_name || 'N/A'}</td>
+            <td>${item.position || 'N/A'}</td>
+            <td>${formatDate(item.start_date)}</td>  
+            <td>${formatDate(item.end_date)}</td>   
+            <td>${item.days_present || 0}</td>      
+            <td>${formatNumber(item.total_hours)}</td> 
+            <td>${formatNumber(item.overtime_hours)}</td>
+            <td>${formatNumber(item.fixed_salary)}</td> 
+            <td>${formatNumber(item.salary_before_tax)}</td>
+            <td>${formatNumber(item.total_deductions)}</td> 
+            <td>${formatNumber(item.net_salary)}</td>  
+            <td>${item.status || 'pending'}</td>
+            <td>
+                <button onclick="approvePayroll(${item.id})">Approve</button>
+                <button onclick="showRejectBox(${item.id})">Reject</button>
+                <div id="remarks-${item.id}" class="remarks-box" style="display:none;">
+                    <input type="text" id="remark-input-${item.id}" placeholder="Enter remarks">
+                    <button onclick="rejectPayroll(${item.id})">Submit</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Define formatDate
+function formatDate(date) {
+        const d = new Date(date);
+        return d.toLocaleDateString();  // Formats as MM/DD/YYYY
+    }
+
+    // Define formatNumber
+    function formatNumber(number) {
+        return parseFloat(number).toFixed(2);  // Formats the number to 2 decimal places
+    }
+
+
+async function approvePayroll(id) {
+    await fetch('http://localhost:4000/hr/payroll/approve-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payrollId: id, status: 'approved', remarks: null })
+    });
+    loadPendingPayroll();
+}
+
+function showRejectBox(id) {
+    document.querySelector(`#remarks-${id}`).style.display = 'block';
+}
+
+async function rejectPayroll(id) {
+    const remarks = document.querySelector(`#remark-input-${id}`).value;
+    if (!remarks.trim()) {
+        alert('Please enter remarks when rejecting.');
+        return;
+    }
+    await fetch('http://localhost:4000/hr/payroll/approve-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payrollId: id, status: 'rejected', remarks })
+    });
+    loadPendingPayroll();
+}
+
+// Load payroll when page loads
+loadPendingPayroll();
+</script>
+
+</body>
+</html>

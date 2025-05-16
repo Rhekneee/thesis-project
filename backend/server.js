@@ -9,6 +9,7 @@ const db = require("./db");
 const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
+const financeRoutes = require('./departments/finance/routes/finance.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -41,8 +42,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
-app.use("/crm", crmRoutes);
-
+app.use('/crm', crmRoutes);
+app.use('/api/finance', financeRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
@@ -54,39 +55,50 @@ app.get('/', (req, res) => {
 
 // Dashboard Route
 app.get('/dashboard', (req, res) => {
-    console.log(" Session at /dashboard:", req.session);
+    console.log("Session at /dashboard:", req.session);
 
     if (!req.session.user) {
         return res.redirect('/');  // If no session, redirect to login
     }
 
-    // Ensure the user has permission to access their dashboard
+    // Get user info from session
+    const userRole = req.session.user.role_name;
+    const isEmployee = req.session.user.employee_id !== undefined;
+    const identifier = isEmployee ? req.session.user.employee_id : req.session.user.username;
+    
+    console.log('User type:', isEmployee ? 'Employee' : 'External User');
+    console.log('Role:', userRole);
+    console.log('Identifier:', identifier);
+
+    // Role-based dashboard mapping
     const roleDashboards = {
+        // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
-        'office_administrator': '/hr_manager/hr_dashboard.html',
-        'liaison_officer': 'manager_crm.html',
-        'finance_accounting': 'manager_finance.html',
-        'general_foreman': 'manager_manufacturing.html',
-        'warehouse_supervisor': 'manager_supply_chain.html',
-        'corporate_secretary': 'manager_corporate_secretary.html'
+        'office_administrator': '/hr admin/hr_admin.html',
+        'finance_accounting': '/finance admin/finance_payroll.html',
+        'general_foreman': '/manufacturing/manufacturing_dashboard.html',
+        'corporate_secretary': 'manager_corporate_secretary.html',
+        'admin_staff': '/hr_employee/attendance',
+        'sales_marketing_head': '/crm admin/crm_admin.html',
+        'logistics': '/scm admin/scm_dashboard.html',
+        'agents': '/agents/agent_dashboard.html',
+        // External user dashboards (using username)
+        'developer': '/developer/developer_dashboard',
+        'customer': '/customer/dashboard'
     };
 
-    const userRole = req.session.user.role_name; // Get the role name from session
-    const dashboardFile = roleDashboards[userRole]; // Get the corresponding dashboard
+    const dashboardFile = roleDashboards[userRole];
 
-    // If role has no associated dashboard, show an error
     if (!dashboardFile) {
-        console.error(`❌ No dashboard assigned for role: ${userRole}`);
-        return res.status(403).send("Unauthorized access.");
+        console.error('No dashboard found for role:', userRole);
+        return res.status(404).send('Dashboard not found for your role');
     }
 
-    // Serve the corresponding dashboard
-    const dashboardPath = path.join(__dirname, '..', 'views', dashboardFile);
-    res.sendFile(dashboardPath, (err) => {
-        if (err) {
-            console.error(`❌ Dashboard file not found: ${dashboardFile}`);
-        }
-    });
+    // Store the identifier (employee_id or username) in session for later use
+    req.session.user.identifier = identifier;
+
+    // Redirect to the appropriate dashboard
+    res.redirect(dashboardFile);
 });
 
 // Logout Route

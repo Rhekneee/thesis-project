@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foremen Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <style>
+
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Search and Filter Styles */
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0;
+        }
+
+        #filterDropdown {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 30px 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            min-width: 150px;
+            margin-right: 10px;
+        }
+
+        #filterDropdown:hover {
+            background-color: #0056b3;
+        }
+
+        #filterDropdown option {
+            background-color: white;
+            color: black;
+            padding: 10px;
+        }
+
+        .entries-per-page {
+            display: flex;
+            align-self: end;
+            margin-left: auto;
+        }
+
+        /* Table Styles */
+        .table {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        .sort-icon:hover {
+            color: #007bff;
+        }
+
+        .foreman-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-available {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .status-busy {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: white;
+        }
+
+        .view-btn {
+            background-color: #0d6efd;
+        }
+
+        .view-btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .modal-header .btn-close {
+            color: white;
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .foreman-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .foreman-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .foreman-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .foreman-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .foreman-details h6 {
+            margin: 0;
+            color: #343a40;
+        }
+
+        .foreman-details p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .foreman-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #0d6efd;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .project-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .project-item:hover {
+            background: #e9ecef;
+        }
+
+        .project-item h6 {
+            margin: 0;
+            color: #343a40;
+        }
+
+        .project-item p {
+            margin: 5px 0 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+                        <!-- Topbar -->
+                        <div class="topbar">
+                            <div class="topbar-left">
+                                <div class="menu-toggle" onclick="toggleSidebar()">
+                                    <i class="fas fa-bars"></i>
+                                </div>
+                            </div>
+                            <div class="topbar-right">
+                                <div class="notification-icon" onclick="toggleNotifications()">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="notification-badge"></span>
+                                </div>
+                                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                                    <div class="profile-info">
+                                        <div class="profile-name"></div>
+                                        <div class="profile-position"></div>
+                                    </div>
+                                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Dropdown -->
+                            <div class="notification-dropdown" id="notificationDropdown">
+                                <div class="notification-header">
+                                    <span>Notifications</span>
+                                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">New Leave Request</div>
+                                    <div class="notification-time">5 minutes ago</div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-title">Payroll Processed</div>
+                                    <div class="notification-time">1 hour ago</div>
+                                </div>
+                                <div class="notification-item">
+                                        <span class="profile-name">John Doe</span>
+                                        <span class="profile-position">HR Manager</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Notification Dropdown -->
+                                <div class="notification-dropdown" id="notificationDropdown">
+                                    <div class="notification-header">
+                                        <span>Notifications</span>
+                                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Leave Request</div>
+                                        <div class="notification-time">5 minutes ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">Payroll Processed</div>
+                                        <div class="notification-time">1 hour ago</div>
+                                    </div>
+                                    <div class="notification-item">
+                                        <div class="notification-title">New Employee Added</div>
+                                        <div class="notification-time">2 hours ago</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- Sidebar -->
+                    <div class="sidebar" id="sidebar">
+                        <div class="sidebar-header">
+                            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                            <span class="company-title">MDB Construction</span>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="nav-item">
+                                <a class="nav-item" href="/manufacturing/manufacturing_dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                                    <i class="fas fa-calendar-check"></i> Attendance 
+                                </a>
+                                <ul class="collapse" id="Attendance">
+                                    <li class="nav-item"><a href="/manufacturing/manufacturing_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                                    <li class="nav-item"><a href="/manufacturing/manufacturing_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                                    <li class="nav-item"><a href="/manufacturing/manufacturing_overtime"><i class="fas fa-business-time"></i> Overtime</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" data-bs-toggle="collapse" data-bs-target="#Projects" aria-expanded="false">
+                                    <i class="fas fa-project-diagram"></i> Projects</i>
+                                </a>
+                                <ul class="collapse" id="Projects">
+                                    <li class="nav-item"><a href="/manufacturing/manufacturing_projects"><i class="fas fa-code-branch"></i> Developer Projects</a></li>
+                                    <li class="nav-item active"><a href="/manufacturing/manufacturing_approved_project"><i class="fas fa-check-circle"></i> Approved Projects</a></li>
+                                    <li class="nav-item"><a href="/manufacturing/manufacturing_progress"><i class="fas fa-tasks"></i> Project Progress</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/manufacturing/manufacturing_request_materials"><i class="fas fa-box"></i> Request Materials</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/manufacturing/manufacturing_ratings"><i class="fas fa-star"></i> Ratings & Feedback</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/manufacturing/manufacturing_foremen"><i class="fas fa-hard-hat"></i> Foremen List</a>
+                            </li>
+                            <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </div>
+
+        <!-- Main content area -->
+        <div id="content">
+           
+
+            <h2>Foremen Management</h2>
+
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search by foreman name..." onkeyup="filterForemen()">
+                
+                <!-- Filter Dropdown -->
+                <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter foremen by status">
+                    <option value="all">All Foremen</option>
+                    <option value="available">Available</option>
+                    <option value="busy">Currently Assigned</option>
+                </select>
+              
+                <div id="entriesPerPageContainer" class="entries-per-page">
+                    <label for="entriesPerPageSelect">Entries per page:</label>
+                    <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Foremen Table -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Image</th>
+                            <th onclick="sortTable(2)">Name <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(3)">Contact <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(4)">Projects Completed <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(5)">Current Projects <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foremenList"></tbody>
+                </table>
+            </div>
+
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Foreman Details Modal -->
+    <div class="modal fade" id="viewForemanModal" tabindex="-1" aria-labelledby="viewForemanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewForemanModalLabel">
+                        <i class="fas fa-user-tie me-2"></i>Foreman Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Foreman Image Section -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-image me-2 text-primary"></i>Profile Image
+                                    </h6>
+                                    <div class="image-container text-center">
+                                        <img id="viewForemanImage" src="#" alt="Foreman Image" class="img-fluid rounded-circle" style="max-height: 200px; object-fit: cover;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Foreman Details Section -->
+                        <div class="col-md-8">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-info-circle me-2 text-primary"></i>Personal Information
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Name</label>
+                                                <p id="viewForemanName" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Contact</label>
+                                                <p id="viewForemanContact" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Specialization</label>
+                                                <p id="viewForemanSpecialization" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Status</label>
+                                                <p id="viewForemanStatus" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Section -->
+                            <div class="card border-0 shadow-sm mt-4">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-chart-bar me-2 text-primary"></i>Statistics
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Projects Completed</label>
+                                                <p id="viewForemanCompleted" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Current Projects</label>
+                                                <p id="viewForemanCurrent" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Current Project Section -->
+                            <div class="card border-0 shadow-sm mt-4" id="currentProjectSection">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-project-diagram me-2 text-primary"></i>Current Project
+                                    </h6>
+                                    <div id="currentProjectDetails"></div>
+                                </div>
+                            </div>
+
+                            <!-- Completed Projects Section -->
+                            <div class="card border-0 shadow-sm mt-4">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-check-circle me-2 text-primary"></i>Completed Projects
+                                    </h6>
+                                    <div class="project-list" id="completedProjectsList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/side_top.js"></script>
+
+    <script>
+        // Sample data for foremen
+        let foremen = [
+            {
+                id: 1,
+                name: 'Michael Johnson',
+                contact: '+63 912 345 6789',
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 15,
+                currentProjects: 1,
+                specialization: 'Commercial Buildings',
+                status: 'busy',
+                currentProject: {
+                    id: 2,
+                    name: 'Commercial Building B',
+                    location: 'Makati',
+                    startDate: '2024-03-15',
+                    expectedEndDate: '2024-12-31'
+                },
+                completedProjects: [
+                    {
+                        id: 1,
+                        name: 'Office Tower A',
+                        location: 'Manila',
+                        completionDate: '2024-02-28'
+                    },
+                    {
+                        id: 2,
+                        name: 'Shopping Mall B',
+                        location: 'Quezon City',
+                        completionDate: '2024-01-15'
+                    }
+                ]
+            },
+            {
+                id: 2,
+                name: 'David Wilson',
+                contact: '+63 923 456 7890',
+                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 12,
+                currentProjects: 0,
+                specialization: 'Residential Projects',
+                status: 'available',
+                completedProjects: [
+                    {
+                        id: 3,
+                        name: 'Residential Complex C',
+                        location: 'Pasig',
+                        completionDate: '2024-03-01'
+                    },
+                    {
+                        id: 4,
+                        name: 'Apartment Building D',
+                        location: 'Mandaluyong',
+                        completionDate: '2024-02-15'
+                    }
+                ]
+            },
+            {
+                id: 3,
+                name: 'Sarah Chen',
+                contact: '+63 934 567 8901',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                projectsCompleted: 8,
+                currentProjects: 0,
+                specialization: 'Industrial Projects',
+                status: 'available',
+                completedProjects: [
+                    {
+                        id: 5,
+                        name: 'Factory Building E',
+                        location: 'Laguna',
+                        completionDate: '2024-03-10'
+                    },
+                    {
+                        id: 6,
+                        name: 'Warehouse F',
+                        location: 'Cavite',
+                        completionDate: '2024-02-28'
+                    }
+                ]
+            }
+        ];
+
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+
+        // Sidebar toggle functionality
+        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var content = document.getElementById('content');
+
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
+        });
+
+        // Function to render foremen
+        function renderForemen(filteredForemen = null) {
+            const foremenList = document.getElementById('foremenList');
+            foremenList.innerHTML = '';
+
+            const foremenToRender = filteredForemen || foremen;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, foremenToRender.length);
+            const paginatedForemen = foremenToRender.slice(startIndex, endIndex);
+
+            paginatedForemen.forEach(foreman => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${foreman.id}</td>
+                    <td><img src="${foreman.image}" alt="${foreman.name}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></td>
+                    <td>${foreman.name}</td>
+                    <td>${foreman.contact}</td>
+                    <td>${foreman.projectsCompleted}</td>
+                    <td>${foreman.currentProjects}</td>
+                    <td><span class="foreman-status status-${foreman.status}">${foreman.status.charAt(0).toUpperCase() + foreman.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn" onclick="viewForeman(${foreman.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                foremenList.appendChild(row);
+            });
+
+            updatePagination(foremenToRender.length);
+        }
+
+        // Function to update pagination
+        function updatePagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+
+            updateEntriesMessage(totalItems);
+        }
+
+        // Function to change page
+        function changePage(newPage) {
+            const totalPages = Math.ceil(foremen.length / itemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderForemen();
+            }
+            return false;
+        }
+
+        // Function to update entries message
+        function updateEntriesMessage(totalItems) {
+            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+            
+            let message;
+            if (totalItems === 0) {
+                message = 'No entries to display';
+            } else if (startIndex === endIndex) {
+                message = `Showing entry ${startIndex} of ${totalItems} entries`;
+            } else {
+                message = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
+            }
+            
+            document.getElementById('showingEntries').textContent = message;
+        }
+
+        // Function to set entries per page
+        function setEntriesPerPage() {
+            itemsPerPage = parseInt(document.getElementById('entriesPerPageSelect').value);
+            currentPage = 1;
+            renderForemen();
+        }
+
+        // Function to handle filter change
+        function handleFilterChange() {
+            const filter = document.getElementById('filterDropdown').value;
+            const searchValue = document.getElementById('searchBar').value.toLowerCase();
+            
+            let filteredForemen = foremen;
+            
+            // Apply status filter
+            if (filter !== 'all') {
+                filteredForemen = filteredForemen.filter(f => f.status === filter);
+            }
+            
+            // Apply search filter
+            if (searchValue) {
+                filteredForemen = filteredForemen.filter(f => 
+                    f.name.toLowerCase().includes(searchValue) ||
+                    f.specialization.toLowerCase().includes(searchValue)
+                );
+            }
+            
+            currentPage = 1;
+            renderForemen(filteredForemen);
+        }
+
+        // Function to view foreman details
+        function viewForeman(id) {
+            const foreman = foremen.find(f => f.id === id);
+            if (foreman) {
+                // Update basic information
+                document.getElementById('viewForemanImage').src = foreman.image;
+                document.getElementById('viewForemanName').textContent = foreman.name;
+                document.getElementById('viewForemanContact').textContent = foreman.contact;
+                document.getElementById('viewForemanSpecialization').textContent = foreman.specialization;
+                document.getElementById('viewForemanStatus').textContent = foreman.status.charAt(0).toUpperCase() + foreman.status.slice(1);
+                document.getElementById('viewForemanCompleted').textContent = foreman.projectsCompleted;
+                document.getElementById('viewForemanCurrent').textContent = foreman.currentProjects;
+
+                // Update current project section
+                const currentProjectSection = document.getElementById('currentProjectSection');
+                const currentProjectDetails = document.getElementById('currentProjectDetails');
+                
+                if (foreman.currentProject) {
+                    currentProjectSection.style.display = 'block';
+                    currentProjectDetails.innerHTML = `
+                        <div class="project-item">
+                            <h6>${foreman.currentProject.name}</h6>
+                            <p><i class="fas fa-map-marker-alt me-2"></i>${foreman.currentProject.location}</p>
+                            <p><i class="fas fa-calendar-alt me-2"></i>Started: ${foreman.currentProject.startDate}</p>
+                            <p><i class="fas fa-flag-checkered me-2"></i>Expected Completion: ${foreman.currentProject.expectedEndDate}</p>
+                        </div>
+                    `;
+                } else {
+                    currentProjectSection.style.display = 'none';
+                }
+
+                // Update completed projects section
+                const completedProjectsList = document.getElementById('completedProjectsList');
+                completedProjectsList.innerHTML = '';
+                
+                foreman.completedProjects.forEach(project => {
+                    const projectItem = document.createElement('div');
+                    projectItem.className = 'project-item';
+                    projectItem.innerHTML = `
+                        <h6>${project.name}</h6>
+                        <p><i class="fas fa-map-marker-alt me-2"></i>${project.location}</p>
+                        <p><i class="fas fa-calendar-check me-2"></i>Completed: ${project.completionDate}</p>
+                    `;
+                    completedProjectsList.appendChild(projectItem);
+                });
+
+                const viewModal = new bootstrap.Modal(document.getElementById('viewForemanModal'));
+                viewModal.show();
+            }
+        }
+
+        // Add event listener for search input
+        document.getElementById('searchBar').addEventListener('input', handleFilterChange);
+
+        // Initialize the table
+        renderForemen();
+    </script>
+</body>
+</html>

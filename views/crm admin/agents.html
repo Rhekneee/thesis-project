@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agents</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Table and form styles */
+        .agents-table {
+            margin-top: 20px;
+        }
+
+        .agents-table th, .agents-table td {
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .agent-form {
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        /* Search bar styling */
+        #searchBar {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease; /* Smooth transition on color change */
+        }
+
+        .sort-icon.active {
+            color: #007bff; /* Change this to your preferred active color */
+        }
+
+        .sort-icon:hover {
+            color: #0056b3; /* Optional: Hover effect */
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0; /* Fix spacing */
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/crm/crm_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/crm/crm_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/crm/crm_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="/crm/crm_work_adjustment"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
+                <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>
+                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
+                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <!-- Properties Section with sub-options -->
+                 <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
+                        <i class="fas fa-home"></i>
+                        <span>Properties</span>
+                    </a>
+                    <ul class="collapse" id="properties">
+                        <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> <span>View Properties</span></a></li>
+                        <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> <span>Add New Property</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> <span>Transactions</span></a></li>
+               
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+           
+            <!-- ========== Agents Content ========== -->
+            <h2>Agents</h2>
+
+            <!-- Search Bar and Entries Per Page -->
+            <div class="search-container">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search agents by name..." onkeyup="filterAgents()">
+                <!-- Entries per page -->
+                <div>
+                    <label for="entriesPerPage" class="form-label">Entries per page:</label>
+                    <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+            </div>
+
+
+
+            <!-- Agent Table -->
+            <table class="table agents-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon" id="sortId"></i></th>
+                        <th onclick="sortTable(1)">Name <i class="fas fa-sort sort-icon" id="sortName"></i></th>
+                        <th onclick="sortTable(2)">Email <i class="fas fa-sort sort-icon" id="sortEmail"></i></th>
+                        <th onclick="sortTable(3)">Phone <i class="fas fa-sort sort-icon" id="sortPhone"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="agentsList">
+                    <!-- Agent rows will be dynamically inserted here -->
+                </tbody>
+            </table>
+
+            <!-- Showing entries message -->
+            <div id="entriesMessage">
+                <span id="showingEntries"></span>
+                <nav>
+                    <ul class="pagination" id="paginationControls">
+                        <!-- Pagination buttons will be dynamically inserted here -->
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Modal for Adding and Editing Agent -->
+            <div class="modal fade" id="addAgentModal" tabindex="-1" aria-labelledby="addAgentModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addAgentModalLabel">Add Agent</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="agentForm" class="agent-form">
+                                <div class="form-group">
+                                    <label for="agentName">Name</label>
+                                    <input type="text" id="agentName" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="agentEmail">Email</label>
+                                    <input type="email" id="agentEmail" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="agentPhone">Phone</label>
+                                    <input type="text" id="agentPhone" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-custom">Save Agent</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteAgentModal" tabindex="-1" aria-labelledby="deleteAgentModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteAgentModalLabel">Confirm Deletion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete this agent?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Replace the entire <script> block in your original file with this -->
+    <script src="/public/js/side_top.js"></script>
+<script>
+
+
+    let agents = [
+        { id: 1, name: 'John Doe', email: 'johndoe@example.com', phone: '123-456-7890' },
+        { id: 2, name: 'Jane Smith', email: 'janesmith@example.com', phone: '987-654-3210' },
+        { id: 3, name: 'David Lee', email: 'davidlee@example.com', phone: '555-123-4567' },
+        { id: 4, name: 'Alice Johnson', email: 'alicej@example.com', phone: '444-789-0123' },
+        { id: 5, name: 'Michael Brown', email: 'michaelb@example.com', phone: '333-555-7890' },
+        { id: 6, name: 'Emily Davis', email: 'emilyd@example.com', phone: '222-888-1234' },
+        { id: 7, name: 'James Wilson', email: 'jamesw@example.com', phone: '111-234-5678' },
+        { id: 8, name: 'Mary Taylor', email: 'maryt@example.com', phone: '999-111-2222' }
+    ];
+
+    let itemsPerPage = 5;
+    let currentPage = 1;
+    let currentSortDirection = 'asc';
+    let agentToDelete = null;
+    let agentToEdit = null;
+    let filteredAgents = null;
+
+    function renderAgents() {
+        const list = filteredAgents || agents;
+        const agentsList = document.getElementById('agentsList');
+        agentsList.innerHTML = '';
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = currentPage * itemsPerPage;
+        const currentAgents = list.slice(start, end);
+
+        currentAgents.forEach(agent => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${agent.id}</td>
+                <td>${agent.name}</td>
+                <td>${agent.email}</td>
+                <td>${agent.phone}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editAgent(${agent.id})">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDelete(${agent.id})">Delete</button>
+                </td>
+            `;
+            agentsList.appendChild(row);
+        });
+
+        renderPagination();
+        updateEntriesMessage();
+    }
+
+    function editAgent(agentId) {
+        agentToEdit = agentId;
+        const agent = agents.find(agent => agent.id === agentId);
+        if (agent) {
+            document.getElementById('agentName').value = agent.name;
+            document.getElementById('agentEmail').value = agent.email;
+            document.getElementById('agentPhone').value = agent.phone;
+            document.getElementById('addAgentModalLabel').textContent = 'Edit Agent';
+            $('#addAgentModal').modal('show');
+        }
+    }
+
+    document.getElementById('agentForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const agentName = document.getElementById('agentName').value;
+        const agentEmail = document.getElementById('agentEmail').value;
+        const agentPhone = document.getElementById('agentPhone').value;
+
+        if (agentToEdit) {
+            const agent = agents.find(agent => agent.id === agentToEdit);
+            if (agent) {
+                agent.name = agentName;
+                agent.email = agentEmail;
+                agent.phone = agentPhone;
+            }
+        } else {
+            const newAgent = {
+                id: agents.length + 1,
+                name: agentName,
+                email: agentEmail,
+                phone: agentPhone
+            };
+            agents.push(newAgent);
+        }
+
+        $('#addAgentModal').modal('hide');
+        agentToEdit = null;
+        renderAgents();
+    });
+
+    function confirmDelete(agentId) {
+        agentToDelete = agentId;
+        $('#deleteAgentModal').modal('show');
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        agents = agents.filter(agent => agent.id !== agentToDelete);
+        filteredAgents = filteredAgents ? filteredAgents.filter(agent => agent.id !== agentToDelete) : null;
+        $('#deleteAgentModal').modal('hide');
+        renderAgents();
+    });
+
+    function updateEntriesMessage() {
+        const list = filteredAgents || agents;
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, list.length);
+        const message = `Showing ${start} to ${end} of ${list.length} entries`;
+        document.getElementById('showingEntries').textContent = message;
+    }
+
+    function renderPagination() {
+        const list = filteredAgents || agents;
+        const paginationControls = document.getElementById('paginationControls');
+        const totalPages = Math.ceil(list.length / itemsPerPage);
+        paginationControls.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('li');
+            pageButton.classList.add('page-item');
+            if (i === currentPage) pageButton.classList.add('active');
+            pageButton.innerHTML = `
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            `;
+            paginationControls.appendChild(pageButton);
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderAgents();
+    }
+
+    function setEntriesPerPage() {
+        itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
+        currentPage = 1;
+        renderAgents();
+    }
+
+    function filterAgents() {
+        const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+
+        if (searchTerm) {
+            filteredAgents = agents.filter(agent =>
+                agent.name.toLowerCase().includes(searchTerm)
+            );
+        } else {
+            filteredAgents = null;
+        }
+
+        currentPage = 1;
+        renderAgents();
+    }
+
+    function sortTable(colIndex) {
+        const list = filteredAgents || agents;
+        const rows = [...list];
+
+        rows.sort((a, b) => {
+            const aText = Object.values(a)[colIndex].toString().toLowerCase();
+            const bText = Object.values(b)[colIndex].toString().toLowerCase();
+            return currentSortDirection === 'asc'
+                ? aText.localeCompare(bText)
+                : bText.localeCompare(aText);
+        });
+
+        if (filteredAgents) {
+            filteredAgents = rows;
+        } else {
+            agents = rows;
+        }
+
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+
+        document.querySelectorAll('.sort-icon').forEach(icon => icon.classList.remove('active'));
+        document.querySelectorAll('th i')[colIndex].classList.add('active');
+
+        renderAgents();
+    }
+
+    renderAgents();
+</script>
+    
+</body>
+
+</html>
