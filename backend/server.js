@@ -12,7 +12,6 @@ const crmRoutes = require('./departments/crm/routes/crm.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
-const PORT = 4000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,6 +42,10 @@ app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 
+app.use(cors({
+    origin: [ 'http://localhost:4000', 'https://mdb-construction-25b433e6e5d5.herokuapp.com' ],
+    credentials: true
+  }));
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
@@ -108,8 +111,9 @@ app.get('/logout', (req, res) => {
         res.redirect("/");
     });
 });
+const PORT = process.env.PORT || 4000;
 
-// Start Server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
+

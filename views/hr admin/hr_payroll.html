@@ -631,412 +631,414 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
-// Global base URL for the HR endpoint
-const BASE_URL = "http://localhost:4000/hr";
+    // Dynamically set BASE_URL based on current origin
+    const BASE_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/hr' 
+        : `${window.location.origin}/hr`;
 
-// Add getUserInfo function
-async function getUserInfo() {
-    try {
-        console.log('=== Fetching User Info ===');
-        
-        const sessionResponse = await fetch('/hr/check-session', {
-            credentials: 'include'
-        });
-
-        if (!sessionResponse.ok) {
-            throw new Error('Failed to fetch session data');
-        }
-
-        const sessionData = await sessionResponse.json();
-        console.log('Full session data:', sessionData);
-
-        if (!sessionData.user || !sessionData.user.employee_id) {
-            throw new Error('No employee ID in session');
-        }
-
-        // Fetch employee details
-        const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
-            credentials: 'include'
-        });
-
-        if (!employeeResponse.ok) {
-            throw new Error('Failed to fetch employee details');
-        }
-
-        const employeeData = await employeeResponse.json();
-        console.log('Full employee data:', employeeData);
-
-        // Update profile info in topbar
-        const profileName = document.querySelector('.profile-name');
-        const profilePosition = document.querySelector('.profile-position');
-        const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-
-        if (profileName && profilePosition) {
-            profileName.textContent = employeeData.full_name || 'Not Set';
-            profilePosition.textContent = employeeData.role_name || 'Not Set';
-        }
-
-        // Update profile picture
-        if (employeeData.profile_picture) {
-            // Extract just the filename if it's a full path
-            const filename = employeeData.profile_picture.includes('/') 
-                ? employeeData.profile_picture.split('/').pop() 
-                : employeeData.profile_picture;
+    // Add getUserInfo function
+    async function getUserInfo() {
+        try {
+            console.log('=== Fetching User Info ===');
             
-            // Add timestamp to prevent caching
-            const timestamp = new Date().getTime();
-            const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
-            console.log('Loading profile picture from:', imageUrl);
-            
-            topbarProfilePicture.src = imageUrl;
+            const sessionResponse = await fetch('/hr/check-session', {
+                credentials: 'include'
+            });
 
-            // If the path was a full path, update it in the database
-            if (employeeData.profile_picture.includes('/')) {
-                try {
-                    const updateResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}/profile-picture`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ profile_picture: filename }),
-                        credentials: 'include'
-                    });
+            if (!sessionResponse.ok) {
+                throw new Error('Failed to fetch session data');
+            }
 
-                    if (!updateResponse.ok) {
-                        console.error('Failed to update profile picture path in database');
-                    } else {
-                        console.log('Successfully updated profile picture path in database');
+            const sessionData = await sessionResponse.json();
+            console.log('Full session data:', sessionData);
+
+            if (!sessionData.user || !sessionData.user.employee_id) {
+                throw new Error('No employee ID in session');
+            }
+
+            // Fetch employee details
+            const employeeResponse = await fetch(`${BASE_URL}/employees/${sessionData.user.employee_id}`, {
+                credentials: 'include'
+            });
+
+            if (!employeeResponse.ok) {
+                throw new Error('Failed to fetch employee details');
+            }
+
+            const employeeData = await employeeResponse.json();
+            console.log('Full employee data:', employeeData);
+
+            // Update profile info in topbar
+            const profileName = document.querySelector('.profile-name');
+            const profilePosition = document.querySelector('.profile-position');
+            const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+            if (profileName && profilePosition) {
+                profileName.textContent = employeeData.full_name || 'Not Set';
+                profilePosition.textContent = employeeData.role_name || 'Not Set';
+            }
+
+            // Update profile picture
+            if (employeeData.profile_picture) {
+                // Extract just the filename if it's a full path
+                const filename = employeeData.profile_picture.includes('/') 
+                    ? employeeData.profile_picture.split('/').pop() 
+                    : employeeData.profile_picture;
+                
+                // Add timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                const imageUrl = `${BASE_URL}/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                console.log('Loading profile picture from:', imageUrl);
+                
+                topbarProfilePicture.src = imageUrl;
+
+                // If the path was a full path, update it in the database
+                if (employeeData.profile_picture.includes('/')) {
+                    try {
+                        const updateResponse = await fetch(`${BASE_URL}/employees/${sessionData.user.employee_id}/profile-picture`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ profile_picture: filename }),
+                            credentials: 'include'
+                        });
+
+                        if (!updateResponse.ok) {
+                            console.error('Failed to update profile picture path in database');
+                        } else {
+                            console.log('Successfully updated profile picture path in database');
+                        }
+                    } catch (error) {
+                        console.error('Error updating profile picture path:', error);
                     }
-                } catch (error) {
-                    console.error('Error updating profile picture path:', error);
                 }
+            } else {
+                console.log('No profile picture found, using default');
+                topbarProfilePicture.src = '/hr/default-profile-picture';
             }
-        } else {
-            console.log('No profile picture found, using default');
-            topbarProfilePicture.src = '/hr/default-profile-picture';
+
+        } catch (error) {
+            console.error('Error in getUserInfo:', error);
+        }
+    }
+
+    // Call getUserInfo when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        getUserInfo();
+        // Set current month as default
+        const currentMonth = new Date().getMonth() + 1;
+        const monthSelect = document.getElementById('month');
+        
+        // Set current month as selected
+        monthSelect.value = currentMonth.toString().padStart(2, '0');
+
+        // Populate year dropdown dynamically
+        const yearSelect = document.getElementById('year');
+        const currentYear = new Date().getFullYear();
+        
+        // Add current year and next 2 years
+        for(let i = 0; i < 3; i++) {
+            const year = currentYear + i;
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
         }
 
-    } catch (error) {
-        console.error('Error in getUserInfo:', error);
-    }
-}
+        // Set default period based on current date
+        const currentDay = new Date().getDate();
+        document.getElementById('period').value = currentDay <= 15 ? 'first' : 'second';
 
-// Call getUserInfo when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    getUserInfo();
-    // Set current month as default
-    const currentMonth = new Date().getMonth() + 1;
-    const monthSelect = document.getElementById('month');
-    
-    // Set current month as selected
-    monthSelect.value = currentMonth.toString().padStart(2, '0');
+        // Set initial active state for dropdown
+        const defaultAction = document.querySelector('[data-action="pending"]');
+        defaultAction.classList.add('active');
+        
+        // Handle dropdown item clicks
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all items
+                document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Update button text and icon
+                const action = this.getAttribute('data-action');
+                const icon = this.getAttribute('data-icon');
+                const text = this.textContent.trim();
+                
+                document.getElementById('selectedAction').textContent = text;
+                document.getElementById('payrollActions').querySelector('i').className = `fas ${icon}`;
+                
+                // Trigger the appropriate action
+                if (action === 'pending') {
+                    handleLoadPendingPayroll();
+                } else if (action === 'approved') {
+                    handleLoadApprovedPayroll();
+                }
+            });
+        });
 
-    // Populate year dropdown dynamically
-    const yearSelect = document.getElementById('year');
-    const currentYear = new Date().getFullYear();
-    
-    // Add current year and next 2 years
-    for(let i = 0; i < 3; i++) {
-        const year = currentYear + i;
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    }
+        // Handle Generate Payroll button click
+        document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
+        document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
+    });
 
-    // Set default period based on current date
-    const currentDay = new Date().getDate();
-    document.getElementById('period').value = currentDay <= 15 ? 'first' : 'second';
+    // Separate the action handlers into functions
+    async function handleGeneratePayroll() {
+        const month = document.getElementById('month').value;
+        const year = document.getElementById('year').value;
+        const period = document.getElementById('period').value;
 
-    // Set initial active state for dropdown
-    const defaultAction = document.querySelector('[data-action="pending"]');
-    defaultAction.classList.add('active');
-    
-    // Handle dropdown item clicks
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all items
-            document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-            
-            // Add active class to clicked item
-            this.classList.add('active');
-            
-            // Update button text and icon
-            const action = this.getAttribute('data-action');
-            const icon = this.getAttribute('data-icon');
-            const text = this.textContent.trim();
-            
-            document.getElementById('selectedAction').textContent = text;
-            document.getElementById('payrollActions').querySelector('i').className = `fas ${icon}`;
-            
-            // Trigger the appropriate action
-            if (action === 'pending') {
-                handleLoadPendingPayroll();
-            } else if (action === 'approved') {
-                handleLoadApprovedPayroll();
+        // Get current date
+        const currentDate = new Date();
+        const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const currentYear = currentDate.getFullYear().toString();
+
+        // Check if selected month/year is current month/year
+        if (month !== currentMonth || year !== currentYear) {
+            showAlert('warning', `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`);
+            return;
+        }
+
+        try {
+            // Show loading state
+            const generateButton = document.getElementById('generatePayroll');
+            const originalText = generateButton.innerHTML;
+            generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            generateButton.disabled = true;
+
+            const response = await fetch(`${BASE_URL}/payroll/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ month, year, period })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to generate payroll');
             }
+
+            if (Array.isArray(data.payroll)) {
+                populateTable(data.payroll);
+                showAlert('success', 'Payroll generated successfully!');
+            } else {
+                showAlert('warning', 'No payroll data returned.');
+            }
+        } catch (error) {
+            console.error('Error generating payroll:', error);
+            showAlert('danger', error.message || 'Failed to generate payroll. Please try again.');
+        } finally {
+            // Reset button state
+            const generateButton = document.getElementById('generatePayroll');
+            generateButton.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
+            generateButton.disabled = false;
+        }
+    }
+
+    async function handleLoadPendingPayroll() {
+        try {
+            const response = await fetch(`${BASE_URL}/payroll/pending`);
+            if (!response.ok) {
+                throw new Error('Failed to load pending payroll');
+            }
+
+            const data = await response.json();
+            if (!data.payroll || data.payroll.length === 0) {
+                showAlert('info', 'No pending payroll records available.');
+                document.querySelector('#payrollTable tbody').innerHTML = ''; // Clear the table
+            } else {
+                populateTable(data.payroll);
+            }
+        } catch (error) {
+            console.error('Error loading pending payroll:', error);
+            showAlert('danger', 'Failed to load pending payroll. Please try again.');
+        }
+    }
+
+    async function handleLoadApprovedPayroll() {
+        try {
+            const response = await fetch(`${BASE_URL}/payroll/approved`);
+            if (!response.ok) {
+                throw new Error('Failed to load approved payroll');
+            }
+
+            const data = await response.json();
+            populateTableforapproved(data.payroll || []);
+        } catch (error) {
+            console.error('Error loading approved payroll:', error);
+            showAlert('danger', 'Failed to load approved payroll. Please try again.');
+        }
+    }
+
+    function populateTable(payrollData) {
+        const tbody = document.querySelector('#payrollTable tbody');
+        tbody.innerHTML = ''; // clear previous data
+
+        if (!payrollData || payrollData.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="15" class="text-center py-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Pending Payroll Records Found</h5>
+                        <p class="text-muted">Generate payroll to see records here.</p>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+
+        payrollData.forEach(item => {
+            const row = document.createElement('tr');
+
+            // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
+            const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
+
+            // Handle number formatting
+            const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
+
+            row.innerHTML = `
+                <td>${item.employee_id}</td>
+                <td>${item.full_name || 'N/A'}</td>
+                <td>${item.position || 'N/A'}</td>
+                <td>${formatDate(item.start_date)}</td>
+                <td>${formatDate(item.end_date)}</td>
+                <td>${item.days_present || 0}</td>
+                <td>${item.days_absent || 0}</td>
+                <td>${formatNumber(item.total_hours)}</td>
+                <td>${formatNumber(item.overtime_hours)}</td>
+                <td>${formatNumber(item.fixed_salary)}</td>
+                <td>${formatNumber(item.absence_deduction)}</td>
+                <td>${formatNumber(item.total_deductions)}</td>
+                <td>${formatNumber(item.net_salary)}</td>
+                <td><span class="badge bg-warning">Pending</span></td>
+            `;
+            tbody.appendChild(row);
         });
-    });
-
-    // Handle Generate Payroll button click
-    document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
-    document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
-});
-
-// Separate the action handlers into functions
-async function handleGeneratePayroll() {
-    const month = document.getElementById('month').value;
-    const year = document.getElementById('year').value;
-    const period = document.getElementById('period').value;
-
-    // Get current date
-    const currentDate = new Date();
-    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const currentYear = currentDate.getFullYear().toString();
-
-    // Check if selected month/year is current month/year
-    if (month !== currentMonth || year !== currentYear) {
-        showAlert('warning', `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`);
-        return;
     }
 
-    try {
-        // Show loading state
-        const generateButton = document.getElementById('generatePayroll');
-        const originalText = generateButton.innerHTML;
-        generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-        generateButton.disabled = true;
+    function populateTableforapproved(payrollData) {
+        const tbody = document.querySelector('#payrollTable tbody');
+        tbody.innerHTML = ''; // clear previous data
 
-        const response = await fetch(`${BASE_URL}/payroll/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ month, year, period })
+        if (!payrollData || payrollData.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="15" class="text-center py-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Approved Payroll Records Found</h5>
+                        <p class="text-muted">Approve pending payroll records to see them here.</p>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+
+        payrollData.forEach(item => {
+            const row = document.createElement('tr');
+
+            // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
+            const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
+
+            // Handle number formatting
+            const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
+
+            row.innerHTML = `
+                <td>${item.employee_id}</td>
+                <td>${item.full_name || 'N/A'}</td>
+                <td>${item.position || 'N/A'}</td>
+                <td>${formatDate(item.start_date)}</td>
+                <td>${formatDate(item.end_date)}</td>
+                <td>${item.days_present || 0}</td>
+                <td>${item.days_absent || 0}</td>
+                <td>${formatNumber(item.total_hours)}</td>
+                <td>${formatNumber(item.overtime_hours)}</td>
+                <td>${formatNumber(item.fixed_salary)}</td>
+                <td>${formatNumber(item.absence_deduction)}</td>
+                <td>${formatNumber(item.total_deductions)}</td>
+                <td>${formatNumber(item.net_salary)}</td>
+                <td><span class="badge bg-success">Approved</span></td>
+            `;
+            tbody.appendChild(row);
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to generate payroll');
-        }
-
-        if (Array.isArray(data.payroll)) {
-            populateTable(data.payroll);
-            showAlert('success', 'Payroll generated successfully!');
-        } else {
-            showAlert('warning', 'No payroll data returned.');
-        }
-    } catch (error) {
-        console.error('Error generating payroll:', error);
-        showAlert('danger', error.message || 'Failed to generate payroll. Please try again.');
-    } finally {
-        // Reset button state
-        const generateButton = document.getElementById('generatePayroll');
-        generateButton.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
-        generateButton.disabled = false;
     }
-}
 
-async function handleLoadPendingPayroll() {
-    try {
-        const response = await fetch(`${BASE_URL}/payroll/pending`);
-        if (!response.ok) {
-            throw new Error('Failed to load pending payroll');
+    // Add this function to show alerts
+    function showAlert(type, message) {
+        // Remove any existing alerts
+        const existingAlert = document.querySelector('.alert');
+        if (existingAlert) {
+            existingAlert.remove();
         }
 
-        const data = await response.json();
-        if (!data.payroll || data.payroll.length === 0) {
-            showAlert('info', 'No pending payroll records available.');
-            document.querySelector('#payrollTable tbody').innerHTML = ''; // Clear the table
-        } else {
-            populateTable(data.payroll);
-        }
-    } catch (error) {
-        console.error('Error loading pending payroll:', error);
-        showAlert('danger', 'Failed to load pending payroll. Please try again.');
-    }
-}
-
-async function handleLoadApprovedPayroll() {
-    try {
-        const response = await fetch(`${BASE_URL}/payroll/approved`);
-        if (!response.ok) {
-            throw new Error('Failed to load approved payroll');
-        }
-
-        const data = await response.json();
-        populateTableforapproved(data.payroll || []);
-    } catch (error) {
-        console.error('Error loading approved payroll:', error);
-        showAlert('danger', 'Failed to load approved payroll. Please try again.');
-    }
-}
-
-function populateTable(payrollData) {
-    const tbody = document.querySelector('#payrollTable tbody');
-    tbody.innerHTML = ''; // clear previous data
-
-    if (!payrollData || payrollData.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td colspan="15" class="text-center py-4">
-                <div class="d-flex flex-column align-items-center">
-                    <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Pending Payroll Records Found</h5>
-                    <p class="text-muted">Generate payroll to see records here.</p>
-                </div>
-            </td>
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
-        tbody.appendChild(row);
-        return;
+
+        // Insert alert before the table
+        const table = document.getElementById('payrollTable');
+        table.parentNode.insertBefore(alertDiv, table);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
     }
 
-    payrollData.forEach(item => {
-        const row = document.createElement('tr');
+    async function handleCancelPayroll() {
+        // Show the modal instead of using confirm()
+        const modal = new bootstrap.Modal(document.getElementById('cancelPayrollModal'));
+        modal.show();
+    }
 
-        // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
-        const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
+    // Add event listener for the confirm button in the modal
+    document.getElementById('confirmCancelPayroll').addEventListener('click', async function() {
+        try {
+            const generateButton = document.getElementById('cancelPayroll');
+            const originalText = generateButton.innerHTML;
+            generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+            generateButton.disabled = true;
 
-        // Handle number formatting
-        const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
+            const response = await fetch(`${BASE_URL}/payroll/cancel`, {
+                method: 'POST'
+            });
 
-        row.innerHTML = `
-            <td>${item.employee_id}</td>
-            <td>${item.full_name || 'N/A'}</td>
-            <td>${item.position || 'N/A'}</td>
-            <td>${formatDate(item.start_date)}</td>
-            <td>${formatDate(item.end_date)}</td>
-            <td>${item.days_present || 0}</td>
-            <td>${item.days_absent || 0}</td>
-            <td>${formatNumber(item.total_hours)}</td>
-            <td>${formatNumber(item.overtime_hours)}</td>
-            <td>${formatNumber(item.fixed_salary)}</td>
-            <td>${formatNumber(item.absence_deduction)}</td>
-            <td>${formatNumber(item.total_deductions)}</td>
-            <td>${formatNumber(item.net_salary)}</td>
-            <td><span class="badge bg-warning">Pending</span></td>
-        `;
-        tbody.appendChild(row);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to cancel payroll');
+            }
+
+            // Hide the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
+            modal.hide();
+
+            showAlert('success', 'Payroll records cancelled successfully!');
+            // Clear the table
+            document.querySelector('#payrollTable tbody').innerHTML = '';
+        } catch (error) {
+            console.error('Error cancelling payroll:', error);
+            showAlert('danger', error.message || 'Failed to cancel payroll. Please try again.');
+        } finally {
+            // Reset button state
+            const generateButton = document.getElementById('cancelPayroll');
+            generateButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Payroll';
+            generateButton.disabled = false;
+        }
     });
-}
-
-function populateTableforapproved(payrollData) {
-    const tbody = document.querySelector('#payrollTable tbody');
-    tbody.innerHTML = ''; // clear previous data
-
-    if (!payrollData || payrollData.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td colspan="15" class="text-center py-4">
-                <div class="d-flex flex-column align-items-center">
-                    <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Approved Payroll Records Found</h5>
-                    <p class="text-muted">Approve pending payroll records to see them here.</p>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-        return;
-    }
-
-    payrollData.forEach(item => {
-        const row = document.createElement('tr');
-
-        // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
-        const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
-
-        // Handle number formatting
-        const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
-
-        row.innerHTML = `
-            <td>${item.employee_id}</td>
-            <td>${item.full_name || 'N/A'}</td>
-            <td>${item.position || 'N/A'}</td>
-            <td>${formatDate(item.start_date)}</td>
-            <td>${formatDate(item.end_date)}</td>
-            <td>${item.days_present || 0}</td>
-            <td>${item.days_absent || 0}</td>
-            <td>${formatNumber(item.total_hours)}</td>
-            <td>${formatNumber(item.overtime_hours)}</td>
-            <td>${formatNumber(item.fixed_salary)}</td>
-            <td>${formatNumber(item.absence_deduction)}</td>
-            <td>${formatNumber(item.total_deductions)}</td>
-            <td>${formatNumber(item.net_salary)}</td>
-            <td><span class="badge bg-success">Approved</span></td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-// Add this function to show alerts
-function showAlert(type, message) {
-    // Remove any existing alerts
-    const existingAlert = document.querySelector('.alert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-
-    // Create new alert
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-
-    // Insert alert before the table
-    const table = document.getElementById('payrollTable');
-    table.parentNode.insertBefore(alertDiv, table);
-
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-async function handleCancelPayroll() {
-    // Show the modal instead of using confirm()
-    const modal = new bootstrap.Modal(document.getElementById('cancelPayrollModal'));
-    modal.show();
-}
-
-// Add event listener for the confirm button in the modal
-document.getElementById('confirmCancelPayroll').addEventListener('click', async function() {
-    try {
-        const generateButton = document.getElementById('cancelPayroll');
-        const originalText = generateButton.innerHTML;
-        generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
-        generateButton.disabled = true;
-
-        const response = await fetch(`${BASE_URL}/payroll/cancel`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to cancel payroll');
-        }
-
-        // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
-        modal.hide();
-
-        showAlert('success', 'Payroll records cancelled successfully!');
-        // Clear the table
-        document.querySelector('#payrollTable tbody').innerHTML = '';
-    } catch (error) {
-        console.error('Error cancelling payroll:', error);
-        showAlert('danger', error.message || 'Failed to cancel payroll. Please try again.');
-    } finally {
-        // Reset button state
-        const generateButton = document.getElementById('cancelPayroll');
-        generateButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Payroll';
-        generateButton.disabled = false;
-    }
-});
     </script>
     <!-- Add side_top.js -->
     <script src="/public/js/side_top.js"></script>
