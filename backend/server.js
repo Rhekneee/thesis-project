@@ -15,7 +15,25 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+
+// CORS configuration
+app.use(cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:4000',
+            'https://mdb-construction-25b433e6e5d5.herokuapp.com',
+            'https://mdb-construction.herokuapp.com'
+        ];
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true
+}));
 
 const sessionStore = new MySQLStore({}, db);
 // Session Setup
@@ -41,11 +59,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
-
-app.use(cors({
-    origin: [ 'http://localhost:4000', 'https://mdb-construction-25b433e6e5d5.herokuapp.com' ],
-    credentials: true
-  }));
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
