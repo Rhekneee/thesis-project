@@ -1,94 +1,98 @@
 const db = require("../../../db");
 
-class Payroll {
-    static async getAllPendingPayrolls() {
+class FinanceModel {
+    // Get all payrolls
+    static async getAllPayrolls() {
+        const SQL_COMMAND = `
+            SELECT 
+                p.id,
+                p.employee_id,
+                p.start_date,
+                p.end_date,
+                p.days_present,
+                p.days_absent,
+                p.total_hours,
+                p.overtime_hours,
+                p.fixed_salary,
+                p.salary_before_tax,
+                p.total_deductions,
+                p.absence_deduction,
+                p.net_salary,
+                p.payroll_date,
+                p.payroll_period,
+                p.status,
+                p.remarks,
+                e.full_name,
+                r.name as position,
+                e.profile_picture
+            FROM payroll p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.id
+            ORDER BY p.payroll_date DESC;
+        `;
+
         try {
-            const query = `
-                SELECT 
-                    p.id,
-                    p.employee_id,
-                    p.start_date as startDate,
-                    p.end_date as endDate,
-                    p.days_present as daysPresent,
-                    p.days_absent as daysAbsent,
-                    p.total_hours as totalHours,
-                    p.overtime_hours as overtimeHours,
-                    p.fixed_salary as fixedSalary,
-                    p.salary_before_tax as salaryBeforeTax,
-                    p.total_deductions as totalDeductions,
-                    p.absence_deduction as absenceDeduction,
-                    p.net_salary as netPay,
-                    p.payroll_date as payrollDate,
-                    p.payroll_period as payrollPeriod,
-                    p.status,
-                    p.remarks,
-                    e.full_name as name,
-                    r.name as position,
-                    e.profile_picture as profilePic
-                FROM payroll p
-                JOIN employees e ON p.employee_id = e.employee_id
-                JOIN roles r ON e.role_id = r.id
-                WHERE p.status = 'pending'
-                ORDER BY p.payroll_date DESC
-            `;
-            const [rows] = await db.query(query);
-            return rows;
+            console.log('Executing SQL query for all payrolls...');
+            const [payrolls] = await db.query(SQL_COMMAND);
+            console.log('Number of payroll records found:', payrolls.length);
+            if (payrolls.length > 0) {
+                console.log('Sample payroll record:', payrolls[0]);
+            } else {
+                console.log('No payroll records found in the database');
+            }
+            return payrolls;
         } catch (error) {
+            console.error('Database error in getAllPayrolls:', error);
             throw error;
         }
     }
 
-    static async updatePayrollStatus(payrollId, status, remarks = null) {
-        try {
-            const query = `
-                UPDATE payroll 
-                SET status = ?, 
-                    remarks = ?,
-                    payroll_date = CURRENT_DATE
-                WHERE id = ?
-            `;
-            const [result] = await db.query(query, [status, remarks, payrollId]);
-            return result.affectedRows > 0;
-        } catch (error) {
-            throw error;
-        }
-    }
+    // Get pending payrolls
+    static async getPendingPayrolls() {
+        const SQL_COMMAND = `
+            SELECT 
+                p.id,
+                p.employee_id,
+                p.start_date,
+                p.end_date,
+                p.days_present,
+                p.days_absent,
+                p.total_hours,
+                p.overtime_hours,
+                p.fixed_salary,
+                p.salary_before_tax,
+                p.total_deductions,
+                p.absence_deduction,
+                p.net_salary,
+                p.payroll_date,
+                p.payroll_period,
+                p.status,
+                p.remarks,
+                e.full_name,
+                r.role_name as position,
+                e.profile_picture
+            FROM payroll p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.role_id
+            WHERE p.status = 'pending'
+            ORDER BY p.payroll_date DESC;
+        `;
 
-    static async getPayrollById(payrollId) {
         try {
-            const query = `
-                SELECT 
-                    p.id,
-                    p.employee_id,
-                    p.start_date as startDate,
-                    p.end_date as endDate,
-                    p.days_present as daysPresent,
-                    p.days_absent as daysAbsent,
-                    p.total_hours as totalHours,
-                    p.overtime_hours as overtimeHours,
-                    p.fixed_salary as fixedSalary,
-                    p.salary_before_tax as salaryBeforeTax,
-                    p.total_deductions as totalDeductions,
-                    p.absence_deduction as absenceDeduction,
-                    p.net_salary as netPay,
-                    p.payroll_date as payrollDate,
-                    p.payroll_period as payrollPeriod,
-                    p.status,
-                    p.remarks,
-                    e.full_name as name,
-                    r.name as position,
-                    e.profile_picture as profilePic
-                FROM payroll p
-                JOIN employees e ON p.employee_id = e.employee_id
-                JOIN roles r ON e.role_id = r.id
-                WHERE p.id = ?
-            `;
-            const [rows] = await db.query(query, [payrollId]);
-            return rows[0];
+            console.log('Executing SQL query for pending payrolls...');
+            const [payrolls] = await db.query(SQL_COMMAND);
+            console.log('Number of pending payroll records found:', payrolls.length);
+            if (payrolls.length > 0) {
+                console.log('Sample pending payroll record:', payrolls[0]);
+            } else {
+                console.log('No pending payroll records found in the database');
+            }
+            return payrolls;
         } catch (error) {
+            console.error('Database error in getPendingPayrolls:', error);
             throw error;
         }
     }
 }
 
-module.exports = Payroll;
+module.exports = FinanceModel;

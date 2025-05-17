@@ -1,101 +1,89 @@
-const Payroll = require('../model/finance.model');
+const FinanceModel = require('../model/finance.model');
 
-class PayrollController {
-    static async getPendingPayrolls(req, res) {
-        try {
-            const payrolls = await Payroll.getAllPendingPayrolls();
-            
-            // The data is already formatted in the model with the correct field names
-            res.json({
-                success: true,
-                data: payrolls
-            });
-        } catch (error) {
-            console.error('Error fetching pending payrolls:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to fetch pending payrolls',
-                error: error.message
-            });
-        }
+// Get all payrolls
+exports.getAllPayrolls = async (req, res) => {
+    try {
+        // Get data from model
+        const payrolls = await FinanceModel.getAllPayrolls();
+
+        // Format the data for frontend
+        const formattedPayrolls = payrolls.map(payroll => ({
+            id: payroll.id,
+            employee_id: payroll.employee_id,
+            name: payroll.full_name,
+            position: payroll.position,
+            profile_picture: payroll.profile_picture || '', // Use empty string if no profile picture
+            start_date: payroll.start_date,
+            end_date: payroll.end_date,
+            days_present: payroll.days_present,
+            days_absent: payroll.days_absent,
+            total_hours: parseFloat(payroll.total_hours),
+            overtime_hours: parseFloat(payroll.overtime_hours),
+            fixed_salary: parseFloat(payroll.fixed_salary),
+            salary_before_tax: parseFloat(payroll.salary_before_tax),
+            total_deductions: parseFloat(payroll.total_deductions),
+            absence_deduction: parseFloat(payroll.absence_deduction),
+            net_salary: parseFloat(payroll.net_salary),
+            payroll_date: payroll.payroll_date,
+            payroll_period: payroll.payroll_period,
+            status: payroll.status,
+            remarks: payroll.remarks
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: formattedPayrolls
+        });
+
+    } catch (error) {
+        console.error("Error fetching payrolls:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching payrolls"
+        });
     }
+};
 
-    static async updatePayrollStatus(req, res) {
-        try {
-            const { payrollId } = req.params;
-            const { status, remarks } = req.body;
+// Get all pending payrolls
+exports.getPendingPayrolls = async (req, res) => {
+    try {
+        // Get data from model
+        const payrolls = await FinanceModel.getPendingPayrolls();
 
-            // Validate payrollId
-            if (!payrollId || payrollId === 'undefined') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid payroll ID'
-                });
-            }
+        // Format the data for frontend
+        const formattedPayrolls = payrolls.map(payroll => ({
+            id: payroll.id,
+            employee_id: payroll.employee_id,
+            name: payroll.full_name,
+            position: payroll.position,
+            profile_picture: payroll.profile_picture || '', // Use empty string if no profile picture
+            start_date: payroll.start_date,
+            end_date: payroll.end_date,
+            days_present: payroll.days_present,
+            days_absent: payroll.days_absent,
+            total_hours: parseFloat(payroll.total_hours),
+            overtime_hours: parseFloat(payroll.overtime_hours),
+            fixed_salary: parseFloat(payroll.fixed_salary),
+            salary_before_tax: parseFloat(payroll.salary_before_tax),
+            total_deductions: parseFloat(payroll.total_deductions),
+            absence_deduction: parseFloat(payroll.absence_deduction),
+            net_salary: parseFloat(payroll.net_salary),
+            payroll_date: payroll.payroll_date,
+            payroll_period: payroll.payroll_period,
+            status: payroll.status,
+            remarks: payroll.remarks
+        }));
 
-            if (!['approved', 'rejected'].includes(status)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid status. Must be either "approved" or "rejected"'
-                });
-            }
+        return res.status(200).json({
+            success: true,
+            data: formattedPayrolls
+        });
 
-            if (status === 'rejected' && !remarks) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Remarks are required when rejecting payroll'
-                });
-            }
-
-            const success = await Payroll.updatePayrollStatus(payrollId, status, remarks);
-            
-            if (!success) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Payroll not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: `Payroll ${status} successfully`
-            });
-        } catch (error) {
-            console.error('Error updating payroll status:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to update payroll status',
-                error: error.message
-            });
-        }
+    } catch (error) {
+        console.error("Error fetching pending payrolls:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching pending payrolls"
+        });
     }
-
-    static async getPayrollDetails(req, res) {
-        try {
-            const { payrollId } = req.params;
-            const payroll = await Payroll.getPayrollById(payrollId);
-
-            if (!payroll) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Payroll not found'
-                });
-            }
-
-            // The data is already formatted in the model with the correct field names
-            res.json({
-                success: true,
-                data: payroll
-            });
-        } catch (error) {
-            console.error('Error fetching payroll details:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to fetch payroll details',
-                error: error.message
-            });
-        }
-    }
-}
-
-module.exports = PayrollController;
+};

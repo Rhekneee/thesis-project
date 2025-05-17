@@ -407,10 +407,15 @@
               }
           }
 
+          // Dynamically set API_URL based on current origin
+          const API_URL = window.location.hostname === 'localhost' 
+              ? 'http://localhost:4000/hr' 
+              : `${window.location.origin}/hr`;
+
           // Function to fetch HR ID from session
           async function getEmployeeIdFromSession() {
               try {
-                  const response = await fetch('http://localhost:4000/hr/check-session', {
+                  const response = await fetch(`${API_URL}/check-session`, {
                       credentials: 'include',
                   });
 
@@ -439,7 +444,7 @@
               console.log("Sending check-in request with:", userId, userLocation, date, checkInTime);
 
               // Send the check-in request to the backend
-              const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+              const response = await fetch(`${API_URL}/check-in/${userId}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -476,7 +481,7 @@
                 console.log("Sending check-out request with:", userId, date, checkOutTime);
 
                 // Send the check-out request to the backend
-                const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+                const response = await fetch(`${API_URL}/check-out/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, checkOutTime, date }),
@@ -495,7 +500,7 @@
           // Load today's attendance from the database
           async function loadEmployeeAttendanceData(employeeId) {
             try {
-                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
+                const response = await fetch(`${API_URL}/today/${employeeId}`);
                 const data = await response.json();
 
                 const tbody = document.getElementById("attendanceBody");

@@ -1,18 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const PayrollController = require('../controller/finance.controller');
-const authMiddleware = require('../middleware/finance.middleware');
+const financeController = require('../controller/finance.controller');
+const { isFinanceAdmin } = require('../middleware/finance.middleware');
 
-// Apply session verification to all routes
-router.use(authMiddleware.verifySession);
+// Apply finance admin middleware to all routes
+router.use(isFinanceAdmin);
 
-// Get all pending payrolls
-router.get('/payrolls/pending', PayrollController.getPendingPayrolls);
+// Payroll routes
+router.get('/payrolls', financeController.getAllPayrolls);
+router.get('/pending-payrolls', financeController.getPendingPayrolls);
 
-// Get specific payroll details
-router.get('/payrolls/:payrollId', PayrollController.getPayrollDetails);
-
-// Update payroll status
-router.put('/payrolls/:payrollId/status', PayrollController.updatePayrollStatus);
+// Add more routes here as needed
+// Example:
+// router.post('/approve-payroll/:id', financeController.approvePayroll);
+// router.post('/reject-payroll/:id', financeController.rejectPayroll);
+// router.get('/payroll-history', financeController.getPayrollHistory);
 
 module.exports = router;

@@ -307,6 +307,11 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   
   <script>
+    // Dynamically set API_URL based on current origin
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/crm' 
+        : `${window.location.origin}/crm`;
+
     // Handle form submission and PDF rendering
     document.getElementById("applicationForm").addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -335,7 +340,7 @@
 
     try {
         // Show loading spinner (optional, can be added to improve UX)
-        let response = await fetch("http://localhost:4000/crm/upload", {
+        let response = await fetch(`${API_URL}/upload`, {
             method: "POST",
             body: formData
         });

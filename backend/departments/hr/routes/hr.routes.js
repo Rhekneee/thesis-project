@@ -152,4 +152,10 @@
     // Dashboard KPI route
     router.get('/dashboard-kpis', HRController.getDashboardKPIs);
 
+    // Developer Management Routes
+    router.get('/developers/pending', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getPendingDevelopers);
+    router.get('/developers/:id', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getDeveloperById);
+    router.post('/developers/:id/approve', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.approveDeveloper);
+    router.post('/developers/:id/reject', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.rejectDeveloper);
+
     module.exports = router;
