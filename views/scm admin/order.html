@@ -3,36 +3,1149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/public/css/scm_style.css">
-  <script src="/public/js/app.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/js/side_top.js"></script>
+  <title>Orders Dashboard</title>
+  <style>
+  
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
 
-  <title>Dashboard UI</title>
+    /* Request Form Styles */
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    /* Materials List Styles */
+    .materials-list {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    /* Table Styles */
+    .table {
+      width: 100%;
+      margin-bottom: 1rem;
+      background-color: transparent;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .table th {
+      background-color: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+      padding: 12px 15px;
+      vertical-align: middle;
+      border-bottom: 1px solid #dee2e6;
+      color: #212529;
+    }
+
+    .table tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    /* Badge Styles */
+    .badge {
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    .bg-warning {
+      background-color: #ffc107 !important;
+      color: #000;
+    }
+
+    .bg-success {
+      background-color: #28a745 !important;
+      color: #fff;
+    }
+
+    .bg-info {
+      background-color: #17a2b8 !important;
+      color: #fff;
+    }
+
+    .bg-primary {
+      background-color: #007bff !important;
+      color: #fff;
+    }
+
+    /* Button Styles */
+    .btn {
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
+    }
+
+    .btn-success {
+      background-color: #28a745;
+      border-color: #28a745;
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+      border-color: #1e7e34;
+    }
+
+    /* Form Styles */
+    .form-label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      background-color: #fff;
+      color: #495057;
+    }
+
+    .form-select:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+      outline: none;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background-color: white;
+      color: #007bff;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button:disabled {
+      background-color: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .status-filter {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      background-color: white;
+      min-width: 150px;
+      max-width: 200px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: white;
+      color: #212529;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    /* Modal Styles */
+    .modal-content {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      padding: 1.75rem 2rem;
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .modal-title i {
+      margin-right: 12px;
+      font-size: 1.3em;
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+
+    .order-info {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .order-info .row {
+      margin-bottom: 1.25rem;
+    }
+
+    .order-info .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 0.85em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .invoice-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .invoice-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .invoice-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .modal-footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #e9ecef;
+      background: #fff;
+      border-radius: 0 0 16px 16px;
+    }
+
+    .modal-footer .btn {
+      padding: 0.7rem 1.75rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-footer .btn i {
+      font-size: 1.1em;
+    }
+
+    .modal-footer .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .btn-close:hover {
+      opacity: 1;
+    }
+
+    .fullscreen-invoice {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+    }
+
+    .fullscreen-invoice.active {
+      display: flex;
+    }
+
+    .fullscreen-header {
+      padding: 1rem 2rem;
+      background: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .fullscreen-content {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .fullscreen-invoice iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .close-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .close-btn:hover {
+      background: #bb2d3b;
+    }
+
+    .materials-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .materials-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      padding-right: 8px;
+    }
+
+    .materials-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .materials-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb {
+      background: #c5cae9;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb:hover {
+      background: #9fa8da;
+    }
+
+    .material-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .material-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #c5cae9;
+    }
+
+    .material-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .material-icon {
+      width: 40px;
+      height: 40px;
+      background: #e8eaf6;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5c6bc0;
+      font-size: 1.2em;
+    }
+
+    .material-name {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #1a237e;
+      flex: 1;
+    }
+
+    .material-details {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .material-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .detail-label {
+      font-size: 0.8em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+  </style>
 </head>
 <body>
-  <div class="sidebar">
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name"></div>
+                      <div class="profile-position"></div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Leave Request</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Payroll Processed</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                      <span class="profile-name">John Doe</span>
+                      <span class="profile-position">HR Manager</span>
+                  </div>
+              </div>
+              
+              <!-- Notification Dropdown -->
+              <div class="notification-dropdown" id="notificationDropdown">
+                  <div class="notification-header">
+                      <span>Notifications</span>
+                      <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Leave Request</div>
+                      <div class="notification-time">5 minutes ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">Payroll Processed</div>
+                      <div class="notification-time">1 hour ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Employee Added</div>
+                      <div class="notification-time">2 hours ago</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h1>SCM</h1>
-        <button id="toggleSidebar">☰</button>
-      </div>
-      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
-      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
-      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
-      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
-      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
-      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
-      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
-      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
+  </div>
+    <ul class="list-unstyled">
+      <li class="nav-item">
+        <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+      </li>
+      
+      <li class="nav-item">
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
+      </li>
+     
+      <li class="nav-item">
+        <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+      </li>
+      <li class="nav-item">
+          <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+      </li>
+      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+    </ul>
+  </div>
 
-  </div>
-  <div class="main-content">
-    <div class="card">
-        
+  <div id="content">
+    <h2>Order List</h2>
+
+    <!-- Request Form -->
+    <div class="request-form">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="entriesPerPage" class="form-label">Entries per page:</label>
+          <select id="entriesPerPage" class="form-select status-filter" onchange="setEntriesPerPage()">
+            <option value="5">5 entries</option>
+            <option value="10">10 entries</option>
+            <option value="15">15 entries</option>
+            <option value="20">20 entries</option>
+          </select>
+        </div>
       </div>
-  
-    
+
+      <!-- Materials List -->
+      <div class="materials-list">
+        <h5>Orders</h5>
+        <div class="table-responsive mb-3">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Order Approve Date</th>
+                <th>Order Deliver Date</th>
+                <th>Status</th>
+                <th>Invoice</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orderBody">
+              <!-- Orders will be populated here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="paginationControls" class="pagination">
+          <!-- Pagination buttons go here -->
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Order Details Modal -->
+  <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="orderDetailsModalLabel">
+            <i class="fas fa-file-invoice"></i> Order Details
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="container-fluid">
+            <div class="row g-0">
+              <!-- Order Details Section -->
+              <div class="col-md-4 border-end">
+                <div class="p-4">
+                  <div class="order-info">
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="info-label">Order ID</div>
+                        <div id="modalOrderId" class="info-value"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="info-label">Order Approve Date</div>
+                        <div id="modalApproveDate" class="info-value"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="info-label">Deliver Date</div>
+                        <div id="modalDeliverDate" class="info-value"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="info-label">Status</div>
+                        <div id="modalStatus" class="info-value"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Invoice Section -->
+              <div class="col-md-8">
+                <div class="p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="fas fa-file-pdf"></i> Supplier Invoice</h6>
+                    <button type="button" id="modalViewInvoiceBtn" class="btn btn-primary btn-sm">
+                      <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                  </div>
+                  <div id="invoiceViewer" class="border rounded" style="height: calc(100vh - 300px);">
+                    <iframe id="invoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Materials Section -->
+            <div class="row g-0">
+              <div class="col-12">
+                <div class="p-4">
+                  <div class="materials-section">
+                    <h6><i class="fas fa-boxes"></i>Ordered Materials</h6>
+                    <div id="modalMaterials" class="materials-grid"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice View Modal -->
+  <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="invoiceModalLabel">
+            <i class="fas fa-file-pdf"></i> Supplier Invoice
+          </h5>
+          <div class="ms-auto me-2">
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="printInvoice()">
+              <i class="fas fa-print"></i> Print
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="downloadInvoice()">
+              <i class="fas fa-download"></i> Download
+            </button>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="invoiceViewer" class="border rounded" style="height: calc(100vh - 200px);">
+            <iframe id="invoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Invoice View -->
+  <div id="fullscreenInvoice" class="fullscreen-invoice">
+    <div class="fullscreen-header">
+      <div class="d-flex align-items-center">
+        <h4 class="mb-0" id="fullscreenInvoiceTitle">
+          <i class="fas fa-file-pdf"></i> Supplier Invoice
+        </h4>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-primary btn-sm" onclick="printFullscreenInvoice()">
+          <i class="fas fa-print"></i> Print
+        </button>
+        <button class="btn btn-outline-success btn-sm" onclick="downloadFullscreenInvoice()">
+          <i class="fas fa-download"></i> Download
+        </button>
+        <button class="close-btn" onclick="closeFullscreenInvoice()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    <div id="fullscreenInvoiceContent" class="fullscreen-content">
+      <iframe id="fullscreenInvoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar toggle functionality
+    document.getElementById('sidebar-toggle').onclick = function() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content');
+      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+        sidebar.style.display = 'block';
+        content.style.marginLeft = '300px';
+      } else {
+        sidebar.style.display = 'none';
+        content.style.marginLeft = '0';
+      }
+    };
+
+    const orders = [
+      {
+        id: 'ORD001',
+        approveDate: '2024-03-15',
+        deliverDate: '2024-03-20',
+        status: 'Pending',
+        invoice: '',
+        materials: [
+          { type: 'Cement', quantity: 50, unit: 'bags' },
+          { type: 'Steel', quantity: 100, unit: 'kg' },
+          { type: 'Sand', quantity: 200, unit: 'cubic' }
+        ]
+      },
+      {
+        id: 'ORD002',
+        approveDate: '2024-03-16',
+        deliverDate: '2024-03-21',
+        status: 'Approved',
+        invoice: 'INV002',
+        materials: [
+          { type: 'Wood', quantity: 20, unit: 'pieces' },
+          { type: 'Bricks', quantity: 500, unit: 'pieces' }
+        ]
+      },
+      {
+        id: 'ORD003',
+        approveDate: '2024-03-17',
+        deliverDate: '2024-03-22',
+        status: 'Delivered',
+        invoice: 'INV003',
+      },
+      {
+        id: 'ORD004',
+        approveDate: '2024-03-18',
+        deliverDate: '2024-03-23',
+        status: 'Completed',
+        invoice: 'INV004',
+      },
+      {
+        id: 'ORD005',
+        approveDate: '2024-03-19',
+        deliverDate: '2024-03-24',
+        status: 'Pending',
+        invoice: '',
+      }
+    ];
+
+    let itemsPerPage = 5;
+    let currentPage = 1;
+    let filteredOrders = [...orders];
+
+    function renderTable() {
+      const tableBody = document.getElementById('orderBody');
+      tableBody.innerHTML = '';
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = currentPage * itemsPerPage;
+      const currentItems = filteredOrders.slice(start, end);
+
+      currentItems.forEach(order => {
+        const row = document.createElement('tr');
+        let statusBadge;
+        switch(order.status) {
+          case 'Pending':
+            statusBadge = '<span class="badge bg-warning">Pending</span>';
+            break;
+          case 'Approved':
+            statusBadge = '<span class="badge bg-success">Approved</span>';
+            break;
+          case 'Delivered':
+            statusBadge = '<span class="badge bg-info">Delivered</span>';
+            break;
+          case 'Completed':
+            statusBadge = '<span class="badge bg-primary">Completed</span>';
+            break;
+          default:
+            statusBadge = '<span class="badge bg-warning">Pending</span>';
+        }
+
+        let actionButtons = '';
+        if (order.status === 'Pending') {
+          actionButtons = `
+            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          `;
+        } else if (order.invoice) {
+          actionButtons = `
+            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          `;
+        } else {
+          actionButtons = `
+            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          `;
+        }
+
+        const invoiceButton = order.invoice ? 
+          `<button onclick="viewInvoice('${order.invoice}', '${order.id}')" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-file-pdf"></i> View Invoice
+          </button>` : 
+          '<span class="text-muted">No invoice</span>';
+
+        row.innerHTML = `
+          <td>${order.id}</td>
+          <td>${order.approveDate}</td>
+          <td>${order.deliverDate}</td>
+          <td>${statusBadge}</td>
+          <td>${invoiceButton}</td>
+          <td>${actionButtons}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      renderPagination();
+    }
+
+    function viewOrderDetails(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Update modal content
+      document.getElementById('modalOrderId').textContent = order.id;
+      document.getElementById('modalApproveDate').textContent = order.approveDate;
+      document.getElementById('modalDeliverDate').textContent = order.deliverDate;
+      
+      // Update status with appropriate badge
+      let statusBadge;
+      switch(order.status) {
+        case 'Pending':
+          statusBadge = '<span class="badge bg-warning">Pending</span>';
+          break;
+        case 'Approved':
+          statusBadge = '<span class="badge bg-success">Approved</span>';
+          break;
+        case 'Delivered':
+          statusBadge = '<span class="badge bg-info">Delivered</span>';
+          break;
+        case 'Completed':
+          statusBadge = '<span class="badge bg-primary">Completed</span>';
+          break;
+        case 'Cancelled':
+          statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+          break;
+        default:
+          statusBadge = '<span class="badge bg-warning">Pending</span>';
+      }
+      document.getElementById('modalStatus').innerHTML = statusBadge;
+
+      // Render materials
+      const materialsContainer = document.getElementById('modalMaterials');
+      materialsContainer.innerHTML = '';
+      if (order.materials) {
+        order.materials.forEach(material => {
+          const materialDiv = document.createElement('div');
+          materialDiv.className = 'material-item';
+          materialDiv.innerHTML = `
+            <div class="material-header">
+              <div class="material-icon">
+                <i class="fas fa-box"></i>
+              </div>
+              <div class="material-name">${material.type}</div>
+            </div>
+            <div class="material-details">
+              <div class="material-detail">
+                <span class="detail-label">Quantity</span>
+                <span class="detail-value">${material.quantity} ${material.unit}</span>
+              </div>
+            </div>
+          `;
+          materialsContainer.appendChild(materialDiv);
+        });
+      }
+
+      // Handle invoice section
+      const invoiceFrame = document.getElementById('invoiceFrame');
+      if (order.invoice) {
+        invoiceFrame.src = `path/to/invoices/${order.invoice}`;
+        document.getElementById('modalViewInvoiceBtn').style.display = 'block';
+      } else {
+        invoiceFrame.src = 'about:blank';
+        document.getElementById('modalViewInvoiceBtn').style.display = 'none';
+      }
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+      modal.show();
+    }
+
+    let currentInvoiceFile = null;
+
+    function viewInvoice(fileName, orderId) {
+      viewFullscreenInvoice(fileName, orderId);
+    }
+
+    function printInvoice() {
+      const invoiceFrame = document.getElementById('invoiceFrame');
+      if (invoiceFrame.contentWindow) {
+        invoiceFrame.contentWindow.print();
+      }
+    }
+
+    function downloadInvoice() {
+      if (currentInvoiceFile) {
+        const link = document.createElement('a');
+        link.href = `/invoices/${currentInvoiceFile}`;
+        link.download = currentInvoiceFile;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    function viewFullscreenInvoice(fileName, orderId) {
+      currentInvoiceFile = fileName;
+      
+      // Update title with order ID
+      document.getElementById('fullscreenInvoiceTitle').innerHTML = `
+        <i class="fas fa-file-pdf"></i> Supplier Invoice - ${orderId}
+      `;
+      
+      // Load invoice in iframe
+      const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+      invoiceFrame.src = `/invoices/${fileName}`;
+      
+      // Show fullscreen view
+      document.getElementById('fullscreenInvoice').classList.add('active');
+    }
+
+    function closeFullscreenInvoice() {
+      document.getElementById('fullscreenInvoice').classList.remove('active');
+      const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+      invoiceFrame.src = 'about:blank';
+    }
+
+    function printFullscreenInvoice() {
+      const invoiceFrame = document.getElementById('fullscreenInvoiceFrame');
+      if (invoiceFrame.contentWindow) {
+        invoiceFrame.contentWindow.print();
+      }
+    }
+
+    function downloadFullscreenInvoice() {
+      if (currentInvoiceFile) {
+        const link = document.createElement('a');
+        link.href = `/invoices/${currentInvoiceFile}`;
+        link.download = currentInvoiceFile;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    function renderPagination() {
+      const paginationControls = document.getElementById('paginationControls');
+      const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+      paginationControls.innerHTML = '';
+      
+      if (currentPage > 1) {
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '&laquo;';
+        prevButton.onclick = () => goToPage(currentPage - 1);
+        paginationControls.appendChild(prevButton);
+      }
+      
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToPage(i);
+        if (i === currentPage) pageButton.classList.add('active');
+        paginationControls.appendChild(pageButton);
+      }
+      
+      if (currentPage < totalPages) {
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '&raquo;';
+        nextButton.onclick = () => goToPage(currentPage + 1);
+        paginationControls.appendChild(nextButton);
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderTable();
+    }
+
+    function setEntriesPerPage() {
+      const select = document.getElementById('entriesPerPage');
+      itemsPerPage = parseInt(select.value);
+      currentPage = 1;
+      renderTable();
+    }
+
+    function filterOrders() {
+      const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+      filteredOrders = orders.filter(order => order.supplier.toLowerCase().includes(searchTerm));
+      currentPage = 1;
+      renderTable();
+    }
+
+    function sortTable(columnIndex) {
+      const sortedOrders = [...filteredOrders];
+      sortedOrders.sort((a, b) => {
+        if (columnIndex === 0) return a.id.localeCompare(b.id);
+        if (columnIndex === 1) return a.approveDate.localeCompare(b.approveDate);
+        if (columnIndex === 2) return a.deliverDate.localeCompare(b.deliverDate);
+        if (columnIndex === 3) return a.status.localeCompare(b.status);
+        if (columnIndex === 4) return a.invoice.localeCompare(b.invoice);
+      });
+      filteredOrders = sortedOrders;
+      renderTable();
+    }
+
+    // Initialize
+    function initializePage() {
+      const select = document.getElementById('entriesPerPage');
+      itemsPerPage = parseInt(select.value);
+      renderTable();
+    }
+
+    // Call initialize when the page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-

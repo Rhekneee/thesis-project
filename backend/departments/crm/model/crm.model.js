@@ -246,6 +246,43 @@ const CRMModel = {
         ]);
 
         return result.insertId;
+    },
+
+    // Property Management Methods
+    storeProperty: async (data) => {
+        const query = `
+            INSERT INTO properties (
+                property_name,
+                property_type,
+                location,
+                price,
+                parking_spaces,
+                bedrooms,
+                bathrooms,
+                floors,
+                description,
+                property_image,
+                virtual_tour_image,
+                created_at,
+                updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+
+        const [result] = await db.execute(query, [
+            data.property_name,
+            data.property_type,
+            data.location,
+            data.price,
+            data.parking_spaces,
+            data.bedrooms,
+            data.bathrooms,
+            data.floors,
+            data.description,
+            data.property_image,
+            data.virtual_tour_image || null  // Handle null virtual tour image
+        ]);
+
+        return result.insertId;
     }
 };
 

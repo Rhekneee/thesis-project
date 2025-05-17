@@ -3,233 +3,769 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/public/css/scm_style.css">
-  <script src="/public/js/app.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
 
-  <title>Dashboard UI</title>
+  <title>Supplier UI</title>
+  <style>
+  
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .material-list {
+      margin-top: 20px;
+    }
+    .material-item {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-add-material {
+      margin-top: 10px;
+    }
+    .table th {
+      background-color: #f8f9fa;
+    }
+    .materials-list {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+    .recent-requests {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-top: 30px;
+    }
+    .recent-requests h4 {
+      color: #495057;
+      margin-bottom: 20px;
+    }
+    .table {
+      background: white;
+      border-radius: 5px;
+    }
+    .table thead {
+      background: #f8f9fa;
+    }
+    .action-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background-color: #007bff;
+      color: white;
+    }
+    .action-btn:hover {
+      background-color: #0056b3;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      position: relative;
+      background-color: white;
+      margin: 50px auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .close-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #6c757d;
+      background: none;
+      border: none;
+    }
+    .close-btn:hover {
+      color: #343a40;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background-color: white;
+      color: #007bff;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+    .pagination button:hover {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    .pagination button.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #495057;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    /* Material Search Container Styles */
+    .material-search-container {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .search-container {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 0.6;
+      min-width: 200px;
+      max-width: 400px;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 10px 35px 10px 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: white;
+    }
+
+    .search-bar:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .clear-search {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6c757d;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 5px;
+      display: none;
+      line-height: 1;
+    }
+
+    .clear-search.visible {
+      display: inline-block;
+    }
+
+    .clear-search:hover {
+      color: #343a40;
+    }
+
+    .status-filter {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      background-color: white;
+      min-width: 150px;
+      max-width: 200px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: white;
+      color: #212529;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+  </style>
 </head>
 <body>
-  <div class="sidebar">
-    <div class="sidebar-header">
-        <h1>SCM</h1>
-        <button id="toggleSidebar">☰</button>
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name"></div>
+                      <div class="profile-position"></div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Leave Request</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Payroll Processed</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                      <span class="profile-name">John Doe</span>
+                      <span class="profile-position">HR Manager</span>
+                  </div>
+              </div>
+              
+              <!-- Notification Dropdown -->
+              <div class="notification-dropdown" id="notificationDropdown">
+                  <div class="notification-header">
+                      <span>Notifications</span>
+                      <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Leave Request</div>
+                      <div class="notification-time">5 minutes ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">Payroll Processed</div>
+                      <div class="notification-time">1 hour ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Employee Added</div>
+                      <div class="notification-time">2 hours ago</div>
+                  </div>
+              </div>
+          </div>
       </div>
-      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
-      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
-      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
-      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
-      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
-      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
-      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
-      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
-
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
+  </div>
+    <ul class="list-unstyled">
+      <li class="nav-item">
+        <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+      </li>
+      
+      <li class="nav-item">
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
+      </li>
+     
+      <li class="nav-item">
+        <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+      </li>
+      <li class="nav-item">
+          <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+      </li>
+      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+    </ul>
   </div>
 
-  <div class="main-content">
-    <div class="top-bar">
-         <button id="addSupplierBtn" class="add-item-btn">Add Supplier</button>
-        <input type="text" id="supplierSearch" class="search-bar1" placeholder="Search suppliers...">
-    </div>
-    <div class="card1">
-        <h2>Supplier Information</h2>
+  <div id="content">
+    <h2>Supplier List</h2>
 
-        <table class="material-table supplier-table">
-            <thead>
-              <tr>
-                <th>Supplier Name</th>
-                <th>Business Type</th>
-                <th>Contact Name</th>
-                <th>Contact No.</th>
-                <th>View</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            
-            <tbody id="supplierBody">
-                <tr>
-                    <td>ABC Builders Co.</td>
-                    <td>Construction Materials</td>
-                    <td>John Doe</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-                  
-                  <tr>
-                    <td>Steel Solutions</td>
-                    <td>Metal Works</td>
-                    <td>Jane Smith</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Steel Solutions</td>
-                    <td>Metal Works</td>
-                    <td>Jane Smith</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Steel Solutions</td>
-                    <td>Metal Works</td>
-                    <td>Jane Smith</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Steel Solutions</td>
-                    <td>Metal Works</td>
-                    <td>Jane Smith</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Steel Solutions</td>
-                    <td>Metal Works</td>
-                    <td>Jane Smith</td>
-                    <td>09123456789</td>
-                    <td><button class="action-btn">View</button></td>
-                    <td>
-                      <button class="action-btn">Edit</button>
-                      <button class="action-btn">Delete</button>
-                    </td>
-                  </tr>
-            </tbody>
-          </table>
-          <div class="pagination" id="supplierPagination">
-            <a href="#" class="page-arrow">&lt;</a>
-            <a href="#" class="page-number active">1</a>
-            <a href="#" class="page-number">2</a>
-            <a href="#" class="page-number">3</a>
-            <a href="#" class="page-number">4</a>
-            <span class="dots">...</span>
-            <a href="#" class="page-arrow">&gt;</a>
-          </div>
+    <div class="material-search-container">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-bar supplier-search" placeholder="Search suppliers..." onkeyup="handleSearch(this.value)">
+          <button class="clear-search" onclick="clearSupplierSearch()">×</button>
         </div>
-          
-        
-         
+        <select id="entriesPerPage" class="form-select status-filter" onchange="setEntriesPerPage()">
+          <option value="5">5 entries</option>
+          <option value="10">10 entries</option>
+          <option value="15">15 entries</option>
+          <option value="20">20 entries</option>
+        </select>
+        <button class="action-btn" onclick="openAddSupplierModal()">+ Add Supplier</button>
+      </div>
+    </div>
+
+    <div class="materials-list">
+      <h5>Suppliers</h5>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Location</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="supplierBody">
+            <!-- Table content will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </div>
+      <div id="paginationControls" class="pagination">
+        <!-- Pagination buttons will be dynamically inserted here -->
+      </div>
+    </div>
   </div>
 
   <div id="addSupplierModal" class="modal">
     <div class="modal-content">
-      <button class="close-btn">&times;</button>
-      <h2>Add Supplier</h2><br><br>
-      <form id="addSupplierForm">
-        <input type="text" id="supplierName" placeholder="Supplier Name" required />
-        <input type="text" id="businessType" placeholder="Business Type" required />
-        <input type="text" id="contactName" placeholder="Contact Name" required />
-        <input type="text" id="contactNumber" placeholder="Contact Number" required />
-        <input type="text" id="location" placeholder="Location" required />
-  
-        <!-- Centered Add button -->
-        <div style="display: flex; justify-content: center; width: 100%;">
-          <button type="submit" class="action-btn">Add</button>
+      <button class="close-btn" onclick="closeAddSupplierModal()">&times;</button>
+      <h3>Add New Supplier</h3><br>
+      <form id="addSupplierForm" style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="supplierName" style="margin-bottom: 4px;">Supplier Name</label>
+          <input type="text" id="supplierName" placeholder="Enter supplier name" required style="width: 100%;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="supplierContact" style="margin-bottom: 4px;">Contact</label>
+          <input type="text" id="supplierContact" placeholder="Enter 11-digit contact number" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="supplierLocation" style="margin-bottom: 4px;">Location</label>
+          <input type="text" id="supplierLocation" placeholder="Enter supplier location" required style="width: 100%;" />
+        </div>
+        <div style="text-align: center; width: 100%;">
+          <button class="action-btn" type="submit" style="width:50%; text-align: center;">Add</button>
         </div>
       </form>
     </div>
-
-
-    
   </div>
-  
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content" style="max-width: 350px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 48px; color: #ef4444; margin-bottom: 12px;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+      <h3 style="color: #ef4444; margin-bottom: 10px;">Delete Supplier?</h3>
+      <p style="color: #64748b; margin-bottom: 24px;">Are you sure you want to delete this supplier?</p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" class="action-btn" onclick="confirmDelete()">Delete</button>
+        <button style="background-color: #f1f5f9; color: #334155; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" class="action-btn" onclick="closeDeleteModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Supplier Modal -->
+  <div id="editSupplierModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeEditSupplierModal()">&times;</button>
+      <h3>Edit Supplier</h3><br>
+      <form style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="editSupplierName" style="margin-bottom: 4px;">Supplier Name</label>
+          <input type="text" id="editSupplierName" required style="width: 100%;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="editSupplierContact" style="margin-bottom: 4px;">Contact</label>
+          <input type="text" id="editSupplierContact" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
+          <label for="editSupplierLocation" style="margin-bottom: 4px;">Location</label>
+          <input type="text" id="editSupplierLocation" required style="width: 100%;" />
+        </div>
+        <div style="text-align: center; width: 100%;">
+          <button class="action-btn" type="button" onclick="confirmEditSupplier()" style="width:50%; text-align: center;">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    const supplierRowsPerPage = 5;
-const supplierTableBody = document.getElementById("supplierBody");
-const supplierRows = Array.from(supplierTableBody?.querySelectorAll("tr") || []);
-const supplierPagination = document.getElementById("supplierPagination");
-
-function paginateSupplierTable() {
-  const totalPages = Math.ceil(supplierRows.length / supplierRowsPerPage);
-  let currentPage = 1;
-
-  function showPage(page) {
-    const start = (page - 1) * supplierRowsPerPage;
-    const end = start + supplierRowsPerPage;
-
-    supplierRows.forEach((row, index) => {
-      row.style.display = (index >= start && index < end) ? "" : "none";
-    });
-
-    updateSupplierPagination(page);
-  }
-
-  function updateSupplierPagination(current) {
-    supplierPagination.innerHTML = "";
-
-    // Prev Arrow
-    const prev = document.createElement("a");
-    prev.href = "#";
-    prev.className = "page-arrow";
-    prev.innerHTML = "&lt;";
-    prev.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (currentPage > 1) {
-        currentPage--;
-        showPage(currentPage);
+    // Sidebar toggle functionality
+    document.getElementById('sidebar-toggle').onclick = function() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content');
+      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+        sidebar.style.display = 'block';
+        content.style.marginLeft = '300px';
+      } else {
+        sidebar.style.display = 'none';
+        content.style.marginLeft = '0';
       }
-    });
-    supplierPagination.appendChild(prev);
+    };
 
-    // Page Numbers
-    for (let i = 1; i <= totalPages; i++) {
-      const btn = document.createElement("a");
-      btn.href = "#";
-      btn.className = "page-number" + (i === current ? " active" : "");
-      btn.textContent = i;
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        currentPage = i;
-        showPage(i);
+    // Initialize data
+    const suppliers = [
+      { id: 1, name: 'ABC Trading', contact: '09123456789', location: 'Manila' },
+      { id: 2, name: 'Steel Works Inc.', contact: '09876543210', location: 'Quezon City' },
+      { id: 3, name: 'Concrete Corp', contact: '09211223344', location: 'Cavite' },
+      { id: 4, name: 'BuildFast Supply', contact: '09334445566', location: 'Laguna' },
+      { id: 5, name: 'Paint Depot', contact: '09556667788', location: 'Batangas' },
+      { id: 6, name: 'Wooden Solutions', contact: '09112223344', location: 'Taguig' }
+    ];
+
+    let suppliersPerPage = 5;
+    let currentPage = 1;
+    let filteredSuppliers = [...suppliers];
+
+    // Render table function
+    function renderTable() {
+      console.log('Rendering table...'); // Debug log
+      const tableBody = document.getElementById('supplierBody');
+      if (!tableBody) {
+        console.error('Table body element not found!'); // Debug log
+        return;
+      }
+
+      tableBody.innerHTML = '';
+      const start = (currentPage - 1) * suppliersPerPage;
+      const end = currentPage * suppliersPerPage;
+      const currentSuppliers = filteredSuppliers.slice(start, end);
+
+      currentSuppliers.forEach(supplier => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${supplier.id}</td>
+          <td>${supplier.name}</td>
+          <td>${supplier.contact}</td>
+          <td>${supplier.location}</td>
+          <td>
+            <button class="btn btn-sm btn-info me-1" onclick="openEditSupplierModal(${supplier.id})" title="Edit Supplier">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${supplier.id})" title="Delete Supplier">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(row);
       });
-      supplierPagination.appendChild(btn);
+
+      renderPagination();
     }
 
-    // Next Arrow
-    const next = document.createElement("a");
-    next.href = "#";
-    next.className = "page-arrow";
-    next.innerHTML = "&gt;";
-    next.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (currentPage < totalPages) {
-        currentPage++;
-        showPage(currentPage);
+    // Render pagination function
+    function renderPagination() {
+      console.log('Rendering pagination...'); // Debug log
+      const paginationControls = document.getElementById('paginationControls');
+      if (!paginationControls) {
+        console.error('Pagination controls element not found!'); // Debug log
+        return;
+      }
+
+      const totalPages = Math.ceil(filteredSuppliers.length / suppliersPerPage);
+      paginationControls.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToPage(i);
+        if (i === currentPage) pageButton.classList.add('active');
+        paginationControls.appendChild(pageButton);
+      }
+    }
+
+    // Initialize the page
+    function initializePage() {
+      console.log('Initializing page...'); // Debug log
+      const select = document.getElementById('entriesPerPage');
+      suppliersPerPage = parseInt(select.value);
+      renderTable();
+    }
+
+    // Call initialize when the page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
+
+    // Also try to initialize when the window loads
+    window.addEventListener('load', initializePage);
+
+    // Make sure the table renders when navigating to the page
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        console.log('Page became visible, re-rendering table...'); // Debug log
+        renderTable();
       }
     });
-    supplierPagination.appendChild(next);
-  }
 
-  if (supplierRows.length) showPage(currentPage);
-}
+    function goToPage(page) {
+      currentPage = page;
+      renderTable();
+    }
 
-if (supplierTableBody) {
-  paginateSupplierTable();
-}
-});
+    function setEntriesPerPage() {
+      const select = document.getElementById('entriesPerPage');
+      suppliersPerPage = parseInt(select.value);
+      currentPage = 1;
+      renderTable();
+    }
+
+    function handleSearch(value) {
+      const clearButton = document.querySelector('.clear-search');
+      if (value.trim() !== '') {
+        clearButton.classList.add('visible');
+      } else {
+        clearButton.classList.remove('visible');
+      }
+      filterSuppliers(value);
+    }
+
+    function clearSupplierSearch() {
+      const searchInput = document.querySelector('.supplier-search');
+      searchInput.value = '';
+      document.querySelector('.clear-search').classList.remove('visible');
+      filterSuppliers('');
+    }
+
+    function filterSuppliers(searchTerm) {
+      const searchTermLower = searchTerm.toLowerCase();
+      filteredSuppliers = suppliers.filter(supplier => {
+        return supplier.name.toLowerCase().includes(searchTermLower) ||
+               supplier.id.toString().includes(searchTermLower) ||
+               supplier.location.toLowerCase().includes(searchTermLower) ||
+               supplier.contact.includes(searchTermLower);
+      });
+      
+      currentPage = 1;
+      renderTable();
+    }
+
+    function sortTable(columnIndex) {
+      const sortedSuppliers = [...filteredSuppliers];
+      sortedSuppliers.sort((a, b) => {
+        if (columnIndex === 0) return a.id - b.id;
+        if (columnIndex === 1) return a.name.localeCompare(b.name);
+        if (columnIndex === 2) return a.contact.localeCompare(b.contact);
+        if (columnIndex === 3) return a.location.localeCompare(b.location);
+      });
+      filteredSuppliers = sortedSuppliers;
+      renderTable();
+    }
+
+    let itemIdToDelete = null;
+
+    function openDeleteModal(itemId) {
+      itemIdToDelete = itemId;
+      document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      itemIdToDelete = null;
+    }
+
+    function confirmDelete() {
+      if (itemIdToDelete !== null) {
+        const index = suppliers.findIndex(supplier => supplier.id === itemIdToDelete);
+        if (index !== -1) {
+          suppliers.splice(index, 1);
+          filteredSuppliers = [...suppliers];
+          renderTable();
+          showToast("Supplier deleted successfully!");
+        }
+      }
+      closeDeleteModal();
+    }
+
+    // Toast notification
+    const toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = 'display:none; position:fixed; top:10%; left:50%; transform:translate(-50%,-50%); background:#F8FAFC; color:#1E293B; padding:16px 24px; border-radius:8px; z-index:9999; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.2);';
+    document.body.appendChild(toast);
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.5s';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          toast.style.display = 'none';
+          toast.style.transition = '';
+        }, 500);
+      }, 1500);
+    }
+
+    let currentEditSupplierId = null;
+
+    function openEditSupplierModal(supplierId) {
+      currentEditSupplierId = supplierId;
+      const supplier = suppliers.find(s => s.id === supplierId);
+      if (supplier) {
+        document.getElementById('editSupplierName').value = supplier.name;
+        document.getElementById('editSupplierContact').value = supplier.contact;
+        document.getElementById('editSupplierLocation').value = supplier.location;
+        document.getElementById('editSupplierModal').style.display = 'block';
+      }
+    }
+
+    function closeEditSupplierModal() {
+      document.getElementById('editSupplierModal').style.display = 'none';
+      currentEditSupplierId = null;
+    }
+
+    function confirmEditSupplier() {
+      const name = document.getElementById('editSupplierName').value.trim();
+      const contact = document.getElementById('editSupplierContact').value.trim();
+      const location = document.getElementById('editSupplierLocation').value.trim();
+
+      if (!name || !contact || !location) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      if (contact.length !== 11) {
+        alert("Contact number must be exactly 11 digits.");
+        return;
+      }
+
+      const supplier = suppliers.find(s => s.id === currentEditSupplierId);
+      if (supplier) {
+        supplier.name = name;
+        supplier.contact = contact;
+        supplier.location = location;
+        filteredSuppliers = [...suppliers];
+        renderTable();
+        showToast("Supplier updated successfully!");
+      }
+
+      closeEditSupplierModal();
+    }
+
+    function openAddSupplierModal() {
+      document.getElementById('addSupplierModal').style.display = 'block';
+    }
+
+    function closeAddSupplierModal() {
+      document.getElementById('addSupplierModal').style.display = 'none';
+      document.getElementById('addSupplierForm').reset();
+    }
+
+    // Add event listener for the Add Supplier button
+    document.getElementById('addSupplierBtn').addEventListener('click', openAddSupplierModal);
+
+    // Add event listener for the Add Supplier form
+    document.getElementById('addSupplierForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('supplierName').value.trim();
+      const contact = document.getElementById('supplierContact').value.trim();
+      const location = document.getElementById('supplierLocation').value.trim();
+
+      if (!name || !contact || !location) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      if (contact.length !== 11) {
+        alert("Contact number must be exactly 11 digits.");
+        return;
+      }
+
+      const newSupplier = {
+        id: suppliers.length + 1,
+        name: name,
+        contact: contact,
+        location: location
+      };
+
+      suppliers.push(newSupplier);
+      filteredSuppliers = [...suppliers];
+      renderTable();
+      showToast("New supplier added successfully!");
+      closeAddSupplierModal();
+    });
   </script>
-
-  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -73,7 +73,7 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/manager_finance.html',
+        'finance_accounting': '/finance admin/finance_payroll.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',

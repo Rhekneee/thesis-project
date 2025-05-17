@@ -144,8 +144,8 @@ const htmlRoutes = (app) => {
   // SCM admin Routes
   // ====================
 
-  app.get('/scm/contract', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'contract.html')); // Adjusted path
+  app.get('/scm/purchase_request', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'purchase_request.html')); // Adjusted path
   });
 
   app.get('/scm/inventory', (req, res) => {
@@ -156,8 +156,8 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'order.html')); // Adjusted path
   });
 
-  app.get('/scm/scm_dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm_dashboard.html')); // Adjusted path
+  app.get('/scm/scm-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm-dashboard.html')); // Adjusted path
   });
 
   app.get('/scm/outside', (req, res) => {
@@ -172,8 +172,8 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
   });
 
-  app.get('/scm/transfer', (req, res) => {    
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'transfer.html')); // Adjusted path
+  app.get('/scm/supplier_dashboard', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier_dashboard.html')); // Adjusted path
   });
 
 
@@ -341,11 +341,11 @@ const htmlRoutes = (app) => {
 
 
   app.get('/finance/finance_dashboard', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'finance', 'finance_dashboard.html')); // Adjusted path
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_dashboard.html')); // Adjusted path
   });   
 
   app.get('/finance/finance_history_attendance', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'finance', 'finance_history_attendance.html')); // Adjusted path
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_history_attendance.html')); // Adjusted path
   }); 
   
   app.get('/finance/finance_payroll', (req, res) => {  
