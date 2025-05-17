@@ -56,6 +56,7 @@ app.get('/hr_manager/employee_list', (req, res) => {
 });
 
 
+
 // ====================
   // CRM Website Routes
   // ====================
