@@ -397,14 +397,34 @@ const HRModel = {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     },
 
-    checkRequestApproval: async (userId, date) => {
-        const sql = `
-            SELECT * FROM attendance 
-            WHERE user_id = ? AND date = ? 
-              AND (early_leave_approved = 1 OR half_day_approved = 1)
-        `;
-        const [request] = await db.execute(sql, [userId, date]);
-        return request.length > 0 ? request[0] : null;
+    checkRequestApproval: async (userId, date, requestType) => {
+        try {
+            // First get the employee_id from the user_id
+            const [employee] = await db.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?',
+                [userId]
+            );
+
+            if (!employee || employee.length === 0) {
+                console.log('❌ No employee found for user_id:', userId);
+                return null;
+            }
+
+            const employeeId = employee[0].employee_id;
+            console.log('🔍 Checking request approval for employee:', employeeId);
+
+            const sql = `
+                SELECT * FROM requests
+                WHERE employee_id = ? AND request_date = ? AND status = 'approved' AND request_type = ?`;
+
+            const [result] = await db.execute(sql, [employeeId, date, requestType]);
+            console.log('📝 Request approval check result:', result.length > 0 ? 'Found approved request' : 'No approved request found');
+
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            console.error('❌ Error in checkRequestApproval:', error);
+            throw error;
+        }
     },
 
     // Check if already checked in
@@ -429,83 +449,128 @@ const HRModel = {
     
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        const officeLat = 14.327421495764893;
-        const officeLng = 120.94053562075905;
+        console.log('🔍 Check-in attempt:', { userId, checkInTime, date, userLat, userLng });
+        
+        const officeLat = 14.329643700546274;
+        const officeLng = 120.94080148408072;
         const allowedRadius = 500;
     
-        // Check if the user is within the allowed radius
-        const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
-        if (distance > allowedRadius) {
-            return { error: `You are outside the allowed range (${Math.round(distance)}m).` };
-        }
-
-        // Check if the user has already checked in
-        const alreadyIn = await HRModel.alreadyCheckedIn(userId, date);
-        if (alreadyIn) {
-            return { error: "You have already checked in today." };
-        }
-
-        const checkInDate = new Date(checkInTime);
-
-        // Ensure the checkInTime is valid
-        if (isNaN(checkInDate.getTime())) {
-            return { error: "Invalid check-in time format." };  // If the time is invalid, return a dash
-        }
-
-        // Convert to Philippine Time (PHT) from UTC (UTC +8 hours)
-        const localTime = new Date(checkInDate.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-    
-        const hourPHT = localTime.getHours(); // Get the hour in Philippine Time (PHT)
-        const minutesPHT = localTime.getMinutes();
-        const secondsPHT = localTime.getSeconds();
-
-        // Check if the employee has an approved half-day request for the day
-        const request = await HRModel.checkRequestApproval(userId, date, "halfDay"); // Check for half-day approval
-    
-        // If no approved half-day request, enforce the 9 AM check-in time
-        if (!request && hourPHT < 9) {
-            return { error: "You can only check in after 9:00 AM unless approved for half-day." };
-        }
-
-        let status = "Present"; // Default status for employees with no request
-
-        // If the employee has an approved half-day request
-        if (request) {
-            // Morning half-day (check-in between 9:00 AM to 12:00 PM)
-            if (hourPHT >= 9 && hourPHT < 12) {
-                status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
+        try {
+            // Check if the user is within the allowed radius
+            const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
+            console.log('📍 Distance from office:', Math.round(distance), 'meters');
+            
+            if (distance > allowedRadius) {
+                console.log('❌ User outside allowed range');
+                return { error: `You are outside the allowed range (${Math.round(distance)}m).` };
             }
-            // Afternoon half-day (check-in between 12:00 PM to 6:00 PM)
-            else if (hourPHT >= 12 && hourPHT < 18) {
-                status = "Half Day"; // Mark as "Half Day" if the check-in is within the half-day period
+
+            // Check if the user has already checked in
+            console.log('🔍 Checking if user already checked in...');
+            const alreadyIn = await HRModel.alreadyCheckedIn(userId, date);
+            console.log('📝 Already checked in:', alreadyIn);
+            
+            if (alreadyIn) {
+                return { error: "You have already checked in today." };
             }
-        } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))) {
-            status = "Late";
-        }        
+
+            const checkInDate = new Date(checkInTime);
+            console.log('⏰ Check-in date object:', checkInDate);
+
+            // Ensure the checkInTime is valid
+            if (isNaN(checkInDate.getTime())) {
+                console.log('❌ Invalid check-in time format');
+                return { error: "Invalid check-in time format." };
+            }
+
+            // Convert to Philippine Time (PHT) from UTC (UTC +8 hours)
+            const localTime = new Date(checkInDate.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+            console.log('🌏 Local time (PHT):', localTime);
         
-        // Format the check-in time to 'HH:MM:SS' for the TIME field in the database
-        const checkInFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
-    
-        const [existing] = await db.execute(
-            `SELECT attendance_id FROM attendance WHERE user_id = ? AND date = ?`,
-            [userId, date]
-        );
-    
-        if (existing.length > 0) {
-            const sql = `UPDATE attendance SET check_in = ?, status = ? WHERE user_id = ? AND date = ?`;
-            await db.execute(sql, [checkInFormatted, status, userId, date]);
-        } else {
-            const sql = `INSERT INTO attendance (user_id, date, check_in, status) VALUES (?, ?, ?, ?)`;
-            await db.execute(sql, [userId, date, checkInFormatted, status]);
+            const hourPHT = localTime.getHours();
+            const minutesPHT = localTime.getMinutes();
+            const secondsPHT = localTime.getSeconds();
+            console.log('⏰ Time components:', { hourPHT, minutesPHT, secondsPHT });
+
+            // Check if the employee has an approved half-day request for the day
+            console.log('🔍 Checking for approved half-day request...');
+            const request = await HRModel.checkRequestApproval(userId, date, "halfDay");
+            console.log('📝 Half-day request status:', request);
+        
+            // If no approved half-day request, enforce the 9 AM check-in time
+            if (!request && hourPHT < 9) {
+                console.log('❌ Too early to check in');
+                return { error: "You can only check in after 9:00 AM unless approved for half-day." };
+            }
+
+            let status = "Present";
+            console.log('📊 Initial status:', status);
+
+            // If the employee has an approved half-day request
+            if (request) {
+                if (hourPHT >= 9 && hourPHT < 12) {
+                    status = "Half Day";
+                } else if (hourPHT >= 12 && hourPHT < 18) {
+                    status = "Half Day";
+                }
+                console.log('📊 Updated status (with half-day):', status);
+            } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))) {
+                status = "Late";
+                console.log('📊 Updated status (late):', status);
+            }        
+        
+            // Format the check-in time
+            const checkInFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
+            console.log('⏰ Formatted check-in time:', checkInFormatted);
+        
+            console.log('🔍 Checking for existing attendance record...');
+            const [existing] = await db.execute(
+                `SELECT attendance_id FROM attendance WHERE user_id = ? AND date = ?`,
+                [userId, date]
+            );
+            console.log('📝 Existing record found:', existing.length > 0);
+        
+            if (existing.length > 0) {
+                console.log('📝 Updating existing attendance record...');
+                const sql = `UPDATE attendance SET check_in = ?, status = ? WHERE user_id = ? AND date = ?`;
+                await db.execute(sql, [checkInFormatted, status, userId, date]);
+            } else {
+                console.log('📝 Inserting new attendance record...');
+                const sql = `INSERT INTO attendance (user_id, date, check_in, status) VALUES (?, ?, ?, ?)`;
+                await db.execute(sql, [userId, date, checkInFormatted, status]);
+            }
+        
+            console.log('✅ Check-in recorded successfully');
+            return { success: true, message: "Check-in recorded." };
+        } catch (error) {
+            console.error('❌ Error in checkIn function:', error);
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            throw error; // Re-throw the error to be handled by the controller
         }
-    
-        return { success: true, message: "Check-in recorded." };
     },
 
         
     checkOut: async (userId, checkOutTime, date) => {
         try {
-            console.log('Check-out function called with:', userId, checkOutTime, date);
+            console.log('Check-out function called with:', { userId, checkOutTime, date });
+
+            // Convert check-out time to Philippine Time (PHT)
+            const checkOutDate = new Date(checkOutTime);
+            const hourPHT = checkOutDate.getUTCHours() + 8;
+            const minutesPHT = checkOutDate.getUTCMinutes();
+
+            console.log('⏰ Check-out time (PHT):', { hourPHT, minutesPHT });
+
+            // Check if it's before 6 PM
+            if (hourPHT < 18) {
+                console.log('❌ Check-out attempted before 6 PM');
+                return { error: "Check-out is only available after 6:00 PM." };
+            }
 
             // First, check if the user has checked in
             const [checkInRecord] = await db.execute(
@@ -514,13 +579,9 @@ const HRModel = {
             );
 
             if (!checkInRecord || !checkInRecord[0].check_in) {
+                console.log('❌ No check-in record found');
                 return { error: "You must check in first." };
             }
-
-            // Convert check-out time to Philippine Time (PHT) - UTC to PHT (UTC + 8)
-            const checkOutDate = new Date(checkOutTime);
-            const hourPHT = checkOutDate.getUTCHours() + 8;
-            const minutesPHT = checkOutDate.getUTCMinutes();
 
             // Format the hour to 24-hour format (0-23)
             const formattedHour = String(hourPHT % 24).padStart(2, '0');
@@ -548,6 +609,13 @@ const HRModel = {
                 status = 'Overtime';
             }
 
+            console.log('📊 Attendance calculations:', {
+                totalHours,
+                adjustedHours,
+                overtimeHours,
+                status
+            });
+
             // Update attendance record with calculated values
             const sql = `
                 UPDATE attendance
@@ -568,13 +636,15 @@ const HRModel = {
             ]);
 
             if (result.affectedRows === 0) {
+                console.log('❌ No rows updated during check-out');
                 return { error: "Check-in required before check-out." };
             }
 
-            return { success: true, message: "Check-out recorded." };
+            console.log('✅ Check-out recorded successfully');
+            return { success: true, message: "Check-out recorded successfully." };
 
         } catch (error) {
-            console.error('Error during check-out:', error);
+            console.error('❌ Error during check-out:', error);
             return { error: error.message || 'Internal Server Error' };
         }
     },    
@@ -648,13 +718,33 @@ const HRModel = {
     },
     
     checkRequestApproval: async (userId, date, requestType) => {
-        const sql = `
-            SELECT * FROM requests
-            WHERE user_id = ? AND request_date = ? AND status = 'approved' AND request_type = ?`;
+        try {
+            // First get the employee_id from the user_id
+            const [employee] = await db.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?',
+                [userId]
+            );
 
-        const [result] = await db.execute(sql, [userId, date, requestType]);
+            if (!employee || employee.length === 0) {
+                console.log('❌ No employee found for user_id:', userId);
+                return null;
+            }
 
-        return result.length > 0 ? result[0] : null; // Returns the request if found, or null if not
+            const employeeId = employee[0].employee_id;
+            console.log('🔍 Checking request approval for employee:', employeeId);
+
+            const sql = `
+                SELECT * FROM requests
+                WHERE employee_id = ? AND request_date = ? AND status = 'approved' AND request_type = ?`;
+
+            const [result] = await db.execute(sql, [employeeId, date, requestType]);
+            console.log('📝 Request approval check result:', result.length > 0 ? 'Found approved request' : 'No approved request found');
+
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            console.error('❌ Error in checkRequestApproval:', error);
+            throw error;
+        }
     },
 
     // Approve or Reject Requests (Early-out or Half-day)
@@ -2322,6 +2412,182 @@ const HRModel = {
             throw error;
         }
     },
+
+    // Developer Management Methods
+    getPendingDevelopers: async () => {
+        const query = `
+            SELECT * FROM developer_accounts 
+            WHERE status = 'pending'
+            ORDER BY created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    getDeveloperById: async (id) => {
+        try {
+            // First get the developer account
+            const [developer] = await db.execute(`
+                SELECT * FROM developer_accounts WHERE id = ?
+            `, [id]);
+
+            if (!developer || developer.length === 0) {
+                throw new Error('Developer not found');
+            }
+
+            // If the developer has a user account, get that too
+            if (developer[0].user_id) {
+                const [user] = await db.execute(`
+                    SELECT id, email, username, is_active 
+                    FROM users 
+                    WHERE id = ?
+                `, [developer[0].user_id]);
+
+                if (user && user.length > 0) {
+                    return {
+                        ...developer[0],
+                        user_id: user[0].id,
+                        user_email: user[0].email,
+                        user_name: user[0].username,
+                        user_status: user[0].is_active
+                    };
+                }
+            }
+
+            return developer[0];
+        } catch (error) {
+            console.error('Error in getDeveloperById:', error);
+            throw new Error('Failed to fetch developer details: ' + error.message);
+        }
+    },
+
+    getAllDevelopers: async () => {
+        const query = `
+            SELECT da.*, u.id as user_id, u.email as user_email
+            FROM developer_accounts da
+            LEFT JOIN users u ON da.user_id = u.id
+            ORDER BY da.created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    approveDeveloper: async (developerId) => {
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // 1. Get developer data
+            const developer = await HRModel.getDeveloperById(developerId);
+            if (!developer) {
+                throw new Error('Developer not found');
+            }
+
+            // 2. Generate employee ID (format: YYYY-XXXX)
+            const currentYear = new Date().getFullYear();
+            const [lastEmployee] = await connection.execute(
+                "SELECT employee_id FROM employees WHERE employee_id LIKE ? ORDER BY employee_id DESC LIMIT 1",
+                [`${currentYear}-%`]
+            );
+            
+            let sequence = 1;
+            if (lastEmployee.length > 0) {
+                const lastSequence = parseInt(lastEmployee[0].employee_id.split('-')[1]);
+                sequence = lastSequence + 1;
+            }
+            const employeeId = `${currentYear}-${String(sequence).padStart(4, '0')}`;
+
+            // 3. Create user account
+            const createUserQuery = `
+                INSERT INTO users (email, username, password, role_id, is_active, created_at)
+                VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), 1, NOW())
+            `;
+            const [userResult] = await connection.execute(createUserQuery, [
+                developer.email,
+                developer.username,
+                developer.password_hash
+            ]);
+            const userId = userResult.insertId;
+
+            // 4. Create employee record
+            const createEmployeeQuery = `
+                INSERT INTO employees (
+                    employee_id, user_id, email, role_id, full_name, 
+                    employment_status, created_at
+                ) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), ?, 'Active', NOW())
+            `;
+            await connection.execute(createEmployeeQuery, [
+                employeeId,
+                userId,
+                developer.email,
+                developer.username
+            ]);
+
+            // 5. Update developer status
+            const updateDeveloperQuery = `
+                UPDATE developer_accounts 
+                SET status = 'active', 
+                    id = ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            `;
+            await connection.execute(updateDeveloperQuery, [userId, developerId]);
+
+            await connection.commit();
+            return { 
+                userId, 
+                developerId,
+                employeeId,
+                message: "Developer approved successfully. They can now log in using their employee ID."
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error("Error approving developer:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Add a function to check developer status
+    checkDeveloperStatus: async (email) => {
+        try {
+            const query = `
+                SELECT status 
+                FROM developer_accounts 
+                WHERE email = ?
+            `;
+            const [result] = await db.execute(query, [email]);
+            
+            if (result.length === 0) {
+                return { status: 'not_found' };
+            }
+            
+            return { 
+                status: result[0].status,
+                message: result[0].status === 'pending' ? 
+                    'Your account is pending approval. Please wait for admin approval.' : 
+                    result[0].status === 'rejected' ? 
+                    'Your account has been rejected. Please contact the administrator.' :
+                    'Your account is active. You can now log in.'
+            };
+        } catch (error) {
+            console.error("Error checking developer status:", error);
+            throw error;
+        }
+    },
+
+    rejectDeveloper: async (developerId, reason) => {
+        const query = `
+            UPDATE developer_accounts 
+            SET status = 'rejected',
+                rejection_reason = ?,
+                updated_at = NOW()
+            WHERE id = ?
+        `;
+        await db.execute(query, [reason, developerId]);
+    }
 };
 
 module.exports = HRModel;

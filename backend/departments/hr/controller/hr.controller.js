@@ -258,14 +258,88 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         const userId = req.params.id;
         const { date, checkInTime, userLat, userLng } = req.body;
 
+        console.log('📝 Check-in request received:', {
+            userId,
+            date,
+            checkInTime,
+            userLat,
+            userLng
+        });
+
         try {
-            const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
-            if (result.error) {
-                return res.status(400).json({ error: result.error });  // Send error back if validation fails
+            // Validate required fields
+            if (!userId || !date || !checkInTime || userLat === undefined || userLng === undefined) {
+                console.log('❌ Missing required fields:', { userId, date, checkInTime, userLat, userLng });
+                return res.status(400).json({ 
+                    error: 'Missing required fields',
+                    details: {
+                        userId: !userId ? 'User ID is required' : null,
+                        date: !date ? 'Date is required' : null,
+                        checkInTime: !checkInTime ? 'Check-in time is required' : null,
+                        userLat: userLat === undefined ? 'Latitude is required' : null,
+                        userLng: userLng === undefined ? 'Longitude is required' : null
+                    }
+                });
             }
-            return res.status(200).json(result);  // Successful check-in response
+
+            // Validate user ID format
+            if (isNaN(parseInt(userId))) {
+                console.log('❌ Invalid user ID format:', userId);
+                return res.status(400).json({ error: 'Invalid user ID format' });
+            }
+
+            // Validate coordinates
+            if (isNaN(parseFloat(userLat)) || isNaN(parseFloat(userLng))) {
+                console.log('❌ Invalid coordinates:', { userLat, userLng });
+                return res.status(400).json({ error: 'Invalid coordinates' });
+            }
+
+            // Validate date format
+            const dateObj = new Date(date);
+            if (isNaN(dateObj.getTime())) {
+                console.log('❌ Invalid date format:', date);
+                return res.status(400).json({ error: 'Invalid date format' });
+            }
+
+            // Validate check-in time format
+            const timeObj = new Date(checkInTime);
+            if (isNaN(timeObj.getTime())) {
+                console.log('❌ Invalid check-in time format:', checkInTime);
+                return res.status(400).json({ error: 'Invalid check-in time format' });
+            }
+
+            console.log('✅ Input validation passed, proceeding with check-in...');
+            const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
+            
+            if (result.error) {
+                console.log('❌ Check-in validation failed:', result.error);
+                return res.status(400).json({ error: result.error });
+            }
+
+            console.log('✅ Check-in successful:', result);
+            return res.status(200).json(result);
         } catch (error) {
-            return res.status(500).json({ error: 'Internal Server Error' });
+            console.error('❌ Error in checkInAttendance controller:', error);
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            
+            // Send appropriate error response based on error type
+            if (error.code === 'ER_NO_REFERENCED_ROW') {
+                return res.status(404).json({ error: 'User not found' });
+            } else if (error.code === 'ER_DUP_ENTRY') {
+                return res.status(409).json({ error: 'Duplicate check-in attempt' });
+            } else if (error.code === 'ER_TRUNCATED_WRONG_VALUE') {
+                return res.status(400).json({ error: 'Invalid data format' });
+            }
+            
+            return res.status(500).json({ 
+                error: 'Internal Server Error',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     },
 
@@ -1600,6 +1674,81 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ error: 'Failed to fetch dashboard KPIs' });
         }
     },
+
+    // Developer Management Controllers
+    getPendingDevelopers: async (req, res) => {
+        try {
+            const developers = await HRModel.getPendingDevelopers();
+            res.json(developers);
+        } catch (error) {
+            console.error('Error fetching pending developers:', error);
+            res.status(500).json({ error: 'Failed to fetch pending developers' });
+        }
+    },
+
+    getDeveloperById: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const developer = await HRModel.getDeveloperById(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            res.json(developer);
+        } catch (error) {
+            console.error('Error fetching developer details:', error);
+            res.status(500).json({ error: 'Failed to fetch developer details' });
+        }
+    },
+
+    approveDeveloper: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const developer = await HRModel.getDeveloperById(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            if (developer.status !== 'pending') {
+                return res.status(400).json({ error: 'Developer is not in pending status' });
+            }
+            
+            await HRModel.approveDeveloper(id);
+            res.json({ message: 'Developer approved successfully' });
+        } catch (error) {
+            console.error('Error approving developer:', error);
+            res.status(500).json({ error: 'Failed to approve developer' });
+        }
+    },
+
+    rejectDeveloper: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { reason } = req.body;
+            
+            if (!reason) {
+                return res.status(400).json({ error: 'Rejection reason is required' });
+            }
+            
+            const developer = await HRModel.getDeveloperById(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            if (developer.status !== 'pending') {
+                return res.status(400).json({ error: 'Developer is not in pending status' });
+            }
+            
+            await HRModel.rejectDeveloper(id, reason);
+            res.json({ message: 'Developer rejected successfully' });
+        } catch (error) {
+            console.error('Error rejecting developer:', error);
+            res.status(500).json({ error: 'Failed to reject developer' });
+        }
+    }
 };
 
 module.exports = HRController;

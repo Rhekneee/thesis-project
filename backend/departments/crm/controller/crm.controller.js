@@ -2,6 +2,7 @@ const CRMModel = require("../model/crm.model");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const bcrypt = require('bcrypt');
 
 // ✅ CommonJS-compatible PDF.js import
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
@@ -29,6 +30,39 @@ const upload = multer({
             return cb(new Error('Only PDF files are allowed.'));
         }
         cb(null, true);
+    }
+});
+
+// Add developer profile picture upload configuration
+const developerUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/developer_profiles");
+
+// Ensure the upload directory exists
+if (!fs.existsSync(developerUploadDir)) {
+    fs.mkdirSync(developerUploadDir, { recursive: true });
+}
+
+const developerStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, developerUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'developer-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const developerUpload = multer({
+    storage: developerStorage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG and GIF are allowed.'));
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
     }
 });
 
@@ -274,7 +308,84 @@ const CRMController = {
             console.error("Error fetching positions:", error);
             res.status(500).json({ error: "Failed to fetch positions" });
         }
+    },
+
+    // Developer Registration Controller
+    registerDeveloper: async (req, res) => {
+        try {
+            const {
+                username,
+                email,
+                password,
+                first_name,
+                middle_name,
+                surname,
+                position,
+                contact_number,
+                company_name,
+                company_address,
+                company_tin
+            } = req.body;
+
+            // Validate required fields
+            if (!username || !email || !password || !first_name || !surname || 
+                !position || !contact_number || !company_name || !company_address || !company_tin) {
+                return res.status(400).json({ error: "All required fields must be filled" });
+            }
+
+            // Check if email already exists
+            const emailExists = await CRMModel.checkDeveloperEmail(email);
+            if (emailExists) {
+                return res.status(400).json({ error: "Email is already registered" });
+            }
+
+            // Check if username already exists
+            const usernameExists = await CRMModel.checkDeveloperUsername(username);
+            if (usernameExists) {
+                return res.status(400).json({ error: "Username is already taken" });
+            }
+
+            // Hash password
+            const saltRounds = 10;
+            const password_hash = await bcrypt.hash(password, saltRounds);
+
+            // Handle profile picture upload
+            let profile_picture = null;
+            if (req.file) {
+                profile_picture = req.file.filename;
+            }
+
+            // Store developer data
+            const developerId = await CRMModel.storeDeveloper({
+                username,
+                email,
+                profile_picture,
+                password_hash,
+                surname,
+                first_name,
+                middle_name: middle_name || null,
+                position,
+                contact_number,
+                company_name,
+                company_address,
+                company_tin
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Developer registration successful. Please wait for admin approval.",
+                developerId 
+            });
+
+        } catch (error) {
+            console.error("Error in developer registration:", error);
+            res.status(500).json({ error: "Failed to register developer" });
+        }
     }
 };
 
-module.exports = { CRMController, upload };
+module.exports = { 
+    CRMController, 
+    upload,
+    developerUpload // Export the new upload middleware
+};

@@ -1,4 +1,5 @@
 const db = require("../../../db");
+const bcrypt = require('bcrypt');
 
 const CRMModel = {
     // Check if the applicant's email already exists in the database
@@ -193,6 +194,58 @@ const CRMModel = {
             console.error('Error in getAllPositions:', error);
             throw error;
         }
+    },
+
+    // Developer Registration Methods
+    checkDeveloperEmail: async (email) => {
+        const query = "SELECT COUNT(*) AS count FROM developer_accounts WHERE email = ?";
+        const [rows] = await db.execute(query, [email]);
+        return rows[0].count > 0;
+    },
+
+    checkDeveloperUsername: async (username) => {
+        const query = "SELECT COUNT(*) AS count FROM developer_accounts WHERE username = ?";
+        const [rows] = await db.execute(query, [username]);
+        return rows[0].count > 0;
+    },
+
+    storeDeveloper: async (data) => {
+        const query = `
+            INSERT INTO developer_accounts (
+                username, 
+                email, 
+                profile_picture, 
+                password_hash, 
+                surname, 
+                first_name, 
+                middle_name, 
+                position, 
+                contact_number, 
+                company_name, 
+                company_address, 
+                company_tin, 
+                created_at, 
+                updated_at, 
+                status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 'pending')
+        `;
+
+        const [result] = await db.execute(query, [
+            data.username,
+            data.email,
+            data.profile_picture,
+            data.password_hash,
+            data.surname,
+            data.first_name,
+            data.middle_name,
+            data.position,
+            data.contact_number,
+            data.company_name,
+            data.company_address,
+            data.company_tin
+        ]);
+
+        return result.insertId;
     }
 };
 
