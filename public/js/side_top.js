@@ -1,5 +1,5 @@
- // JavaScript for toggling the sidebar visibility
- function toggleSidebar() {
+// JavaScript for toggling the sidebar visibility
+function toggleSidebar() {
     var sidebar = document.getElementById('sidebar');
     var content = document.getElementById('content');
     
@@ -118,76 +118,216 @@ function toggleChevron() {
 
                 const sessionData = await sessionResponse.json();
                 console.log('Full session data:', sessionData);
-                console.log('User active status from session:', sessionData.user?.is_active);
-                console.log('User role from session:', sessionData.user?.role_name);
 
-                if (!sessionData.user || !sessionData.user.employee_id) {
-                    throw new Error('No employee ID in session');
+                if (!sessionData || !sessionData.user) {
+                    throw new Error('No user data in session');
                 }
 
-                // Fetch employee details
-                const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
-                    credentials: 'include'
-                });
+                const user = sessionData.user;
+                console.log('User active status from session:', user.is_active);
+                console.log('User role from session:', user.role_name);
 
-                if (!employeeResponse.ok) {
-                    throw new Error('Failed to fetch employee details');
-                }
+                let userData;
+                const role = user.role_name?.toLowerCase();
 
-                const employeeData = await employeeResponse.json();
-                console.log('Full employee data:', employeeData);
-
-                const profileName = document.querySelector('.profile-name');
-                const profilePosition = document.querySelector('.profile-position');
-                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-
-                if (profileName && profilePosition) {
-                    profileName.textContent = employeeData.full_name || 'Not Set';
-                    profilePosition.textContent = employeeData.role_name || 'Not Set';
-                }
-
-                // Update profile picture with proper path handling
-                if (employeeData.profile_picture) {
-                    // Extract just the filename if it's a full path
-                    const filename = employeeData.profile_picture.includes('/') 
-                        ? employeeData.profile_picture.split('/').pop() 
-                        : employeeData.profile_picture;
-                    
-                    // Add timestamp to prevent caching
-                    const timestamp = new Date().getTime();
-                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
-                    console.log('Loading profile picture from:', imageUrl);
-                    
-                    topbarProfilePicture.src = imageUrl;
-
-                    // If the path was a full path, update it in the database
-                    if (employeeData.profile_picture.includes('/')) {
+                // Fetch user details based on role
+                if (role === 'developer' || role === 'customer') {
+                    // For developers and customers, use CRM endpoints
+                    if (!user.id) {
+                        console.log('No user ID in session, using session data directly');
+                        // If no user ID, use the session data directly
+                        userData = {
+                            ...user,
+                            profile_picture: null,
+                            status: user.is_active ? 'active' : 'inactive'
+                        };
+                    } else {
                         try {
-                            const updateResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}/profile-picture`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ profile_picture: filename }),
+                            const developerResponse = await fetch(`/crm/developer/${user.id}`, {
                                 credentials: 'include'
                             });
 
-                            if (!updateResponse.ok) {
-                                console.error('Failed to update profile picture path in database');
+                            if (!developerResponse.ok) {
+                                console.log('Failed to fetch developer details, using session data');
+                                // If fetch fails, use session data
+                                userData = {
+                                    ...user,
+                                    profile_picture: null,
+                                    status: user.is_active ? 'active' : 'inactive'
+                                };
                             } else {
-                                console.log('Successfully updated profile picture path in database');
+                                const responseData = await developerResponse.json();
+                                console.log('Developer response data:', responseData);
+
+                                if (!responseData.success || !responseData.profile) {
+                                    console.log('Invalid developer data, using session data');
+                                    userData = {
+                                        ...user,
+                                        profile_picture: null,
+                                        status: user.is_active ? 'active' : 'inactive'
+                                    };
+                                } else {
+                                    userData = responseData.profile;
+                                }
                             }
                         } catch (error) {
-                            console.error('Error updating profile picture path:', error);
+                            console.log('Error fetching developer details, using session data:', error);
+                            userData = {
+                                ...user,
+                                profile_picture: null,
+                                status: user.is_active ? 'active' : 'inactive'
+                            };
+                        }
+                    }
+                    console.log('Final developer data:', userData);
+                } else if (role === 'employee' || role === 'hr' || role === 'office_administrator' || 
+                          role === 'finance_accounting' || role === 'general_foreman' || 
+                          role === 'corporate_secretary' || role === 'admin_staff' || 
+                          role === 'sales_marketing_head' || role === 'logistics' || 
+                          role === 'agents') {
+                    // For employees and related roles, use HR endpoints
+                    if (!user.employee_id) {
+                        console.log('No employee ID in session, using session data directly');
+                        userData = {
+                            ...user,
+                            profile_picture: null,
+                            is_active: user.is_active ? 1 : 0,
+                            is_deleted: 0
+                        };
+                    } else {
+                        try {
+                            const employeeResponse = await fetch(`/hr/employees/${user.employee_id}`, {
+                                credentials: 'include'
+                            });
+
+                            if (!employeeResponse.ok) {
+                                console.log('Failed to fetch employee details, using session data');
+                                userData = {
+                                    ...user,
+                                    profile_picture: null,
+                                    is_active: user.is_active ? 1 : 0,
+                                    is_deleted: 0
+                                };
+                            } else {
+                                userData = await employeeResponse.json();
+                            }
+                        } catch (error) {
+                            console.log('Error fetching employee details, using session data:', error);
+                            userData = {
+                                ...user,
+                                profile_picture: null,
+                                is_active: user.is_active ? 1 : 0,
+                                is_deleted: 0
+                            };
                         }
                     }
                 } else {
-                    console.log('No profile picture found, using default');
-                    topbarProfilePicture.src = '/images/default-profile.png';
+                    console.log('Invalid user role, using session data directly');
+                    userData = {
+                        ...user,
+                        profile_picture: null,
+                        status: user.is_active ? 'active' : 'inactive'
+                    };
+                }
+
+                // Update profile pictures
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                // Simple function to set profile picture
+                const setProfilePicture = (imgElement, imagePath, role) => {
+                    if (!imgElement) return;
+                    
+                    // Always use CRM default for developers and customers
+                    if (role === 'developer' || role === 'customer') {
+                        imgElement.src = '/crm/default-profile-picture';
+                        return;
+                    }
+                    
+                    if (imagePath) {
+                        const filename = imagePath.includes('/') 
+                            ? imagePath.split('/').pop() 
+                            : imagePath;
+                        
+                        const timestamp = new Date().getTime();
+                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                        
+                        imgElement.src = imageUrl;
+                        
+                        imgElement.onerror = () => {
+                            console.error('Failed to load image:', imageUrl);
+                            imgElement.src = '/hr/default-profile-picture';
+                        };
+                    } else {
+                        imgElement.src = '/hr/default-profile-picture';
+                    }
+                };
+
+                // Set both profile pictures
+                const imagePath = userData.profile_picture;
+                console.log('Setting profile pictures with path:', imagePath);
+                
+                setProfilePicture(profilePicture, imagePath, role);
+                setProfilePicture(topbarProfilePicture, imagePath, role);
+
+                // Update profile information
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const statusBadge = document.getElementById('statusBadge');
+
+                if (profileName && profilePosition) {
+                    let displayName;
+                    let displayPosition;
+
+                    if (role === 'developer' || role === 'customer') {
+                        // For developers, use username if name is not available
+                        displayName = userData.username || role.charAt(0).toUpperCase() + role.slice(1);
+                        displayPosition = userData.position || role.charAt(0).toUpperCase() + role.slice(1);
+                    } else {
+                        displayName = userData.full_name || userData.username || role.charAt(0).toUpperCase() + role.slice(1);
+                        displayPosition = userData.role_name || role.charAt(0).toUpperCase() + role.slice(1);
+                    }
+
+                    profileName.textContent = displayName;
+                    profilePosition.textContent = displayPosition;
+                }
+
+                // Update status badge
+                if (statusBadge) {
+                    let isActive;
+                    if (role === 'developer' || role === 'customer') {
+                        isActive = userData.status === 'active' || userData.is_active;
+                    } else {
+                        isActive = userData.is_deleted === 0 && (userData.is_active === 1 || user.is_active === 1);
+                    }
+
+                    if (isActive) {
+                        statusBadge.className = 'status-badge status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'status-badge status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
                 }
 
             } catch (error) {
                 console.error('Error in getUserInfo:', error);
+                // Set default images on error based on role
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                
+                // Get role from session if available, otherwise default to developer
+                const role = sessionData?.user?.role_name?.toLowerCase() || 'developer';
+                
+                const defaultImage = role === 'developer' || role === 'customer' 
+                    ? '/crm/default-profile-picture' 
+                    : '/hr/default-profile-picture';
+                    
+                if (profilePicture) profilePicture.src = defaultImage;
+                if (topbarProfilePicture) topbarProfilePicture.src = defaultImage;
+                
+                // Don't throw the error, just log it
+                return;
             }
         }
 
