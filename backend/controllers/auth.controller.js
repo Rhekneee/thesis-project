@@ -43,31 +43,77 @@ const getPermissionsForRole = async (role_id) => {
 exports.login = async (req, res) => {
     try {
         const { employee_id, password } = req.body;
-        console.log("🔍 Login attempt with employee ID:", employee_id);
+        console.log("�� Login attempt with username/userid:", employee_id);
 
-        // First check if user exists
+        // First check if it's a developer trying to log in using username
+        const checkDeveloperSQL = `
+            SELECT u.id, u.username, u.password, da.status
+            FROM users u
+            JOIN developer_accounts da ON u.id = da.id
+            WHERE u.username = ? AND da.status = 'active'
+        `;
+        
+        console.log("🔍 Checking if developer exists with username...");
+        const [developers] = await db.query(checkDeveloperSQL, [employee_id]);
+        
+        if (developers.length > 0) {
+            const developer = developers[0];
+            const isPasswordValid = await bcrypt.compare(password, developer.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ message: "Invalid credentials." });
+            }
+            
+            // Get user details for session using the user id
+            const [userDetails] = await db.query(`
+                SELECT u.id, u.email, u.username, u.role_id, r.name AS role_name, e.employee_id
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                LEFT JOIN employees e ON u.id = e.user_id
+                WHERE u.id = ?
+            `, [developer.id]);
+
+            if (userDetails.length > 0) {
+                const user = userDetails[0];
+                req.session.user = {
+                    id: user.id,  // This is the reference id from users table
+                    email: user.email,
+                    username: user.username,  // This is what they used to login
+                    role_name: user.role_name,
+                    employee_id: user.employee_id,
+                    is_external: true
+                };
+                return res.status(200).json({ 
+                    message: "Login successful",
+                    redirect: "/dashboard"
+                });
+            }
+        }
+
+        // If not a developer, try normal employee login - ONLY through employee_id
         const checkUserSQL = `
-            SELECT users.id, users.email, users.password, users.created_at, users.role_id, roles.name AS role_name, employees.employee_id
+            SELECT users.id, users.email, users.username, users.password, users.created_at, 
+                   users.role_id, roles.name AS role_name, employees.employee_id
             FROM users
             JOIN roles ON users.role_id = roles.id
             JOIN employees ON users.id = employees.user_id
             WHERE employees.employee_id = ?;
         `;
         
-        console.log("🔍 Checking if user exists...");
+        console.log("🔍 Checking if employee exists with employee_id...");
         const [users] = await db.query(checkUserSQL, [employee_id]);
-        console.log("🔍 User check result:", users);
+        console.log("🔍 Employee check result:", users);
 
         if (users.length === 0) {
-            console.log("❌ User not found");
-            return res.status(401).json({ message: "Invalid employee ID." });
+            console.log("❌ No user found with the provided credentials");
+            return res.status(401).json({ message: "Invalid credentials." });
         }
 
         const user = users[0];
         console.log("🔍 Found user:", { 
             id: user.id, 
             employee_id: user.employee_id, 
-            role: user.role_name
+            role: user.role_name,
+            username: user.username
         });
 
         // Now check password using bcrypt
@@ -83,8 +129,10 @@ exports.login = async (req, res) => {
         req.session.user = {
             id: user.id,
             email: user.email,
+            username: user.username,
             role_name: user.role_name,
-            employee_id: user.employee_id
+            employee_id: user.employee_id,
+            is_external: false
         };
         console.log("📝 Session data set:", req.session.user);
 

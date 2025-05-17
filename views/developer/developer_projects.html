@@ -9,83 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
     <style>
-        /* Styling for the sidebar */
-        #sidebar {
-            width: 300px;
-            height: 100vh;
-            background-color: #343a40;
-            position: fixed;
-            left: 0;
-            top: 0;
-            transition: all 0.3s;
-            color: white;
-            padding-top: 30px;
-            display: none;
-        }
-
-        #sidebar .sidebar-header {
-            text-align: center;
-            padding: 10px;
-        }
-
-        #sidebar ul {
-            padding: 0;
-            list-style: none;
-        }
-
-        #sidebar ul li {
-            padding: 15px;
-            text-align: left;
-            margin-left: auto;
-        }
-
-        #sidebar ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        #sidebar ul li.logout {
-            margin-top: 350px;
-        }
-
-        #sidebar ul li.logout a:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #sidebar ul li a:hover {
-            background-color: #5a6268;
-            color: white;
-        }
-
-        #sidebar ul li.active a {
-            background-color: #007bff;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 200px;
-            }
-        }
-
-        #sidebar-toggle {
-            font-size: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #sidebar-toggle:hover {
-            background-color: #0056b3;
-        }
-
-        #content {
+ #content {
             margin-left: 0;
             transition: margin-left 0.3s;
             padding: 20px;
@@ -358,14 +285,35 @@
         .image-preview-container {
             margin-top: 15px;
             text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        #imagePreview {
+        #imagePreview, #editImagePreview {
             max-width: 200px;
             max-height: 200px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
             display: none;
+        }
+
+        /* Edit Modal specific styles */
+        #editProjectModal .image-preview-container {
+            margin-top: 10px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #editProjectModal #editImagePreview {
+            max-width: 100%;
+            max-height: 200px;
+            width: auto;
+            height: auto;
         }
 
         .alert {
@@ -413,44 +361,286 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
         }
+
+        /* Add new table container styles */
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .table-striped tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        /* Project Details Modal Styles */
+        .project-details-container {
+            padding: 20px;
+        }
+
+        .project-image-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-detail-image {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .project-info-container {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .info-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-group:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .info-group label {
+            display: block;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #212529;
+            font-size: 1.1rem;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        /* Status badge colors */
+        .status-badge.pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .status-badge.approved {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .status-badge.rejected {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .status-badge.in-progress {
+            background-color: #17a2b8;
+            color: #fff;
+        }
+
+        /* Modal specific styles */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 0;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+            border-radius: 0 0 15px 15px;
+        }
+
+        /* Confirmation Modal Styles */
+        #editConfirmationModal .modal-content {
+            border: none;
+            border-radius: 15px;
+        }
+
+        #editConfirmationModal .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 15px 20px;
+        }
+
+        #editConfirmationModal .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        #editConfirmationModal .modal-body {
+            padding: 30px 20px;
+        }
     </style>
 </head>
 
 <body>
     <div id="wrapper">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h3>Welcome, Developer</h3>
-                <p class="text-light mb-0">Project Management</p>
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
             </div>
-            <ul class="list-unstyled">
-                <li class="nav-item active">
-                    <a class="nav-item" href="developer_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_projects.html"><i class="fas fa-project-diagram"></i> Projects</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_project_progress.html"><i class="fas fa-chart-line"></i> Project Progress</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_finished_projects.html"><i class="fas fa-check-circle"></i> Completed Projects</a>
-                </li>
-                <li class="nav-item">
-                    <a href="developer_manufacturing_cost.html"><i class="fas fa-money-bill-wave"></i> Manufacturing Cost</a>
-                </li>
-    
-                <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
         </div>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
+    </div>
+    <ul class="list-unstyled">
+        <li class="nav-item active">
+            <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        </li>
+        <li class="nav-item">
+            <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i> <span>Projects</span></a>
+        </li>
+        <li class="nav-item">
+            <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i> <span>Project Progress</span></a>
+        </li>
+        <li class="nav-item">
+            <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i> <span>Completed Projects</span></a>
+        </li>
+        <li class="nav-item">
+            <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
+        </li>
+
+        
+    </ul>
+    <div class="logout-container">
+        <a href="/logout" class="logout-link">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="logout-text">Logout</span>
+        </a>
+    </div>
+</div>
 
         <!-- Main content area -->
         <div id="content">
-            <button class="btn" id="sidebar-toggle" aria-label="Toggle Sidebar">
-                <i class="fas fa-bars"></i>
-            </button>
-
+        
             <h2>My Projects</h2>
 
             <div class="search-container">
@@ -475,26 +665,32 @@
                 </div>
             </div>
 
-            <!-- Project Table -->
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Image</th>
-                        <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable(4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="projectsList"></tbody>
-            </table>
+            <!-- Project Table Container -->
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Image</th>
+                                <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectsList"></tbody>
+                    </table>
+                </div>
+            </div>
 
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-3">
+                <div id="showingEntries" class="text-muted"></div>
+                <nav aria-label="Project pagination">
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -623,33 +819,36 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <h6 class="form-label">Project Image</h6>
-                                <img id="viewProjectImage" src="#" alt="Project Image" class="img-fluid rounded">
+                    <div class="project-details-container">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="project-image-container">
+                                    <img id="viewProjectImage" src="#" alt="Project Image" class="project-detail-image">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <h6 class="form-label">Project Name</h6>
-                                <p id="viewProjectName" class="form-control-plaintext"></p>
-                            </div>
-                            <div class="mb-3">
-                                <h6 class="form-label">Location</h6>
-                                <p id="viewProjectLocation" class="form-control-plaintext"></p>
-                            </div>
-                            <div class="mb-3">
-                                <h6 class="form-label">Submission Date</h6>
-                                <p id="viewProjectSubmissionDate" class="form-control-plaintext"></p>
-                            </div>
-                            <div class="mb-3">
-                                <h6 class="form-label">Deadline</h6>
-                                <p id="viewProjectDeadline" class="form-control-plaintext"></p>
-                            </div>
-                            <div class="mb-3">
-                                <h6 class="form-label">Status</h6>
-                                <p id="viewProjectStatus" class="form-control-plaintext"></p>
+                            <div class="col-md-7">
+                                <div class="project-info-container">
+                                    <div class="info-group">
+                                        <label>Project Name</label>
+                                        <p id="viewProjectName" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Location</label>
+                                        <p id="viewProjectLocation" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Submission Date</label>
+                                        <p id="viewProjectSubmissionDate" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Deadline</label>
+                                        <p id="viewProjectDeadline" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Status</label>
+                                        <p id="viewProjectStatus" class="info-value status-badge"></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -687,13 +886,65 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal for Edit -->
+    <div class="modal fade" id="editConfirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Changes
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                    <p class="mb-0">Are you sure you want to save these changes to the project?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmEditBtn">
+                        <i class="fas fa-check me-2"></i>Confirm Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Manufacturing -->
+    <div class="modal fade" id="manufacturingConfirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Action
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center" style="padding: 30px 20px;">
+                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                    <p class="mb-0">Are you sure you want to send this project to manufacturing?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmManufacturingBtn">
+                        <i class="fas fa-check me-2"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Sample data for projects
-        let projects = [
+         // Sample data for projects
+         let projects = [
             {
                 id: 1,
                 name: 'Residential Complex A',
@@ -714,10 +965,16 @@
             }
         ];
 
+        // Initialize variables
         let currentPage = 1;
         let itemsPerPage = 5;
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
+
+        // Initialize the table when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            renderProjects();
+        });
 
         // Sidebar toggle functionality
         document.getElementById('sidebar-toggle').addEventListener('click', function () {
@@ -814,33 +1071,44 @@
             const endIndex = Math.min(startIndex + itemsPerPage, projectsToRender.length);
             const paginatedProjects = projectsToRender.slice(startIndex, endIndex);
 
-            paginatedProjects.forEach(project => {
+            if (paginatedProjects.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${project.id}</td>
-                    <td>${project.name}</td>
-                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
-                    <td>${project.location}</td>
-                    <td>${project.submissionDate}</td>
-                    <td>${project.deadline}</td>
-                    <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Project">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn send-btn" onclick="sendProject(${project.id})" title="Send to Manufacturing">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                            <button class="action-btn edit-btn" onclick="editProject(${project.id})" title="Edit Project">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
+                    <td colspan="8" class="text-center py-4">
+                        <i class="fas fa-info-circle me-2"></i>No projects found
                     </td>
                 `;
                 projectsList.appendChild(row);
-            });
+            } else {
+                paginatedProjects.forEach(project => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${project.id}</td>
+                        <td>${project.name}</td>
+                        <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                        <td>${project.location}</td>
+                        <td>${project.submissionDate}</td>
+                        <td>${project.deadline}</td>
+                        <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Project">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn send-btn" onclick="sendProject(${project.id})" title="Send to Manufacturing">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                                <button class="action-btn edit-btn" onclick="editProject(${project.id})" title="Edit Project">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    projectsList.appendChild(row);
+                });
+            }
 
+            // Update pagination and entries message
             updatePagination(projectsToRender.length);
         }
 
@@ -886,23 +1154,38 @@
             const project = projects.find(p => p.id === projectId);
             
             if (project) {
-                project.name = document.getElementById('editProjectName').value;
-                project.location = document.getElementById('editProjectLocation').value;
-                project.deadline = document.getElementById('editProjectDeadline').value;
-
+                // Collect new values
+                const newName = document.getElementById('editProjectName').value;
+                const newLocation = document.getElementById('editProjectLocation').value;
+                const newDeadline = document.getElementById('editProjectDeadline').value;
                 const imageFile = document.getElementById('editProjectImage').files[0];
-                if (imageFile) {
-                    project.image = URL.createObjectURL(imageFile);
-                }
 
-                renderProjects();
-                showSuccessMessage('Project updated successfully!');
-                
-                setTimeout(() => {
+                // Show confirmation modal
+                const confirmationModal = new bootstrap.Modal(document.getElementById('editConfirmationModal'));
+                confirmationModal.show();
+
+                // Handle confirmation
+                document.getElementById('confirmEditBtn').onclick = function() {
+                    // Update project data
+                    project.name = newName;
+                    project.location = newLocation;
+                    project.deadline = newDeadline;
+
+                    if (imageFile) {
+                        project.image = URL.createObjectURL(imageFile);
+                    }
+
+                    renderProjects();
+                    showSuccessMessage('Project updated successfully!');
+                    
+                    // Close both modals
+                    confirmationModal.hide();
                     $('#editProjectModal').modal('hide');
+                    
+                    // Reset form
                     document.getElementById('editProjectForm').reset();
                     document.getElementById('editImagePreview').style.display = 'none';
-                }, 2000);
+                };
             }
         });
 
@@ -911,11 +1194,17 @@
             const project = projects.find(p => p.id === id);
             if (project) {
                 if (project.status === 'pending') {
-                    if (confirm('Are you sure you want to send this project to manufacturing?')) {
+                    // Show confirmation modal
+                    const confirmationModal = new bootstrap.Modal(document.getElementById('manufacturingConfirmationModal'));
+                    confirmationModal.show();
+
+                    // Handle confirmation
+                    document.getElementById('confirmManufacturingBtn').onclick = function() {
                         project.status = 'in-progress';
                         renderProjects();
                         showSuccessMessage('Project has been sent to manufacturing successfully!');
-                    }
+                        confirmationModal.hide();
+                    };
                 } else {
                     showWarningMessage('Only pending projects can be sent to manufacturing.');
                 }
@@ -941,30 +1230,69 @@
 
         // Update pagination function
         function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
             const paginationControls = document.getElementById('paginationControls');
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Clear existing pagination
             paginationControls.innerHTML = '';
 
-            if (totalPages <= 1) return;
+            // Hide pagination if only one page or no items
+            if (totalPages <= 1) {
+                paginationControls.style.display = 'none';
+            } else {
+                paginationControls.style.display = 'flex';
 
-            const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
-            paginationControls.appendChild(prevLi);
+                // Previous button
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage - 1})" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(prevLi);
 
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
-                paginationControls.appendChild(li);
+                // Page numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                    li.innerHTML = `
+                        <a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>
+                    `;
+                    paginationControls.appendChild(li);
+                }
+
+                // Next button
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage + 1})" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(nextLi);
             }
 
-            const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
-            paginationControls.appendChild(nextLi);
+            // Update entries message
+            updateEntriesMessage(totalItems);
+        }
 
-            updateEntriesMessage();
+        // Update entries message function
+        function updateEntriesMessage(totalItems) {
+            const showingEntries = document.getElementById('showingEntries');
+            if (totalItems === 0) {
+                showingEntries.textContent = 'No entries to display';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+            
+            if (startIndex === endIndex) {
+                showingEntries.textContent = `Showing entry ${startIndex} of ${totalItems} entries`;
+            } else {
+                showingEntries.textContent = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
+            }
         }
 
         // Change page function
@@ -975,23 +1303,6 @@
                 renderProjects();
             }
             return false;
-        }
-
-        // Update entries message function
-        function updateEntriesMessage() {
-            const startIndex = projects.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-            const endIndex = Math.min(startIndex + itemsPerPage - 1, projects.length);
-            
-            let message;
-            if (projects.length === 0) {
-                message = 'No entries to display';
-            } else if (startIndex === endIndex) {
-                message = `Showing entry ${startIndex} of ${projects.length} entries`;
-            } else {
-                message = `Showing ${startIndex} to ${endIndex} of ${projects.length} entries`;
-            }
-            
-            document.getElementById('showingEntries').textContent = message;
         }
 
         // Set entries per page function
@@ -1076,6 +1387,8 @@
                 ? [...projects] 
                 : projects.filter(p => p.status === filter);
             
+            currentPage = 1; // Reset to first page when filter changes
+            
             // Apply current sort if exists
             if (currentSortColumn) {
                 const columnName = currentSortColumn;
@@ -1120,9 +1433,6 @@
             
             renderProjects(filteredProjects);
         }
-
-        // Initialize the table
-        renderProjects();
     </script>
 </body>
 </html>

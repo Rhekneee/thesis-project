@@ -57,7 +57,12 @@
 </nav>
 <!-- Partner Developers Section -->
 <div class="container mt-5 pt-5">
-    <h2 class="text-center mb-5" style="color: #4f6ef5; font-weight: bold;">Partner Developers</h2>
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="text-center" style="color: #4f6ef5; font-weight: bold;">Partner Developers</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#developerRegistrationModal">
+            <i class="fas fa-user-plus"></i> Register as Developer
+        </button>
+    </div>
     <div class="row justify-content-center">
 
         <!-- Developer 1 -->
@@ -149,6 +154,378 @@
   
   
 
+
+<!-- Developer Registration Modal -->
+<div class="modal fade" id="developerRegistrationModal" tabindex="-1" aria-labelledby="developerRegistrationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-light">
+                <h5 class="modal-title" id="developerRegistrationModalLabel">Developer Registration</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4">
+                <form id="developerRegistrationForm" enctype="multipart/form-data">
+                    <!-- Personal Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Personal Information</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label required-field">First Name</label>
+                                <input type="text" class="form-control" name="first_name" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Middle Name</label>
+                                <input type="text" class="form-control" name="middle_name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label required-field">Surname</label>
+                                <input type="text" class="form-control" name="surname" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Contact Number</label>
+                                <input type="tel" class="form-control" name="contact_number" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Username</label>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Password</label>
+                                <input type="password" class="form-control" name="password" id="password" required 
+                                    onkeyup="validatePassword()">
+                                <div class="password-requirements mt-2">
+                                    <small class="d-block" id="length"><i class="fas fa-times-circle"></i> At least 8 characters</small>
+                                    <small class="d-block" id="uppercase"><i class="fas fa-times-circle"></i> One uppercase letter</small>
+                                    <small class="d-block" id="lowercase"><i class="fas fa-times-circle"></i> One lowercase letter</small>
+                                    <small class="d-block" id="number"><i class="fas fa-times-circle"></i> One number</small>
+                                    <small class="d-block" id="special"><i class="fas fa-times-circle"></i> One special character</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Confirm Password</label>
+                                <input type="password" class="form-control" name="confirm_password" id="confirm_password" required 
+                                    onkeyup="validateConfirmPassword()">
+                                <div class="mt-2">
+                                    <small id="password-match" class="text-danger d-none">
+                                        <i class="fas fa-times-circle"></i> Passwords do not match
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Position</label>
+                                <input type="text" class="form-control" name="position" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Profile Picture</label>
+                                <input type="file" class="form-control" name="profile_picture" accept="image/*" onchange="previewImage(this)">
+                                <img id="profilePreview" class="profile-picture-preview d-none mt-2" src="#" alt="Profile Preview">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-building"></i> Company Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Company Name</label>
+                                <input type="text" class="form-control" name="company_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required-field">Company TIN</label>
+                                <input type="text" class="form-control" name="company_tin" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label required-field">Company Address</label>
+                            <textarea class="form-control" name="company_address" rows="3" required></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="developerRegistrationForm" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .required-field::after {
+        content: " *";
+        color: red;
+    }
+    .profile-picture-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+    }
+    .modal-xl {
+        max-width: 95%;
+    }
+    @media (min-width: 1200px) {
+        .modal-xl {
+            max-width: 1140px;
+        }
+    }
+    .password-requirements small {
+        color: #dc3545;
+        transition: color 0.3s ease;
+    }
+    .password-requirements small.valid {
+        color: #28a745;
+    }
+    .password-requirements small i {
+        margin-right: 5px;
+    }
+    #password-match {
+        transition: color 0.3s ease;
+    }
+    #password-match.valid {
+        color: #28a745;
+    }
+    .modal-body {
+        padding: 1.5rem 2rem;
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .form-control {
+        padding: 0.6rem 1rem;
+    }
+    .password-requirements {
+        font-size: 0.9rem;
+    }
+    .modal-content {
+        border-radius: 0.5rem;
+    }
+    .modal-header {
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 1rem 2rem;
+    }
+    .modal-footer {
+        border-radius: 0 0 0.5rem 0.5rem;
+        padding: 1rem 2rem;
+    }
+
+    /* Add custom alert styles */
+    .custom-alert {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
+        background-color: #28a745;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        z-index: 9999;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    .custom-alert.error {
+        background-color: #dc3545;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+</style>
+
+<!-- Add custom alert div after the body tag -->
+<div id="customAlert" class="custom-alert">
+    <i class="fas fa-check-circle"></i>
+    <span id="alertMessage"></span>
+</div>
+
+<script>
+    // Preview profile picture before upload
+    function previewImage(input) {
+        const preview = document.getElementById('profilePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Password validation
+    function validatePassword() {
+        const password = document.getElementById('password');
+        if (!password) return; // Exit if password element doesn't exist
+
+        const passwordValue = password.value;
+        const requirements = {
+            length: passwordValue.length >= 8,
+            uppercase: /[A-Z]/.test(passwordValue),
+            lowercase: /[a-z]/.test(passwordValue),
+            number: /[0-9]/.test(passwordValue),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(passwordValue)
+        };
+
+        // Update requirement indicators
+        for (const [requirement, isValid] of Object.entries(requirements)) {
+            const element = document.getElementById(requirement);
+            if (element) { // Check if element exists before updating
+                if (isValid) {
+                    element.classList.add('valid');
+                    const icon = element.querySelector('i');
+                    if (icon) icon.className = 'fas fa-check-circle';
+                } else {
+                    element.classList.remove('valid');
+                    const icon = element.querySelector('i');
+                    if (icon) icon.className = 'fas fa-times-circle';
+                }
+            }
+        }
+
+        // Validate confirm password if it has a value
+        const confirmPassword = document.getElementById('confirm_password');
+        if (confirmPassword && confirmPassword.value) {
+            validateConfirmPassword();
+        }
+    }
+
+    function validateConfirmPassword() {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const matchElement = document.getElementById('password-match');
+        
+        if (!password || !confirmPassword || !matchElement) return; // Exit if any element doesn't exist
+
+        const passwordValue = password.value;
+        const confirmPasswordValue = confirmPassword.value;
+
+        if (confirmPasswordValue === '') {
+            matchElement.classList.add('d-none');
+            return;
+        }
+
+        matchElement.classList.remove('d-none');
+        if (passwordValue === confirmPasswordValue) {
+            matchElement.classList.add('valid');
+            matchElement.classList.remove('text-danger');
+            matchElement.classList.add('text-success');
+            const icon = matchElement.querySelector('i');
+            if (icon) icon.className = 'fas fa-check-circle';
+            matchElement.textContent = ' Passwords match';
+        } else {
+            matchElement.classList.remove('valid');
+            matchElement.classList.add('text-danger');
+            matchElement.classList.remove('text-success');
+            const icon = matchElement.querySelector('i');
+            if (icon) icon.className = 'fas fa-times-circle';
+            matchElement.textContent = ' Passwords do not match';
+        }
+    }
+
+    // Add showAlert function
+    function showAlert(message, isError = false) {
+        const alert = document.getElementById('customAlert');
+        const alertMessage = document.getElementById('alertMessage');
+        
+        alert.className = 'custom-alert' + (isError ? ' error' : '');
+        alertMessage.textContent = message;
+        alert.style.display = 'block';
+
+        // Hide the alert after 3 seconds
+        setTimeout(() => {
+            alert.style.animation = 'fadeOut 0.5s ease-out';
+            setTimeout(() => {
+                alert.style.display = 'none';
+                alert.style.animation = 'slideIn 0.5s ease-out';
+            }, 500);
+        }, 3000);
+    }
+
+    // Update form submission to use custom alert
+    document.getElementById('developerRegistrationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        // Check if all password requirements are met
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+        };
+
+        const allRequirementsMet = Object.values(requirements).every(requirement => requirement);
+        
+        if (!allRequirementsMet) {
+            showAlert('Please ensure all password requirements are met.', true);
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showAlert('Passwords do not match.', true);
+            return;
+        }
+        
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('/crm/developer/register', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Registration successful! Please wait for admin approval.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                showAlert(data.error || 'Registration failed. Please try again.', true);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('An error occurred during registration. Please try again.', true);
+        }
+    });
+</script>
 
 <!-- Footer -->
 <footer class="bg-dark text-light pt-4">

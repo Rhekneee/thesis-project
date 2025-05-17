@@ -202,12 +202,17 @@
                         <input type="text" class="form-control" id="propertyName" name="propertyName" required>
                     </div>
                     <div class="mb-3">
-                        <label for="bedrooms" class="form-label">Property Type</label>
-                        <select class="form-select" id="bedrooms" name="bedrooms" required>
-                            <option value="1">House & Lot</option>
-                            <option value="2">Condominium</option>
-                            <option value="3">Townhouse</option>
+                        <label for="propertyTypeSelect" class="form-label">Property Type</label>
+                        <select class="form-select" id="propertyTypeSelect" name="propertyTypeSelect" required>
+                            <option value="House & Lot">House & Lot</option>
+                            <option value="Condominium">Condominium</option>
+                            <option value="Townhouse">Townhouse</option>
+                            <option value="Other">Other</option>
                         </select>
+                    </div>
+                    <div class="mt-2" id="customPropertyTypeContainer" style="display: none;">
+                        <label for="customPropertyType" class="form-label">Please specify</label>
+                        <input type="text" class="form-control" id="customPropertyType" name="customPropertyType" placeholder="Enter property type">
                     </div>
                     <div class="mb-3">
                         <label for="location" class="form-label">Location</label>
@@ -326,6 +331,17 @@
             // Show success modal
             $('#successModal').modal('show');
         });
+        document.getElementById('propertyTypeSelect').addEventListener('change', function() {
+    const customContainer = document.getElementById('customPropertyTypeContainer');
+    if (this.value === 'Other') {
+        customContainer.style.display = 'block';
+        document.getElementById('customPropertyType').setAttribute('required', 'required');
+    } else {
+        customContainer.style.display = 'none';
+        document.getElementById('customPropertyType').removeAttribute('required');
+    }
+});
+
     </script>
 </body>
 
