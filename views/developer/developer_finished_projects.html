@@ -10,9 +10,9 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
     <style>
-       
-        #content {
+#content {
             margin-left: 0;
             transition: margin-left 0.3s;
             padding: 20px;
@@ -69,6 +69,15 @@
             gap: 10px;
         }
 
+        .entries-per-page label {
+            margin-bottom: 0;
+            margin-right: 5px;
+        }
+
+        #entriesPerPageSelect {
+            width: 70px;
+        }
+
         .table th {
             cursor: pointer;
         }
@@ -87,6 +96,44 @@
             padding: 5px 10px;
             border-radius: 15px;
             font-size: 0.9em;
+        }
+
+        /* Add new table container styles */
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .table-striped tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
         }
 
         .modal-project-image {
@@ -114,101 +161,159 @@
         .rating-summary .total-ratings {
             color: #6c757d;
         }
+
+        #filterDropdown {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 30px 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            min-width: 150px;
+            max-width: 220px;
+            width: 220px;
+            margin-right: 0;
+        }
+
+        #filterDropdown:hover {
+            background-color: #0056b3;
+        }
+
+        #filterDropdown option {
+            background-color: white;
+            color: black;
+            padding: 10px;
+        }
+
+        /* Modal Styling to match developer_projects */
+        .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .modal-header {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+        .modal-header .btn-close {
+            color: white;
+            filter: brightness(0) invert(1);
+        }
+        .modal-body {
+            padding: 25px;
+        }
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e9ecef;
+        }
     </style>
 </head>
 
 <body>
     <div id="wrapper">
-                        <!-- Topbar -->
-                        <div class="topbar">
-                            <div class="topbar-left">
-                                <div class="menu-toggle" onclick="toggleSidebar()">
-                                    <i class="fas fa-bars"></i>
-                                </div>
+                <!-- Topbar -->
+                <div class="topbar">
+                    <div class="topbar-left">
+                        <div class="menu-toggle" onclick="toggleSidebar()">
+                            <i class="fas fa-bars"></i>
+                        </div>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="notification-icon" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge"></span>
+                        </div>
+                        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                            <div class="profile-info">
+                                <div class="profile-name"></div>
+                                <div class="profile-position"></div>
                             </div>
-                            <div class="topbar-right">
-                                <div class="notification-icon" onclick="toggleNotifications()">
-                                    <i class="fas fa-bell"></i>
-                                    <span class="notification-badge"></span>
-                                </div>
-                                <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
-                                    <div class="profile-info">
-                                        <div class="profile-name"></div>
-                                        <div class="profile-position"></div>
-                                    </div>
-                                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Notification Dropdown -->
-                            <div class="notification-dropdown" id="notificationDropdown">
-                                <div class="notification-header">
-                                    <span>Notifications</span>
-                                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-                                </div>
-                                <div class="notification-item">
-                                    <div class="notification-title">New Leave Request</div>
-                                    <div class="notification-time">5 minutes ago</div>
-                                </div>
-                                <div class="notification-item">
-                                    <div class="notification-title">Payroll Processed</div>
-                                    <div class="notification-time">1 hour ago</div>
-                                </div>
-                                <div class="notification-item">
-                                        <span class="profile-name">John Doe</span>
-                                        <span class="profile-position">HR Manager</span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Notification Dropdown -->
-                                <div class="notification-dropdown" id="notificationDropdown">
-                                    <div class="notification-header">
-                                        <span>Notifications</span>
-                                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-                                    </div>
-                                    <div class="notification-item">
-                                        <div class="notification-title">New Leave Request</div>
-                                        <div class="notification-time">5 minutes ago</div>
-                                    </div>
-                                    <div class="notification-item">
-                                        <div class="notification-title">Payroll Processed</div>
-                                        <div class="notification-time">1 hour ago</div>
-                                    </div>
-                                    <div class="notification-item">
-                                        <div class="notification-title">New Employee Added</div>
-                                        <div class="notification-time">2 hours ago</div>
-                                    </div>
-                                </div>
+                            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span>Notifications</span>
+                            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-title">New Leave Request</div>
+                            <div class="notification-time">5 minutes ago</div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-title">Payroll Processed</div>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                        <div class="notification-item">
+                                <span class="profile-name">John Doe</span>
+                                <span class="profile-position">HR Manager</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <span>Notifications</span>
+                                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">New Leave Request</div>
+                                <div class="notification-time">5 minutes ago</div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">Payroll Processed</div>
+                                <div class="notification-time">1 hour ago</div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-title">New Employee Added</div>
+                                <div class="notification-time">2 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
                 <span class="company-title">MDB Construction</span>
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
-                <li class="nav-item">
-                    <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span> </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i><span></span> Projects</span> </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i><span> Project Progress</span> </a>
-                </li>
                 <li class="nav-item active">
-                    <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i><span> Completed Projects</span> </a>
+                    <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
                 </li>
                 <li class="nav-item">
-                    <a href="/developer/developer_manufacturing"><i class="fas fa-money-bill-wave"></i><span> Manufacturing Cost</span> </a>
+                    <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i> <span>Projects</span></a>
                 </li>
-            
-                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i><span> Logout</span> </a></li>
+                <li class="nav-item">
+                    <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i> <span>Project Progress</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i> <span>Completed Projects</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
+                </li>
+        
+                <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
             </ul>
         </div>
+        
 
         <!-- Main content area -->
         <div id="content">
@@ -218,7 +323,12 @@
 
             <div class="search-container">
                 <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
-                <div class="entries-per-page">
+                <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
+                    <option value="all">All Projects</option>
+                    <option value="rated">Rated</option>
+                    <option value="to-rate">To Rate</option>
+                </select>
+                <div id="entriesPerPageContainer" class="entries-per-page">
                     <label for="entriesPerPageSelect">Entries per page:</label>
                     <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
                         <option value="5">5</option>
@@ -229,28 +339,32 @@
             </div>
 
             <!-- Projects Table -->
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Image</th>
-                            <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(4)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(5)">Rating <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(6)">Feedback <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(7)">Status <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="projectsList"></tbody>
-                </table>
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Image</th>
+                                <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(4)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(5)">Rating <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(6)">Feedback <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(7)">Status <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectsList"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-3">
+                <div id="showingEntries" class="text-muted"></div>
+                <nav aria-label="Project pagination">
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -260,47 +374,131 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="projectDetailsModalLabel">Project Details</h5>
+                    <h5 class="modal-title" id="projectDetailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>Project Details
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="projectDetailsForm">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <img id="modalProjectImage" src="" alt="Project Image" class="modal-project-image">
-                            <div class="project-info">
-                                    <p><strong>Project Name:</strong> <span id="modalProjectName"></span></p>
-                                    <p><strong>Location:</strong> <span id="modalProjectLocation"></span></p>
-                                    <p><strong>Completion Date:</strong> <span id="modalCompletionDate"></span></p>
-                                    <p><strong>Status:</strong> <span class="completed-badge">Completed</span></p>
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="rating-section">
-                                    <h5>Rate this Project</h5>
-                                    <div class="rating-stars" id="ratingStars">
-                                        <i class="far fa-star" data-rating="1"></i>
-                                        <i class="far fa-star" data-rating="2"></i>
-                                        <i class="far fa-star" data-rating="3"></i>
-                                        <i class="far fa-star" data-rating="4"></i>
-                                        <i class="far fa-star" data-rating="5"></i>
-                            </div>
-                                    <div id="ratingDescription" class="mt-2 text-muted"></div>
-                                    
-                                </div>
-                                <div id="feedbackSection" class="mt-4">
-                                    <h5>Provide Feedback (Optional)</h5>
-                                    <div class="form-group">
-                                        <textarea id="projectFeedback" class="form-control" rows="4" placeholder="Share your thoughts about this project..."></textarea>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="card shadow-sm border-0">
+                                    <img id="modalProjectImage" src="" alt="Project Image" class="modal-project-image card-img-top">
+                                    <div class="card-body p-3">
+                                        <div class="mb-2">
+                                            <span class="fw-bold"><i class="fas fa-project-diagram me-2"></i>Project Name:</span>
+                                            <span id="modalProjectName"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="fw-bold"><i class="fas fa-map-marker-alt me-2"></i>Location:</span>
+                                            <span id="modalProjectLocation"></span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="fw-bold"><i class="fas fa-calendar-check me-2"></i>Completion Date:</span>
+                                            <span id="modalCompletionDate"></span>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold"><i class="fas fa-check-circle me-2"></i>Status:</span>
+                                            <span class="completed-badge">Completed</span>
+                                        </div>
                                     </div>
-                                    <button type="button" class="btn btn-success mt-3" id="submitRatingBtn">Submit Rating & Feedback</button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card shadow-sm border-0 mb-3">
+                                    <div class="card-body">
+                                        <!-- View-only details section -->
+                                        <div id="viewDetailsSection" style="display:none;">
+                                            <h5 class="mb-3">Your Rating & Feedback</h5>
+                                            <div class="mb-2">
+                                                <span class="fw-bold">Rating:</span>
+                                                <span id="viewRatingStars"></span>
+                                            </div>
+                                            <div>
+                                                <span class="fw-bold">Feedback:</span>
+                                                <span id="viewFeedbackText" class="text-muted"></span>
+                                            </div>
+                                        </div>
+                                        <!-- Editable rating/feedback section -->
+                                        <div class="rating-section mb-4">
+                                            <h5 class="mb-3">Rate this Project</h5>
+                                            <div class="rating-stars mb-2" id="ratingStars">
+                                                <i class="far fa-star" data-rating="1"></i>
+                                                <i class="far fa-star" data-rating="2"></i>
+                                                <i class="far fa-star" data-rating="3"></i>
+                                                <i class="far fa-star" data-rating="4"></i>
+                                                <i class="far fa-star" data-rating="5"></i>
+                                            </div>
+                                            <div id="ratingDescription" class="text-muted"></div>
+                                        </div>
+                                        <div id="feedbackSection">
+                                            <h5 class="mb-2">Provide Feedback <span class="text-muted" style="font-size:0.9em;">(Optional)</span></h5>
+                                            <div class="form-group mb-3">
+                                                <textarea id="projectFeedback" class="form-control" rows="4" placeholder="Share your thoughts about this project..."></textarea>
+                                            </div>
+                                            <button type="button" class="btn btn-primary w-100" id="submitRatingBtn">
+                                                <i class="fas fa-save me-2"></i>Submit Rating & Feedback
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
-                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Rating/Feedback -->
+    <div class="modal fade" id="ratingConfirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Submission
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                    <p class="mb-0">Are you sure you want to submit your rating and feedback for this project?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmRatingBtn">
+                        <i class="fas fa-check me-2"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="successMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Message Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="warningMessage"></h5>
                 </div>
             </div>
         </div>
@@ -456,7 +654,16 @@
                 const selectedRating = project.developerRating;
                 if (selectedRating) {
                     const feedback = feedbackInput.value;
-                    updateRating(selectedRating, feedback);
+                    // Show confirmation modal before submitting
+                    const confirmationModal = new bootstrap.Modal(document.getElementById('ratingConfirmationModal'));
+                    confirmationModal.show();
+                    document.getElementById('confirmRatingBtn').onclick = function() {
+                        updateRating(selectedRating, feedback);
+                        confirmationModal.hide();
+                        // Hide the view modal after submission
+                        const viewModal = bootstrap.Modal.getInstance(document.getElementById('projectDetailsModal'));
+                        if (viewModal) viewModal.hide();
+                    };
                 }
             });
         }
@@ -465,13 +672,11 @@
         function updateRating(rating, feedback) {
             const projectId = parseInt(document.getElementById('projectDetailsModal').getAttribute('data-project-id'));
             const project = projects.find(p => p.id === projectId);
-            
             if (project) {
                 // Save developer's rating and feedback
                 project.developerRating = Number(rating);
                 project.feedback = feedback;
                 project.hasRated = true;
-                
                 // Update the stars display
                 const stars = document.querySelectorAll('.rating-stars i');
                 stars.forEach(star => {
@@ -484,21 +689,21 @@
                         star.classList.add('far');
                     }
                 });
-
-                // Show success message
-                const successAlert = document.createElement('div');
-                successAlert.className = 'alert alert-success mt-3';
-                successAlert.textContent = 'Rating and feedback submitted successfully!';
-                document.querySelector('.rating-section').appendChild(successAlert);
-
-                // Remove success message after 3 seconds
-                setTimeout(() => {
-                    successAlert.remove();
-                }, 3000);
-
+                // Show success modal
+                showSuccessMessage('Rating and feedback submitted successfully!');
                 // Re-render the projects table to update the rating and feedback display
                 renderProjects();
             }
+        }
+
+        // Show success message modal
+        function showSuccessMessage(message) {
+            document.getElementById('successMessage').textContent = message;
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+            setTimeout(() => {
+                successModal.hide();
+            }, 2000);
         }
 
         // Generate star rating HTML
@@ -585,18 +790,21 @@
             // Show/hide rating section based on viewOnly parameter
             const ratingSection = document.querySelector('.rating-section');
             const feedbackSection = document.getElementById('feedbackSection');
-            
+            const viewDetailsSection = document.getElementById('viewDetailsSection');
             if (viewOnly) {
                 ratingSection.style.display = 'none';
                 feedbackSection.style.display = 'none';
+                viewDetailsSection.style.display = 'block';
+                // Set rating stars and feedback
+                document.getElementById('viewRatingStars').innerHTML = project.developerRating ? generateStarRating(project.developerRating) : '<span class="text-muted">Not rated yet</span>';
+                document.getElementById('viewFeedbackText').textContent = project.feedback || '-';
             } else {
                 ratingSection.style.display = 'block';
                 feedbackSection.style.display = 'block';
-                
+                viewDetailsSection.style.display = 'none';
                 // Reset feedback section and rating description
                 document.getElementById('projectFeedback').value = project.feedback || '';
                 document.getElementById('ratingDescription').textContent = project.developerRating ? ratingDescriptions[project.developerRating] : '';
-
                 // Initialize stars with the project's rating
                 const stars = document.querySelectorAll('.rating-stars i');
                 stars.forEach(star => {
@@ -609,7 +817,6 @@
                         star.classList.add('far');
                     }
                 });
-
                 // Initialize rating stars and feedback logic
                 initializeRatingStars();
             }
@@ -700,30 +907,69 @@
 
         // Update pagination
         function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
             const paginationControls = document.getElementById('paginationControls');
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Clear existing pagination
             paginationControls.innerHTML = '';
 
-            if (totalPages <= 1) return;
+            // Hide pagination if only one page or no items
+            if (totalPages <= 1) {
+                paginationControls.style.display = 'none';
+            } else {
+                paginationControls.style.display = 'flex';
 
-            const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
-            paginationControls.appendChild(prevLi);
+                // Previous button
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage - 1})" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(prevLi);
 
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
-                paginationControls.appendChild(li);
+                // Page numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                    li.innerHTML = `
+                        <a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>
+                    `;
+                    paginationControls.appendChild(li);
+                }
+
+                // Next button
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage + 1})" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(nextLi);
             }
 
-            const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
-            paginationControls.appendChild(nextLi);
-
+            // Update entries message
             updateEntriesMessage(totalItems);
+        }
+
+        // Update entries message function
+        function updateEntriesMessage(totalItems) {
+            const showingEntries = document.getElementById('showingEntries');
+            if (totalItems === 0) {
+                showingEntries.textContent = 'No entries to display';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+            
+            if (startIndex === endIndex) {
+                showingEntries.textContent = `Showing entry ${startIndex} of ${totalItems} entries`;
+            } else {
+                showingEntries.textContent = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
+            }
         }
 
         // Change page
@@ -736,97 +982,17 @@
             return false;
         }
 
-        // Update entries message
-        function updateEntriesMessage(totalItems) {
-            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-            const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
+        // Handle filter change function
+        function handleFilterChange() {
+            const filter = document.getElementById('filterDropdown').value;
+            const filteredProjects = filter === 'all' 
+                ? [...projects] 
+                : filter === 'rated'
+                    ? projects.filter(p => p.developerRating)
+                    : projects.filter(p => !p.developerRating);
             
-            let message;
-            if (totalItems === 0) {
-                message = 'No entries to display';
-            } else if (startIndex === endIndex) {
-                message = `Showing entry ${startIndex} of ${totalItems} entries`;
-            } else {
-                message = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
-            }
-            
-            document.getElementById('showingEntries').textContent = message;
-        }
-
-        // Update getUserInfo function to use user_id for developers
-        async function getUserInfo() {
-            try {
-                console.log('=== Fetching User Info ===');
-                
-                const sessionResponse = await fetch('/developer/check-session', {
-                    credentials: 'include'
-                });
-
-                if (!sessionResponse.ok) {
-                    throw new Error('Failed to fetch session data');
-                }
-
-                const sessionData = await sessionResponse.json();
-                console.log('Full session data:', sessionData);
-
-                if (!sessionData.id) {
-                    throw new Error('No user ID in session');
-                }
-
-                // Fetch developer details using id from CRM routes
-                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
-                    credentials: 'include'
-                });
-
-                if (!developerResponse.ok) {
-                    throw new Error('Failed to fetch developer details');
-                }
-
-                const responseData = await developerResponse.json();
-                console.log('Developer response data:', responseData);
-
-                if (!responseData.success || !responseData.profile) {
-                    throw new Error('Invalid developer data received');
-                }
-
-                const developerData = responseData.profile;
-                console.log('Developer data:', developerData);
-
-                // Update profile pictures
-                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-                if (developerData.profile_picture) {
-                    const filename = developerData.profile_picture.includes('/') 
-                        ? developerData.profile_picture.split('/').pop() 
-                        : developerData.profile_picture;
-                    
-                    const timestamp = new Date().getTime();
-                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
-                    
-                    topbarProfilePicture.src = imageUrl;
-                    topbarProfilePicture.onerror = () => {
-                        topbarProfilePicture.src = '/uploads/profile_pictures/default-profile-picture';
-                    };
-                } else {
-                    topbarProfilePicture.src = '/uploads/profile_pictures/default-profile-picture';
-                }
-
-                // Update profile info
-                const profileName = document.querySelector('.profile-name');
-                const profilePosition = document.querySelector('.profile-position');
-                
-                if (profileName) {
-                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
-                    profileName.textContent = fullName || 'Developer';
-                }
-                if (profilePosition) profilePosition.textContent = developerData.position || 'Developer';
-
-            } catch (error) {
-                console.error('Error in getUserInfo:', error);
-                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-                if (topbarProfilePicture) {
-                    topbarProfilePicture.src = '/uploads/profile_pictures/default-profile-picture';
-                }
-            }
+            currentPage = 1; // Reset to first page when filter changes
+            renderProjects(filteredProjects);
         }
     </script>
 </body>

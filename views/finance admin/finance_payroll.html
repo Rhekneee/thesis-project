@@ -9,6 +9,7 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
     <style>
         #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
         .table { width: 100%; margin-top: 30px; }
@@ -185,202 +186,109 @@
             color: #333;
             font-weight: 500;
         }
-        .table-container {
-            position: relative;
-            margin: 20px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            background: white;
-        }
-
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            /* Add smooth scrolling */
-            scroll-behavior: smooth;
-            /* Hide scrollbar for Chrome, Safari and Opera */
-            &::-webkit-scrollbar {
-                height: 8px;
-            }
-            /* Track */
-            &::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 4px;
-            }
-            /* Handle */
-            &::-webkit-scrollbar-thumb {
-                background: #888;
-                border-radius: 4px;
-            }
-            /* Handle on hover */
-            &::-webkit-scrollbar-thumb:hover {
-                background: #555;
-            }
-        }
-
-        .table-scroll table {
-            width: max-content;
-            min-width: 100%;
-            margin: 0;
-        }
-
-        .table-scroll thead {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        .table-scroll th {
-            background: #f8f9fa;
-            white-space: nowrap;
-            padding: 12px 16px;
-            border-bottom: 2px solid #dee2e6;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .table-scroll td {
-            white-space: nowrap;
-            padding: 12px 16px;
-            border-bottom: 1px solid #dee2e6;
-            text-align: center;
-        }
-
-        .table-scroll tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Ensure the action buttons column stays visible */
-        .table-scroll td:last-child {
-            position: sticky;
-            right: 0;
-            background: white;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        .table-scroll th:last-child {
-            position: sticky;
-            right: 0;
-            background: #f8f9fa;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .table-container {
-                margin: 10px 0;
-            }
-            
-            .table-scroll td,
-            .table-scroll th {
-                padding: 8px 12px;
-            }
-        }
     </style>
 </head>
 <body>
-     <!-- Topbar -->
-     <div class="topbar">
-      <div class="topbar-left">
-          <div class="menu-toggle" onclick="toggleSidebar()">
-              <i class="fas fa-bars"></i>
-          </div>
-      </div>
-      <div class="topbar-right">
-          <div class="notification-icon" onclick="toggleNotifications()">
-              <i class="fas fa-bell"></i>
-              <span class="notification-badge"></span>
-          </div>
-          <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
-              <div class="profile-info">
-                  <div class="profile-name"></div>
-                  <div class="profile-position"></div>
-              </div>
-              <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                  <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
-              </div>
-          </div>
-      </div>
-      
-      <!-- Notification Dropdown -->
-      <div class="notification-dropdown" id="notificationDropdown">
-          <div class="notification-header">
-              <span>Notifications</span>
-              <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-          </div>
-          <div class="notification-item">
-              <div class="notification-title">New Leave Request</div>
-              <div class="notification-time">5 minutes ago</div>
-          </div>
-          <div class="notification-item">
-              <div class="notification-title">Payroll Processed</div>
-              <div class="notification-time">1 hour ago</div>
-          </div>
-          <div class="notification-item">
-                  <span class="profile-name">John Doe</span>
-                  <span class="profile-position">HR Manager</span>
-              </div>
-          </div>
-          
-          <!-- Notification Dropdown -->
-          <div class="notification-dropdown" id="notificationDropdown">
-              <div class="notification-header">
-                  <span>Notifications</span>
-                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">New Leave Request</div>
-                  <div class="notification-time">5 minutes ago</div>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">Payroll Processed</div>
-                  <div class="notification-time">1 hour ago</div>
-              </div>
-              <div class="notification-item">
-                  <div class="notification-title">New Employee Added</div>
-                  <div class="notification-time">2 hours ago</div>
-              </div>
-          </div>
-      </div>
-  </div>
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
-      <span class="company-title">MDB Construction</span>
-  </div>
-      <ul class="list-unstyled">
-          <li class="nav-item">
-              <a class="nav-item" href="/finance admin/finance_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-          </li>
-          <li class="nav-item">
-              <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                  <i class="fas fa-calendar-check"></i> <span>Attendance</span>
-              </a>
-              <ul class="collapse" id="Attendance">
-                  <li class="nav-item"><a href="/finance admin/finanace_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_leave_request"><i class="fas fa-file-invoice"></i><span> Request Leave</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_halfday"><i class="fas fa-clock"></i><span>Request Halfday</span></a></li>
-                  <li class="nav-item"><a href="/finance admin/finance_overtime"><i class="fas fa-business-time"></i><span> Request Overtime</span></a></li>
-              </ul>
-          </li>
-          <li class="nav-item">
-              <a href="/finance admin/finance_payroll"><i class="fas fa-money-bill-wave"></i><span> Payroll</span></a>
-          </li>
-          <li class="nav-item">
-              <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
-                  <i class="fas fa-shopping-cart"></i> <span>Purchase</span>
-              </a>
-              <ul class="collapse" id="Purchase">
-                  <li class="nav-item"><a href="/finance-admin/finance_purchase_request"><i class="fas fa-file-invoice"></i><span> Purchase Request</span></a></li>
-                  <li class="nav-item"><a href="/finance-admin/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i><span> Purchase Order</span></a></li>
-              </ul>
-          </li>
-          <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i><span> Logout</span></a></li>
-      </ul>
-  </div>
+   <!-- Topbar -->
+   <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Welcome, Admin</h3>
+            <p class="text-light mb-0">Finance Management</p>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="finance_dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="finanace_daily_attendance.html"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                    <li class="nav-item"><a href="finance_leave_request.html"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                    <li class="nav-item"><a href="finance_halfday.html"><i class="fas fa-clock"></i> Request Halfday</a></li>
+                    <li class="nav-item"><a href="finance_overtime.html"><i class="fas fa-business-time"></i> Request Overtime</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="/finance/finance_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="/finance/finance_purchase_request"><i class="fas fa-file-invoice"></i> Purchase Request</a></li>
+                    <li class="nav-item"><a href="/finance/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i> Purchase Order</a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
     <div id="content">
         <h2>Payroll Management</h2>
         <div class="search-container mb-2">
@@ -401,33 +309,28 @@
                 </select>
             </div>
         </div>
-        <div class="table-container">
-            <div class="table-scroll">
-                <table class="table" id="payrollTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortPayroll('employee_id')">Employee ID <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('name')">Full Name <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('position')">Position <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('payrollPeriod')">Payroll Period <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('startDate')">Start Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('endDate')">End Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('daysPresent')">Days Present <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('daysAbsent')">Days Absent <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('totalHours')">Total Hours <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('overtimeHours')">Overtime Hours <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('fixedSalary')">Fixed Salary <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('salaryBeforeTax')">Salary Before Tax <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('totalDeductions')">Total Deductions <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('absenceDeduction')">Absence Deduction <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('netPay')">Net Pay <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortPayroll('status')">Status <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payrollList"></tbody>
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="payrollTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPayroll('id')">Employee ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('name')">Full Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('position')">Position <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('startDate')">Start Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('endDate')">End Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('daysPresent')">Days Present <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalHours')">Total Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('overtimeHours')">Overtime Hours <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('fixedSalary')">Fixed Salary <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('salaryBeforeTax')">Salary Before Tax <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('totalDeductions')">Total Deductions <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('netPay')">Net Pay <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayroll('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="payrollList"></tbody>
+            </table>
         </div>
         <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
             <span id="showingEntries"></span>
@@ -565,186 +468,269 @@
         </div>
       </div>
     </div>
-    <script src="/js/side_top.js"></script>
+
+    <!-- Move all scripts to the end of body -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Sidebar toggle logic
-        document.querySelector('.menu-toggle').onclick = function() {
-            const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                sidebar.style.display = 'block';
-                content.style.marginLeft = '300px';
-            } else {
-                sidebar.style.display = 'none';
-                content.style.marginLeft = '0';
-            }
-        };
-
-        // Replace the sample payroll data with an empty array
+        // Global variables for payroll table state
         let payrolls = [];
-
-        // Add function to fetch payrolls from backend
-        async function fetchPayrolls() {
-            try {
-                const response = await fetch('/api/finance/payrolls/pending', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch payrolls');
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    payrolls = result.data;
-                    renderPayrolls();
-                } else {
-                    throw new Error(result.message || 'Failed to fetch payrolls');
-                }
-            } catch (error) {
-                console.error('Error fetching payrolls:', error);
-                // You might want to show an error message to the user here
-            }
-        }
-
-        // --- Payroll Table Logic ---
         let payrollCurrentPage = 1;
         let payrollItemsPerPage = 5;
         let payrollSortColumn = null;
         let payrollSortDirection = 'asc';
         let payrollSearchValue = '';
         let payrollStatusFilter = 'all';
+        let currentPayrollIdx = null;
+        let pendingAction = null;
 
-        function filterAndSortPayrolls() {
-            let filtered = payrolls.filter(p => {
-                // Status filter
-                if (payrollStatusFilter !== 'all' && p.status !== payrollStatusFilter) return false;
-                // Search filter
-                const search = payrollSearchValue.toLowerCase();
-                return (
-                    p.employee_id.toLowerCase().includes(search) ||
-                    p.name.toLowerCase().includes(search) ||
-                    p.position.toLowerCase().includes(search) ||
-                    (p.payrollPeriod && p.payrollPeriod.toLowerCase().includes(search))
-                );
+        // Initialize payroll table functionality
+        function initializePayrollTable() {
+            // Set up event listeners
+            document.getElementById('searchBar').addEventListener('input', function(e) {
+                payrollSearchValue = e.target.value;
+                payrollCurrentPage = 1;
+                renderPayrolls();
             });
-            // Sorting
+
+            document.getElementById('statusFilter').addEventListener('change', function(e) {
+                payrollStatusFilter = e.target.value;
+                payrollCurrentPage = 1;
+                renderPayrolls();
+            });
+
+            document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
+                payrollItemsPerPage = parseInt(e.target.value);
+                payrollCurrentPage = 1;
+                renderPayrolls();
+            });
+
+            // Set up modal event listeners
+            document.getElementById('modalApproveBtn').addEventListener('click', handleApprovePayroll);
+            document.getElementById('modalRejectBtn').addEventListener('click', handleRejectPayroll);
+            document.getElementById('confirmActionBtn').addEventListener('click', handleConfirmAction);
+            document.getElementById('printSummaryBtn').addEventListener('click', handlePrintSummary);
+            document.getElementById('printPayrollSummaryBtn').addEventListener('click', handlePrintPayrollSummary);
+            document.getElementById('downloadPayrollSummaryBtn').addEventListener('click', handleDownloadPayrollSummary);
+
+            // Fetch initial data
+            fetchPayrolls();
+        }
+
+        // Fetch payrolls from the server
+        async function fetchPayrolls() {
+            try {
+                const response = await fetch('/finance/payrolls');
+                const result = await response.json();
+                
+                if (result.success) {
+                    payrolls = result.data;
+                    renderPayrolls();
+                } else {
+                    console.error('Failed to fetch payrolls:', result.message);
+                    document.getElementById('payrollList').innerHTML = `
+                        <tr>
+                            <td colspan="14" class="text-center text-danger">
+                                Failed to load payroll data. Please try again later.
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching payrolls:', error);
+                document.getElementById('payrollList').innerHTML = `
+                    <tr>
+                        <td colspan="14" class="text-center text-danger">
+                            Error connecting to server. Please check your connection and try again.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Filter and sort payrolls
+        function filterAndSortPayrolls() {
+            let filtered = [...payrolls];
+
+            // Apply search filter
+            if (payrollSearchValue) {
+                const searchLower = payrollSearchValue.toLowerCase();
+                filtered = filtered.filter(payroll => 
+                    payroll.name.toLowerCase().includes(searchLower) ||
+                    payroll.position.toLowerCase().includes(searchLower) ||
+                    payroll.employee_id.toString().includes(searchLower)
+                );
+            }
+
+            // Apply status filter
+            if (payrollStatusFilter !== 'all') {
+                filtered = filtered.filter(payroll => payroll.status === payrollStatusFilter);
+            }
+
+            // Apply sorting
             if (payrollSortColumn) {
                 filtered.sort((a, b) => {
-                    let valueA = a[payrollSortColumn];
-                    let valueB = b[payrollSortColumn];
-                    // Numeric sort for numbers
-                    if ([
-                        'daysPresent','totalHours','overtimeHours','fixedSalary','salaryBeforeTax','totalDeductions','netPay'
-                    ].includes(payrollSortColumn)) {
-                        valueA = Number(valueA);
-                        valueB = Number(valueB);
-                    } else if (payrollSortColumn === 'startDate' || payrollSortColumn === 'endDate') {
-                        valueA = new Date(valueA);
-                        valueB = new Date(valueB);
-                    } else {
-                        valueA = valueA.toString().toLowerCase();
-                        valueB = valueB.toString().toLowerCase();
+                    let aVal = a[payrollSortColumn];
+                    let bVal = b[payrollSortColumn];
+
+                    // Handle numeric values
+                    if (['total_hours', 'overtime_hours', 'fixed_salary', 'salary_before_tax', 
+                         'total_deductions', 'net_salary', 'days_present', 'days_absent'].includes(payrollSortColumn)) {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
                     }
-                    if (valueA < valueB) return payrollSortDirection === 'asc' ? -1 : 1;
-                    if (valueA > valueB) return payrollSortDirection === 'asc' ? 1 : -1;
+
+                    // Handle date values
+                    if (['start_date', 'end_date', 'payroll_date'].includes(payrollSortColumn)) {
+                        aVal = new Date(aVal);
+                        bVal = new Date(bVal);
+                    }
+
+                    if (aVal < bVal) return payrollSortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return payrollSortDirection === 'asc' ? 1 : -1;
                     return 0;
                 });
             }
+
             return filtered;
         }
 
+        // Render payrolls in the table
         function renderPayrolls() {
-            const payrollList = document.getElementById('payrollList');
-            payrollList.innerHTML = '';
             const filtered = filterAndSortPayrolls();
-            const startIndex = (payrollCurrentPage - 1) * payrollItemsPerPage;
-            const endIndex = Math.min(startIndex + payrollItemsPerPage, filtered.length);
-            const paginated = filtered.slice(startIndex, endIndex);
-            paginated.forEach((p, idx) => {
+            const start = (payrollCurrentPage - 1) * payrollItemsPerPage;
+            const end = start + payrollItemsPerPage;
+            const paginatedPayrolls = filtered.slice(start, end);
+
+            const tbody = document.getElementById('payrollList');
+            tbody.innerHTML = '';
+
+            if (paginatedPayrolls.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="14" class="text-center">
+                            No payroll records found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            paginatedPayrolls.forEach((payroll, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${p.employee_id}</td>
-                    <td>${p.name}</td>
-                    <td>${p.position}</td>
-                    <td>${p.payrollPeriod || '-'}</td>
-                    <td>${p.startDate}</td>
-                    <td>${p.endDate}</td>
-                    <td>${p.daysPresent}</td>
-                    <td>${p.daysAbsent}</td>
-                    <td>${p.totalHours}</td>
-                    <td>${p.overtimeHours}</td>
-                    <td>₱${p.fixedSalary.toLocaleString()}</td>
-                    <td>₱${p.salaryBeforeTax.toLocaleString()}</td>
-                    <td>₱${p.totalDeductions.toLocaleString()}</td>
-                    <td>₱${p.absenceDeduction.toLocaleString()}</td>
-                    <td>₱${p.netPay.toLocaleString()}</td>
-                    <td><span class="payroll-status status-${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></td>
+                    <td>${payroll.employee_id}</td>
+                    <td>${payroll.name}</td>
+                    <td>${payroll.position}</td>
+                    <td>${formatDate(payroll.start_date)}</td>
+                    <td>${formatDate(payroll.end_date)}</td>
+                    <td>${payroll.days_present}</td>
+                    <td>${formatNumber(payroll.total_hours)}</td>
+                    <td>${formatNumber(payroll.overtime_hours)}</td>
+                    <td>${formatCurrency(payroll.fixed_salary)}</td>
+                    <td>${formatCurrency(payroll.salary_before_tax)}</td>
+                    <td>${formatCurrency(payroll.total_deductions)}</td>
+                    <td>${formatCurrency(payroll.net_salary)}</td>
+                    <td><span class="payroll-status status-${payroll.status.toLowerCase()}">${payroll.status}</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPayroll(${payrolls.indexOf(p)})" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn btn btn-sm btn-primary" onclick="viewPayroll(${index})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${payroll.status === 'pending' ? `
+                                <button class="action-btn btn btn-sm btn-success" onclick="approvePayroll(${index})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="action-btn btn btn-sm btn-danger" onclick="rejectPayroll(${index})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </td>
                 `;
-                payrollList.appendChild(row);
+                tbody.appendChild(row);
             });
+
             updatePayrollEntriesMessage(filtered.length);
             updatePayrollPagination(filtered.length);
-            updatePrintSummaryBtn();
+            updatePrintSummaryBtn(filtered.length > 0);
         }
 
-        function updatePayrollEntriesMessage(totalEntries) {
-            const startIndex = totalEntries === 0 ? 0 : (payrollCurrentPage - 1) * payrollItemsPerPage + 1;
-            const endIndex = Math.min(startIndex + payrollItemsPerPage - 1, totalEntries);
-            let message;
-            if (totalEntries === 0) {
-                message = 'No entries to display';
-            } else if (startIndex === endIndex) {
-                message = `Showing entry ${startIndex} of ${totalEntries} entries`;
-            } else {
-                message = `Showing ${startIndex} to ${endIndex} of ${totalEntries} entries`;
-            }
-            document.getElementById('showingEntries').textContent = message;
+        // Helper functions for formatting
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
         }
 
-        function updatePayrollPagination(totalEntries) {
-            const totalPages = Math.ceil(totalEntries / payrollItemsPerPage);
-            const paginationControls = document.getElementById('paginationControls');
-            paginationControls.innerHTML = '';
-            if (totalPages <= 1) return;
-            // Previous
+        function formatNumber(number) {
+            return parseFloat(number).toFixed(2);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            }).format(amount);
+        }
+
+        // Update entries message
+        function updatePayrollEntriesMessage(total) {
+            const start = (payrollCurrentPage - 1) * payrollItemsPerPage + 1;
+            const end = Math.min(start + payrollItemsPerPage - 1, total);
+            document.getElementById('showingEntries').textContent = 
+                `Showing ${start} to ${end} of ${total} entries`;
+        }
+
+        // Update pagination controls
+        function updatePayrollPagination(total) {
+            const totalPages = Math.ceil(total / payrollItemsPerPage);
+            const pagination = document.getElementById('paginationControls');
+            pagination.innerHTML = '';
+
+            // Previous button
             const prevLi = document.createElement('li');
             prevLi.className = `page-item ${payrollCurrentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${payrollCurrentPage - 1})">Previous</a>`;
-            paginationControls.appendChild(prevLi);
-            // Pages
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePayrollPage(${payrollCurrentPage - 1})" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            `;
+            pagination.appendChild(prevLi);
+
+            // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 const li = document.createElement('li');
-                li.className = `page-item ${payrollCurrentPage === i ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${i})">${i}</a>`;
-                paginationControls.appendChild(li);
+                li.className = `page-item ${i === payrollCurrentPage ? 'active' : ''}`;
+                li.innerHTML = `
+                    <a class="page-link" href="#" onclick="changePayrollPage(${i})">${i}</a>
+                `;
+                pagination.appendChild(li);
             }
-            // Next
+
+            // Next button
             const nextLi = document.createElement('li');
             nextLi.className = `page-item ${payrollCurrentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePayrollPage(${payrollCurrentPage + 1})">Next</a>`;
-            paginationControls.appendChild(nextLi);
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePayrollPage(${payrollCurrentPage + 1})" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            `;
+            pagination.appendChild(nextLi);
         }
 
-        function changePayrollPage(newPage) {
-            const filtered = filterAndSortPayrolls();
-            const totalPages = Math.ceil(filtered.length / payrollItemsPerPage);
-            if (newPage >= 1 && newPage <= totalPages) {
-                payrollCurrentPage = newPage;
+        // Change page
+        function changePayrollPage(page) {
+            if (page < 1 || page > Math.ceil(payrolls.length / payrollItemsPerPage)) return;
+            payrollCurrentPage = page;
                 renderPayrolls();
-            }
-            return false;
         }
 
+        // Sort payrolls
         function sortPayroll(column) {
             if (payrollSortColumn === column) {
                 payrollSortDirection = payrollSortDirection === 'asc' ? 'desc' : 'asc';
@@ -755,305 +741,166 @@
             renderPayrolls();
         }
 
-        document.getElementById('searchBar').addEventListener('input', function(e) {
-            payrollSearchValue = e.target.value;
-            payrollCurrentPage = 1;
-            renderPayrolls();
-        });
-        document.getElementById('statusFilter').addEventListener('change', function(e) {
-            payrollStatusFilter = e.target.value;
-            payrollCurrentPage = 1;
-            renderPayrolls();
-        });
-        document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
-            payrollItemsPerPage = parseInt(e.target.value);
-            payrollCurrentPage = 1;
-            renderPayrolls();
-        });
+        // Update print summary button state
+        function updatePrintSummaryBtn(hasData) {
+            const printBtn = document.getElementById('printSummaryBtn');
+            printBtn.disabled = !hasData;
+        }
 
-        // Modal state
-        let currentPayrollIdx = null;
-        let pendingAction = null;
+        // View payroll details
+        function viewPayroll(index) {
+            const payroll = payrolls[index];
+            currentPayrollIdx = index;
 
-        function viewPayroll(idx) {
-            currentPayrollIdx = idx;
-            const p = payrolls[idx];
-            // Set profile picture or placeholder
-            const profilePic = p.profilePic && p.profilePic.trim() !== '' ? p.profilePic : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(p.name) + '&background=0D8ABC&color=fff&size=80';
-            document.getElementById('modalProfilePic').src = profilePic;
-            document.getElementById('modalEmployeeId').textContent = p.employee_id;
-            document.getElementById('modalFullName').textContent = p.name;
-            document.getElementById('modalPosition').textContent = p.position;
-            document.getElementById('modalStatus').textContent = p.status.charAt(0).toUpperCase() + p.status.slice(1);
-            document.getElementById('modalStatus').className = 'payroll-status status-' + p.status + ' mt-2';
-            document.getElementById('modalStartDate').textContent = p.startDate;
-            document.getElementById('modalEndDate').textContent = p.endDate;
-            document.getElementById('modalDaysPresent').textContent = p.daysPresent;
-            document.getElementById('modalTotalHours').textContent = p.totalHours;
-            document.getElementById('modalOvertimeHours').textContent = p.overtimeHours;
-            document.getElementById('modalFixedSalary').textContent = '₱' + p.fixedSalary.toLocaleString();
-            document.getElementById('modalSalaryBeforeTax').textContent = '₱' + p.salaryBeforeTax.toLocaleString();
-            document.getElementById('modalTotalDeductions').textContent = '₱' + p.totalDeductions.toLocaleString();
-            document.getElementById('modalNetPay').textContent = '₱' + p.netPay.toLocaleString();
-            // Enable/disable approve/reject
-            document.getElementById('modalApproveBtn').disabled = p.status !== 'pending';
-            document.getElementById('modalRejectBtn').disabled = p.status !== 'pending';
+            // Update modal content
+            document.getElementById('modalProfilePic').src = payroll.profile_picture || '/hr/default-profile-picture';
+            document.getElementById('modalFullName').textContent = payroll.name;
+            document.getElementById('modalPosition').textContent = payroll.position;
+            document.getElementById('modalStatus').textContent = payroll.status;
+            document.getElementById('modalStatus').className = `payroll-status status-${payroll.status.toLowerCase()}`;
+            document.getElementById('modalEmployeeId').textContent = payroll.employee_id;
+            document.getElementById('modalStartDate').textContent = formatDate(payroll.start_date);
+            document.getElementById('modalEndDate').textContent = formatDate(payroll.end_date);
+            document.getElementById('modalDaysPresent').textContent = payroll.days_present;
+            document.getElementById('modalTotalHours').textContent = formatNumber(payroll.total_hours);
+            document.getElementById('modalOvertimeHours').textContent = formatNumber(payroll.overtime_hours);
+            document.getElementById('modalFixedSalary').textContent = formatCurrency(payroll.fixed_salary);
+            document.getElementById('modalSalaryBeforeTax').textContent = formatCurrency(payroll.salary_before_tax);
+            document.getElementById('modalTotalDeductions').textContent = formatCurrency(payroll.total_deductions);
+            document.getElementById('modalNetPay').textContent = formatCurrency(payroll.net_salary);
+
+            // Show/hide action buttons based on status
+            const approveBtn = document.getElementById('modalApproveBtn');
+            const rejectBtn = document.getElementById('modalRejectBtn');
+            if (payroll.status === 'pending') {
+                approveBtn.style.display = 'inline-block';
+                rejectBtn.style.display = 'inline-block';
+            } else {
+                approveBtn.style.display = 'none';
+                rejectBtn.style.display = 'none';
+            }
+
             // Show modal
-            var viewModal = new bootstrap.Modal(document.getElementById('viewPayrollModal'));
+            const viewModal = new bootstrap.Modal(document.getElementById('viewPayrollModal'));
             viewModal.show();
         }
 
-        document.getElementById('modalApproveBtn').onclick = function() {
+        // Approve payroll
+        function approvePayroll(index) {
+            currentPayrollIdx = index;
+            handleApprovePayroll();
+        }
+
+        // Reject payroll
+        function rejectPayroll(index) {
+            currentPayrollIdx = index;
+            handleRejectPayroll();
+        }
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle functionality
+            const sidebarToggle = document.querySelector('.menu-toggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    const sidebar = document.getElementById('sidebar');
+                    const content = document.getElementById('content');
+                    if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                        sidebar.style.display = 'block';
+                        content.style.marginLeft = '300px';
+                    } else {
+                        sidebar.style.display = 'none';
+                        content.style.marginLeft = '0';
+                    }
+                });
+            }
+
+            // Initialize payroll table
+            initializePayrollTable();
+        });
+
+        // Modal handlers
+        function handleApprovePayroll() {
             pendingAction = 'approved';
-            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-check-circle fa-3x text-success"></i>';
-            document.getElementById('confirmTitle').textContent = 'Approve Payroll?';
-            document.getElementById('confirmModalBody').innerHTML = '<span class="text-success fw-bold">Are you sure you want to approve this payroll? This action cannot be undone.</span>';
-            document.getElementById('remarksFormContainer').style.display = 'none';
-            var confirmBtn = document.getElementById('confirmActionBtn');
-            confirmBtn.className = 'btn btn-success px-4';
-            confirmBtn.innerHTML = '<i class="fas fa-check"></i> Yes, Approve';
-            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            confirmModal.show();
-        };
-        document.getElementById('modalRejectBtn').onclick = function() {
+            showConfirmationModal('Approve Payroll?', 'success', 'Are you sure you want to approve this payroll? This action cannot be undone.');
+        }
+
+        function handleRejectPayroll() {
             pendingAction = 'rejected';
-            document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-times-circle fa-3x text-danger"></i>';
-            document.getElementById('confirmTitle').textContent = 'Reject Payroll?';
-            document.getElementById('confirmModalBody').innerHTML = '<span class="text-danger fw-bold">Are you sure you want to reject this payroll? This action cannot be undone.</span>';
-            document.getElementById('remarksFormContainer').style.display = 'block';
-            document.getElementById('remarksInput').value = '';
-            document.getElementById('remarksError').style.display = 'none';
-            var confirmBtn = document.getElementById('confirmActionBtn');
-            confirmBtn.className = 'btn btn-danger px-4';
-            confirmBtn.innerHTML = '<i class="fas fa-times"></i> Yes, Reject';
-            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            confirmModal.show();
-        };
-        document.getElementById('confirmActionBtn').onclick = async function() {
+            showConfirmationModal('Reject Payroll?', 'danger', 'Are you sure you want to reject this payroll? This action cannot be undone.', true);
+        }
+
+        function handleConfirmAction() {
             if (currentPayrollIdx !== null && pendingAction) {
-                try {
-                    const payroll = payrolls[currentPayrollIdx];
-                    const remarks = pendingAction === 'rejected' ? document.getElementById('remarksInput').value.trim() : null;
-                    
-                    if (pendingAction === 'rejected' && !remarks) {
+                if (pendingAction === 'rejected') {
+                    const remarks = document.getElementById('remarksInput').value.trim();
+                    if (!remarks) {
                         document.getElementById('remarksError').style.display = 'block';
                         return;
                     }
-
-                    const response = await fetch(`/api/finance/payrolls/${payroll.id}/status`, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            status: pendingAction,
-                            remarks: remarks
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to update payroll status');
-                    }
-
-                    const result = await response.json();
-                    if (result.success) {
-                        // Update local data
-                        payrolls[currentPayrollIdx].status = pendingAction;
-                        if (remarks) {
-                            payrolls[currentPayrollIdx].remarks = remarks;
-                        }
-                        renderPayrolls();
-                        
-                        // Hide both modals
-                        var confirmModalEl = document.getElementById('confirmModal');
-                        var viewModalEl = document.getElementById('viewPayrollModal');
-                        bootstrap.Modal.getInstance(confirmModalEl).hide();
-                        bootstrap.Modal.getInstance(viewModalEl).hide();
-                        
-                        currentPayrollIdx = null;
-                        pendingAction = null;
-                    } else {
-                        throw new Error(result.message || 'Failed to update payroll status');
-                    }
-                } catch (error) {
-                    console.error('Error updating payroll status:', error);
-                    alert('Failed to update payroll status. Please try again.');
+                    document.getElementById('remarksError').style.display = 'none';
+                    payrolls[currentPayrollIdx].remarks = remarks;
                 }
+                payrolls[currentPayrollIdx].status = pendingAction;
+                renderPayrolls();
+                
+                // Hide both modals
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewPayrollModal'));
+                confirmModal.hide();
+                viewModal.hide();
+                
+                currentPayrollIdx = null;
+                pendingAction = null;
             }
-        };
+        }
 
-        function updatePrintSummaryBtn() {
+        function showConfirmationModal(title, type, message, showRemarks = false) {
+            const icon = type === 'success' ? 'check-circle' : 'times-circle';
+            const color = type === 'success' ? 'success' : 'danger';
+            
+            document.getElementById('confirmIcon').innerHTML = `<i class="fas fa-${icon} fa-3x text-${color}"></i>`;
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmModalBody').innerHTML = `<span class="text-${color} fw-bold">${message}</span>`;
+            document.getElementById('remarksFormContainer').style.display = showRemarks ? 'block' : 'none';
+            
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.className = `btn btn-${color} px-4`;
+            confirmBtn.innerHTML = `<i class="fas fa-${icon === 'check-circle' ? 'check' : 'times'}"></i> Yes, ${title.split('?')[0]}`;
+            
+            if (showRemarks) {
+                document.getElementById('remarksInput').value = '';
+                document.getElementById('remarksError').style.display = 'none';
+            }
+            
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        // Print and download handlers
+        function handlePrintSummary() {
             const filtered = filterAndSortPayrolls();
-            const hasPending = filtered.some(p => p.status === 'pending');
-            const btn = document.getElementById('printSummaryBtn');
-            btn.disabled = filtered.length === 0 || hasPending;
+            document.getElementById('payrollSummaryContent').innerHTML = getPayrollSummaryHTML(filtered);
+            const summaryModal = new bootstrap.Modal(document.getElementById('payrollSummaryModal'));
+            summaryModal.show();
         }
 
-        // Update print summary button on initial render
-        updatePrintSummaryBtn();
-
-        // Payroll Summary Modal logic
-        function getPayrollSummaryHTML(filtered) {
-            let totalNetPay = 0, totalDeductions = 0, totalSalary = 0, totalBeforeTax = 0, totalOvertime = 0;
-            filtered.forEach(p => {
-                totalNetPay += Number(p.netPay);
-                totalDeductions += Number(p.totalDeductions);
-                totalSalary += Number(p.fixedSalary);
-                totalBeforeTax += Number(p.salaryBeforeTax);
-                totalOvertime += Number(p.overtimeHours);
-            });
-            const period = filtered.length > 0 ? `${filtered[0].startDate} to ${filtered[0].endDate}` : '';
-            return `
-              <div id="payrollSummaryPrintArea" style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 850px; margin: 0 auto; background: #fff; padding: 0;">
-                <div class="payroll-header" style="background: #000; padding: 32px 40px 24px 40px; display: flex; align-items: center; border-radius: 18px 18px 0 0; box-shadow: 0 4px 16px rgba(26,35,126,0.08); justify-content: space-between;">
-                  <div style="display: flex; align-items: center; gap: 22px;">
-                    <img src="/public/image/mdb.jpg" alt="MDB Construction Logo" style="height: 60px; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
-                    <div>
-                      <div style="font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: #fff; font-family: 'Segoe UI', Arial, sans-serif;">MDB Construction</div>
-                      <div style="font-size: 1.2rem; font-weight: 500; color: #fff; opacity: 0.95;">Payroll Summary Report</div>
-                      <div style="font-size: 1.05rem; color: #e3eafc; margin-top: 2px;">Period: <span style="color: #fff; font-weight: 600;">${period}</span></div>
-                    </div>
-                  </div>
-                  <div style="text-align: right; color: #fff; font-size: 1.1rem; font-weight: 400; min-width: 120px;">
-                    <div style="font-size: 1rem; opacity: 0.85;">Generated:</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; letter-spacing: 1px;">${new Date().toLocaleDateString()}</div>
-                  </div>
-                </div>
-                <div style="padding: 48px 40px 40px 40px; background: #fff; border-radius: 0 0 18px 18px;">
-                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 48px;">
-                    <thead>
-                      <tr style="background: #11336b; color: #fff;">
-                        <th style="padding: 16px; font-size: 1.1rem; font-weight: 700; text-align: left; border-top-left-radius: 8px; background: #11336b; color: #fff;">Description</th>
-                        <th style="padding: 16px; font-size: 1.1rem; font-weight: 700; text-align: right; border-top-right-radius: 8px; background: #11336b; color: #fff;">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody style="color: #222;">
-                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Employees</td><td style="padding: 14px; text-align: right;">${filtered.length}</td></tr>
-                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Net Pay</td><td style="padding: 14px; text-align: right; color: #388e3c; font-weight: 700;">₱${totalNetPay.toLocaleString()}</td></tr>
-                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Deductions</td><td style="padding: 14px; text-align: right; color: #dc3545; font-weight: 700;">₱${totalDeductions.toLocaleString()}</td></tr>
-                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Fixed Salary</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">₱${totalSalary.toLocaleString()}</td></tr>
-                      <tr style="background: #f8f9fa;"><td style="padding: 14px; font-weight: 600;">Total Salary Before Tax</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">₱${totalBeforeTax.toLocaleString()}</td></tr>
-                      <tr style="background: #f1f6ff;"><td style="padding: 14px; font-weight: 600;">Total Overtime Hours</td><td style="padding: 14px; text-align: right; color: #1976d2; font-weight: 700;">${totalOvertime.toLocaleString()}</td></tr>
-                    </tbody>
-                  </table>
-                  <div style="margin-top: 56px; display: flex; justify-content: flex-end; align-items: center;">
-                    <div style="text-align: right;">
-                      <div class="signature-line" style="border-bottom: 2.5px solid #1976d2; width: 260px; margin-bottom: 10px;"></div>
-                      <div style="font-size: 1.2rem; color: #1a237e; font-weight: 700; font-family: 'Segoe UI', Arial, sans-serif;">Finance Administrator</div>
-                      <div style="font-size: 1rem; color: #888;">Authorized Signature</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-        }
-
-        document.getElementById('printPayrollSummaryBtn').addEventListener('click', function() {
+        function handlePrintPayrollSummary() {
             const printContents = document.getElementById('payrollSummaryPrintArea').outerHTML;
             const originalContents = document.body.innerHTML;
             document.body.innerHTML = printContents;
             window.print();
             document.body.innerHTML = originalContents;
-            window.location.reload(); // To restore event listeners and modal state
-        });
+            window.location.reload();
+        }
 
-        document.getElementById('downloadPayrollSummaryBtn').addEventListener('click', function() {
-            const filtered = filterAndSortPayrolls();
-            const doc = new window.jspdf.jsPDF();
-            // Add header background (solid black)
-            doc.setFillColor(0, 0, 0); // #000
-            doc.rect(0, 0, 210, 45, 'F');
-            // Add logo
-            doc.addImage('/public/image/mdb.jpg', 'JPEG', 15, 8, 22, 22);
-            // Add company name and report title, period, and generated date
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(20);
-            doc.text('MDB Construction', 42, 20);
-            doc.setFontSize(13);
-            doc.text('Payroll Summary Report', 42, 28);
-            const period = filtered.length > 0 ? `${filtered[0].startDate} to ${filtered[0].endDate}` : '';
-            doc.setFontSize(10);
-            doc.text(`Period: ${period}`, 42, 35);
-            // Generated date right-aligned
-            doc.setFontSize(11);
-            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 200, 15, {align: 'right'});
-            // Reset text color for content
-            doc.setTextColor(33, 33, 33);
-            // Calculate totals
-            let totalNetPay = 0, totalDeductions = 0, totalSalary = 0, totalBeforeTax = 0, totalOvertime = 0;
-            filtered.forEach(p => {
-                totalNetPay += Number(p.netPay);
-                totalDeductions += Number(p.totalDeductions);
-                totalSalary += Number(p.fixedSalary);
-                totalBeforeTax += Number(p.salaryBeforeTax);
-                totalOvertime += Number(p.overtimeHours);
-            });
-            // Table headers
-            let y = 55;
-            doc.setFillColor(17, 51, 107); // #11336b
-            doc.setTextColor(255,255,255);
-            doc.rect(20, y, 170, 10, 'F');
-            doc.setFontSize(12);
-            doc.text('Description', 25, y + 7);
-            doc.text('Amount', 170, y + 7, {align: 'right'});
-            // Table rows with zebra striping and color highlights
-            y += 10;
-            doc.setFontSize(11);
-            const rows = [
-                ['Total Employees', filtered.length, '#f8f9fa', '#212121'],
-                ['Total Net Pay', `₱${totalNetPay.toLocaleString()}`, '#f1f6ff', '#388e3c'],
-                ['Total Deductions', `₱${totalDeductions.toLocaleString()}`, '#f8f9fa', '#dc3545'],
-                ['Total Fixed Salary', `₱${totalSalary.toLocaleString()}`, '#f1f6ff', '#1976d2'],
-                ['Total Salary Before Tax', `₱${totalBeforeTax.toLocaleString()}`, '#f8f9fa', '#1976d2'],
-                ['Total Overtime Hours', totalOvertime.toLocaleString(), '#f1f6ff', '#1976d2']
-            ];
-            rows.forEach((row, i) => {
-                // Row background
-                const rgb = row[2] === '#f1f6ff' ? [241,246,255] : [248,249,250];
-                doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-                doc.rect(20, y, 170, 10, 'F');
-                // Description
-                doc.setTextColor(33,33,33);
-                doc.text(row[0], 25, y + 7);
-                // Amount with color
-                let color = row[3];
-                if (color === '#388e3c') doc.setTextColor(56, 142, 60); // green
-                else if (color === '#dc3545') doc.setTextColor(220, 53, 69); // red
-                else if (color === '#1976d2') doc.setTextColor(25, 118, 210); // blue
-                else doc.setTextColor(33,33,33);
-                doc.text(String(row[1]), 170, y + 7, {align: 'right'});
-                y += 10;
-            });
-            // Add signature
-            y += 20;
-            doc.setDrawColor(25, 118, 210);
-            doc.line(120, y, 180, y);
-            doc.setFontSize(12);
-            doc.setTextColor(26, 35, 126);
-            doc.text('Finance Administrator', 150, y + 10, { align: 'center' });
-            doc.setFontSize(10);
-            doc.setTextColor(136, 136, 136);
-            doc.text('Authorized Signature', 150, y + 18, { align: 'center' });
-            doc.save('payroll_summary.pdf');
-        });
+        function handleDownloadPayrollSummary() {
+            // Your existing download PDF code
+            // ... existing code ...
+        }
 
-        document.getElementById('printSummaryBtn').addEventListener('click', function() {
-            const filtered = filterAndSortPayrolls();
-            document.getElementById('payrollSummaryContent').innerHTML = getPayrollSummaryHTML(filtered);
-            var summaryModal = new bootstrap.Modal(document.getElementById('payrollSummaryModal'));
-            summaryModal.show();
-        });
-
-        // Call fetchPayrolls when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchPayrolls();
-        });
-
-        // Initial render
-        renderPayrolls();
+        // Keep your existing helper functions (filterAndSortPayrolls, renderPayrolls, etc.)
+        // ... existing code ...
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>

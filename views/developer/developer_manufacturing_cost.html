@@ -10,10 +10,9 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
     <style>
-      
-
-        #content {
+ #content {
             margin-left: 0;
             transition: margin-left 0.3s;
             padding: 20px;
@@ -359,30 +358,68 @@
             background: linear-gradient(45deg, #dc3545, #bd2130);
             color: white;
         }
+
+        /* Add new table container styles */
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .table-striped tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
     </style>
 </head>
 
 <body>
     <div id="wrapper">
-                        <!-- Topbar -->
-                        <div class="topbar">
+                         <!-- Topbar -->
+                         <div class="topbar">
                             <div class="topbar-left">
-                                <button id="sidebar-toggle" class="menu-toggle" onclick="toggleSidebar()">
+                                <div class="menu-toggle" onclick="toggleSidebar()">
                                     <i class="fas fa-bars"></i>
-                                </button>
+                                </div>
                             </div>
                             <div class="topbar-right">
                                 <div class="notification-icon" onclick="toggleNotifications()">
                                     <i class="fas fa-bell"></i>
                                     <span class="notification-badge"></span>
                                 </div>
-                                <div class="profile-section" onclick="window.location.href='/developer/developer_profile'">
+                                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
                                     <div class="profile-info">
                                         <div class="profile-name"></div>
                                         <div class="profile-position"></div>
                                     </div>
                                     <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                                        <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
                                     </div>
                                 </div>
                             </div>
@@ -428,36 +465,42 @@
                                 </div>
                             </div>
                         </div>
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
-                <span class="company-title">MDB Construction</span>
-            </div>
-            <ul class="list-unstyled">
-                <li class="nav-item">
-                    <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span> </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i><span></span> Projects</span> </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i><span> Project Progress</span> </a>
-                </li>
-                <li class="nav-item active">
-                    <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i><span> Completed Projects</span> </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/developer/developer_manufacturing"><i class="fas fa-money-bill-wave"></i><span> Manufacturing Cost</span> </a>
-                </li>
+                <!-- Sidebar -->
+                <div class="sidebar" id="sidebar">
+                    <div class="sidebar-header">
+                        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                        <span class="company-title">MDB Construction</span>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="nav-item active">
+                            <a class="nav-item" href="/developer/developer_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/developer/developer_projects"><i class="fas fa-project-diagram"></i> <span>Projects</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/developer/developer_project_progress"><i class="fas fa-chart-line"></i> <span>Project Progress</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i> <span>Completed Projects</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
+                        </li>
             
-                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i><span> Logout</span> </a></li>
-            </ul>
-        </div>
+                        
+                    </ul>
+                     <!-- Move Logout outside the main ul -->
+                    <div class="logout-container">
+                        <a href="/logout" class="logout-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span class="logout-text">Logout</span>
+                        </a>
+                    </div>
+                </div>
 
         <!-- Main content area -->
         <div id="content">
-        
 
             <h2>Manufacturing Cost</h2>
 
@@ -481,27 +524,135 @@
             </div>
 
             <!-- Manufacturing Cost Table -->
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">No. <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Image</th>
-                            <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(4)">Accepted Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(5)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="manufacturingProjectsList"></tbody>
-                </table>
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">No. <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Image</th>
+                                <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(4)">Accepted Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(5)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manufacturingProjectsList"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-3">
+                <div id="showingEntries" class="text-muted"></div>
+                <nav aria-label="Project pagination">
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Project Modal -->
+    <div class="modal fade" id="viewProjectModal" tabindex="-1" aria-labelledby="viewProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewProjectModalLabel">
+                        <i class="fas fa-eye me-2"></i>Project Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="project-details-container">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="project-image-container">
+                                    <img id="viewProjectImage" src="#" alt="Project Image" class="project-detail-image">
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="project-info-container">
+                                    <div class="info-group">
+                                        <label>Project Name</label>
+                                        <p id="viewProjectName" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Location</label>
+                                        <p id="viewProjectLocation" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Accepted Date</label>
+                                        <p id="viewProjectAcceptedDate" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Manufacturing Cost</label>
+                                        <p id="viewProjectCost" class="info-value"></p>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Status</label>
+                                        <p id="viewProjectStatus" class="info-value status-badge"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Action
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                    <p class="mb-0" id="confirmationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmActionBtn">
+                        <i class="fas fa-check me-2"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="successMessage"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Message Modal -->
+    <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                    <h5 class="mt-3" id="warningMessage"></h5>
+                </div>
             </div>
         </div>
     </div>
@@ -615,29 +766,50 @@
 
         // Function to update pagination
         function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
             const paginationControls = document.getElementById('paginationControls');
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Clear existing pagination
             paginationControls.innerHTML = '';
 
-            if (totalPages <= 1) return;
+            // Hide pagination if only one page or no items
+            if (totalPages <= 1) {
+                paginationControls.style.display = 'none';
+            } else {
+                paginationControls.style.display = 'flex';
 
-            const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage - 1})">Previous</a>`;
-            paginationControls.appendChild(prevLi);
+                // Previous button
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage - 1})" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(prevLi);
 
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>`;
-                paginationControls.appendChild(li);
+                // Page numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                    li.innerHTML = `
+                        <a class="page-link" href="#" onclick="return changePage(${i})">${i}</a>
+                    `;
+                    paginationControls.appendChild(li);
+                }
+
+                // Next button
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="return changePage(${currentPage + 1})" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                `;
+                paginationControls.appendChild(nextLi);
             }
 
-            const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" onclick="return changePage(${currentPage + 1})">Next</a>`;
-            paginationControls.appendChild(nextLi);
-
+            // Update entries message
             updateEntriesMessage(totalItems);
         }
 
@@ -653,19 +825,20 @@
 
         // Function to update entries message
         function updateEntriesMessage(totalItems) {
-            const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const showingEntries = document.getElementById('showingEntries');
+            if (totalItems === 0) {
+                showingEntries.textContent = 'No entries to display';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
             const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
             
-            let message;
-            if (totalItems === 0) {
-                message = 'No entries to display';
-            } else if (startIndex === endIndex) {
-                message = `Showing entry ${startIndex} of ${totalItems} entries`;
+            if (startIndex === endIndex) {
+                showingEntries.textContent = `Showing entry ${startIndex} of ${totalItems} entries`;
             } else {
-                message = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
+                showingEntries.textContent = `Showing ${startIndex} to ${endIndex} of ${totalItems} entries`;
             }
-            
-            document.getElementById('showingEntries').textContent = message;
         }
 
         // Function to set entries per page
@@ -802,31 +975,54 @@
             renderProjects(filteredProjects);
         }
 
-        // Function to view project details
-        function viewProject(id) {
-            const project = manufacturingProjects.find(p => p.id === id);
-            if (project) {
-                document.getElementById('modalProjectName').textContent = project.name;
-                document.getElementById('modalProjectLocation').textContent = project.location;
-                document.getElementById('modalProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
-                document.getElementById('modalMaterialsCost').textContent = '₱' + project.cost.toLocaleString();
-                document.getElementById('modalLaborCost').textContent = '₱' + project.cost.toLocaleString();
-                document.getElementById('modalEquipmentCost').textContent = '₱' + project.cost.toLocaleString();
-                document.getElementById('modalOverheadCost').textContent = '₱' + project.cost.toLocaleString();
-                document.getElementById('modalTotalCost').textContent = '₱' + project.cost.toLocaleString();
-                $('#costDetailsModal').modal('show');
-            }
+        // Function to show success message
+        function showSuccessMessage(message) {
+            document.getElementById('successMessage').textContent = message;
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+            setTimeout(() => {
+                successModal.hide();
+            }, 2000);
+        }
+
+        // Function to show warning message
+        function showWarningMessage(message) {
+            document.getElementById('warningMessage').textContent = message;
+            const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+            warningModal.show();
+            setTimeout(() => {
+                warningModal.hide();
+            }, 2000);
+        }
+
+        // Function to show confirmation dialog
+        function showConfirmationDialog(message, onConfirm) {
+            document.getElementById('confirmationMessage').textContent = message;
+            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            
+            // Remove any existing event listeners
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            // Add new event listener
+            newConfirmBtn.addEventListener('click', () => {
+                onConfirm();
+                confirmationModal.hide();
+            });
+            
+            confirmationModal.show();
         }
 
         // Function to approve project
         function approveProject(id) {
             const project = manufacturingProjects.find(p => p.id === id);
             if (project && project.status === 'pending') {
-                if (confirm(`Are you sure you want to approve ${project.name}?`)) {
+                showConfirmationDialog(`Are you sure you want to approve ${project.name}?`, () => {
                     project.status = 'approved';
                     renderProjects();
-                    alert(`Project ${project.name} has been approved!`);
-                }
+                    showSuccessMessage(`Project ${project.name} has been approved!`);
+                });
             }
         }
 
@@ -834,11 +1030,27 @@
         function rejectProject(id) {
             const project = manufacturingProjects.find(p => p.id === id);
             if (project && project.status === 'pending') {
-                if (confirm(`Are you sure you want to reject ${project.name}?`)) {
+                showConfirmationDialog(`Are you sure you want to reject ${project.name}?`, () => {
                     project.status = 'rejected';
                     renderProjects();
-                    alert(`Project ${project.name} has been rejected!`);
-                }
+                    showSuccessMessage(`Project ${project.name} has been rejected!`);
+                });
+            }
+        }
+
+        // Function to view project details
+        function viewProject(id) {
+            const project = manufacturingProjects.find(p => p.id === id);
+            if (project) {
+                document.getElementById('viewProjectImage').src = project.image;
+                document.getElementById('viewProjectName').textContent = project.name;
+                document.getElementById('viewProjectLocation').textContent = project.location;
+                document.getElementById('viewProjectAcceptedDate').textContent = project.acceptedDate;
+                document.getElementById('viewProjectCost').textContent = '₱' + project.cost.toLocaleString();
+                document.getElementById('viewProjectStatus').innerHTML = `<span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span>`;
+                
+                const viewModal = new bootstrap.Modal(document.getElementById('viewProjectModal'));
+                viewModal.show();
             }
         }
 

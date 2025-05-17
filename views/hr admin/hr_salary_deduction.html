@@ -396,6 +396,12 @@
                         <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
                     </ul>
                 </li>    
+                <li class="nav-item">
+                    <a href="/hr/developers_approval">
+                        <i class="fas fa-users"></i>
+                        <span>Developers Approval</span>
+                    </a>
+                </li>
             </ul>
             <!-- Move Logout outside the main ul -->
             <div class="logout-container">
@@ -574,343 +580,345 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
-// Global base URL for the HR endpoint
-const BASE_URL = "http://localhost:4000/hr";
+    // Dynamically set BASE_URL based on current origin
+    const BASE_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/hr' 
+        : `${window.location.origin}/hr`;
 
-// Add these new variables at the top of your script
-let currentDeductionId = null;
-let isArchiveAction = true; // true for archive, false for restore
+    // Add these new variables at the top of your script
+    let currentDeductionId = null;
+    let isArchiveAction = true; // true for archive, false for restore
 
-// Fetch deductions from the backend and populate the table
-async function fetchDeductions() {
-    try {
-        const response = await fetch(`${BASE_URL}/deductions`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch deductions');
-        }
-        const data = await response.json();
-        
-        if (!data.deductions || !Array.isArray(data.deductions)) {
-            throw new Error('Invalid data format received from server');
-        }
-        
-        const activeTbody = document.querySelector('#activeDeductionsTable tbody');
-        const inactiveTbody = document.querySelector('#inactiveDeductionsTable tbody');
-        activeTbody.innerHTML = '';
-        inactiveTbody.innerHTML = '';
-        
-        data.deductions.forEach(deduction => {
-            const row = document.createElement('tr');
-            const statusBadge = deduction.is_active ? 
-                '<span class="badge bg-success">Active</span>' : 
-                '<span class="badge bg-secondary">Archived</span>';
-            
-            const actionButtons = deduction.is_active ?
-                `<button onclick="handleEditClick(${deduction.id})" class="btn btn-sm btn-primary">Edit</button>
-                 <button onclick="handleArchiveClick(${deduction.id})" class="btn btn-sm btn-warning">Archive</button>` :
-                `<button onclick="handleRestoreClick(${deduction.id})" class="btn btn-sm btn-success">Restore</button>`;
-            
-            row.innerHTML = `
-                <td>${deduction.deduction_type}</td>
-                <td>₱${deduction.salary_min.toLocaleString()} - ₱${deduction.salary_max.toLocaleString()}</td>
-                <td>${deduction.employee_percentage}%</td>
-                <td>${deduction.employer_percentage}%</td>
-                <td>${deduction.total_rate}%</td>
-                <td>${statusBadge}</td>
-                <td>${actionButtons}</td>
-            `;
-            
-            if (deduction.is_active) {
-                activeTbody.appendChild(row);
-            } else {
-                inactiveTbody.appendChild(row);
+    // Fetch deductions from the backend and populate the table
+    async function fetchDeductions() {
+        try {
+            const response = await fetch(`${BASE_URL}/deductions`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch deductions');
             }
-        });
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to fetch deductions. Please try again.');
-    }
-}
-// Call fetchDeductions to load the data on page load
-fetchDeductions();
-
-// Function to open the modal with the selected deduction details
-async function handleEditClick(id) {
-    try {
-        const response = await fetch(`${BASE_URL}/deductions/${id}`);
-        if (!response.ok) {
-            throw new Error('Failed to load deduction details');
+            const data = await response.json();
+            
+            if (!data.deductions || !Array.isArray(data.deductions)) {
+                throw new Error('Invalid data format received from server');
+            }
+            
+            const activeTbody = document.querySelector('#activeDeductionsTable tbody');
+            const inactiveTbody = document.querySelector('#inactiveDeductionsTable tbody');
+            activeTbody.innerHTML = '';
+            inactiveTbody.innerHTML = '';
+            
+            data.deductions.forEach(deduction => {
+                const row = document.createElement('tr');
+                const statusBadge = deduction.is_active ? 
+                    '<span class="badge bg-success">Active</span>' : 
+                    '<span class="badge bg-secondary">Archived</span>';
+                
+                const actionButtons = deduction.is_active ?
+                    `<button onclick="handleEditClick(${deduction.id})" class="btn btn-sm btn-primary">Edit</button>
+                     <button onclick="handleArchiveClick(${deduction.id})" class="btn btn-sm btn-warning">Archive</button>` :
+                    `<button onclick="handleRestoreClick(${deduction.id})" class="btn btn-sm btn-success">Restore</button>`;
+                
+                row.innerHTML = `
+                    <td>${deduction.deduction_type}</td>
+                    <td>₱${deduction.salary_min.toLocaleString()} - ₱${deduction.salary_max.toLocaleString()}</td>
+                    <td>${deduction.employee_percentage}%</td>
+                    <td>${deduction.employer_percentage}%</td>
+                    <td>${deduction.total_rate}%</td>
+                    <td>${statusBadge}</td>
+                    <td>${actionButtons}</td>
+                `;
+                
+                if (deduction.is_active) {
+                    activeTbody.appendChild(row);
+                } else {
+                    inactiveTbody.appendChild(row);
+                }
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to fetch deductions. Please try again.');
         }
-        const deduction = await response.json();
+    }
+    // Call fetchDeductions to load the data on page load
+    fetchDeductions();
+
+    // Function to open the modal with the selected deduction details
+    async function handleEditClick(id) {
+        try {
+            const response = await fetch(`${BASE_URL}/deductions/${id}`);
+            if (!response.ok) {
+                throw new Error('Failed to load deduction details');
+            }
+            const deduction = await response.json();
+            
+            // Populate the edit form
+            document.getElementById('edit_deduction_id').value = deduction.id;
+            document.getElementById('edit_deduction_type').value = deduction.deduction_type;
+            document.getElementById('edit_salary_min').value = deduction.salary_min;
+            document.getElementById('edit_salary_max').value = deduction.salary_max;
+            document.getElementById('edit_employee_percentage').value = deduction.employee_percentage;
+            document.getElementById('edit_employer_percentage').value = deduction.employer_percentage;
+            document.getElementById('edit_total_rate').value = deduction.total_rate;
+
+            // Show the edit modal
+            document.getElementById('editDeductionModal').style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to load deduction details. Please try again.');
+        }
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById('editDeductionModal').style.display = 'none';
+    }
+
+    // Add this function to show alerts
+    function showAlert(type, message) {
+        // Remove any existing alerts
+        const existingAlert = document.querySelector('.alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+
+        // Create new alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        // Insert alert before the table
+        const table = document.querySelector('.tab-content');
+        table.parentNode.insertBefore(alertDiv, table);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Update the edit form submission handler
+    document.getElementById('editDeductionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        // Populate the edit form
-        document.getElementById('edit_deduction_id').value = deduction.id;
-        document.getElementById('edit_deduction_type').value = deduction.deduction_type;
-        document.getElementById('edit_salary_min').value = deduction.salary_min;
-        document.getElementById('edit_salary_max').value = deduction.salary_max;
-        document.getElementById('edit_employee_percentage').value = deduction.employee_percentage;
-        document.getElementById('edit_employer_percentage').value = deduction.employer_percentage;
-        document.getElementById('edit_total_rate').value = deduction.total_rate;
+        const id = document.getElementById('edit_deduction_id').value;
+        const deduction_type = document.getElementById('edit_deduction_type').value;
+        const salary_min = document.getElementById('edit_salary_min').value;
+        const salary_max = document.getElementById('edit_salary_max').value;
+        const employee_percentage = document.getElementById('edit_employee_percentage').value;
+        const employer_percentage = document.getElementById('edit_employer_percentage').value;
+        const total_rate = document.getElementById('edit_total_rate').value;
 
-        // Show the edit modal
-        document.getElementById('editDeductionModal').style.display = 'block';
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to load deduction details. Please try again.');
-    }
-}
-
-// Function to close the modal
-function closeModal() {
-    document.getElementById('editDeductionModal').style.display = 'none';
-}
-
-// Add this function to show alerts
-function showAlert(type, message) {
-    // Remove any existing alerts
-    const existingAlert = document.querySelector('.alert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-
-    // Create new alert
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-
-    // Insert alert before the table
-    const table = document.querySelector('.tab-content');
-    table.parentNode.insertBefore(alertDiv, table);
-
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-// Update the edit form submission handler
-document.getElementById('editDeductionForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const id = document.getElementById('edit_deduction_id').value;
-    const deduction_type = document.getElementById('edit_deduction_type').value;
-    const salary_min = document.getElementById('edit_salary_min').value;
-    const salary_max = document.getElementById('edit_salary_max').value;
-    const employee_percentage = document.getElementById('edit_employee_percentage').value;
-    const employer_percentage = document.getElementById('edit_employer_percentage').value;
-    const total_rate = document.getElementById('edit_total_rate').value;
-
-    // Validate percentages
-    if (parseFloat(employee_percentage) < 0 || parseFloat(employer_percentage) < 0) {
-        showAlert('danger', 'Percentages cannot be negative');
-        return;
-    }
-
-    if (parseFloat(salary_min) >= parseFloat(salary_max)) {
-        showAlert('danger', 'Minimum salary must be less than maximum salary');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${BASE_URL}/deductions/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id,
-                deduction_type,
-                salary_min,
-                salary_max,
-                employee_percentage,
-                employer_percentage,
-                total_rate
-            })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to update deduction');
+        // Validate percentages
+        if (parseFloat(employee_percentage) < 0 || parseFloat(employer_percentage) < 0) {
+            showAlert('danger', 'Percentages cannot be negative');
+            return;
         }
 
-        showAlert('success', 'Deduction updated successfully');
-        closeModal();
-        fetchDeductions();
-    } catch (error) {
-        console.error('Error:', error);
-        showAlert('danger', error.message || 'Failed to update deduction. Please try again.');
-    }
-});
+        if (parseFloat(salary_min) >= parseFloat(salary_max)) {
+            showAlert('danger', 'Minimum salary must be less than maximum salary');
+            return;
+        }
 
-// Function to handle archive click
-function handleArchiveClick(id) {
-    currentDeductionId = id;
-    isArchiveAction = true;
-    document.getElementById('archiveModal').style.display = 'block';
-}
+        try {
+            const response = await fetch(`${BASE_URL}/deductions/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    deduction_type,
+                    salary_min,
+                    salary_max,
+                    employee_percentage,
+                    employer_percentage,
+                    total_rate
+                })
+            });
 
-// Function to handle restore click
-function handleRestoreClick(id) {
-    currentDeductionId = id;
-    isArchiveAction = false;
-    document.getElementById('restoreModal').style.display = 'block';
-}
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to update deduction');
+            }
 
-// Function to close archive modal
-function closeArchiveModal() {
-    document.getElementById('archiveModal').style.display = 'none';
-    currentDeductionId = null;
-}
-
-// Function to close restore modal
-function closeRestoreModal() {
-    document.getElementById('restoreModal').style.display = 'none';
-    currentDeductionId = null;
-}
-
-// Function to confirm archive
-async function confirmArchive() {
-    if (!currentDeductionId) return;
-    
-    try {
-        const response = await fetch(`${BASE_URL}/deductions/archive/${currentDeductionId}`, {
-            method: 'PUT'
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            showAlert('success', 'Deduction archived successfully');
-            closeArchiveModal();
+            showAlert('success', 'Deduction updated successfully');
+            closeModal();
             fetchDeductions();
-        } else {
-            throw new Error(data.error || 'Failed to archive deduction');
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('danger', error.message || 'Failed to update deduction. Please try again.');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showAlert('danger', error.message || 'Failed to archive deduction');
+    });
+
+    // Function to handle archive click
+    function handleArchiveClick(id) {
+        currentDeductionId = id;
+        isArchiveAction = true;
+        document.getElementById('archiveModal').style.display = 'block';
     }
-}
 
-// Function to confirm restore
-async function confirmRestore() {
-    if (!currentDeductionId) return;
-    
-    try {
-        const response = await fetch(`${BASE_URL}/deductions/restore/${currentDeductionId}`, {
-            method: 'PUT'
-        });
+    // Function to handle restore click
+    function handleRestoreClick(id) {
+        currentDeductionId = id;
+        isArchiveAction = false;
+        document.getElementById('restoreModal').style.display = 'block';
+    }
 
-        const data = await response.json();
-        if (response.ok) {
-            showAlert('success', 'Deduction restored successfully');
-            closeRestoreModal();
-            fetchDeductions();
-        } else {
-            throw new Error(data.error || 'Failed to restore deduction');
+    // Function to close archive modal
+    function closeArchiveModal() {
+        document.getElementById('archiveModal').style.display = 'none';
+        currentDeductionId = null;
+    }
+
+    // Function to close restore modal
+    function closeRestoreModal() {
+        document.getElementById('restoreModal').style.display = 'none';
+        currentDeductionId = null;
+    }
+
+    // Function to confirm archive
+    async function confirmArchive() {
+        if (!currentDeductionId) return;
+        
+        try {
+            const response = await fetch(`${BASE_URL}/deductions/archive/${currentDeductionId}`, {
+                method: 'PUT'
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                showAlert('success', 'Deduction archived successfully');
+                closeArchiveModal();
+                fetchDeductions();
+            } else {
+                throw new Error(data.error || 'Failed to archive deduction');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('danger', error.message || 'Failed to archive deduction');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        showAlert('danger', error.message || 'Failed to restore deduction');
     }
-}
 
-// Function to calculate total rate with validation
-function calculateTotalRate(employeePercentage, employerPercentage, totalRateId) {
-    // Convert to numbers and handle empty/invalid values
-    const employeePercent = Math.max(0, parseFloat(employeePercentage) || 0);
-    const employerPercent = Math.max(0, parseFloat(employerPercentage) || 0);
-    
-    // Calculate total rate
-    const totalRate = employeePercent + employerPercent;
-    
-    // Update the total rate field with 2 decimal places
-    document.getElementById(totalRateId).value = totalRate.toFixed(2);
-    
-    // Update the input fields with validated values
-    if (totalRateId === 'edit_total_rate') {
-        document.getElementById('edit_employee_percentage').value = employeePercent.toFixed(2);
-        document.getElementById('edit_employer_percentage').value = employerPercent.toFixed(2);
-    } else {
-        document.getElementById('add_employee_percentage').value = employeePercent.toFixed(2);
-        document.getElementById('add_employer_percentage').value = employerPercent.toFixed(2);
-    }
-}
+    // Function to confirm restore
+    async function confirmRestore() {
+        if (!currentDeductionId) return;
+        
+        try {
+            const response = await fetch(`${BASE_URL}/deductions/restore/${currentDeductionId}`, {
+                method: 'PUT'
+            });
 
-// Add event listeners for percentage inputs with validation
-document.getElementById('edit_employee_percentage').addEventListener('input', function() {
-    const value = Math.max(0, parseFloat(this.value) || 0);
-    this.value = value.toFixed(2);
-    const employeePercentage = this.value;
-    const employerPercentage = document.getElementById('edit_employer_percentage').value;
-    calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
-});
-
-document.getElementById('edit_employer_percentage').addEventListener('input', function() {
-    const value = Math.max(0, parseFloat(this.value) || 0);
-    this.value = value.toFixed(2);
-    const employerPercentage = this.value;
-    const employeePercentage = document.getElementById('edit_employee_percentage').value;
-    calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
-});
-
-// Function to open the add modal
-function openAddModal() {
-    document.getElementById('addDeductionModal').style.display = 'block';
-    // Reset form
-    document.getElementById('addDeductionForm').reset();
-}
-
-// Function to close the add modal
-function closeAddModal() {
-    document.getElementById('addDeductionModal').style.display = 'none';
-}
-
-// Function to handle edit button click
-function handleEdit(event) {
-    const id = event.target.getAttribute('data-id');
-    handleEditClick(id);
-}
-
-// Update the add form submission handler
-document.getElementById('addDeductionForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const deduction_type = document.getElementById('add_deduction_type').value;
-    const salary_min = document.getElementById('add_salary_min').value;
-    const salary_max = document.getElementById('add_salary_max').value;
-    const employee_percentage = document.getElementById('add_employee_percentage').value;
-    const employer_percentage = document.getElementById('add_employer_percentage').value;
-    const total_rate = document.getElementById('add_total_rate').value;
-
-    try {
-        const response = await fetch(`${BASE_URL}/deductions/add`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                deduction_type,
-                salary_min,
-                salary_max,
-                employee_percentage,
-                employer_percentage,
-                total_rate
-            })
-        });
-
-        const data = await response.json();
-        if (data.message === 'Deduction added successfully') {
-            showAlert('success', 'Deduction added successfully');
-            closeAddModal();
-            fetchDeductions();
-        } else {
-            showAlert('danger', 'Failed to add deduction: ' + data.error);
+            const data = await response.json();
+            if (response.ok) {
+                showAlert('success', 'Deduction restored successfully');
+                closeRestoreModal();
+                fetchDeductions();
+            } else {
+                throw new Error(data.error || 'Failed to restore deduction');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('danger', error.message || 'Failed to restore deduction');
         }
-    } catch (error) {
-        console.error('Error adding deduction:', error);
-        showAlert('danger', 'Failed to add deduction');
     }
-});
+
+    // Function to calculate total rate with validation
+    function calculateTotalRate(employeePercentage, employerPercentage, totalRateId) {
+        // Convert to numbers and handle empty/invalid values
+        const employeePercent = Math.max(0, parseFloat(employeePercentage) || 0);
+        const employerPercent = Math.max(0, parseFloat(employerPercentage) || 0);
+        
+        // Calculate total rate
+        const totalRate = employeePercent + employerPercent;
+        
+        // Update the total rate field with 2 decimal places
+        document.getElementById(totalRateId).value = totalRate.toFixed(2);
+        
+        // Update the input fields with validated values
+        if (totalRateId === 'edit_total_rate') {
+            document.getElementById('edit_employee_percentage').value = employeePercent.toFixed(2);
+            document.getElementById('edit_employer_percentage').value = employerPercent.toFixed(2);
+        } else {
+            document.getElementById('add_employee_percentage').value = employeePercent.toFixed(2);
+            document.getElementById('add_employer_percentage').value = employerPercent.toFixed(2);
+        }
+    }
+
+    // Add event listeners for percentage inputs with validation
+    document.getElementById('edit_employee_percentage').addEventListener('input', function() {
+        const value = Math.max(0, parseFloat(this.value) || 0);
+        this.value = value.toFixed(2);
+        const employeePercentage = this.value;
+        const employerPercentage = document.getElementById('edit_employer_percentage').value;
+        calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
+    });
+
+    document.getElementById('edit_employer_percentage').addEventListener('input', function() {
+        const value = Math.max(0, parseFloat(this.value) || 0);
+        this.value = value.toFixed(2);
+        const employerPercentage = this.value;
+        const employeePercentage = document.getElementById('edit_employee_percentage').value;
+        calculateTotalRate(employeePercentage, employerPercentage, 'edit_total_rate');
+    });
+
+    // Function to open the add modal
+    function openAddModal() {
+        document.getElementById('addDeductionModal').style.display = 'block';
+        // Reset form
+        document.getElementById('addDeductionForm').reset();
+    }
+
+    // Function to close the add modal
+    function closeAddModal() {
+        document.getElementById('addDeductionModal').style.display = 'none';
+    }
+
+    // Function to handle edit button click
+    function handleEdit(event) {
+        const id = event.target.getAttribute('data-id');
+        handleEditClick(id);
+    }
+
+    // Update the add form submission handler
+    document.getElementById('addDeductionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const deduction_type = document.getElementById('add_deduction_type').value;
+        const salary_min = document.getElementById('add_salary_min').value;
+        const salary_max = document.getElementById('add_salary_max').value;
+        const employee_percentage = document.getElementById('add_employee_percentage').value;
+        const employer_percentage = document.getElementById('add_employer_percentage').value;
+        const total_rate = document.getElementById('add_total_rate').value;
+
+        try {
+            const response = await fetch(`${BASE_URL}/deductions/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deduction_type,
+                    salary_min,
+                    salary_max,
+                    employee_percentage,
+                    employer_percentage,
+                    total_rate
+                })
+            });
+
+            const data = await response.json();
+            if (data.message === 'Deduction added successfully') {
+                showAlert('success', 'Deduction added successfully');
+                closeAddModal();
+                fetchDeductions();
+            } else {
+                showAlert('danger', 'Failed to add deduction: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error adding deduction:', error);
+            showAlert('danger', 'Failed to add deduction');
+        }
+    });
 
     </script>
 </body>

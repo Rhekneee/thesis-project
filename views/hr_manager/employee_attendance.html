@@ -146,8 +146,12 @@
        
     
         <script>
+        // Dynamically set API_URL based on current origin
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000/hr' 
+            : `${window.location.origin}/hr`;
+
         window.onload = async () => {
-            const API_URL = "http://localhost:4000/hr";
             const employeeId = await getEmployeeIdFromSession()  // Assuming HR ID from session
 
             if (!employeeId) {
@@ -242,7 +246,7 @@
             // Handle the request approval (approve or reject)
             async function handleRequestApproval(requestId, requestType, isApproved) {
                 try {
-                    const response = await fetch(`${API_URL}/approve-request/${hrId}`, {
+                    const response = await fetch(`${API_URL}/approve-request/${employeeId}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ requestId, requestType, isApproved })
@@ -251,7 +255,7 @@
                     const data = await response.json();
                     if (response.ok) {
                         alert(`${isApproved ? 'Approved' : 'Rejected'} successfully!`);
-                        loadEmployeeAttendanceData(hrId);  // Refresh the attendance data
+                        loadEmployeeAttendanceData(employeeId);  // Refresh the attendance data
                     } else {
                         alert(`Error: ${data.error || 'Failed to approve/reject request.'}`);
                     }

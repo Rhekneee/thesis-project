@@ -67,8 +67,13 @@
 </table>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
 <script>
+// Dynamically set API_URL based on current origin
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:4000/hr' 
+    : `${window.location.origin}/hr`;
+
 async function loadPendingPayroll() {
-    const res = await fetch('http://localhost:4000/hr/payroll/pending');
+    const res = await fetch(`${API_URL}/payroll/pending`);
     const response = await res.json();
     const data = response.payroll;
     
@@ -118,7 +123,7 @@ function formatDate(date) {
 
 
 async function approvePayroll(id) {
-    await fetch('http://localhost:4000/hr/payroll/approve-reject', {
+    await fetch(`${API_URL}/payroll/approve-reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payrollId: id, status: 'approved', remarks: null })
@@ -136,7 +141,7 @@ async function rejectPayroll(id) {
         alert('Please enter remarks when rejecting.');
         return;
     }
-    await fetch('http://localhost:4000/hr/payroll/approve-reject', {
+    await fetch(`${API_URL}/payroll/approve-reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payrollId: id, status: 'rejected', remarks })
