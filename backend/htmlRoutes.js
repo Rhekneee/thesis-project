@@ -2,58 +2,58 @@
 const path = require('path');
 
 const htmlRoutes = (app) => {
-// ====================
-  // HR Manager Routes
-  // ====================
-  app.get('/customer', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'customer.html'));
-  });
+// // ====================
+//   // HR Manager Routes
+//   // ====================
+//   app.get('/customer', (req, res) => {
+//     res.sendFile(path.join(__dirname, '..', 'views', 'customer.html'));
+//   });
   
-  app.get('/hr_manager/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'hr_manager', 'hr_dashboard.html'));
-  });
+//   app.get('/hr_manager/dashboard', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'views', 'hr_manager', 'hr_dashboard.html'));
+//   });
 
-  app.get('/hr_manager/employee_management', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_management.html'));
-});
+//   app.get('/hr_manager/employee_management', (req, res) => {
+//     res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_management.html'));
+// });
 
-app.get('/hr_manager/employee_attendance', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_attendance.html'));
-});
+// app.get('/hr_manager/employee_attendance', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_attendance.html'));
+// });
 
-// Leave Requests Route
-app.get('/hr_manager/leave_request', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'leave_request.html'));
-});
+// // Leave Requests Route
+// app.get('/hr_manager/leave_request', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'leave_request.html'));
+// });
 
-// Payroll Management Route
-app.get('/hr_manager/payroll', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'payroll_management.html'));
-});
+// // Payroll Management Route
+// app.get('/hr_manager/payroll', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'payroll_management.html'));
+// });
 
-// Reports Route
-app.get('/hr_manager/reports', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'report.html'));
-});
+// // Reports Route
+// app.get('/hr_manager/reports', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'report.html'));
+// });
 
-// Attendance Route
-app.get('/hr_manager/attendance', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'attendance.html'));
-});
+// // Attendance Route
+// app.get('/hr_manager/attendance', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'attendance.html'));
+// });
 
-// Recruitment Route
-app.get('/hr_manager/recruitment', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'recruitment.html'));
-});
+// // Recruitment Route
+// app.get('/hr_manager/recruitment', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'recruitment.html'));
+// });
 
-// Route for the Employee Attendance page
-app.get('/hr_employee/attendance', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_employee', 'Individual_attendance.html'));
-});
+// // Route for the Employee Attendance page
+// app.get('/hr_employee/attendance', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_employee', 'Individual_attendance.html'));
+// });
 
-app.get('/hr_manager/employee_list', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_list.html'));
-});
+// app.get('/hr_manager/employee_list', (req, res) => {
+//   res.sendFile(path.join(__dirname, '..', 'views', 'hr_manager', 'employee_list.html'));
+// });
 
 
 
@@ -176,35 +176,6 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'transfer.html')); // Adjusted path
   });
 
-  // ====================
-  // CRM Website Routes
-  // ====================
-  app.get('/crm/index', (req, res) => {
-    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'index.html')); // Adjusted path
-  });
-
-  app.get('/crm/application', (req, res) => {
-    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'application.html')); // Adjusted path
-  });
-
-  app.get('/crm/contact', (req, res) => {
-    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'contact.html')); // Adjusted path
-  });
-
-  app.get('/crm/developer', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'developers.html')); // Adjusted path
-  });
-
-  app.get('/crm/faqs', (req, res) => {
-    res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'faqs.html')); // Adjusted path
-  });
-
-  app.get('/crm/properties', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'properties.html')); // Adjusted path
-  });
-  app.get('/crm/vtour', (req, res) => {    
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'vtour.html')); // Adjusted path
-  });
 
 // ====================
   // HR admin Routes
@@ -281,28 +252,12 @@ app.get('/hr_manager/employee_list', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'developers_approval.html')); // Adjusted path
   });
 
-// ====================
-  // finance admin Routes
-  // ====================  
-
-  app.get('/fin/manager_finance', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'manager_finance.html')); // Adjusted path
-  });
-
-
-
-
-// ====================
-  //   admin Routes
-  // ====================  
-
-
   app.get('/hr/hr_salary_deduction', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
   });
 
 
-
+  
 // ====================
   //   agents Routes
   // ====================  
@@ -327,98 +282,6 @@ app.get('/hr_manager/employee_list', (req, res) => {
   app.get('/agents/agent_transactions', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'agents', 'agent_transactions.html')); // Adjusted path
   });
-
-
-
-// ====================
-  //   manufacturing Routes
-  // ====================  
-
-
-  app.get('/manufacturing/manufacturing_dashboard', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_dashboard.html')); // Adjusted path
-  });
-
-  app.get('/manufacturing/manufacturing_foremen', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_foremen.html')); // Adjusted path
-  });
-
-  app.get('/manufacturing/manufacturing_approved_project', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_approved_project.html')); // Adjusted path
-  }); 
-
-  app.get('/manufacturing/manufacturing_progress', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_progress.html')); // Adjusted path
-  }); 
-  
-  app.get('/manufacturing/manufacturing_projects', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_projects.html')); // Adjusted path
-  });
-
-  app.get('/manufacturing/manufacturing_request_materials', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_request_materials.html')); // Adjusted path
-  });
-
-  app.get('/manufacturing/manufacturing_ratings', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_ratings.html')); // Adjusted path
-  }); 
-
-  app.get('/manufacturing/manufacturing_daily_attendance', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_daily_attendance.html')); // Adjusted path
-  }); 
-  
-  app.get('/manufacturing/manufacturing_leave_request', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_leave_request.html')); // Adjusted path
-  });
-
-  app.get('/manufacturing/manufacturing_halfday_request', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_halfday_request.html')); // Adjusted path
-  }); 
-
-  app.get('/manufacturing/manufacturing_overtime', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_overtime.html')); // Adjusted path
-  }); 
-  
-
-  
-// ====================
-  //   finance Routes
-  // ====================  
-
-
-  app.get('/finance/finance_dashboard', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'finance', 'finance_dashboard.html')); // Adjusted path
-  });   
-
-  app.get('/finance/finance_history_attendance', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'finance', 'finance_history_attendance.html')); // Adjusted path
-  }); 
-
-
-// ====================
-//   Developer Routes
-// ====================
-
-app.get('/developer/developer_dashboard', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_dashboard.html')); // Adjusted path
-}); 
-
-app.get('/developer/developer_projects', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_projects.html')); // Adjusted path
-}); 
-
-app.get('/developer/developer_project_progress', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_project_progress.html')); // Adjusted path
-}); 
-
-app.get('/developer/developer_manufacturing_cost', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_manufacturing_cost.html')); // Adjusted path
-}); 
-
-app.get('/developer/developer_finished_projects', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_finished_projects.html')); // Adjusted path
-}); 
-
 
 
 // ====================
