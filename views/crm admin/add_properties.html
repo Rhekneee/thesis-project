@@ -196,7 +196,7 @@
             <!-- ========== Add Properties Content ========== -->
             <div class="container mt-4">
                 <h3>Add New Property</h3>
-                <form id="propertyForm" action="#" method="post" enctype="multipart/form-data" class="property-form">
+                <form id="propertyForm" class="property-form" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="propertyName" class="form-label">Property Name</label>
                         <input type="text" class="form-control" id="propertyName" name="propertyName" required>
@@ -228,8 +228,8 @@
                         <input type="number" class="form-control" id="price" name="price" required>
                     </div>
                     <div class="mb-3">
-                        <label for="bedrooms" class="form-label">Number of Parking Spaces</label>
-                        <select class="form-select" id="bedrooms" name="bedrooms" required>
+                        <label for="parking" class="form-label">Number of Parking Spaces</label>
+                        <select class="form-select" id="parking" name="parking" required>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -237,8 +237,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="parking" class="form-label">Number of Bedrooms</label>
-                        <select class="form-select" id="parking" name="parking" required>
+                        <label for="bedrooms" class="form-label">Number of Bedrooms</label>
+                        <select class="form-select" id="bedrooms" name="bedrooms" required>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3+</option>
@@ -265,15 +265,36 @@
                         <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="image" class="form-label">Property Image</label>
-                        <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                        <label for="property_image" class="form-label">Property Image</label>
+                        <input type="file" class="form-control" id="property_image" name="property_image" accept="image/*" required>
+                        <div class="form-text">Accepted formats: JPEG, PNG, GIF. Max size: 5MB</div>
                     </div>
                     <div class="mb-3">
-                        <label for="virtualTour" class="form-label">360° Virtual Tour Image</label>
-                        <input type="file" class="form-control" id="virtualTour" name="virtualTour" accept="image/*" required>
+                        <label for="virtual_tour_image" class="form-label">360° Virtual Tour Image (Coming Soon)</label>
+                        <input type="file" class="form-control" id="virtual_tour_image" name="virtual_tour_image" accept="image/*" disabled>
+                        <div class="form-text">Dynamic virtual tour feature will be available in future updates.</div>
                     </div>
-                    <!-- Modal for Confirmation -->
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+
+                    <!-- Add Coming Soon Modal -->
+                    <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="comingSoonModalLabel">Coming Soon!</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>The dynamic virtual tour feature is coming soon! Your upload will not be saved at this time.</p>
+                                    <p>Please check back later for this exciting feature.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitPropertyBtn">
                         Add Property
                     </button>
                 </form>
@@ -293,26 +314,25 @@
                     Property added successfully!
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.href='/crm/property_list'">View Properties</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <!-- Error Message Modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmModalLabel">Confirm Property Addition</h5>
+                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    Are you sure you want to add this property?
+                <div class="modal-body" id="errorModalBody">
+                    An error occurred while adding the property.
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmSubmit">Confirm</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -323,25 +343,83 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
-        // Handle Confirmation Modal Submit
-        document.getElementById('confirmSubmit').addEventListener('click', function () {
-            // Hide the modal
-            $('#confirmModal').modal('hide');
-            
-            // Show success modal
-            $('#successModal').modal('show');
-        });
+        // Handle custom property type input
         document.getElementById('propertyTypeSelect').addEventListener('change', function() {
-    const customContainer = document.getElementById('customPropertyTypeContainer');
-    if (this.value === 'Other') {
-        customContainer.style.display = 'block';
-        document.getElementById('customPropertyType').setAttribute('required', 'required');
-    } else {
-        customContainer.style.display = 'none';
-        document.getElementById('customPropertyType').removeAttribute('required');
-    }
-});
+            const customContainer = document.getElementById('customPropertyTypeContainer');
+            if (this.value === 'Other') {
+                customContainer.style.display = 'block';
+                document.getElementById('customPropertyType').setAttribute('required', 'required');
+            } else {
+                customContainer.style.display = 'none';
+                document.getElementById('customPropertyType').removeAttribute('required');
+            }
+        });
 
+        // Handle form submission
+        document.getElementById('propertyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = this;
+            const formData = new FormData(form);
+
+            // Validate property image
+            const propertyImage = document.getElementById('property_image').files[0];
+            if (!propertyImage) {
+                document.getElementById('errorModalBody').textContent = 'Please select a property image.';
+                $('#errorModal').modal('show');
+                return;
+            }
+
+            // Validate property image size and type
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            
+            if (propertyImage.size > maxSize) {
+                document.getElementById('errorModalBody').textContent = 'Property image must be less than 5MB.';
+                $('#errorModal').modal('show');
+                return;
+            }
+
+            if (!allowedTypes.includes(propertyImage.type)) {
+                document.getElementById('errorModalBody').textContent = 'Property image must be JPEG, PNG, or GIF.';
+                $('#errorModal').modal('show');
+                return;
+            }
+
+            // Disable submit button
+            const submitBtn = document.getElementById('submitPropertyBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+
+            try {
+                const response = await fetch('/crm/properties', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    $('#successModal').modal('show');
+                } else {
+                    document.getElementById('errorModalBody').textContent = result.error || 'An error occurred while adding the property.';
+                    $('#errorModal').modal('show');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorModalBody').textContent = 'An error occurred while adding the property. Please try again.';
+                $('#errorModal').modal('show');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Property';
+            }
+        });
+
+        // Show coming soon message when clicking virtual tour input
+        document.getElementById('virtual_tour_image').addEventListener('click', function(e) {
+            e.preventDefault();
+            $('#comingSoonModal').modal('show');
+        });
     </script>
 </body>
 

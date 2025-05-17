@@ -66,6 +66,46 @@ const developerUpload = multer({
     }
 });
 
+// Add property image upload configuration
+const propertyUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/properties");
+
+// Ensure the upload directory exists
+if (!fs.existsSync(propertyUploadDir)) {
+    fs.mkdirSync(propertyUploadDir, { recursive: true });
+}
+
+const propertyStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, propertyUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'property-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const propertyUpload = multer({
+    storage: propertyStorage,
+    fileFilter: (req, file, cb) => {
+        // Only process property_image files
+        if (file.fieldname === 'property_image') {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (allowedTypes.includes(file.mimetype)) {
+                cb(null, true);
+            } else {
+                cb(new Error('Invalid file type. Only JPEG, PNG and GIF are allowed.'));
+            }
+        } else {
+            // Skip other files
+            cb(null, false);
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 1 // Only allow one file
+    }
+}).single('property_image');
+
 // 📄 Helper function: Check if uploaded file is a valid resume
 const checkIfResume = async (filePath) => {
     try {
@@ -472,11 +512,88 @@ const CRMController = {
             console.error("Error in developer registration:", error);
             res.status(500).json({ error: "Failed to register developer" });
         }
+    },
+
+    // Property Management Controller
+    createProperty: async (req, res) => {
+        // Wrap the multer middleware in a promise
+        const handleUpload = () => {
+            return new Promise((resolve, reject) => {
+                propertyUpload(req, res, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+        };
+
+        try {
+            // Handle the file upload
+            await handleUpload();
+
+            const {
+                propertyName,
+                propertyTypeSelect,
+                customPropertyType,
+                location,
+                price,
+                parking,
+                bedrooms,
+                bathrooms,
+                floors,
+                description
+            } = req.body;
+
+            // Validate required fields
+            if (!propertyName || !location || !price || !parking || 
+                !bedrooms || !bathrooms || !floors || !description) {
+                return res.status(400).json({ error: "All required fields must be filled" });
+            }
+
+            // Check if property image was uploaded
+            if (!req.file) {
+                return res.status(400).json({ error: "Property image is required" });
+            }
+
+            // Determine property type
+            const property_type = propertyTypeSelect === 'Other' ? customPropertyType : propertyTypeSelect;
+
+            // Store property data
+            const propertyId = await CRMModel.storeProperty({
+                property_name: propertyName,
+                property_type: property_type,
+                location: location,
+                price: parseFloat(price),
+                parking_spaces: parseInt(parking),
+                bedrooms: parseInt(bedrooms),
+                bathrooms: parseInt(bathrooms),
+                floors: parseInt(floors),
+                description: description,
+                property_image: req.file.filename,
+                virtual_tour_image: null
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Property added successfully",
+                propertyId 
+            });
+        } catch (error) {
+            console.error("Error in property creation:", error);
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                res.status(400).json({ error: "File size exceeds 5MB limit" });
+            } else {
+                res.status(500).json({ error: "Failed to create property" });
+            }
+        }
     }
 };
 
 module.exports = { 
     CRMController, 
     upload,
-    developerUpload // Export the new upload middleware
+    developerUpload,
+    propertyUpload // Export the new upload middleware
 };
