@@ -92,8 +92,99 @@ const checkIfResume = async (filePath) => {
     }
 };
 
+// Define upload directories
+const resumeUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/resume");
+const profilePictureUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/profile_pictures");
+
+// Ensure upload directories exist
+[resumeUploadDir, profilePictureUploadDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
+
+// Resume upload storage
+const resumeStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, resumeUploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+// Profile picture upload storage
+const profilePictureStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, profilePictureUploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+// Resume upload middleware
+const uploadResume = multer({
+    storage: resumeStorage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype !== 'application/pdf') {
+            return cb(new Error('Only PDF files are allowed.'));
+        }
+        cb(null, true);
+    }
+});
+
+// Profile picture upload middleware
+const uploadProfilePicture = multer({
+    storage: profilePictureStorage,
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+            return cb(new Error('Only image files are allowed.'));
+        }
+        cb(null, true);
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
+
 // 📤 Controller logic for handling resume uploads
 const CRMController = {
+    // Check developer session
+    checkSession: async (req, res) => {
+        try {
+            if (!req.session || !req.session.user) {
+                return res.status(401).json({ 
+                    success: false,
+                    error: "Unauthorized: Please log in." 
+                });
+            }
+
+            // Check if user is a developer
+            if (req.session.user.role_name !== 'developer') {
+                return res.status(403).json({ 
+                    success: false,
+                    error: "Forbidden: Developer access required." 
+                });
+            }
+
+            // Return session data
+            res.json({
+                success: true,
+                id: req.session.user.id,
+                username: req.session.user.username,
+                email: req.session.user.email,
+                role_name: req.session.user.role_name
+            });
+        } catch (error) {
+            console.error('Error in checkSession:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to check session' 
+            });
+        }
+    },
+
     // Handle the submission of a site visit request
     createVisitRequest: async (req, res) => {
         try {

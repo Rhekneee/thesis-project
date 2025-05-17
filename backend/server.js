@@ -13,8 +13,6 @@ const financeRoutes = require('./departments/finance/routes/finance.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
-const PORT = 4000;
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
@@ -75,8 +73,8 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/finance_payroll.html',
-        'general_foreman': '/manufacturing/manufacturing_dashboard.html',
+        'finance_accounting': '/finance admin/manager_finance.html',
+        'general_foreman': 'manager_manufacturing.html',
         'corporate_secretary': 'manager_corporate_secretary.html',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
@@ -110,6 +108,7 @@ app.get('/logout', (req, res) => {
 });
 
 // Start Server
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });

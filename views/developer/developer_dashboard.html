@@ -88,6 +88,8 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: none;
+            overflow: visible;
         }
 
         .project-item {
@@ -96,30 +98,67 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 80px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .project-item:last-child {
-            border-bottom: none;
+        .project-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .project-info {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 1;
+            min-width: 0;
         }
 
         .project-image {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 8px;
             object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .project-info > div {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .project-info h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #343a40;
+            white-space: normal;
+            word-break: break-word;
         }
 
         .project-status {
-            padding: 5px 10px;
+            display: inline-block;
+            padding: 5px 12px;
             border-radius: 15px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .progress {
+            width: 120px !important;
+            height: 8px;
+            margin: 0 15px;
+            flex-shrink: 0;
+        }
+
+        .progress-bar {
+            font-size: 0.75rem;
+            line-height: 8px;
+            padding: 0 5px;
         }
 
         .status-pending {
@@ -221,6 +260,8 @@
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
                 <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
                 <span class="company-title">MDB Construction</span>
             </div>
@@ -337,6 +378,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/side_top.js"></script>
 
     <script>
                 // Sample data
@@ -375,6 +417,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeCharts();
             renderRecentProjects();
+            getUserInfo();
         });
 
         // Initialize charts
@@ -510,21 +553,131 @@
                     <div class="project-info">
                         <img src="${project.image}" alt="${project.name}" class="project-image">
                         <div>
-                            <h5 class="mb-1">${project.name}</h5>
+                            <h5>${project.name}</h5>
                             <span class="project-status status-${project.status}">
                                 ${project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                             </span>
                         </div>
                     </div>
-                    <div class="progress" style="width: 100px;">
-                        <div class="progress-bar" role="progressbar" style="width: ${project.progress}%"
-                             aria-valuenow="${project.progress}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress">
+                        <div class="progress-bar bg-${project.status === 'completed' ? 'success' : project.status === 'in-progress' ? 'info' : 'warning'}" 
+                             role="progressbar" 
+                             style="width: ${project.progress}%"
+                             aria-valuenow="${project.progress}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
                             ${project.progress}%
                         </div>
                     </div>
                 `;
                 projectsList.appendChild(projectItem);
             });
+        }
+
+        // Update getUserInfo function to handle nested user data in session
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+
+                if (!sessionData.id) {
+                    throw new Error('No user ID in session');
+                }
+
+                // Fetch developer details using id from CRM routes
+                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
+                    credentials: 'include'
+                });
+
+                if (!developerResponse.ok) {
+                    throw new Error('Failed to fetch developer details');
+                }
+
+                const responseData = await developerResponse.json();
+                console.log('Developer response data:', responseData);
+
+                if (!responseData.success || !responseData.profile) {
+                    throw new Error('Invalid developer data received');
+                }
+
+                const developerData = responseData.profile;
+                console.log('Developer data:', developerData);
+
+                // Update profile pictures
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                // Simple function to set profile picture
+                const setProfilePicture = (imgElement, imagePath) => {
+                    if (!imgElement) return;
+                    
+                    if (imagePath) {
+                        const filename = imagePath.includes('/') 
+                            ? imagePath.split('/').pop() 
+                            : imagePath;
+                        
+                        const timestamp = new Date().getTime();
+                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                        
+                        imgElement.src = imageUrl;
+                        
+                        imgElement.onerror = () => {
+                            console.error('Failed to load image:', imageUrl);
+                            imgElement.src = '/crm/default-profile-picture';
+                        };
+                    } else {
+                        imgElement.src = '/crm/default-profile-picture';
+                    }
+                };
+
+                // Set both profile pictures
+                const imagePath = developerData.profile_picture;
+                console.log('Setting profile pictures with path:', imagePath);
+                
+                setProfilePicture(profilePicture, imagePath);
+                setProfilePicture(topbarProfilePicture, imagePath);
+
+                // Update profile information
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const statusBadge = document.getElementById('statusBadge');
+
+                if (profileName && profilePosition) {
+                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
+                    profileName.textContent = fullName || 'Developer';
+                    profilePosition.textContent = developerData.position || 'Developer';
+                }
+
+                // Update status badge
+                if (statusBadge) {
+                    const isActive = developerData.status === 'active';
+                    if (isActive) {
+                        statusBadge.className = 'status-badge status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'status-badge status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+                // Set default images on error
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                if (profilePicture) profilePicture.src = '/crm/default-profile-picture';
+                if (topbarProfilePicture) topbarProfilePicture.src = '/crm/default-profile-picture';
+            }
         }
     </script>
 </body>

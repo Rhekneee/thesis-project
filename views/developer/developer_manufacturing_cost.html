@@ -660,6 +660,7 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/side_top.js"></script>
 
     <script>
         // Sample data for manufacturing costs
@@ -708,7 +709,7 @@
         let currentSortDirection = 'asc';
 
         // Sidebar toggle functionality
-        document.getElementById('sidebar-toggle').addEventListener('click', function () {
+        function toggleSidebar() {
             var sidebar = document.getElementById('sidebar');
             var content = document.getElementById('content');
 
@@ -719,7 +720,7 @@
                 sidebar.style.display = 'none';
                 content.style.marginLeft = '0';
             }
-        });
+        }
 
         // Function to render manufacturing projects
         function renderProjects(filteredProjects = null) {
@@ -1056,8 +1057,99 @@
         // Add event listener for search input
         document.getElementById('searchBar').addEventListener('input', handleFilterChange);
 
-        // Initialize the table
-        renderProjects();
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            
+            // Set initial state
+            if (window.innerWidth < 768) {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            } else {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            }
+            
+            renderProjects();
+            getUserInfo();
+        });
+
+        // Update getUserInfo function to use the correct developer session endpoint
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/developer/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+
+                if (!sessionData.id) {
+                    throw new Error('No user ID in session');
+                }
+
+                // Fetch developer details using id from CRM routes
+                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
+                    credentials: 'include'
+                });
+
+                if (!developerResponse.ok) {
+                    throw new Error('Failed to fetch developer details');
+                }
+
+                const responseData = await developerResponse.json();
+                console.log('Developer response data:', responseData);
+
+                if (!responseData.success || !responseData.profile) {
+                    throw new Error('Invalid developer data received');
+                }
+
+                const developerData = responseData.profile;
+                console.log('Developer data:', developerData);
+
+                // Update profile pictures
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                if (developerData.profile_picture) {
+                    const filename = developerData.profile_picture.includes('/') 
+                        ? developerData.profile_picture.split('/').pop() 
+                        : developerData.profile_picture;
+                    
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                    
+                    topbarProfilePicture.src = imageUrl;
+                    topbarProfilePicture.onerror = () => {
+                        topbarProfilePicture.src = '/crm/default-profile-picture';
+                    };
+                } else {
+                    topbarProfilePicture.src = '/crm/default-profile-picture';
+                }
+
+                // Update profile info
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                
+                if (profileName) {
+                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
+                    profileName.textContent = fullName || 'Developer';
+                }
+                if (profilePosition) profilePosition.textContent = developerData.position || 'Developer';
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                if (topbarProfilePicture) {
+                    topbarProfilePicture.src = '/crm/default-profile-picture';
+                }
+            }
+        }
     </script>
 
     <!-- Cost Details Modal -->

@@ -236,9 +236,10 @@ option {
 
         <h3>Permissions</h3>
         <div class="form-group">
-            <label>Permission:</label>
+            <label for="roleSelect">Role:</label>
             <select name="role_id" id="roleSelect" required>
-                <!-- Permissions will be loaded dynamically -->
+                <option value="">Select Role...</option>
+                <!-- Roles will be loaded dynamically -->
             </select>
         </div>
 
@@ -306,11 +307,11 @@ option {
         </div>
 
         <div class="form-group">
-            <label for="editPermissionSelect">Permission</label>
-            <select id="editPermissionSelect" name="edit_permission">
-                <option value="">Loading...</option> <!-- Placeholder while fetching -->
+            <label for="editRoleSelect">Role:</label>
+            <select id="editRoleSelect" name="edit_role" disabled>
+                <option value="">Select Role...</option>
+                <!-- Roles will be loaded dynamically -->
             </select>
-
         </div>
 
         <button id="updateEmployee">Update Employee</button>
@@ -346,10 +347,15 @@ option {
         <!-- Content for Resume Submission -->
     </div>
     <script>
+<<<<<<< HEAD
     // Dynamically set API_URL based on current origin
     const API_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:4000/hr' 
         : `${window.location.origin}/hr`;
+=======
+const API_URL = "http://localhost:4000/hr";
+let userRole = null; // Add this to store the user's role
+>>>>>>> development
 
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(section => {
@@ -357,33 +363,28 @@ function showSection(sectionId) {
     });
 
     const section = document.getElementById(sectionId);
-    section.style.display = 'block';
-
-    if (sectionId === 'employeeManagement') {
-        if (userRole === 6) {
-            document.getElementById("employeeFormContainer").style.display = "block";
-        } else {
-            document.getElementById("employeeFormContainer").style.display = "none";
-        }
+    if (section) {
+        section.style.display = 'block';
     }
 }
 
-
-
-window.onload = async () => {
+// Initialize the page
+async function initializePage() {
     try {
+        // First check session
         const res = await fetch("http://localhost:4000/hr/check-session", {
-            credentials: "include", // 👈 make sure cookies are sent!
+            credentials: "include",
         });
 
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Session check failed");
 
         const session = await res.json();
+        userRole = session.user.role_id;
 
-        const roleId = session.user.role_id;
-        if (roleId === 6) {
+        if (userRole === 6) {
             showSection('employeeManagement');
-            loadRoles();
+            await loadRoles(); // Load roles for the add form
+            console.log("Roles loaded successfully");
         } else {
             redirectToLogin();
         }
@@ -391,37 +392,50 @@ window.onload = async () => {
         console.error("❌ Session check failed:", err);
         redirectToLogin();
     }
-};
+}
 
-
+// Call initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initializePage);
 
 async function loadRoles() {
     try {
         console.log("Fetching roles...");
         const response = await fetch(`${API_URL}/roles`);
 
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
 
         const roles = await response.json();
         console.log("Roles data received:", roles);
 
-        const roleSelect = document.getElementById("roleSelect");
-        roleSelect.innerHTML = '<option value="">Select Role</option>';
+        // Load roles for both add and edit forms
+        const roleSelects = ['roleSelect', 'editRoleSelect'];
+        
+        roleSelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) {
+                console.warn(`Select element ${selectId} not found`);
+                return;
+            }
 
-        if (!Array.isArray(roles) || roles.length === 0) {
-            console.warn("No roles found or invalid format.");
-            return;
-        }
+            select.innerHTML = '<option value="">Select Role</option>';
 
-        roles.forEach(role => {
-            const option = document.createElement("option");
-            option.value = role.id;
-            option.textContent = role.name;
-            roleSelect.appendChild(option);
+            if (Array.isArray(roles) && roles.length > 0) {
+                roles.forEach(role => {
+                    const option = document.createElement("option");
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    select.appendChild(option);
+                });
+                console.log(`Roles loaded into ${selectId}`);
+            } else {
+                console.warn("No roles found or invalid format");
+            }
         });
     } catch (error) {
         console.error("Error loading roles:", error);
-        alert("Error loading roles.");
+        alert("Error loading roles. Please refresh the page.");
     }
 }
 
@@ -487,11 +501,11 @@ async function loadEmployees() {
 async function populateEditForm(employee) {
     document.getElementById("editEmployeeForm").style.display = "block";
 
-    // Load permissions first
+    // Load roles first
     await loadEditRoles();
 
     // Fill form values
-    document.getElementById("editEmployeeId").value = employee.id;
+    document.getElementById("editEmployeeId").value = employee.employee_id;
     document.getElementById("editEmail").value = employee.email;
     document.getElementById("editFullName").value = employee.full_name;
     document.getElementById("editContact").value = employee.contact;
@@ -502,12 +516,12 @@ async function populateEditForm(employee) {
     document.getElementById("editEmergencyContactName").value = employee.emergency_contact_name;
     document.getElementById("editEmergencyContactRelationship").value = employee.emergency_contact_relationship;
     document.getElementById("editEmergencyContactPhone").value = employee.emergency_contact_phone;
-    document.getElementById("editPermissionSelect").value = employee.permission_id;
+    document.getElementById("editRoleSelect").value = employee.role_id;
 }
 
 // 🔹 Load Edit Permissions
 async function loadEditRoles() {
-    const select = document.getElementById("editPermissionSelect"); // Your edit dropdown
+    const select = document.getElementById("editRoleSelect"); // Changed from editPermissionSelect
     try {
         const response = await fetch(`${API_URL}/roles`);
         const roles = await response.json();
@@ -539,7 +553,7 @@ async function updateEmployee() {
         emergency_contact_name: document.getElementById("editEmergencyContactName").value,
         emergency_contact_relationship: document.getElementById("editEmergencyContactRelationship").value,
         emergency_contact_phone: document.getElementById("editEmergencyContactPhone").value,
-        permission_id: document.getElementById("editPermissionSelect").value
+        role_id: document.getElementById("editRoleSelect").value
     };
 
     try {
@@ -564,14 +578,24 @@ async function updateEmployee() {
 }
 
 // 🔹 Event Listeners
-document.getElementById("employeeForm").addEventListener("submit", addEmployee);
-document.getElementById("loadEmployees").addEventListener("click", loadEmployees);
-document.getElementById("editEmployeeForm").addEventListener("submit", e => {
-    e.preventDefault();
-    updateEmployee();
+document.addEventListener('DOMContentLoaded', () => {
+    const employeeForm = document.getElementById("employeeForm");
+    const editEmployeeForm = document.getElementById("editEmployeeForm");
+    const loadEmployeesBtn = document.getElementById("loadEmployees");
+
+    if (employeeForm) {
+        employeeForm.addEventListener("submit", addEmployee);
+    }
+    if (editEmployeeForm) {
+        editEmployeeForm.addEventListener("submit", e => {
+            e.preventDefault();
+            updateEmployee();
+        });
+    }
+    if (loadEmployeesBtn) {
+        loadEmployeesBtn.addEventListener("click", loadEmployees);
+    }
 });
-
-
 
 //attendance monitoring
         const officeLat = 14.3435377;
