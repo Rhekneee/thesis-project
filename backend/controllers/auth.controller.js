@@ -68,7 +68,9 @@ const getPermissionsForRole = async (role_id) => {
 exports.login = async (req, res) => {
     try {
         const { employee_id, password } = req.body;
-        console.log("�� Login attempt with username/userid:", employee_id);
+        console.log("🔍 DEBUG: Login attempt started");
+        console.log("🔍 DEBUG: Input credentials - employee_id/username:", employee_id);
+        console.log("🔍 DEBUG: Password provided:", password ? "Yes" : "No");
 
         // First check if it's a developer trying to log in using username
         const checkDeveloperSQL = `
@@ -78,16 +80,24 @@ exports.login = async (req, res) => {
             WHERE u.username = ? AND da.status = 'active'
         `;
         
-        console.log("🔍 Checking if developer exists with username...");
+        console.log("🔍 DEBUG: Checking developer account for username:", employee_id);
         const [developers] = await db.query(checkDeveloperSQL, [employee_id]);
+        console.log("🔍 DEBUG: Developer query result:", developers.length > 0 ? "Found" : "Not found");
         
         if (developers.length > 0) {
+            console.log("🔍 DEBUG: Developer account found, attempting password verification");
             const developer = developers[0];
+            console.log("🔍 DEBUG: Developer details - ID:", developer.id, "Username:", developer.username, "Status:", developer.status);
+            
             const isPasswordValid = await bcrypt.compare(password, developer.password);
+            console.log("🔍 DEBUG: Password verification result:", isPasswordValid ? "Valid" : "Invalid");
+            
             if (!isPasswordValid) {
+                console.log("❌ DEBUG: Developer password verification failed");
                 return res.status(401).json({ message: "Invalid credentials." });
             }
             
+            console.log("🔍 DEBUG: Fetching complete user details for developer");
             // Get user details for session using the user id
             const [userDetails] = await db.query(`
                 SELECT u.id, u.email, u.username, u.role_id, r.name AS role_name, e.employee_id
@@ -97,21 +107,29 @@ exports.login = async (req, res) => {
                 WHERE u.id = ?
             `, [developer.id]);
 
+            console.log("🔍 DEBUG: User details query result:", userDetails.length > 0 ? "Found" : "Not found");
+
             if (userDetails.length > 0) {
                 const user = userDetails[0];
+                console.log("🔍 DEBUG: Setting session for developer - ID:", user.id, "Role:", user.role_name);
                 req.session.user = {
-                    id: user.id,  // This is the reference id from users table
+                    id: user.id,
                     email: user.email,
-                    username: user.username,  // This is what they used to login
+                    username: user.username,
                     role_name: user.role_name,
                     employee_id: user.employee_id,
                     is_external: true
                 };
+                console.log("✅ DEBUG: Developer login successful");
                 return res.status(200).json({ 
                     message: "Login successful",
                     redirect: "/dashboard"
                 });
+            } else {
+                console.log("❌ DEBUG: Developer found but user details not found");
             }
+        } else {
+            console.log("🔍 DEBUG: Not a developer account, checking employee login");
         }
 
         // If not a developer, try normal employee login - ONLY through employee_id
@@ -124,33 +142,29 @@ exports.login = async (req, res) => {
             WHERE employees.employee_id = ?;
         `;
         
-        console.log("🔍 Checking if employee exists with employee_id...");
+        console.log("🔍 DEBUG: Checking employee account for ID:", employee_id);
         const [users] = await db.query(checkUserSQL, [employee_id]);
-        console.log("🔍 Employee check result:", users);
+        console.log("🔍 DEBUG: Employee query result:", users.length > 0 ? "Found" : "Not found");
 
         if (users.length === 0) {
-            console.log("❌ No user found with the provided credentials");
+            console.log("❌ DEBUG: No employee found with ID:", employee_id);
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
         const user = users[0];
-        console.log("🔍 Found user:", { 
-            id: user.id, 
-            employee_id: user.employee_id, 
-            role: user.role_name,
-            username: user.username
-        });
+        console.log("🔍 DEBUG: Employee found - ID:", user.id, "Role:", user.role_name);
 
         // Now check password using bcrypt
+        console.log("🔍 DEBUG: Attempting password verification for employee");
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log("🔍 DEBUG: Employee password verification result:", isPasswordValid ? "Valid" : "Invalid");
+        
         if (!isPasswordValid) {
-            console.log("❌ Password mismatch");
+            console.log("❌ DEBUG: Employee password verification failed");
             return res.status(401).json({ message: "Invalid password." });
         }
 
-        console.log("✅ Login successful for employee:", user.employee_id);
-
-        // Set session data
+        console.log("🔍 DEBUG: Setting session for employee");
         req.session.user = {
             id: user.id,
             email: user.email,
@@ -159,7 +173,7 @@ exports.login = async (req, res) => {
             employee_id: user.employee_id,
             is_external: false
         };
-        console.log("📝 Session data set:", req.session.user);
+        console.log("📝 DEBUG: Session data set:", req.session.user);
 
         // Determine redirect path based on role
         let redirectPath = '/dashboard';
@@ -168,15 +182,17 @@ exports.login = async (req, res) => {
         } else if (user.role_id === 26) { // Customer
             redirectPath = '/customer/dashboard';
         }
+        console.log("🔍 DEBUG: Redirect path determined:", redirectPath);
 
-        // Send JSON response for successful login
+        console.log("✅ DEBUG: Employee login successful");
         return res.status(200).json({ 
             message: "Login successful",
             redirect: redirectPath
         });
 
     } catch (error) {
-        console.error("❌ Login error:", error);
+        console.error("❌ DEBUG: Login error occurred:", error);
+        console.error("❌ DEBUG: Error stack:", error.stack);
         return res.status(401).json({ message: error.message });
     }
 };
