@@ -272,74 +272,126 @@
                         <div class="form-text">Dynamic virtual tour feature will be available in future updates.</div>
                     </div>
 
-                    <!-- Add Coming Soon Modal -->
-                    <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="comingSoonModalLabel">Coming Soon!</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>The dynamic virtual tour feature is coming soon! Your upload will not be saved at this time.</p>
-                                    <p>Please check back later for this exciting feature.</p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
-                                </div>
-                            </div>
+            <!-- Coming Soon Modal -->
+            <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="comingSoonModalLabel">Coming Soon!</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>The dynamic virtual tour feature is coming soon! Your upload will not be saved at this time.</p>
+                            <p>Please check back later for this exciting feature.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <button type="submit" class="btn btn-primary" id="submitPropertyBtn">
-                        Add Property
-                    </button>
-                </form>
+            <button type="submit" class="btn btn-primary" id="submitPropertyBtn">
+                Add Property
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Success!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Property added successfully!
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.href='/crm/property_list'">View Properties</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Success Message Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="successModalLabel">Success!</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Property added successfully!
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.href='/crm/property_list'">View Properties</button>
-                </div>
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="errorModalBody">
+                An error occurred while adding the property.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Error Message Modal -->
-    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="errorModalBody">
-                    An error occurred while adding the property.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
+        // Function to populate locations
+        async function fetchLocations() {
+            const locationSelect = document.getElementById('location');
+            if (!locationSelect) {
+                console.error('Location select element not found!');
+                return;
+            }
+
+            try {
+                console.log('Fetching locations...');
+                const response = await fetch('/crm/properties/locations');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received data:', data);
+                
+                // Clear existing options
+                locationSelect.innerHTML = '<option value="">Select a location</option>';
+                
+                if (data.success && Array.isArray(data.locations) && data.locations.length > 0) {
+                    console.log(`Adding ${data.locations.length} locations to select`);
+                    
+                    data.locations.forEach(location => {
+                        const option = new Option(location, location);
+                        locationSelect.add(option);
+                    });
+                    
+                    console.log('Select element after population:', {
+                        optionsCount: locationSelect.options.length,
+                        options: Array.from(locationSelect.options).map(opt => opt.value)
+                    });
+                } else {
+                    console.warn('No locations found in response:', data);
+                }
+            } catch (error) {
+                console.error('Error fetching locations:', error);
+                // Show error in the select element
+                locationSelect.innerHTML = '<option value="">Error loading locations</option>';
+            }
+        }
+
+        // Call fetchLocations when the page is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchLocations);
+        } else {
+            fetchLocations();
+        }
+
         // Handle custom property type input
         document.getElementById('propertyTypeSelect').addEventListener('change', function() {
             const customContainer = document.getElementById('customPropertyTypeContainer');
@@ -387,23 +439,24 @@
             const form = this;
             const formData = new FormData();
 
-            // Validate property image
-            const propertyImage = document.getElementById('property_image').files[0];
-            if (!propertyImage) {
-                document.getElementById('errorModalBody').textContent = 'Please select a property image.';
-                $('#errorModal').modal('show');
-                return;
-            }
+            // Disable submit button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
 
-            // Validate property image size and type
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            
-            if (propertyImage.size > maxSize) {
-                document.getElementById('errorModalBody').textContent = 'Property image must be less than 5MB.';
-                $('#errorModal').modal('show');
-                return;
-            }
+            try {
+                // Validate property image
+                const propertyImage = document.getElementById('property_image').files[0];
+                if (!propertyImage) {
+                    throw new Error('Please select a property image.');
+                }
+
+                // Validate property image size and type
+                const maxSize = 2 * 1024 * 1024; // 2MB
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                
+                if (propertyImage.size > maxSize) {
+                    throw new Error('Property image must be less than 2MB. Please choose a smaller image.');
+                }
 
             if (!allowedTypes.includes(propertyImage.type)) {
                 document.getElementById('errorModalBody').textContent = 'Property image must be JPEG, PNG, or GIF.';
@@ -437,9 +490,10 @@
                     body: formData
                 });
 
-                const result = await response.json();
+                const result = await uploadPromise;
+                console.log('Server response:', result);
 
-                if (response.ok) {
+                if (result.success) {
                     $('#successModal').modal('show');
                 } else {
                     throw new Error(result.error || 'Failed to create property');
@@ -449,6 +503,7 @@
                 document.getElementById('errorModalBody').textContent = error.message || 'An error occurred while adding the property. Please try again.';
                 $('#errorModal').modal('show');
             } finally {
+                // Re-enable submit button
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Add Property';
             }
