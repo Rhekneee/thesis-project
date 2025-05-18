@@ -466,44 +466,87 @@
   </div>
 
   <div id="content">
-    <h2>Request Material</h2>
+    <h2>Purchase Requests</h2>
 
-    <div class="request-form">
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="entriesPerPageRequest" class="form-label">Entries per page:</label>
-          <select id="entriesPerPageRequest" class="form-select status-filter" onchange="setEntriesPerPageRequest()">
-            <option value="5">5 entries</option>
-            <option value="10">10 entries</option>
-            <option value="15">15 entries</option>
-            <option value="20">20 entries</option>
+    <!-- New Purchase Request Form -->
+    <form id="purchaseRequestForm" class="request-form mb-4">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="requestDate" class="form-label">Request Date</label>
+          <input type="date" class="form-control" id="requestDate" required />
+        </div>
+        <div class="col-md-2">
+          <label for="department" class="form-label">Department</label>
+          <input type="text" class="form-control" id="department" value="logistics" readonly />
+        </div>
+        <div class="col-md-2">
+          <label for="materialType" class="form-label">Material Type</label>
+          <select class="form-select" id="materialType" required>
+            <option value="">Select Material</option>
+            <option value="Cement">Cement</option>
+            <option value="Concrete">Concrete</option>
+            <option value="Steel">Steel</option>
+            <option value="Rebar">Rebar</option>
+            <option value="Gravel">Gravel</option>
+            <option value="Sand">Sand</option>
+            <option value="Wood / Lumber">Wood / Lumber</option>
+            <option value="Bricks">Bricks</option>
+            <option value="Tiles">Tiles</option>
+            <option value="Glass">Glass</option>
+            <option value="Asphalt">Asphalt</option>
+            <option value="PVC Pipes">PVC Pipes</option>
+            <option value="Copper Wiring">Copper Wiring</option>
+            <option value="Aluminum Sheets">Aluminum Sheets</option>
+            <option value="Paint">Paint</option>
+            <option value="Insulation">Insulation</option>
+            <option value="Drywall / Gypsum">Drywall / Gypsum</option>
           </select>
         </div>
+        <div class="col-md-1">
+          <label for="quantity" class="form-label">Quantity</label>
+          <input type="number" class="form-control" id="quantity" min="1" required />
+        </div>
+        <div class="col-md-1">
+          <label for="unit" class="form-label">Unit</label>
+          <input type="text" class="form-control" id="unit" required />
+        </div>
+        <div class="col-md-3">
+          <label for="justification" class="form-label">Justification</label>
+          <input type="text" class="form-control" id="justification" required />
+        </div>
       </div>
+      <div class="mt-3 text-end">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Submit Request</button>
+      </div>
+    </form>
 
-      <div class="materials-list">
-        <h5>Request List</h5>
-        <div class="table-responsive mb-3">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Request ID</th>
-                <th>Project</th>
-                <th>Request Date</th>
-                <th>Approved Date</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="requestBody">
-              <!-- Table content will be dynamically inserted here -->
-            </tbody>
-          </table>
-        </div>
-
-        <div id="paginationRequest" class="pagination">
-          <!-- Pagination buttons will be dynamically inserted here -->
-        </div>
+    <div class="materials-list">
+      <h5>Purchase Request List</h5>
+      <div class="table-responsive mb-3">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Request Date</th>
+              <th>Requested By</th>
+              <th>Department</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Justification</th>
+              <th>Status</th>
+              <th>Approved By</th>
+              <th>Approved Date</th>
+              <th>Remarks</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="purchaseRequestBody">
+            <!-- Table content will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </div>
+      <div id="paginationPurchaseRequest" class="pagination">
+        <!-- Pagination buttons will be dynamically inserted here -->
       </div>
     </div>
 
@@ -878,6 +921,119 @@
     } else {
       initializePage();
     }
+
+    // Purchase Requests JS
+    let purchaseRequests = [];
+    let purchaseRequestsPerPage = 5;
+    let currentPurchaseRequestPage = 1;
+    let filteredPurchaseRequests = [];
+
+    // Fetch purchase requests from backend
+    async function fetchPurchaseRequests() {
+      try {
+        const response = await fetch('/scm/purchase_requests');
+        if (!response.ok) throw new Error('Failed to fetch purchase requests');
+        purchaseRequests = await response.json();
+        filteredPurchaseRequests = [...purchaseRequests];
+        renderPurchaseRequestTable();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    // Render purchase request table
+    function renderPurchaseRequestTable() {
+      const tableBody = document.getElementById('purchaseRequestBody');
+      tableBody.innerHTML = '';
+      const start = (currentPurchaseRequestPage - 1) * purchaseRequestsPerPage;
+      const end = currentPurchaseRequestPage * purchaseRequestsPerPage;
+      const currentRequests = filteredPurchaseRequests.slice(start, end);
+      currentRequests.forEach(request => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${request.request_id}</td>
+          <td>${request.request_date ? request.request_date.split('T')[0] : ''}</td>
+          <td>${request.requested_by}</td>
+          <td>${request.department}</td>
+          <td>${request.quantity}</td>
+          <td>${request.unit}</td>
+          <td>${request.justification}</td>
+          <td><span class="badge bg-${getStatusColor(request.status)}">${request.status}</span></td>
+          <td>${request.approved_by || ''}</td>
+          <td>${request.approved_date ? request.approved_date.split('T')[0] : ''}</td>
+          <td>${request.remarks || ''}</td>
+          <td><!-- Action buttons here if needed --></td>
+        `;
+        tableBody.appendChild(row);
+      });
+      renderPurchaseRequestPagination();
+    }
+
+    function renderPurchaseRequestPagination() {
+      const paginationControls = document.getElementById('paginationPurchaseRequest');
+      const totalPages = Math.ceil(filteredPurchaseRequests.length / purchaseRequestsPerPage);
+      paginationControls.innerHTML = '';
+      if (currentPurchaseRequestPage > 1) {
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '&laquo;';
+        prevButton.onclick = () => goToPurchaseRequestPage(currentPurchaseRequestPage - 1);
+        paginationControls.appendChild(prevButton);
+      }
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToPurchaseRequestPage(i);
+        if (i === currentPurchaseRequestPage) pageButton.classList.add('active');
+        paginationControls.appendChild(pageButton);
+      }
+      if (currentPurchaseRequestPage < totalPages) {
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '&raquo;';
+        nextButton.onclick = () => goToPurchaseRequestPage(currentPurchaseRequestPage + 1);
+        paginationControls.appendChild(nextButton);
+      }
+    }
+
+    function goToPurchaseRequestPage(page) {
+      currentPurchaseRequestPage = page;
+      renderPurchaseRequestTable();
+    }
+
+    // Handle form submission
+    const purchaseRequestForm = document.getElementById('purchaseRequestForm');
+    purchaseRequestForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const request_date = document.getElementById('requestDate').value;
+      const department = document.getElementById('department').value.trim();
+      const material_type = document.getElementById('materialType').value;
+      const quantity = document.getElementById('quantity').value;
+      const unit = document.getElementById('unit').value.trim();
+      const justification = document.getElementById('justification').value.trim();
+      if (!request_date || !department || !material_type || !quantity || !unit || !justification) {
+        alert('Please fill out all fields.');
+        return;
+      }
+      try {
+        const response = await fetch('/scm/purchase_requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_date, department, material_type, quantity, unit, justification })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          alert('Purchase request submitted successfully!');
+          purchaseRequestForm.reset();
+          fetchPurchaseRequests();
+        } else {
+          alert(result.error || 'Failed to submit purchase request.');
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+
+    // Fetch purchase requests on page load
+    fetchPurchaseRequests();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
