@@ -3,288 +3,314 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/public/css/scm_style.css">
-  <script src="/public/js/app.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-  <title>Dashboard UI</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/js/side_top.js"></script>
+  <title>Outside Purchases</title>
+  <style>
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .material-list {
+      margin-top: 20px;
+    }
+    .material-item {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-add-material {
+      margin-top: 10px;
+    }
+    .table th {
+      background-color: #f8f9fa;
+    }
+    .materials-list {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+    .recent-requests {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-top: 30px;
+    }
+    .recent-requests h4 {
+      color: #495057;
+      margin-bottom: 20px;
+    }
+    .table {
+      background: white;
+      border-radius: 5px;
+    }
+    .table thead {
+      background: #f8f9fa;
+    }
+  </style>
 </head>
 <body>
-  <div class="sidebar">
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name"></div>
+                      <div class="profile-position"></div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Leave Request</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Payroll Processed</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                      <span class="profile-name">John Doe</span>
+                      <span class="profile-position">HR Manager</span>
+                  </div>
+              </div>
+              
+              <!-- Notification Dropdown -->
+              <div class="notification-dropdown" id="notificationDropdown">
+                  <div class="notification-header">
+                      <span>Notifications</span>
+                      <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Leave Request</div>
+                      <div class="notification-time">5 minutes ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">Payroll Processed</div>
+                      <div class="notification-time">1 hour ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Employee Added</div>
+                      <div class="notification-time">2 hours ago</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h1>SCM</h1>
-        <button id="toggleSidebar">☰</button>
-      </div>
-      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
-      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
-      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
-      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
-      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
-      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
-      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
-      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
-
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
   </div>
-  <div class="main-content">
-    <div class="top-bar">
-        <button id="addItemBtn" class="add-item-btn">+ Add Purchase</button>
-      <input type="text" id="requestSearch" class="search-bar2" placeholder="Search requests...">
-    </div>
-    <div class="card">
-      <h2>Outside Purchase</h2>
+    <ul class="list-unstyled">
+      <li class="nav-item">
+        <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+      </li>
       
-      <table class="material-table request-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Cost</th>
-            <th>Site</th>
-            <th>Date</th>
-            <th>Reason</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="outsideBody">
-          <tr>
-            <td>REQ-001</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>5000</td>
-            <td>Site A</td>
-            <td>03/01/2025</td>
-            <td>Emergency</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-
-          <tr>
-            <td>REQ-002</td>
-            <td>Cement</td>
-            <td>100</td>
-            <td>1000</td>
-            <td>Site B</td>
-            <td>03/02/2025</td>
-            <td>Ewan</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <tr>
-            <td>REQ-001</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>5000</td>
-            <td>Site A</td>
-            <td>03/01/2025</td>
-            <td>Emergency</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <tr>
-            <td>REQ-001</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>5000</td>
-            <td>Site A</td>
-            <td>03/01/2025</td>
-            <td>Emergency</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <tr>
-            <td>REQ-001</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>5000</td>
-            <td>Site A</td>
-            <td>03/01/2025</td>
-            <td>Emergency</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <tr>
-            <td>REQ-001</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>5000</td>
-            <td>Site A</td>
-            <td>03/01/2025</td>
-            <td>Emergency</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <!-- You can add more sample rows here -->
-        </tbody>
-      </table>
-      <div class="pagination" id="outsidePagination">
-        <a href="#" class="page-arrow">&lt;</a>
-        <a href="#" class="page-number active">1</a>
-        <a href="#" class="page-number">2</a>
-        <a href="#" class="page-number">3</a>
-        <a href="#" class="page-number">4</a>
-        <span class="dots">...</span>
-        <a href="#" class="page-arrow">&gt;</a>
-      </div>
-    </div>
-    
-    
+      <li class="nav-item">
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
+      </li>
      
-    
+      <li class="nav-item">
+        <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+      </li>
+      <li class="nav-item">
+          <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+      </li>
+      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+    </ul>
   </div>
-  
 
-<!-- Modal -->
-<div id="addItemModal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <h2>Add Outside Purchase</h2><br><br>
-    <form id="addItemForm">
-      <input type="text" id="itemName" placeholder="Item Name" required />
-      <input type="number" id="itemQuantity" placeholder="Quantity" required />
-      <input type="number" id="itemCost" placeholder="Cost" required />
-      <input type="text" id="itemSite" placeholder="Site" required />
-      <input type="date" id="itemDate" required />
-      <input type="text" id="itemReason" placeholder="Reason" required />
-      
-      <div style="display: flex; justify-content: center; width: 100%;">
-        <button type="submit">Add</button>
+  <div id="content">
+    <h2>Outside Purchases</h2>
+
+    <div class="request-form">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="outsidePerPage" class="form-label">Entries per page:</label>
+          <select id="outsidePerPage" class="form-select" onchange="setOutsidePerPage()">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
       </div>
-    </form>
+
+      <div class="materials-list">
+        <h5>Outside Purchases List</h5>
+        <div class="table-responsive mb-3">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Reimbursement ID</th>
+                <th>Employee Name</th>
+                <th>Quantity</th>
+                <th>Cost</th>
+                <th>Site</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="outsideBody">
+              <!-- Data rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="paginationControls" class="pagination">
+          <!-- Pagination buttons will be inserted here -->
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
-
-
-
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    /* Outside Purchase Pagination */
-    const outsideRowsPerPage = 5;
-    const outsideTableBody = document.getElementById("outsideBody");
-    const outsideRows = Array.from(outsideTableBody?.querySelectorAll("tr") || []);
-    const outsidePagination = document.getElementById("outsidePagination");
-  
-    function paginateOutsideTable() {
-      const totalPages = Math.ceil(outsideRows.length / outsideRowsPerPage);
-      let currentPage = 1;
-  
-      function showPage(page) {
-        const start = (page - 1) * outsideRowsPerPage;
-        const end = start + outsideRowsPerPage;
-  
-        outsideRows.forEach((row, index) => {
-          row.style.display = (index >= start && index < end) ? "" : "none";
-        });
-  
-        updateOutsidePagination(page);
+  <script>
+    // Sidebar toggle functionality
+    document.getElementById('sidebar-toggle').onclick = function() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content');
+      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+        sidebar.style.display = 'block';
+        content.style.marginLeft = '300px';
+      } else {
+        sidebar.style.display = 'none';
+        content.style.marginLeft = '0';
       }
-  
-      function updateOutsidePagination(current) {
-        outsidePagination.innerHTML = "";
-  
-        // Prev
-        const prev = document.createElement("a");
-        prev.href = "#";
-        prev.className = "page-arrow";
-        prev.innerHTML = "&lt;";
-        prev.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (currentPage > 1) {
-            currentPage--;
-            showPage(currentPage);
-          }
-        });
-        outsidePagination.appendChild(prev);
-  
-        // Page Numbers
-        for (let i = 1; i <= totalPages; i++) {
-          const btn = document.createElement("a");
-          btn.href = "#";
-          btn.className = "page-number" + (i === current ? " active" : "");
-          btn.textContent = i;
-          btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            currentPage = i;
-            showPage(i);
-          });
-          outsidePagination.appendChild(btn);
+    };
+
+    const outsidePurchases = [
+      { id: 1, item: 'Steel Pipe', quantity: 20, cost: 1500, site: 'Site A', date: '2024-04-01', reason: 'Urgent fix' },
+      { id: 2, item: 'Paint', quantity: 10, cost: 800, site: 'Site B', date: '2024-04-15', reason: 'Repainting gate' },
+      { id: 3, item: 'Welding Rods', quantity: 30, cost: 450, site: 'Site C', date: '2024-04-18', reason: 'Reinforcement' },
+      { id: 4, item: 'Tiles', quantity: 100, cost: 5000, site: 'Site D', date: '2024-04-19', reason: 'Flooring' },
+      { id: 5, item: 'Cement', quantity: 15, cost: 1000, site: 'Site A', date: '2024-04-20', reason: 'Backup' },
+      { id: 6, item: 'Gravel', quantity: 50, cost: 1200, site: 'Site B', date: '2024-04-21', reason: 'Foundation mix' }
+    ];
+
+    let outsidePerPage = 5;
+    let outsideCurrentPage = 1;
+    let filteredOutside = [...outsidePurchases];
+
+    function renderOutsideTable() {
+      const tableBody = document.getElementById('outsideBody');
+      tableBody.innerHTML = '';
+      const start = (outsideCurrentPage - 1) * outsidePerPage;
+      const end = outsideCurrentPage * outsidePerPage;
+      const currentItems = filteredOutside.slice(start, end);
+
+      currentItems.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.id}</td>
+          <td>${entry.employeeeName}</td>
+          <td>${entry.datePurchase}</td>
+          <td>${entry.reimbursementDate}</td>
+          <td>${entry.paymentmethod}</td>
+          <td>${entry.date}</td>
+          <td>${entry.reason}</td>
+          <td>
+            <button class="action-btn">Edit</button>
+            <button class="action-btn">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      renderOutsidePagination();
+    }
+
+    function renderOutsidePagination() {
+      const paginationControls = document.getElementById('paginationControls');
+      const totalPages = Math.ceil(filteredOutside.length / outsidePerPage);
+      paginationControls.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToOutsidePage(i);
+        if (i === outsideCurrentPage) {
+          pageButton.classList.add('active');
         }
-  
-        // Next
-        const next = document.createElement("a");
-        next.href = "#";
-        next.className = "page-arrow";
-        next.innerHTML = "&gt;";
-        next.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (currentPage < totalPages) {
-            currentPage++;
-            showPage(currentPage);
-          }
-        });
-        outsidePagination.appendChild(next);
+        paginationControls.appendChild(pageButton);
       }
-  
-      if (outsideRows.length) showPage(currentPage);
-    }
-  
-    if (outsideTableBody) {
-      paginateOutsideTable();
     }
 
-// Modal functionality
-const addItemBtn = document.getElementById("addItemBtn");
-const addItemModal = document.getElementById("addItemModal");
-const closeBtn = document.querySelector(".close-btn");
-
-if (addItemBtn && addItemModal && closeBtn) {
-  addItemBtn.addEventListener("click", () => {
-    addItemModal.style.display = "block";
-  });
-
-  closeBtn.addEventListener("click", () => {
-    addItemModal.style.display = "none";
-  });
-
-  window.addEventListener("click", (event) => {
-    if (event.target === addItemModal) {
-      addItemModal.style.display = "none";
+    function goToOutsidePage(page) {
+      outsideCurrentPage = page;
+      renderOutsideTable();
     }
-  });
-}
 
+    function setOutsidePerPage() {
+      outsidePerPage = parseInt(document.getElementById('outsidePerPage').value);
+      outsideCurrentPage = 1;
+      renderOutsideTable();
+    }
 
+    function filterOutside() {
+      const searchTerm = document.getElementById('searchOutside').value.toLowerCase();
+      filteredOutside = outsidePurchases.filter(entry => entry.item.toLowerCase().includes(searchTerm));
+      outsideCurrentPage = 1;
+      renderOutsideTable();
+    }
 
-
-
-  });
-
-
-
-
+    // Initial render
+    renderOutsideTable();
   </script>
-  
-  
-
- 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

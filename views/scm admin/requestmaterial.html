@@ -3,174 +3,882 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/public/css/scm_style.css">
-  <script src="/public/js/app.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/js/side_top.js"></script>
+  <title>Request Material</title>
+  <style>
+  
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .material-list {
+      margin-top: 20px;
+    }
+    .material-item {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-add-material {
+      margin-top: 10px;
+    }
+    .table th {
+      background-color: #f8f9fa;
+    }
+    .materials-list {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+    .recent-requests {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-top: 30px;
+    }
+    .recent-requests h4 {
+      color: #495057;
+      margin-bottom: 20px;
+    }
+    .table {
+      background: white;
+      border-radius: 5px;
+    }
+    .table thead {
+      background: #f8f9fa;
+    }
+    /* Modal Styles */
+    .modal-content {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
 
-  <title>Dashboard UI</title>
+    .modal-header {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      padding: 1.75rem 2rem;
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .modal-title i {
+      margin-right: 12px;
+      font-size: 1.3em;
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+
+    .request-info {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .request-info .row {
+      margin-bottom: 1.25rem;
+    }
+
+    .request-info .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 0.85em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .materials-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .materials-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .materials-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb {
+      background: #c5cae9;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb:hover {
+      background: #9fa8da;
+    }
+
+    .material-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .material-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #c5cae9;
+    }
+
+    .material-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .material-icon {
+      width: 40px;
+      height: 40px;
+      background: #e8eaf6;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5c6bc0;
+      font-size: 1.2em;
+    }
+
+    .material-name {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #1a237e;
+      flex: 1;
+    }
+
+    .material-details {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .material-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .detail-label {
+      font-size: 0.8em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+
+    .modal-footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #e9ecef;
+      background: #fff;
+      border-radius: 0 0 16px 16px;
+    }
+
+    .modal-footer .btn {
+      padding: 0.7rem 1.75rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-footer .btn i {
+      font-size: 1.1em;
+    }
+
+    .modal-footer .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .btn-close:hover {
+      opacity: 1;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background-color: white;
+      color: #007bff;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button:disabled {
+      background-color: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .status-filter {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      background-color: white;
+      min-width: 150px;
+      max-width: 200px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: white;
+      color: #212529;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+  </style>
 </head>
 <body>
-  <div class="sidebar">
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name"></div>
+                      <div class="profile-position"></div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Leave Request</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Payroll Processed</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                      <span class="profile-name">John Doe</span>
+                      <span class="profile-position">HR Manager</span>
+                  </div>
+              </div>
+              
+              <!-- Notification Dropdown -->
+              <div class="notification-dropdown" id="notificationDropdown">
+                  <div class="notification-header">
+                      <span>Notifications</span>
+                      <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Leave Request</div>
+                      <div class="notification-time">5 minutes ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">Payroll Processed</div>
+                      <div class="notification-time">1 hour ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Employee Added</div>
+                      <div class="notification-time">2 hours ago</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h1>SCM</h1>
-        <button id="toggleSidebar">☰</button>
-      </div>
-      <a href="/scm/scm_dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></a> 
-      <a href="/scm/inventory"><i class="bi bi-box"></i><span>Inventory</span></a>
-      <a href="/scm/supplier"><i class="bi bi-person-lines-fill"></i><span>Supplier</span></a>
-      <a href="/scm/transfer"><i class="bi bi-truck"></i><span>Material Transfer</span></a>
-      <a href="/scm/requestmaterial"><i class="bi bi-plus-circle"></i><span>Request Material</span></a>
-      <a href="/scm/outside"><i class="bi bi-receipt"></i><span>Outside Purchases</span></a>
-      <a href="/scm/contract"><i class="bi bi-file-earmark-text"></i><span>Contract</span></a>
-      <a href="/logout" class="logout"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
-
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
   </div>
-  <div class="main-content">
-    <div class="top-bar">
-      <input type="text" id="requestSearch" class="search-bar" placeholder="Search requests...">
-    </div>
-    <div class="card">
-      <h2>Material Requests</h2>
+    <ul class="list-unstyled">
+      <li class="nav-item">
+        <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+      </li>
       
-      <table class="material-table request-table">
-        <thead>
-          <tr>
-            <th>Request ID</th>
-            <th>Site</th>
-            <th>Material</th>
-            <th>Qty</th>
-            <th>Requested By</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="requestBody">
-          <tr>
-            <td>REQ-001</td>
-            <td>Site A</td>
-            <td>Cement</td>
-            <td>50</td>
-            <td>John Doe</td>
-            <td>03/01/2025</td>
-            <td>Pending</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
+      <li class="nav-item">
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
+      </li>
+     
+      <li class="nav-item">
+        <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+      </li>
+      <li class="nav-item">
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+      </li>
+      <li class="nav-item">
+          <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+      </li>
+      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+    </ul>
+  </div>
 
-          <tr>
-            <td>REQ-002</td>
-            <td>Site B</td>
-            <td>Paint</td>
-            <td>100</td>
-            <td>John Depp</td>
-            <td>03/02/2025</td>
-            <td>Approved</td>
-            <td>
-              <button class="action-btn">View</button>
-              <button class="action-btn">Edit</button>
-              <button class="action-btn">Delete</button>
-            </td>
-          </tr>
-          <!-- You can add more sample rows here -->
-        </tbody>
-      </table>
-      <div class="pagination" id="requestPagination">
-        <a href="#" class="page-arrow">&lt;</a>
-        <a href="#" class="page-number active">1</a>
-        <a href="#" class="page-number">2</a>
-        <a href="#" class="page-number">3</a>
-        <a href="#" class="page-number">4</a>
-        <span class="dots">...</span>
-        <a href="#" class="page-arrow">&gt;</a>
+  <div id="content">
+    <h2>Request Material</h2>
+
+    <div class="request-form">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="entriesPerPageRequest" class="form-label">Entries per page:</label>
+          <select id="entriesPerPageRequest" class="form-select status-filter" onchange="setEntriesPerPageRequest()">
+            <option value="5">5 entries</option>
+            <option value="10">10 entries</option>
+            <option value="15">15 entries</option>
+            <option value="20">20 entries</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="materials-list">
+        <h5>Request List</h5>
+        <div class="table-responsive mb-3">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Project</th>
+                <th>Request Date</th>
+                <th>Approved Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="requestBody">
+              <!-- Table content will be dynamically inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="paginationRequest" class="pagination">
+          <!-- Pagination buttons will be dynamically inserted here -->
+        </div>
       </div>
     </div>
-    
-    
-     
-    
+
+    <!-- Request Details Modal -->
+    <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="requestDetailsModalLabel">
+              <i class="fas fa-file-invoice"></i> Request Details
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="request-info">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="info-label">Request ID</div>
+                    <div id="modalRequestId" class="info-value"></div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-label">Project</div>
+                    <div id="modalProject" class="info-value"></div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="info-label">Request Date</div>
+                    <div id="modalRequestDate" class="info-value"></div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-label">Status</div>
+                    <div id="modalStatus" class="info-value"></div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="info-label">Approved Date</div>
+                    <div id="modalApprovalDate" class="info-value"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="materials-section">
+                <h6><i class="fas fa-boxes"></i>Requested Materials</h6>
+                <div id="modalMaterials" class="materials-grid"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="d-flex justify-content-between w-100">
+              <div id="actionButtons" class="d-flex gap-2">
+                <!-- Action buttons will be dynamically inserted here -->
+              </div>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fas fa-times"></i> Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-document.addEventListener("DOMContentLoaded", () => {
-  /* Request Pagination */
-  const requestRowsPerPage = 5;
-  const requestTableBody = document.getElementById("requestBody");
-  const requestRows = Array.from(requestTableBody?.querySelectorAll("tr") || []);
-  const requestPagination = document.getElementById("requestPagination");
-
-  function paginateRequestTable() {
-    const totalPages = Math.ceil(requestRows.length / requestRowsPerPage);
-    let currentPage = 1;
-
-    function showPage(page) {
-      const start = (page - 1) * requestRowsPerPage;
-      const end = start + requestRowsPerPage;
-
-      requestRows.forEach((row, index) => {
-        row.style.display = (index >= start && index < end) ? "" : "none";
-      });
-
-      updateRequestPagination(page);
-    }
-
-    function updateRequestPagination(current) {
-      requestPagination.innerHTML = "";
-
-      // Prev
-      const prev = document.createElement("a");
-      prev.href = "#";
-      prev.className = "page-arrow";
-      prev.innerHTML = "&lt;";
-      prev.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (currentPage > 1) {
-          currentPage--;
-          showPage(currentPage);
-        }
-      });
-      requestPagination.appendChild(prev);
-
-      // Page Numbers
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("a");
-        btn.href = "#";
-        btn.className = "page-number" + (i === current ? " active" : "");
-        btn.textContent = i;
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          currentPage = i;
-          showPage(i);
-        });
-        requestPagination.appendChild(btn);
+    // Sidebar toggle functionality
+    document.getElementById('sidebar-toggle').onclick = function() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content');
+      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+        sidebar.style.display = 'block';
+        content.style.marginLeft = '300px';
+      } else {
+        sidebar.style.display = 'none';
+        content.style.marginLeft = '0';
       }
+    };
 
-      // Next
-      const next = document.createElement("a");
-      next.href = "#";
-      next.className = "page-arrow";
-      next.innerHTML = "&gt;";
-      next.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (currentPage < totalPages) {
-          currentPage++;
-          showPage(currentPage);
-        }
+    const requests = [
+      { requestid: 'R001', project: 'Project A', requestdate: '2024-01-01', approveddate: '2024-01-02', status: 'Pending'},
+      { requestid: 'R002', project: 'Project B', requestdate: '2024-01-03', approveddate: '2024-01-04', status: 'Approved'},
+      { requestid: 'R003', project: 'Project C', requestdate: '2024-01-05', approveddate: '2024-01-06', status: 'Rejected'},
+      { requestid: 'R004', project: 'Project D', requestdate: '2024-01-07', approveddate: '2024-01-08', status: 'In Transit'},
+      { requestid: 'R005', project: 'Project E', requestdate: '2024-01-09', approveddate: '2024-01-10', status: 'Delivered'},
+      { requestid: 'R006', project: 'Project F', requestdate: '2024-01-11', approveddate: '2024-01-12', status: 'Pending'},
+      { requestid: 'R007', project: 'Project G', requestdate: '2024-01-13', approveddate: '2024-01-14', status: 'Approved'},
+      { requestid: 'R008', project: 'Project H', requestdate: '2024-01-15', approveddate: '2024-01-16', status: 'Rejected'},
+      { requestid: 'R009', project: 'Project I', requestdate: '2024-01-17', approveddate: '2024-01-18', status: 'In Transit'},
+      { requestid: 'R010', project: 'Project J', requestdate: '2024-01-19', approveddate: '2024-01-20', status: 'Delivered'},
+    ];
+
+    let requestsPerPage = 5;
+    let currentRequestPage = 1;
+    let filteredRequests = [...requests];
+
+    function renderRequestTable() {
+      const tableBody = document.getElementById('requestBody');
+      tableBody.innerHTML = '';
+      const start = (currentRequestPage - 1) * requestsPerPage;
+      const end = currentRequestPage * requestsPerPage;
+      const currentRequests = filteredRequests.slice(start, end);
+
+      currentRequests.forEach(request => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${request.requestid}</td>
+          <td>${request.project}</td>
+          <td>${request.requestdate}</td>
+          <td>${request.approveddate}</td>
+          <td><span class="badge bg-${getStatusColor(request.status)}">${request.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="viewRequestDetails('${request.requestid}')" title="View Details">
+              <i class="fas fa-eye"></i> View
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(row);
       });
-      requestPagination.appendChild(next);
+
+      renderRequestPagination();
     }
 
-    if (requestRows.length) showPage(currentPage);
-  }
+    function getStatusColor(status) {
+      switch(status) {
+        case 'Pending': return 'warning';
+        case 'Approved': return 'success';
+        case 'Rejected': return 'danger';
+        case 'In Transit': return 'primary';
+        case 'Delivered': return 'info';
+        default: return 'secondary';
+      }
+    }
 
-  if (requestTableBody) {
-    paginateRequestTable();
-  }
-});
-</script>
+    function renderRequestPagination() {
+      const paginationControls = document.getElementById('paginationRequest');
+      const totalPages = Math.ceil(filteredRequests.length / requestsPerPage);
+      
+      paginationControls.innerHTML = '';
+      
+      if (currentRequestPage > 1) {
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '&laquo;';
+        prevButton.onclick = () => goToRequestPage(currentRequestPage - 1);
+        paginationControls.appendChild(prevButton);
+      }
+      
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToRequestPage(i);
+        if (i === currentRequestPage) pageButton.classList.add('active');
+        paginationControls.appendChild(pageButton);
+      }
+      
+      if (currentRequestPage < totalPages) {
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '&raquo;';
+        nextButton.onclick = () => goToRequestPage(currentRequestPage + 1);
+        paginationControls.appendChild(nextButton);
+      }
+    }
 
+    function goToRequestPage(page) {
+      currentRequestPage = page;
+      renderRequestTable();
+    }
+
+    function setEntriesPerPageRequest() {
+      const select = document.getElementById('entriesPerPageRequest');
+      requestsPerPage = parseInt(select.value);
+      currentRequestPage = 1;
+      renderRequestTable();
+    }
+
+    function filterRequests() {
+      const searchTerm = document.getElementById('searchRequest').value.toLowerCase();
+      filteredRequests = requests.filter(r => 
+        r.project.toLowerCase().includes(searchTerm) ||
+        r.requestid.toLowerCase().includes(searchTerm)
+      );
+      currentRequestPage = 1;
+      renderRequestTable();
+    }
+
+    function viewRequestDetails(requestId) {
+      const request = requests.find(r => r.requestid === requestId);
+      if (request) {
+        // Update request info
+        document.getElementById('modalRequestId').textContent = request.requestid;
+        document.getElementById('modalProject').textContent = request.project;
+        document.getElementById('modalRequestDate').textContent = request.requestdate;
+        document.getElementById('modalApprovalDate').textContent = request.approveddate || '-';
+        
+        // Update status with appropriate badge
+        let statusBadge;
+        switch(request.status) {
+          case 'Pending':
+            statusBadge = '<span class="badge bg-warning">Pending</span>';
+            break;
+          case 'Approved':
+            statusBadge = '<span class="badge bg-success">Approved</span>';
+            break;
+          case 'Rejected':
+            statusBadge = '<span class="badge bg-danger">Rejected</span>';
+            break;
+          case 'In Transit':
+            statusBadge = '<span class="badge bg-primary">In Transit</span>';
+            break;
+          case 'Delivered':
+            statusBadge = '<span class="badge bg-info">Delivered</span>';
+            break;
+          default:
+            statusBadge = '<span class="badge bg-secondary">Unknown</span>';
+        }
+        document.getElementById('modalStatus').innerHTML = statusBadge;
+
+        // Render materials
+        const materialsContainer = document.getElementById('modalMaterials');
+        materialsContainer.innerHTML = '';
+        if (request.materials) {
+          request.materials.forEach(material => {
+            const materialDiv = document.createElement('div');
+            materialDiv.className = 'material-item';
+            materialDiv.innerHTML = `
+              <div class="material-header">
+                <div class="material-icon">
+                  <i class="fas fa-box"></i>
+                </div>
+                <div class="material-name">${material.type}</div>
+              </div>
+              <div class="material-details">
+                <div class="material-detail">
+                  <span class="detail-label">Quantity</span>
+                  <span class="detail-value">${material.quantity} ${material.unit}</span>
+                </div>
+              </div>
+            `;
+            materialsContainer.appendChild(materialDiv);
+          });
+        }
+
+        // Update action buttons based on status
+        const actionButtons = document.getElementById('actionButtons');
+        actionButtons.innerHTML = ''; // Clear existing buttons
+
+        switch(request.status) {
+          case 'Pending':
+            actionButtons.innerHTML = `
+              <button type="button" class="btn btn-success" onclick="approveRequest('${requestId}')">
+                <i class="fas fa-check"></i> Approve
+              </button>
+              <button type="button" class="btn btn-danger" onclick="rejectRequest('${requestId}')">
+                <i class="fas fa-times"></i> Reject
+              </button>
+            `;
+            break;
+          case 'Approved':
+            actionButtons.innerHTML = `
+              <button type="button" class="btn btn-primary" onclick="transferMaterial('${requestId}')">
+                <i class="fas fa-truck"></i> Transfer Material
+              </button>
+            `;
+            break;
+          case 'In Transit':
+            actionButtons.innerHTML = `
+              <button type="button" class="btn btn-info" onclick="markAsDelivered('${requestId}')">
+                <i class="fas fa-box"></i> Mark as Delivered
+              </button>
+            `;
+            break;
+        }
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+        modal.show();
+      }
+    }
+
+    function approveRequest(requestId) {
+      if (confirm('Are you sure you want to approve this request?')) {
+        const request = requests.find(r => r.requestid === requestId);
+        if (request) {
+          request.status = 'Approved';
+          request.approveddate = new Date().toISOString().split('T')[0];
+          updateRequestStatus(requestId, 'Approved');
+          closeRequestDetailsModal();
+          showToast('Request approved successfully!');
+        }
+      }
+    }
+
+    function rejectRequest(requestId) {
+      if (confirm('Are you sure you want to reject this request?')) {
+        const request = requests.find(r => r.requestid === requestId);
+        if (request) {
+          request.status = 'Rejected';
+          updateRequestStatus(requestId, 'Rejected');
+          closeRequestDetailsModal();
+          showToast('Request rejected successfully!');
+        }
+      }
+    }
+
+    function transferMaterial(requestId) {
+      if (confirm('Are you sure you want to mark this request as in transit?')) {
+        const request = requests.find(r => r.requestid === requestId);
+        if (request) {
+          request.status = 'In Transit';
+          updateRequestStatus(requestId, 'In Transit');
+          closeRequestDetailsModal();
+          showToast('Material transfer initiated!');
+        }
+      }
+    }
+
+    function markAsDelivered(requestId) {
+      if (confirm('Are you sure you want to mark this request as delivered?')) {
+        const request = requests.find(r => r.requestid === requestId);
+        if (request) {
+          request.status = 'Delivered';
+          updateRequestStatus(requestId, 'Delivered');
+          closeRequestDetailsModal();
+          showToast('Request marked as delivered!');
+        }
+      }
+    }
+
+    function updateRequestStatus(requestId, newStatus) {
+      // Update the status in the main table
+      const rows = document.getElementById('requestBody').getElementsByTagName('tr');
+      for (let row of rows) {
+        if (row.cells[0].textContent === requestId) {
+          let statusBadge;
+          switch(newStatus) {
+            case 'Pending':
+              statusBadge = '<span class="badge bg-warning">Pending</span>';
+              break;
+            case 'Approved':
+              statusBadge = '<span class="badge bg-success">Approved</span>';
+              break;
+            case 'Rejected':
+              statusBadge = '<span class="badge bg-danger">Rejected</span>';
+              break;
+            case 'In Transit':
+              statusBadge = '<span class="badge bg-primary">In Transit</span>';
+              break;
+            case 'Delivered':
+              statusBadge = '<span class="badge bg-info">Delivered</span>';
+              break;
+          }
+          row.cells[4].innerHTML = statusBadge;
+          break;
+        }
+      }
+    }
+
+    function closeRequestDetailsModal() {
+      const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+      modal.hide();
+    }
+
+    // Initialize
+    function initializePage() {
+      const select = document.getElementById('entriesPerPageRequest');
+      requestsPerPage = parseInt(select.value);
+      renderRequestTable();
+    }
+
+    // Call initialize when the page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

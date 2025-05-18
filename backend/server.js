@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -10,6 +11,7 @@ const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
+const scmRoutes = require('./departments/supply/routes/scm.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -35,13 +37,14 @@ app.use(session({
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 app.use(express.static(path.join(__dirname, '..', 'views')));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
+app.use('/scm', scmRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
@@ -73,11 +76,11 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/manager_finance.html',
+        'finance_accounting': '/finance admin/finance_payroll.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
-        'logistics': '/scm admin/scm_dashboard.html',
+        'logistics': '/scm admin/scm-dashboard.html',
         'agents': '/agents/agent_dashboard.html',
         // External user dashboards (using username)
         'developer': '/developer/developer_dashboard',
