@@ -1,145 +1,53 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 require('dotenv').config();
-=======
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
-<<<<<<< HEAD
-<<<<<<< HEAD
 const MySQLStore = require("express-mysql-session")(session);
 const path = require('path');
 const db = require("./db");
 
 const authRoutes = require('./routes/auth.routes');
-const profileRoutes = require('./routes/profile.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
 const scmRoutes = require('./departments/supply/routes/scm.routes');
-const manuRoutes = require('./departments/manufacturing/routes/manufacturing.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const sessionStore = new MySQLStore({
-    expiration: 1000 * 60 * 60 * 24, // 24 hours
-    createDatabaseTable: true,
-    schema: {
-        tableName: 'sessions',
-        columnNames: {
-            session_id: 'session_id',
-            expires: 'expires',
-            data: 'data'
-        }
-    }
-}, db);
-
+const sessionStore = new MySQLStore({}, db);
 // Session Setup
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_secret_key',
-    resave: true,
+    secret: 'your_secret_key',
+    resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-        secure: false, // Changed to false to allow HTTP in development and testing
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24,
-        sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects
-        path: '/'
-    },
-    rolling: true,
-    name: 'sessionId'
-}));
-
-// Session debug middleware removed
-
-// Add session error handling
-app.use((err, req, res, next) => {
-    if (err.code === 'EBADCSRFTOKEN') {
-        // Handle CSRF token errors
-        return res.status(403).json({ error: 'Invalid CSRF token' });
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 2
     }
-    if (err.code === 'ECONNRESET') {
-        // Handle connection reset errors
-        return res.status(503).json({ error: 'Session store connection error' });
-    }
-    next(err);
-});
-
-// Add session check middleware
-app.use((req, res, next) => {
-    if (req.session && req.session.user) {
-        // Refresh session on activity
-        req.session.touch();
-    }
-    next();
-});
+  }));  
 
 // Static Files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 app.use(express.static(path.join(__dirname, '..', 'views')));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/profile', (req, res, next) => {
-    console.log('🔍 Profile route accessed');
-    console.log('Session user:', req.session?.user);
-    
-    // Check user type from session
-    if (req.session?.user?.is_supplier) {
-        console.log('✅ Serving supplier profile');
-        // Serve the supplier profile page
-        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'supplier.html'));
-    } else if (req.session?.user?.is_external && req.session.user.role_name === 'developer') {
-        console.log('✅ Serving developer profile');
-        // Serve the developer profile page
-        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'developer.html'));
-    } else if (req.session?.user?.is_external) {
-        console.log('✅ Serving other external user profile');
-        // For other external users, use regular profile routes
-        profileRoutes(req, res, next);
-    } else {
-        console.log('✅ Serving employee profile');
-        // For internal users (employees), use regular profile routes
-        profileRoutes(req, res, next);
-    }
-});
-
-// Add route for profile API endpoints
-app.use('/api/profile', profileRoutes);
-
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
 app.use('/scm', scmRoutes);
-app.use('/manufacturing', manuRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
-
-// Developer session check route
-app.get('/developer/check-session', (req, res) => {
-    if (req.session && req.session.user && req.session.user.is_external) {
-        res.json({
-            id: req.session.user.id,
-            username: req.session.user.username,
-            email: req.session.user.email,
-            role_name: req.session.user.role_name
-        });
-    } else {
-        res.status(401).json({ error: 'Not logged in as developer' });
-    }
-});
 
 // Default Route - Login
 app.get('/', (req, res) => {
@@ -168,20 +76,15 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/finance_dashboard.html',
+        'finance_accounting': '/finance admin/finance_payroll.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard',
-        'foreman_1': '/manufacturing/manufacturing_dashboard',
-        'foreman_2': '/manufacturing/manufacturing_dashboard',
-        'foreman_3': '/manufacturing/manufacturing_dashboard',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
-        'sales_marketing_coordinator': '/crm admin/crm_admin.html',
-        'documentation_officer': '/crm admin/crm_admin.html',
         'logistics': '/scm admin/scm-dashboard.html',
         'agents': '/agents/agent_dashboard.html',
         // External user dashboards (using username)
         'developer': '/developer/developer_dashboard',
-        'supplier': '/supplier/supplier_dashboard.html'
+        'customer': '/customer/dashboard'
     };
 
     const dashboardFile = roleDashboards[userRole];
@@ -202,111 +105,12 @@ app.get('/dashboard', (req, res) => {
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) return res.status(500).json({ message: "Logout failed." });
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-const path = require('path');
-
-const authRoutes = require('./routes/auth.routes');
-const hrRoutes = require('./departments/hr/routes/hr.routes');
-const crmRoutes = require('./departments/crm/routes/crm.routes');
-
-const app = express();  
-const PORT = 4000;
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
-
-// 🔹 Session Configuration
-app.use(session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }  // Change to true if using HTTPS
-}));
-
-// 🔹 Serve Static Files
-app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // ✅ Serve uploaded resumes
-
-// 🔹 Routes
-app.use('/auth', authRoutes);
-app.use('/hr', hrRoutes);
-app.use("/crm", crmRoutes);
-
-// ❌ REMOVE DUPLICATE UPLOAD ROUTE HERE
-
-// 🔹 Default route - Load login page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
-});
-
-
-app.get('/customer', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'customer.html'));
-});
-
-// 🔹 Role-Based Dashboard Route
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/');
-    }
-
-    const roleDashboards = {
-        owner: "owner_dashboard.html",
-        office_administrator: "manager_hr.html",
-        liaison_officer: "manager_crm.html",
-        finance_accounting: "manager_finance.html",
-        general_foreman: "manager_manufacturing.html",
-        warehouse_supervisor: "manager_supply_chain.html",
-        corporate_secretary: "manager_corporate_secretary.html"
-    };
-
-    const dashboardFile = roleDashboards[req.session.user.role_name];
-
-    if (!dashboardFile) {
-        console.error(`❌ No dashboard assigned for role: ${req.session.user.role_name}`);
-        return res.status(403).send("Unauthorized access.");
-    }
-
-    const dashboardPath = path.join(__dirname, '..', 'views', dashboardFile);
-    res.sendFile(dashboardPath, (err) => {
-        if (err) {
-            console.error(`❌ Dashboard file not found: ${dashboardFile}`);
-        }
-    });
-});
-
-// 🔹 Logout Route
-app.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.error("❌ Logout error:", err);
-            return res.status(500).json({ message: "Logout failed." });
-        }
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
         res.redirect("/");
     });
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // Start Server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-=======
-// 🔹 Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
->>>>>>> 85f9240 (Initial commit)
-=======
-// 🔹 Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
->>>>>>> aa1bb20 (Initial commit)
 });
