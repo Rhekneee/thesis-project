@@ -129,10 +129,69 @@ exports.login = async (req, res) => {
                 console.log("❌ DEBUG: Developer found but user details not found");
             }
         } else {
-            console.log("🔍 DEBUG: Not a developer account, checking employee login");
+            console.log("🔍 DEBUG: Not a developer account, checking supplier login");
         }
 
-        // If not a developer, try normal employee login - ONLY through employee_id
+        // Check if it's a supplier trying to log in using username
+        const checkSupplierSQL = `
+            SELECT u.id, u.username, u.password, s.status, u.role_id, s.supplier_id
+            FROM users u
+            JOIN supplier_account s ON u.username = s.supplier_name
+            WHERE u.username = ? AND s.status = 'active' AND u.role_id = 27
+        `;
+        
+        console.log("🔍 DEBUG: Checking supplier account for username:", employee_id);
+        const [suppliers] = await db.query(checkSupplierSQL, [employee_id]);
+        console.log("🔍 DEBUG: Supplier query result:", suppliers.length > 0 ? "Found" : "Not found");
+        
+        if (suppliers.length > 0) {
+            console.log("🔍 DEBUG: Supplier account found, attempting password verification");
+            const supplier = suppliers[0];
+            const isPasswordValid = await bcrypt.compare(password, supplier.password);
+            console.log("🔍 DEBUG: Supplier password verification result:", isPasswordValid ? "Valid" : "Invalid");
+            
+            if (!isPasswordValid) {
+                console.log("❌ DEBUG: Supplier password verification failed");
+                return res.status(401).json({ message: "Invalid credentials." });
+            }
+            
+            console.log("🔍 DEBUG: Fetching complete user details for supplier");
+            // Get user details for session using the user id
+            const [userDetails] = await db.query(`
+                SELECT u.id, u.email, u.username, u.role_id, r.name AS role_name, s.supplier_id
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                JOIN supplier_account s ON u.username = s.supplier_name
+                WHERE u.id = ?
+            `, [supplier.id]);
+
+            console.log("🔍 DEBUG: User details query result:", userDetails.length > 0 ? "Found" : "Not found");
+
+            if (userDetails.length > 0) {
+                const user = userDetails[0];
+                console.log("🔍 DEBUG: Setting session for supplier - ID:", user.id, "Role:", user.role_name, "Supplier ID:", user.supplier_id);
+                req.session.user = {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    role_name: user.role_name,
+                    role_id: user.role_id,
+                    supplier_id: user.supplier_id,
+                    is_supplier: true
+                };
+                console.log("✅ DEBUG: Supplier login successful");
+                return res.status(200).json({ 
+                    message: "Login successful",
+                    redirect: "/supplier/supplier_dashboard.html"
+                });
+            } else {
+                console.log("❌ DEBUG: Supplier found but user details not found");
+            }
+        } else {
+            console.log("🔍 DEBUG: Not a supplier account, checking employee login");
+        }
+
+        // If not a developer or supplier, try normal employee login - ONLY through employee_id
         const checkUserSQL = `
             SELECT users.id, users.email, users.username, users.password, users.created_at, 
                    users.role_id, roles.name AS role_name, employees.employee_id
