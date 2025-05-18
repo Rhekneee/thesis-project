@@ -384,10 +384,17 @@
         <table class="table table-striped">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Name</th>
-              <th>Contact</th>
-              <th>Location</th>
+              <th>Contact Name</th>
+              <th>Contact Email</th>
+              <th>Contact Phone</th>
+              <th>Address</th>
+              <th>City</th>
+              <th>Postal Code</th>
+              <th>Country</th>
+              <th>Account #</th>
+              <th>Payment Terms</th>
+              <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -407,17 +414,48 @@
       <button class="close-btn" onclick="closeAddSupplierModal()">&times;</button>
       <h3>Add New Supplier</h3><br>
       <form id="addSupplierForm" style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="supplierName" style="margin-bottom: 4px;">Supplier Name</label>
-          <input type="text" id="supplierName" placeholder="Enter supplier name" required style="width: 100%;" />
+        <div class="form-group">
+          <label for="supplierName">Supplier Name</label>
+          <input type="text" id="supplierName" placeholder="Enter supplier name" required />
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="supplierContact" style="margin-bottom: 4px;">Contact</label>
-          <input type="text" id="supplierContact" placeholder="Enter 11-digit contact number" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%;" />
+        <div class="form-group">
+          <label for="supplierContact">Contact Phone</label>
+          <input type="text" id="supplierContact" placeholder="Enter 11-digit contact number" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="supplierLocation" style="margin-bottom: 4px;">Location</label>
-          <input type="text" id="supplierLocation" placeholder="Enter supplier location" required style="width: 100%;" />
+        <div class="form-group">
+          <label for="contactName">Contact Name</label>
+          <input type="text" id="contactName" placeholder="Enter contact name" required />
+        </div>
+        <div class="form-group">
+          <label for="contactEmail">Contact Email</label>
+          <input type="email" id="contactEmail" placeholder="Enter contact email" required />
+        </div>
+        <div class="form-group">
+          <label for="supplierLocation">Address</label>
+          <input type="text" id="supplierLocation" placeholder="Enter supplier address" required />
+        </div>
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" placeholder="Enter city" required />
+        </div>
+        <div class="form-group">
+          <label for="postalCode">Postal Code</label>
+          <input type="text" id="postalCode" placeholder="Enter postal code" required />
+        </div>
+        <div class="form-group">
+          <label for="country">Country</label>
+          <input type="text" id="country" placeholder="Enter country" required />
+        </div>
+        <div class="form-group">
+          <label for="accountNumber">Account Number</label>
+          <input type="text" id="accountNumber" placeholder="Enter account number" required />
+        </div>
+        <div class="form-group">
+          <label for="paymentTerms">Payment Terms</label>
+          <select id="paymentTerms" required>
+            <option value="cod">Cash on Delivery</option>
+            <option value="online payment">Online Payment</option>
+          </select>
         </div>
         <div style="text-align: center; width: 100%;">
           <button class="action-btn" type="submit" style="width:50%; text-align: center;">Add</button>
@@ -443,90 +481,237 @@
 
   <!-- Edit Supplier Modal -->
   <div id="editSupplierModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 600px; min-width: 400px; width: 100%;">
       <button class="close-btn" onclick="closeEditSupplierModal()">&times;</button>
       <h3>Edit Supplier</h3><br>
-      <form style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="editSupplierName" style="margin-bottom: 4px;">Supplier Name</label>
-          <input type="text" id="editSupplierName" required style="width: 100%;" />
-        </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="editSupplierContact" style="margin-bottom: 4px;">Contact</label>
-          <input type="text" id="editSupplierContact" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%;" />
-        </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="editSupplierLocation" style="margin-bottom: 4px;">Location</label>
-          <input type="text" id="editSupplierLocation" required style="width: 100%;" />
-        </div>
-        <div style="text-align: center; width: 100%;">
-          <button class="action-btn" type="button" onclick="confirmEditSupplier()" style="width:50%; text-align: center;">Update</button>
+      <form id="editSupplierForm" style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
+        <div class="form-group"><label for="editSupplierName">Supplier Name</label><input type="text" id="editSupplierName" required /></div>
+        <div class="form-group"><label for="editContactName">Contact Name</label><input type="text" id="editContactName" required /></div>
+        <div class="form-group"><label for="editContactEmail">Contact Email</label><input type="email" id="editContactEmail" required /></div>
+        <div class="form-group"><label for="editSupplierContact">Contact Phone</label><input type="text" id="editSupplierContact" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" /></div>
+        <div class="form-group"><label for="editSupplierLocation">Address</label><input type="text" id="editSupplierLocation" required /></div>
+        <div class="form-group"><label for="editCity">City</label><input type="text" id="editCity" required /></div>
+        <div class="form-group"><label for="editPostalCode">Postal Code</label><input type="text" id="editPostalCode" required /></div>
+        <div class="form-group"><label for="editCountry">Country</label><input type="text" id="editCountry" required /></div>
+        <div class="form-group"><label for="editAccountNumber">Account Number</label><input type="text" id="editAccountNumber" required /></div>
+        <div class="form-group"><label for="editPaymentTerms">Payment Terms</label><input type="text" id="editPaymentTerms" required /></div>
+        <div class="form-group"><label for="editStatus">Status</label><input type="text" id="editStatus" required /></div>
+        <div style="text-align: center; width: 100%; margin-top: 12px;">
+          <button class="action-btn" type="button" onclick="confirmEditSupplier()" style="width:50%; text-align: center;">Save Changes</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Add this modal HTML right before the closing body tag -->
+  <div id="successModal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding: 32px 24px;">
+      <div style="font-size: 48px; color: #10B981; margin-bottom: 12px;">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3 style="color: #10B981; margin-bottom: 10px;">Success!</h3>
+      <p style="color: #64748b; margin-bottom: 16px;">Supplier account created successfully.</p>
+      <div style="background-color: #F3F4F6; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #374151; font-weight: 500;">Default Login Credentials:</p>
+        <p style="margin: 8px 0 0 0; color: #6B7280;">Username: <span id="successUsername" style="color: #374151; font-weight: 500;"></span></p>
+        <p style="margin: 4px 0 0 0; color: #6B7280;">Password: <span id="successPassword" style="color: #374151; font-weight: 500;"></span></p>
+      </div>
+      <p style="color: #EF4444; font-size: 14px; margin-bottom: 24px;">Please save these credentials securely!</p>
+      <button style="background-color: #10B981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;" onclick="closeSuccessModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- View Supplier Modal -->
+  <div id="viewSupplierModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; min-width: 400px; width: 100%;">
+      <button class="close-btn" onclick="closeViewSupplierModal()">&times;</button>
+      <h3 style="margin-bottom: 24px;">Supplier Details</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 24px 32px;">
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Name:</strong><br><span id="viewSupplierNameText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Name:</strong><br><span id="viewContactNameText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Email:</strong><br><span id="viewContactEmailText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Phone:</strong><br><span id="viewContactPhoneText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Address:</strong><br><span id="viewSupplierLocationText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>City:</strong><br><span id="viewCityText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Postal Code:</strong><br><span id="viewPostalCodeText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Country:</strong><br><span id="viewCountryText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Account Number:</strong><br><span id="viewAccountNumberText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Payment Terms:</strong><br><span id="viewPaymentTermsText"></span></div>
+        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Status:</strong><br><span id="viewStatusText"></span></div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Sidebar toggle functionality
-    document.getElementById('sidebar-toggle').onclick = function() {
-      const sidebar = document.getElementById('sidebar');
-      const content = document.getElementById('content');
-      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-        sidebar.style.display = 'block';
-        content.style.marginLeft = '300px';
-      } else {
-        sidebar.style.display = 'none';
-        content.style.marginLeft = '0';
-      }
-    };
-
-    // Initialize data
-    const suppliers = [
-      { id: 1, name: 'ABC Trading', contact: '09123456789', location: 'Manila' },
-      { id: 2, name: 'Steel Works Inc.', contact: '09876543210', location: 'Quezon City' },
-      { id: 3, name: 'Concrete Corp', contact: '09211223344', location: 'Cavite' },
-      { id: 4, name: 'BuildFast Supply', contact: '09334445566', location: 'Laguna' },
-      { id: 5, name: 'Paint Depot', contact: '09556667788', location: 'Batangas' },
-      { id: 6, name: 'Wooden Solutions', contact: '09112223344', location: 'Taguig' }
-    ];
-
+    // Initialize variables
+    let suppliers = [];
+    let filteredSuppliers = [];
     let suppliersPerPage = 5;
     let currentPage = 1;
-    let filteredSuppliers = [...suppliers];
+    let itemIdToDelete = null;
+    let currentEditSupplierId = null;
 
-    // Render table function
-    function renderTable() {
-      console.log('Rendering table...'); // Debug log
-      const tableBody = document.getElementById('supplierBody');
-      if (!tableBody) {
-        console.error('Table body element not found!'); // Debug log
+    // Setup form event listeners
+    function setupEventListeners() {
+      const addSupplierForm = document.getElementById('addSupplierForm');
+      if (addSupplierForm) {
+        addSupplierForm.addEventListener('submit', handleAddSupplier);
+      } else {
+        console.error('Add supplier form not found');
+      }
+    }
+
+    // Handle form submission
+    async function handleAddSupplier(e) {
+      e.preventDefault();
+      
+      // Get form values
+      const supplier_name = document.getElementById('supplierName').value.trim();
+      const contact_phone = document.getElementById('supplierContact').value.trim();
+      const contact_name = document.getElementById('contactName').value.trim();
+      const contact_email = document.getElementById('contactEmail').value.trim();
+      const address = document.getElementById('supplierLocation').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const postal_code = document.getElementById('postalCode').value.trim();
+      const country = document.getElementById('country').value.trim();
+      const account_number = document.getElementById('accountNumber').value.trim();
+      const payment_terms = document.getElementById('paymentTerms').value;
+
+      // Validate all fields
+      if (!supplier_name || !contact_name || !contact_email || !contact_phone || 
+          !address || !city || !postal_code || !country || !account_number || !payment_terms) {
+        showToast("Please fill out all fields.");
         return;
       }
 
+      // Validate phone number
+      if (!/^\d{11}$/.test(contact_phone)) {
+        showToast("Phone number must be exactly 11 digits.");
+        return;
+      }
+
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(contact_email)) {
+        showToast("Please enter a valid email address.");
+        return;
+      }
+
+      try {
+        const response = await fetch('/scm/suppliers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            supplier_name,
+            contact_name,
+            contact_email,
+            contact_phone,
+            address,
+            city,
+            postal_code,
+            country,
+            account_number,
+            payment_terms
+          })
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          closeAddSupplierModal();
+          showSuccessModal(supplier_name, result.defaultPassword);
+        } else {
+          showToast(result.error || "Failed to add supplier.");
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast("Error: " + error.message);
+      }
+    }
+
+    // Fetch suppliers from backend
+    async function fetchSuppliers() {
+      try {
+        const response = await fetch('/scm/suppliers');
+        if (!response.ok) {
+          throw new Error('Failed to fetch suppliers');
+        }
+        suppliers = await response.json();
+        filteredSuppliers = [...suppliers];
+        renderTable();
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        showToast('Error loading suppliers: ' + error.message);
+      }
+    }
+
+    // Initialize the page
+    function initializePage() {
+      console.log('Initializing page...');
+      setupEventListeners(); // Setup event listeners first
+      fetchSuppliers(); // Then fetch suppliers
+      const select = document.getElementById('entriesPerPage');
+      if (select) {
+        suppliersPerPage = parseInt(select.value);
+      }
+    }
+
+    // Call initialize when the page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
+
+    // Also try to initialize when the window loads
+    window.addEventListener('load', initializePage);
+
+    // Make sure the table renders when navigating to the page
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        console.log('Page became visible, re-rendering table...');
+        renderTable();
+      }
+    });
+
+    // Render table function
+    function renderTable() {
+      const tableBody = document.getElementById('supplierBody');
+      if (!tableBody) return;
       tableBody.innerHTML = '';
       const start = (currentPage - 1) * suppliersPerPage;
       const end = currentPage * suppliersPerPage;
       const currentSuppliers = filteredSuppliers.slice(start, end);
-
       currentSuppliers.forEach(supplier => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${supplier.id}</td>
-          <td>${supplier.name}</td>
-          <td>${supplier.contact}</td>
-          <td>${supplier.location}</td>
+          <td>${supplier.supplier_name || ''}</td>
+          <td>${supplier.contact_name || ''}</td>
+          <td>${supplier.contact_email || ''}</td>
+          <td>${supplier.contact_phone || ''}</td>
+          <td>${supplier.address || ''}</td>
+          <td>${supplier.city || ''}</td>
+          <td>${supplier.postal_code || ''}</td>
+          <td>${supplier.country || ''}</td>
+          <td>${supplier.account_number || ''}</td>
+          <td>${supplier.payment_terms || ''}</td>
+          <td>${supplier.status || 'active'}</td>
           <td>
-            <button class="btn btn-sm btn-info me-1" onclick="openEditSupplierModal(${supplier.id})" title="Edit Supplier">
-              <i class="fas fa-edit"></i> Edit
+            <button class="btn btn-sm btn-secondary me-1" onclick="openViewSupplierModal(${supplier.supplier_id})" title="View Supplier">
+              <i class="fas fa-eye"></i>
             </button>
-            <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${supplier.id})" title="Delete Supplier">
-              <i class="fas fa-trash"></i> Delete
+            <button class="btn btn-sm btn-info me-1" onclick="openEditSupplierModal(${supplier.supplier_id})" title="Edit Supplier">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${supplier.supplier_id})" title="Delete Supplier">
+              <i class="fas fa-trash"></i>
             </button>
           </td>
         `;
         tableBody.appendChild(row);
       });
-
       renderPagination();
     }
 
@@ -550,32 +735,6 @@
         paginationControls.appendChild(pageButton);
       }
     }
-
-    // Initialize the page
-    function initializePage() {
-      console.log('Initializing page...'); // Debug log
-      const select = document.getElementById('entriesPerPage');
-      suppliersPerPage = parseInt(select.value);
-      renderTable();
-    }
-
-    // Call initialize when the page loads
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
-    } else {
-      initializePage();
-    }
-
-    // Also try to initialize when the window loads
-    window.addEventListener('load', initializePage);
-
-    // Make sure the table renders when navigating to the page
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) {
-        console.log('Page became visible, re-rendering table...'); // Debug log
-        renderTable();
-      }
-    });
 
     function goToPage(page) {
       currentPage = page;
@@ -609,10 +768,10 @@
     function filterSuppliers(searchTerm) {
       const searchTermLower = searchTerm.toLowerCase();
       filteredSuppliers = suppliers.filter(supplier => {
-        return supplier.name.toLowerCase().includes(searchTermLower) ||
-               supplier.id.toString().includes(searchTermLower) ||
-               supplier.location.toLowerCase().includes(searchTermLower) ||
-               supplier.contact.includes(searchTermLower);
+        return supplier.supplier_name.toLowerCase().includes(searchTermLower) ||
+               supplier.contact_name.toLowerCase().includes(searchTermLower) ||
+               supplier.contact_email.toLowerCase().includes(searchTermLower) ||
+               supplier.contact_phone.includes(searchTermLower);
       });
       
       currentPage = 1;
@@ -631,10 +790,8 @@
       renderTable();
     }
 
-    let itemIdToDelete = null;
-
-    function openDeleteModal(itemId) {
-      itemIdToDelete = itemId;
+    function openDeleteModal(supplierId) {
+      itemIdToDelete = supplierId;
       document.getElementById('deleteModal').style.display = 'block';
     }
 
@@ -645,7 +802,7 @@
 
     function confirmDelete() {
       if (itemIdToDelete !== null) {
-        const index = suppliers.findIndex(supplier => supplier.id === itemIdToDelete);
+        const index = suppliers.findIndex(supplier => supplier.supplier_id === itemIdToDelete);
         if (index !== -1) {
           suppliers.splice(index, 1);
           filteredSuppliers = [...suppliers];
@@ -677,15 +834,21 @@
       }, 1500);
     }
 
-    let currentEditSupplierId = null;
-
     function openEditSupplierModal(supplierId) {
-      currentEditSupplierId = supplierId;
-      const supplier = suppliers.find(s => s.id === supplierId);
+      const supplier = suppliers.find(s => s.supplier_id === supplierId);
       if (supplier) {
-        document.getElementById('editSupplierName').value = supplier.name;
-        document.getElementById('editSupplierContact').value = supplier.contact;
-        document.getElementById('editSupplierLocation').value = supplier.location;
+        currentEditSupplierId = supplierId;
+        document.getElementById('editSupplierName').value = supplier.supplier_name || '';
+        document.getElementById('editContactName').value = supplier.contact_name || '';
+        document.getElementById('editContactEmail').value = supplier.contact_email || '';
+        document.getElementById('editSupplierContact').value = supplier.contact_phone || '';
+        document.getElementById('editSupplierLocation').value = supplier.address || '';
+        document.getElementById('editCity').value = supplier.city || '';
+        document.getElementById('editPostalCode').value = supplier.postal_code || '';
+        document.getElementById('editCountry').value = supplier.country || '';
+        document.getElementById('editAccountNumber').value = supplier.account_number || '';
+        document.getElementById('editPaymentTerms').value = supplier.payment_terms || '';
+        document.getElementById('editStatus').value = supplier.status || 'active';
         document.getElementById('editSupplierModal').style.display = 'block';
       }
     }
@@ -710,11 +873,11 @@
         return;
       }
 
-      const supplier = suppliers.find(s => s.id === currentEditSupplierId);
+      const supplier = suppliers.find(s => s.supplier_id === currentEditSupplierId);
       if (supplier) {
-        supplier.name = name;
-        supplier.contact = contact;
-        supplier.location = location;
+        supplier.supplier_name = name;
+        supplier.contact_phone = contact;
+        supplier.address = location;
         filteredSuppliers = [...suppliers];
         renderTable();
         showToast("Supplier updated successfully!");
@@ -736,35 +899,109 @@
     document.getElementById('addSupplierBtn').addEventListener('click', openAddSupplierModal);
 
     // Add event listener for the Add Supplier form
-    document.getElementById('addSupplierForm').addEventListener('submit', function(e) {
+    document.getElementById('addSupplierForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const name = document.getElementById('supplierName').value.trim();
-      const contact = document.getElementById('supplierContact').value.trim();
-      const location = document.getElementById('supplierLocation').value.trim();
+      
+      // Get form values
+      const supplier_name = document.getElementById('supplierName').value.trim();
+      const contact_phone = document.getElementById('supplierContact').value.trim();
+      const contact_name = document.getElementById('contactName').value.trim();
+      const contact_email = document.getElementById('contactEmail').value.trim();
+      const address = document.getElementById('supplierLocation').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const postal_code = document.getElementById('postalCode').value.trim();
+      const country = document.getElementById('country').value.trim();
+      const account_number = document.getElementById('accountNumber').value.trim();
+      const payment_terms = document.getElementById('paymentTerms').value;
 
-      if (!name || !contact || !location) {
-        alert("Please fill out all fields.");
+      // Validate all fields
+      if (!supplier_name || !contact_name || !contact_email || !contact_phone || 
+          !address || !city || !postal_code || !country || !account_number || !payment_terms) {
+        showToast("Please fill out all fields.");
         return;
       }
 
-      if (contact.length !== 11) {
-        alert("Contact number must be exactly 11 digits.");
+      // Validate phone number
+      if (!/^\d{11}$/.test(contact_phone)) {
+        showToast("Phone number must be exactly 11 digits.");
         return;
       }
 
-      const newSupplier = {
-        id: suppliers.length + 1,
-        name: name,
-        contact: contact,
-        location: location
-      };
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(contact_email)) {
+        showToast("Please enter a valid email address.");
+        return;
+      }
 
-      suppliers.push(newSupplier);
-      filteredSuppliers = [...suppliers];
-      renderTable();
-      showToast("New supplier added successfully!");
-      closeAddSupplierModal();
+      try {
+        const response = await fetch('/scm/suppliers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            supplier_name,
+            contact_name,
+            contact_email,
+            contact_phone,
+            address,
+            city,
+            postal_code,
+            country,
+            account_number,
+            payment_terms
+          })
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          closeAddSupplierModal();
+          showSuccessModal(supplier_name, result.defaultPassword);
+        } else {
+          showToast(result.error || "Failed to add supplier.");
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast("Error: " + error.message);
+      }
     });
+
+    // Add these new functions for the success modal
+    function showSuccessModal(username, password) {
+      document.getElementById('successUsername').textContent = username;
+      document.getElementById('successPassword').textContent = password;
+      document.getElementById('successModal').style.display = 'block';
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('successModal').style.display = 'none';
+      // Refresh the supplier list
+      fetchSuppliers();
+    }
+
+    function openViewSupplierModal(supplierId) {
+      const supplier = suppliers.find(s => s.supplier_id === supplierId);
+      if (supplier) {
+        document.getElementById('viewSupplierNameText').textContent = supplier.supplier_name || '';
+        document.getElementById('viewContactNameText').textContent = supplier.contact_name || '';
+        document.getElementById('viewContactEmailText').textContent = supplier.contact_email || '';
+        document.getElementById('viewContactPhoneText').textContent = supplier.contact_phone || '';
+        document.getElementById('viewSupplierLocationText').textContent = supplier.address || '';
+        document.getElementById('viewCityText').textContent = supplier.city || '';
+        document.getElementById('viewPostalCodeText').textContent = supplier.postal_code || '';
+        document.getElementById('viewCountryText').textContent = supplier.country || '';
+        document.getElementById('viewAccountNumberText').textContent = supplier.account_number || '';
+        document.getElementById('viewPaymentTermsText').textContent = supplier.payment_terms || '';
+        document.getElementById('viewStatusText').textContent = supplier.status || 'active';
+        document.getElementById('viewSupplierModal').style.display = 'block';
+      }
+    }
+
+    function closeViewSupplierModal() {
+      document.getElementById('viewSupplierModal').style.display = 'none';
+    }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -10,6 +11,7 @@ const authRoutes = require('./routes/auth.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
+const scmRoutes = require('./departments/supply/routes/scm.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -42,6 +44,7 @@ app.use('/auth', authRoutes);
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
+app.use('/scm', scmRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
