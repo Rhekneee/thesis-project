@@ -283,6 +283,122 @@ const CRMModel = {
         ]);
 
         return result.insertId;
+    },
+
+    // Get active developer companies for property locations
+    getActiveDeveloperCompanies: async () => {
+        const query = `
+            SELECT DISTINCT company_name 
+            FROM developer_accounts 
+            WHERE status = 'active' 
+            ORDER BY company_name ASC
+        `;
+        try {
+            const [rows] = await db.execute(query);
+            return rows.map(row => row.company_name);
+        } catch (error) {
+            console.error('Error in getActiveDeveloperCompanies:', error);
+            throw error;
+        }
+    },
+
+    // Get all properties from the database
+    getAllProperties: async () => {
+        const query = `
+            SELECT 
+                property_id as id,
+                property_name as name,
+                location,
+                CONCAT('₱', FORMAT(price, 2)) as price,
+                property_type as type,
+                status,
+                DATE_FORMAT(created_at, '%Y-%m-%d') as addedDate,
+                description,
+                parking_spaces as parking,
+                bedrooms,
+                bathrooms,
+                floors,
+                property_image as imageUrl
+            FROM properties 
+            ORDER BY created_at DESC
+        `;
+        try {
+            const [rows] = await db.execute(query);
+            return rows;
+        } catch (error) {
+            console.error('Error in getAllProperties:', error);
+            throw error;
+        }
+    },
+
+    // Get a single property by ID
+    getPropertyById: async (propertyId) => {
+        const query = `
+            SELECT 
+                property_id,
+                property_name,
+                property_type,
+                location,
+                price,
+                parking_spaces,
+                bedrooms,
+                bathrooms,
+                floors,
+                description,
+                property_image,
+                virtual_tour_image,
+                status,
+                DATE_FORMAT(created_at, '%Y-%m-%d') as added_date
+            FROM properties 
+            WHERE property_id = ?
+        `;
+        try {
+            const [rows] = await db.execute(query, [propertyId]);
+            return rows[0] || null;
+        } catch (error) {
+            console.error('Error in getPropertyById:', error);
+            throw error;
+        }
+    },
+
+    // Update property by ID
+    updateProperty: async (propertyId, data) => {
+        let query = `
+            UPDATE properties SET
+                property_name = ?,
+                property_type = ?,
+                location = ?,
+                price = ?,
+                parking_spaces = ?,
+                bedrooms = ?,
+                bathrooms = ?,
+                floors = ?,
+                description = ?,
+                status = ?,
+                updated_at = NOW()`;
+        const params = [
+            data.property_name,
+            data.property_type,
+            data.location,
+            data.price,
+            data.parking_spaces,
+            data.bedrooms,
+            data.bathrooms,
+            data.floors,
+            data.description,
+            data.status
+        ];
+        if (data.property_image) {
+            query += ', property_image = ?';
+            params.push(data.property_image);
+        }
+        if (data.virtual_tour_image) {
+            query += ', virtual_tour_image = ?';
+            params.push(data.virtual_tour_image);
+        }
+        query += ' WHERE property_id = ?';
+        params.push(propertyId);
+        await db.execute(query, params);
     }
 };
 
