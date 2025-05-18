@@ -79,11 +79,15 @@ const propertyStorage = multer.diskStorage({
         cb(null, propertyUploadDir);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'property-' + uniqueSuffix + path.extname(file.originalname));
+        // Create a more unique filename with timestamp and random number
+        const timestamp = Date.now();
+        const random = Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `property-${timestamp}-${random}${ext}`);
     }
 });
 
+// Create multer instance with specific configuration
 const propertyUpload = multer({
     storage: propertyStorage,
     fileFilter: (req, file, cb) => {
@@ -103,8 +107,11 @@ const propertyUpload = multer({
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1 // Only allow one file
+        fileSize: 2 * 1024 * 1024, // 2MB limit
+        files: 1, // Only allow one file
+        fieldSize: 2 * 1024 * 1024, // 2MB limit for fields
+        fields: 20, // Maximum number of non-file fields
+        parts: 30 // Maximum number of parts (fields + files)
     }
 }).single('property_image');
 
@@ -539,6 +546,17 @@ const CRMController = {
             console.log('Received property creation request:', req.body);
             console.log('File:', req.file);
 
+            // Log all incoming data for debugging
+            console.log('Processing property data:', {
+                body: req.body,
+                file: req.file ? {
+                    filename: req.file.filename,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                } : 'No file'
+            });
+
+            console.log('Received property data:', req.body);
             const {
                 propertyName,
                 propertyTypeSelect,
@@ -607,7 +625,15 @@ const CRMController = {
                 throw dbError;
             }
         } catch (error) {
-            console.error("Error in property creation:", error);
+            console.error("Error in property creation:", {
+                message: error.message,
+                code: error.code,
+                stack: error.stack,
+                storageErrors: error.storageErrors,
+                sqlMessage: error.sqlMessage,
+                sqlState: error.sqlState
+            });
+
             if (error.code === 'LIMIT_FILE_SIZE') {
                 res.status(400).json({ error: "File size exceeds 5MB limit" });
             } else if (error.code === 'ER_DUP_ENTRY') {
