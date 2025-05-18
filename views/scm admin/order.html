@@ -606,7 +606,7 @@
       </li>
       
       <li class="nav-item">
-        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
       </li>
       <li class="nav-item">
         <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
@@ -616,7 +616,7 @@
         <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
       </li>
       <li class="nav-item">
-        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span>  Request Material</span></a>
       </li>
       <li class="nav-item">
           <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
@@ -644,16 +644,17 @@
 
       <!-- Materials List -->
       <div class="materials-list">
-        <h5>Orders</h5>
+        <h5>Approved Orders</h5>
         <div class="table-responsive mb-3">
           <table class="table table-striped">
             <thead>
               <tr>
                 <th>Order ID</th>
-                <th>Order Approve Date</th>
-                <th>Order Deliver Date</th>
+                <th>Supplier</th>
+                <th>Material Type</th>
+                <th>Quantity</th>
+                <th>Estimation Cost</th>
                 <th>Status</th>
-                <th>Invoice</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -672,7 +673,7 @@
 
   <!-- Order Details Modal -->
   <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="orderDetailsModalLabel">
@@ -680,66 +681,30 @@
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-0">
-          <div class="container-fluid">
-            <div class="row g-0">
-              <!-- Order Details Section -->
-              <div class="col-md-4 border-end">
-                <div class="p-4">
-                  <div class="order-info">
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="info-label">Order ID</div>
-                        <div id="modalOrderId" class="info-value"></div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="info-label">Order Approve Date</div>
-                        <div id="modalApproveDate" class="info-value"></div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="info-label">Deliver Date</div>
-                        <div id="modalDeliverDate" class="info-value"></div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="info-label">Status</div>
-                        <div id="modalStatus" class="info-value"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- Invoice Section -->
-              <div class="col-md-8">
-                <div class="p-4">
-                  <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0"><i class="fas fa-file-pdf"></i> Supplier Invoice</h6>
-                    <button type="button" id="modalViewInvoiceBtn" class="btn btn-primary btn-sm">
-                      <i class="fas fa-expand"></i> Fullscreen
-                    </button>
-                  </div>
-                  <div id="invoiceViewer" class="border rounded" style="height: calc(100vh - 300px);">
-                    <iframe id="invoiceFrame" class="w-100 h-100" frameborder="0"></iframe>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Materials Section -->
-            <div class="row g-0">
+        <div class="modal-body">
+          <div class="order-info">
+            <div class="row">
               <div class="col-12">
-                <div class="p-4">
-                  <div class="materials-section">
-                    <h6><i class="fas fa-boxes"></i>Ordered Materials</h6>
-                    <div id="modalMaterials" class="materials-grid"></div>
-                  </div>
-                </div>
+                <div class="info-label">Order ID</div>
+                <div id="modalOrderId" class="info-value"></div>
               </div>
             </div>
+            <div class="row">
+              <div class="col-12">
+                <div class="info-label">Order Date</div>
+                <div id="modalApproveDate" class="info-value"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12">
+                <div class="info-label">Status</div>
+                <div id="modalStatus" class="info-value"></div>
+              </div>
+            </div>
+          </div>
+          <div class="materials-section mt-4">
+            <h6><i class="fas fa-boxes"></i>Order Details</h6>
+            <div id="modalMaterials" class="materials-grid"></div>
           </div>
         </div>
         <div class="modal-footer">
@@ -804,69 +769,43 @@
   </div>
 
   <script>
-    // Sidebar toggle functionality
-    document.getElementById('sidebar-toggle').onclick = function() {
-      const sidebar = document.getElementById('sidebar');
-      const content = document.getElementById('content');
-      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-        sidebar.style.display = 'block';
-        content.style.marginLeft = '300px';
-      } else {
-        sidebar.style.display = 'none';
-        content.style.marginLeft = '0';
-      }
-    };
 
-    const orders = [
-      {
-        id: 'ORD001',
-        approveDate: '2024-03-15',
-        deliverDate: '2024-03-20',
-        status: 'Pending',
-        invoice: '',
-        materials: [
-          { type: 'Cement', quantity: 50, unit: 'bags' },
-          { type: 'Steel', quantity: 100, unit: 'kg' },
-          { type: 'Sand', quantity: 200, unit: 'cubic' }
-        ]
-      },
-      {
-        id: 'ORD002',
-        approveDate: '2024-03-16',
-        deliverDate: '2024-03-21',
-        status: 'Approved',
-        invoice: 'INV002',
-        materials: [
-          { type: 'Wood', quantity: 20, unit: 'pieces' },
-          { type: 'Bricks', quantity: 500, unit: 'pieces' }
-        ]
-      },
-      {
-        id: 'ORD003',
-        approveDate: '2024-03-17',
-        deliverDate: '2024-03-22',
-        status: 'Delivered',
-        invoice: 'INV003',
-      },
-      {
-        id: 'ORD004',
-        approveDate: '2024-03-18',
-        deliverDate: '2024-03-23',
-        status: 'Completed',
-        invoice: 'INV004',
-      },
-      {
-        id: 'ORD005',
-        approveDate: '2024-03-19',
-        deliverDate: '2024-03-24',
-        status: 'Pending',
-        invoice: '',
-      }
-    ];
 
+    let orders = [];
     let itemsPerPage = 5;
     let currentPage = 1;
-    let filteredOrders = [...orders];
+    let filteredOrders = [];
+
+    // Fetch approved orders from backend
+    async function fetchApprovedOrders() {
+      try {
+        const response = await fetch('/scm/approved-orders', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // Important for session cookies
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+          orders = data.orders;
+          filteredOrders = [...orders];
+          renderTable();
+        } else {
+          console.error('Failed to fetch orders:', data.error);
+          alert('Failed to fetch orders: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        alert('Error fetching orders. Please try again later.');
+      }
+    }
 
     function renderTable() {
       const tableBody = document.getElementById('orderBody');
@@ -879,55 +818,44 @@
         const row = document.createElement('tr');
         let statusBadge;
         switch(order.status) {
-          case 'Pending':
-            statusBadge = '<span class="badge bg-warning">Pending</span>';
-            break;
           case 'Approved':
             statusBadge = '<span class="badge bg-success">Approved</span>';
+            break;
+          case 'Paid':
+            statusBadge = '<span class="badge bg-primary">Paid</span>';
             break;
           case 'Delivered':
             statusBadge = '<span class="badge bg-info">Delivered</span>';
             break;
-          case 'Completed':
-            statusBadge = '<span class="badge bg-primary">Completed</span>';
-            break;
           default:
-            statusBadge = '<span class="badge bg-warning">Pending</span>';
+            statusBadge = `<span class="badge bg-secondary">${order.status}</span>`;
         }
 
         let actionButtons = '';
-        if (order.status === 'Pending') {
+        if (order.status === 'Paid') {
           actionButtons = `
-            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
-              <i class="fas fa-eye"></i>
+            <button class="btn btn-sm btn-success me-1" onclick="markAsDelivered('${order.po_id}')" title="Mark as Delivered">
+              <i class="fas fa-truck"></i> Deliver
             </button>
-          `;
-        } else if (order.invoice) {
-          actionButtons = `
-            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
+            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
               <i class="fas fa-eye"></i>
             </button>
           `;
         } else {
           actionButtons = `
-            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.id}')" title="View Order Details">
+            <button class="btn btn-sm btn-primary me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
               <i class="fas fa-eye"></i>
             </button>
           `;
         }
 
-        const invoiceButton = order.invoice ? 
-          `<button onclick="viewInvoice('${order.invoice}', '${order.id}')" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-file-pdf"></i> View Invoice
-          </button>` : 
-          '<span class="text-muted">No invoice</span>';
-
         row.innerHTML = `
-          <td>${order.id}</td>
-          <td>${order.approveDate}</td>
-          <td>${order.deliverDate}</td>
+          <td>${order.po_id}</td>
+          <td>${order.supplier_name || 'N/A'}</td>
+          <td>${order.material_type || 'N/A'}</td>
+          <td>${order.quantity || 0} ${order.unit || ''}</td>
+          <td>₱${(order.estimation_cost || 0).toFixed(2)}</td>
           <td>${statusBadge}</td>
-          <td>${invoiceButton}</td>
           <td>${actionButtons}</td>
         `;
         tableBody.appendChild(row);
@@ -936,72 +864,111 @@
       renderPagination();
     }
 
+    // Mark order as delivered
+    async function markAsDelivered(orderId) {
+      const receiptData = {
+        receipt_number: prompt('Enter receipt number:'),
+        receipt_date: new Date().toISOString().split('T')[0]
+      };
+
+      if (!receiptData.receipt_number) {
+        alert('Receipt number is required');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/scm/orders/${orderId}/delivery`, {
+          method: 'PUT',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ receiptData })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          alert('Order marked as delivered successfully');
+          await fetchApprovedOrders(); // Refresh the orders list
+        } else {
+          alert(data.error || 'Failed to update delivery status');
+        }
+      } catch (error) {
+        console.error('Error updating delivery status:', error);
+        alert('Failed to update delivery status. Please try again later.');
+      }
+    }
+
+    // View order details
     function viewOrderDetails(orderId) {
-      const order = orders.find(o => o.id === orderId);
+      const order = orders.find(o => o.po_id === orderId);
       if (!order) return;
 
       // Update modal content
-      document.getElementById('modalOrderId').textContent = order.id;
-      document.getElementById('modalApproveDate').textContent = order.approveDate;
-      document.getElementById('modalDeliverDate').textContent = order.deliverDate;
+      document.getElementById('modalOrderId').textContent = order.po_id || 'N/A';
+      document.getElementById('modalApproveDate').textContent = order.order_date || 'N/A';
       
       // Update status with appropriate badge
       let statusBadge;
       switch(order.status) {
-        case 'Pending':
-          statusBadge = '<span class="badge bg-warning">Pending</span>';
-          break;
         case 'Approved':
           statusBadge = '<span class="badge bg-success">Approved</span>';
+          break;
+        case 'Paid':
+          statusBadge = '<span class="badge bg-primary">Paid</span>';
           break;
         case 'Delivered':
           statusBadge = '<span class="badge bg-info">Delivered</span>';
           break;
-        case 'Completed':
-          statusBadge = '<span class="badge bg-primary">Completed</span>';
-          break;
-        case 'Cancelled':
-          statusBadge = '<span class="badge bg-danger">Cancelled</span>';
-          break;
         default:
-          statusBadge = '<span class="badge bg-warning">Pending</span>';
+          statusBadge = `<span class="badge bg-secondary">${order.status || 'Unknown'}</span>`;
       }
       document.getElementById('modalStatus').innerHTML = statusBadge;
 
       // Render materials
       const materialsContainer = document.getElementById('modalMaterials');
       materialsContainer.innerHTML = '';
-      if (order.materials) {
-        order.materials.forEach(material => {
-          const materialDiv = document.createElement('div');
-          materialDiv.className = 'material-item';
-          materialDiv.innerHTML = `
-            <div class="material-header">
-              <div class="material-icon">
-                <i class="fas fa-box"></i>
-              </div>
-              <div class="material-name">${material.type}</div>
+      
+      const materialDiv = document.createElement('div');
+      materialDiv.className = 'material-item';
+      materialDiv.innerHTML = `
+        <div class="material-header">
+          <div class="material-icon">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="material-name">${order.material_type || 'N/A'}</div>
+        </div>
+        <div class="material-details">
+          <div class="material-detail">
+            <span class="detail-label">Supplier</span>
+            <span class="detail-value">${order.supplier_name || 'N/A'}</span>
+          </div>
+          <div class="material-detail">
+            <span class="detail-label">Quantity</span>
+            <span class="detail-value">${order.quantity || 0} ${order.unit || ''}</span>
+          </div>
+          <div class="material-detail">
+            <span class="detail-label">Estimation Cost</span>
+            <span class="detail-value">₱${(order.estimation_cost || 0).toFixed(2)}</span>
+          </div>
+          ${order.receipt_number ? `
+            <div class="material-detail">
+              <span class="detail-label">Receipt Number</span>
+              <span class="detail-value">${order.receipt_number}</span>
             </div>
-            <div class="material-details">
-              <div class="material-detail">
-                <span class="detail-label">Quantity</span>
-                <span class="detail-value">${material.quantity} ${material.unit}</span>
-              </div>
+            <div class="material-detail">
+              <span class="detail-label">Receipt Date</span>
+              <span class="detail-value">${order.receipt_date || 'N/A'}</span>
             </div>
-          `;
-          materialsContainer.appendChild(materialDiv);
-        });
-      }
-
-      // Handle invoice section
-      const invoiceFrame = document.getElementById('invoiceFrame');
-      if (order.invoice) {
-        invoiceFrame.src = `path/to/invoices/${order.invoice}`;
-        document.getElementById('modalViewInvoiceBtn').style.display = 'block';
-      } else {
-        invoiceFrame.src = 'about:blank';
-        document.getElementById('modalViewInvoiceBtn').style.display = 'none';
-      }
+          ` : ''}
+        </div>
+      `;
+      materialsContainer.appendChild(materialDiv);
 
       // Show modal
       const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
@@ -1133,10 +1100,15 @@
     }
 
     // Initialize
-    function initializePage() {
-      const select = document.getElementById('entriesPerPage');
-      itemsPerPage = parseInt(select.value);
-      renderTable();
+    async function initializePage() {
+      try {
+        const select = document.getElementById('entriesPerPage');
+        itemsPerPage = parseInt(select.value);
+        await fetchApprovedOrders();
+      } catch (error) {
+        console.error('Error initializing page:', error);
+        alert('Error loading orders. Please refresh the page.');
+      }
     }
 
     // Call initialize when the page loads

@@ -19,19 +19,57 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const sessionStore = new MySQLStore({}, db);
+const sessionStore = new MySQLStore({
+    expiration: 1000 * 60 * 60 * 24, // 24 hours
+    createDatabaseTable: true,
+    schema: {
+        tableName: 'sessions',
+        columnNames: {
+            session_id: 'session_id',
+            expires: 'expires',
+            data: 'data'
+        }
+    }
+}, db);
+
 // Session Setup
 app.use(session({
-    secret: 'your_secret_key',
-    resave: false,
+    secret: process.env.SESSION_SECRET || 'your_secret_key', // Use environment variable
+    resave: true, // Changed to true to prevent session loss
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 2
+        secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        sameSite: 'strict', // Protect against CSRF
+        path: '/'
+    },
+    rolling: true, // Refresh session on activity
+    name: 'sessionId' // Custom session name
+}));
+
+// Add session error handling
+app.use((err, req, res, next) => {
+    if (err.code === 'EBADCSRFTOKEN') {
+        // Handle CSRF token errors
+        return res.status(403).json({ error: 'Invalid CSRF token' });
     }
-  }));  
+    if (err.code === 'ECONNRESET') {
+        // Handle connection reset errors
+        return res.status(503).json({ error: 'Session store connection error' });
+    }
+    next(err);
+});
+
+// Add session check middleware
+app.use((req, res, next) => {
+    if (req.session && req.session.user) {
+        // Refresh session on activity
+        req.session.touch();
+    }
+    next();
+});
 
 // Static Files
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -84,7 +122,7 @@ app.get('/dashboard', (req, res) => {
         'agents': '/agents/agent_dashboard.html',
         // External user dashboards (using username)
         'developer': '/developer/developer_dashboard',
-        'customer': '/customer/dashboard'
+        'supplier': '/supplier/supplier_dashboard.html'
     };
 
     const dashboardFile = roleDashboards[userRole];

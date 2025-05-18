@@ -23,6 +23,8 @@
        padding: 20px;
        box-shadow: 0 0 10px rgba(0,0,0,0.05);
        margin-bottom: 20px;
+       position: relative;
+       z-index: 1; /* Lower z-index to stay below modals */
      }
 
      .search-container {
@@ -30,6 +32,8 @@
        gap: 15px;
        align-items: center;
        margin-bottom: 15px;
+       position: relative;
+       z-index: 1;
      }
 
      .search-wrapper {
@@ -37,6 +41,7 @@
        flex: 0.6;
        min-width: 200px;
        max-width: 400px;
+       z-index: 1;
      }
 
      .search-bar {
@@ -46,6 +51,8 @@
        border-radius: 5px;
        font-size: 14px;
        background-color: white;
+       position: relative;
+       z-index: 1;
      }
 
      .search-bar:focus {
@@ -84,9 +91,11 @@
        background-color: white;
        min-width: 150px;
        max-width: 200px;
+       position: relative;
+       z-index: 1;
      }
 
-     /* Table Styles */
+     /* Updated Table Styles */
      .material-table {
        width: 100%;
        border-collapse: separate;
@@ -95,6 +104,7 @@
        border-radius: 10px;
        overflow: hidden;
        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+       margin-bottom: 0;
      }
 
      .material-table th {
@@ -104,27 +114,103 @@
        font-weight: 600;
        color: #495057;
        border-bottom: 2px solid #dee2e6;
+       white-space: nowrap;
      }
 
      .material-table td {
        padding: 12px 15px;
        border-bottom: 1px solid #dee2e6;
        color: #212529;
+       vertical-align: middle;
      }
 
-     .material-table tr:last-child td {
-       border-bottom: none;
+     .material-table tbody tr:hover {
+       background-color: rgba(13, 202, 240, 0.05);
      }
 
-     .material-table tr:hover {
-       background-color: #f8f9fa;
+     /* Column Widths */
+     .material-table th:nth-child(1), /* ID */
+     .material-table td:nth-child(1) {
+       width: 80px;
+       text-align: center;
      }
 
-     /* Status Badge Styles */
+     .material-table th:nth-child(2), /* Name */
+     .material-table td:nth-child(2) {
+       width: 25%;
+       min-width: 200px;
+     }
+
+     .material-table th:nth-child(3), /* Unit */
+     .material-table td:nth-child(3) {
+       width: 100px;
+       text-align: center;
+     }
+
+     .material-table th:nth-child(4), /* Quantity */
+     .material-table td:nth-child(4) {
+       width: 120px;
+       text-align: right;
+     }
+
+     .material-table th:nth-child(5), /* Status */
+     .material-table td:nth-child(5) {
+       width: 150px;
+       text-align: center;
+     }
+
+     .material-table th:nth-child(6), /* Action */
+     .material-table td:nth-child(6) {
+       width: 180px;
+       text-align: center;
+     }
+
+     /* Action Buttons Container */
+     .action-buttons {
+       display: flex;
+       gap: 8px;
+       justify-content: center;
+       align-items: center;
+     }
+
+     .btn-sm {
+       padding: 6px 12px;
+       font-size: 0.875rem;
+       line-height: 1.5;
+       border-radius: 4px;
+       white-space: nowrap;
+       transition: all 0.2s ease;
+     }
+
+     .btn-info {
+       background-color: #0dcaf0;
+       border-color: #0dcaf0;
+       color: #fff;
+     }
+
+     .btn-danger {
+       background-color: #dc3545;
+       border-color: #dc3545;
+       color: #fff;
+     }
+
+     .btn-info:hover {
+       background-color: #31d2f2;
+       border-color: #25cff2;
+       transform: translateY(-1px);
+     }
+
+     .btn-danger:hover {
+       background-color: #bb2d3b;
+       border-color: #b02a37;
+       transform: translateY(-1px);
+     }
+
+     /* Status Badge Updates */
      .status-badge {
-       padding: 5px 15px;
+       padding: 6px 12px;
        border-radius: 15px;
-       font-size: 0.9em;
+       font-size: 0.875rem;
        font-weight: 500;
        display: inline-block;
        min-width: 100px;
@@ -157,6 +243,8 @@
        background-color: #007bff;
        color: white;
        white-space: nowrap;
+       position: relative;
+       z-index: 1;
      }
 
      .action-btn:hover {
@@ -176,86 +264,131 @@
        left: 0;
        width: 100%;
        height: 100%;
-       background-color: rgba(0,0,0,0.5);
-       z-index: 1000;
+       z-index: 1050 !important;
+     }
+
+     .modal-backdrop {
+       position: fixed;
+       top: 0;
+       left: 0;
+       width: 100%;
+       height: 100%;
+       background-color: rgba(0, 0, 0, 0.5);
+       z-index: 1040 !important;
+     }
+
+     .modal-dialog {
+       position: relative;
+       z-index: inherit;
+       margin: 1.75rem auto;
+       max-width: 800px;
+       pointer-events: auto;
      }
 
      .modal-content {
        position: relative;
-       background-color: white;
-       margin: 50px auto;
-       padding: 20px;
-       width: 90%;
-       max-width: 500px;
-       border-radius: 10px;
-       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-     }
-
-     .close-btn {
-       position: absolute;
-       right: 20px;
-       top: 20px;
-       font-size: 24px;
-       cursor: pointer;
-       color: #6c757d;
-       background: none;
+       background-color: #fff;
        border: none;
+       border-radius: 16px;
+       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+       pointer-events: auto;
      }
 
-     .close-btn:hover {
-       color: #343a40;
+     .modal.fade .modal-dialog {
+       transform: translate(0, -50px);
+       transition: transform 0.3s ease-out;
      }
 
-     /* Form Styles */
-     .form-group {
-       margin-bottom: 15px;
+     .modal.show .modal-dialog {
+       transform: none;
      }
 
-     .form-group label {
-       display: block;
-       margin-bottom: 5px;
-       color: #495057;
+     /* Ensure form elements are clickable */
+     .modal-body {
+       position: relative;
+       z-index: 1060;
+     }
+
+     .form-control, .form-select {
+       position: relative;
+       z-index: 1060;
+     }
+
+     .modal-header {
+       background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+       padding: 1.75rem 2rem;
+       border-bottom: none;
+       border-radius: 16px 16px 0 0;
+     }
+
+     .modal-title {
+       font-size: 1.5rem;
+       font-weight: 600;
+       letter-spacing: 0.5px;
+       color: #fff;
+     }
+
+     .modal-title i {
+       margin-right: 12px;
+       font-size: 1.3em;
+       color: #fff;
+     }
+
+     .modal-footer {
+       padding: 1.5rem 2rem;
+       border-top: 1px solid #e9ecef;
+       background: #fff;
+       border-radius: 0 0 16px 16px;
+     }
+
+     .modal-footer .btn {
+       padding: 0.7rem 1.75rem;
        font-weight: 500;
+       letter-spacing: 0.3px;
+       border-radius: 8px;
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       transition: all 0.2s ease;
      }
 
-     .form-group input,
-     .form-group select {
-       width: 100%;
-       padding: 8px 12px;
-       border: 1px solid #dee2e6;
-       border-radius: 5px;
-       font-size: 14px;
+     .modal-footer .btn i {
+       font-size: 1.1em;
      }
 
-     .form-group input:focus,
-     .form-group select:focus {
-       outline: none;
-       border-color: #80bdff;
-       box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+     .modal-footer .btn:hover {
+       transform: translateY(-1px);
+       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
      }
 
-     .form-select {
-       width: 100%;
-       padding: 8px 12px;
-       border: 1px solid #dee2e6;
-       border-radius: 5px;
-       font-size: 14px;
-       background-color: white;
-       color: #212529;
+     .btn-close {
+       filter: brightness(0) invert(1);
+       opacity: 0.8;
      }
 
-     .form-select:focus {
-       outline: none;
-       border-color: #80bdff;
-       box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+     .btn-close:hover {
+       opacity: 1;
      }
 
-     /* Pagination Styles */
+     /* Table Container */
+     .card1 {
+       background: #fff;
+       border-radius: 10px;
+       padding: 20px;
+       box-shadow: 0 0 10px rgba(0,0,0,0.05);
+       margin-bottom: 20px;
+       position: relative;
+       z-index: 1;
+     }
+
+     /* Pagination Updates */
      .pagination {
        display: flex;
        justify-content: center;
        gap: 5px;
        margin-top: 20px;
+       position: relative;
+       z-index: 1;
      }
 
      .pagination button {
@@ -284,6 +417,169 @@
        background-color: #e9ecef;
        color: #6c757d;
        cursor: not-allowed;
+     }
+
+     /* Entries Info */
+     .entries-info {
+       color: #6c757d;
+       font-size: 0.9rem;
+       position: relative;
+       z-index: 1;
+     }
+
+     /* Success Modal Styles */
+     .success-icon {
+         animation: scaleIn 0.5s ease-out;
+     }
+     
+     @keyframes scaleIn {
+         0% {
+             transform: scale(0);
+             opacity: 0;
+         }
+         50% {
+             transform: scale(1.2);
+         }
+         100% {
+             transform: scale(1);
+             opacity: 1;
+         }
+     }
+
+     #successModal .modal-content {
+         border: none;
+         border-radius: 15px;
+         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+     }
+
+     #successModal .modal-body {
+         padding: 3rem 2rem;
+     }
+
+     #successModal h3 {
+         font-weight: 600;
+         color: #28a745;
+     }
+
+     #successModal p {
+         font-size: 1.1rem;
+         line-height: 1.6;
+     }
+
+     /* Confirm Changes Modal Styles */
+     #confirmChangesModal .modal-content {
+         border: none;
+         border-radius: 15px;
+         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+     }
+
+     #confirmChangesModal .modal-body {
+         padding: 3rem 2rem;
+     }
+
+     #confirmChangesModal h3 {
+         font-weight: 600;
+         color: #1a237e;
+     }
+
+     #confirmChangesModal p {
+         font-size: 1.1rem;
+         line-height: 1.6;
+     }
+
+     .btn-success {
+         background-color: #28a745;
+         border-color: #28a745;
+         padding: 0.75rem 2rem;
+         font-size: 1.1rem;
+         border-radius: 8px;
+         transition: all 0.3s ease;
+     }
+
+     .btn-success:hover {
+         background-color: #218838;
+         border-color: #1e7e34;
+         transform: translateY(-2px);
+         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+     }
+
+     /* Update confirmation modal z-index */
+     #confirmChangesModal {
+         z-index: 1070 !important;
+     }
+
+     #confirmChangesModal + .modal-backdrop {
+         z-index: 1065 !important;
+     }
+
+     /* Update success modal z-index */
+     #successModal {
+         z-index: 1070 !important;
+     }
+
+     #successModal + .modal-backdrop {
+         z-index: 1065 !important;
+     }
+
+     /* Update toast styles */
+     #toast {
+         position: fixed;
+         top: 20px;
+         right: 20px;
+         padding: 15px 25px;
+         background-color: #28a745;
+         color: white;
+         border-radius: 5px;
+         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+         z-index: 1080 !important; /* Higher than all modals */
+         display: none;
+         transition: opacity 0.5s;
+     }
+
+     /* Add styles for modal stacking */
+     .modal.show {
+         display: block !important;
+     }
+
+     .modal-backdrop.show {
+         opacity: 0.5;
+     }
+
+     /* Ensure proper modal stacking */
+     .modal-dialog {
+         z-index: inherit;
+     }
+
+     /* Add styles to ensure proper stacking context */
+     .modal-open {
+         overflow: hidden;
+     }
+
+     .modal-open .modal {
+         overflow-x: hidden;
+         overflow-y: auto;
+     }
+
+     /* Ensure proper stacking for nested modals */
+     .modal.show {
+         display: block !important;
+     }
+
+     .modal-backdrop.show {
+         opacity: 0.5;
+     }
+
+     /* Update table container z-index */
+     .card1 {
+         position: relative;
+         z-index: 1;
+     }
+
+     /* Update pagination and entries info z-index */
+     .pagination,
+     .entries-info {
+         position: relative;
+         z-index: 1;
      }
    </style>
 
@@ -371,7 +667,7 @@
       </li>
       
       <li class="nav-item">
-        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
       </li>
       <li class="nav-item">
         <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
@@ -381,7 +677,7 @@
         <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
       </li>
       <li class="nav-item">
-        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Request Material</span></a>
       </li>
       <li class="nav-item">
           <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
@@ -416,134 +712,448 @@
     </div>
 
     <div class="card1">
+      <div class="table-responsive">
       <table class="material-table" id="material-table">
         <thead>
           <tr>
-            <th>ID <i class="bi bi-sort" onclick="sortTable(0)"></i></th>
-            <th>Name <i class="bi bi-sort" onclick="sortTable(1)"></i></th>
-            <th>Unit <i class="bi bi-sort" onclick="sortTable(2)"></i></th>
-            <th>Quantity <i class="bi bi-sort" onclick="sortTable(3)"></i></th>
+              <th>ID</th>
+              <th>Material Name</th>
+              <th>Unit</th>
+              <th>Quantity</th>
             <th>Status</th>
-            <th>Action</th>
+              <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <!-- Table content will be dynamically populated -->
         </tbody>
       </table>
-
-      <div class="pagination" id="paginationControls">
+      </div>
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="entries-info">
+          Showing <span id="currentEntries">0</span> of <span id="totalEntries">0</span> entries
+        </div>
+        <div id="paginationControls" class="pagination">
         <!-- Pagination controls will be dynamically populated -->
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Add Material Modal -->
-  <div id="addMaterialModal" class="modal">
+  <!-- Update Add Material Modal -->
+  <div id="addMaterialModal" class="modal fade" tabindex="-1" aria-labelledby="addMaterialModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeAddMaterialModal()">&times;</button>
-      <h3>Edit Material</h3><br>
-      <form style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="editMaterialName" style="margin-bottom: 4px;">Material Name</label>
-          <input type="text" id="editMaterialName" required style="width: 100%;" />
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMaterialModalLabel">
+            <i class="fas fa-edit me-2"></i>Edit Material
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="editMaterialUnit" style="margin-bottom: 4px;">Unit</label>
-          <select id="editMaterialUnit"  required style="width: 100%;">
-            <option value="PCS">PCS</option>
-            <option value="KG">KG</option>
-            <option value="L">L</option>
-            <option value="M">M</option>
-            <option value="BOX">BOX</option>
-            <option value="SET">SET</option>
+        <div class="modal-body">
+          <form id="editMaterialForm">
+            <div class="row g-4">
+              <!-- Material Type Field -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="editMaterialType" class="form-label fw-bold">Material Type*</label>
+                  <select class="form-select form-select-lg" id="editMaterialType" name="material_type" required onchange="updateUnitField('edit')">
+                    <option value="">Select Material</option>
+                    <option value="Cement" data-unit="bags">Cement</option>
+                    <option value="Concrete" data-unit="cubic meters">Concrete</option>
+                    <option value="Steel" data-unit="kg">Steel</option>
+                    <option value="Rebar" data-unit="kg">Rebar</option>
+                    <option value="Gravel" data-unit="cubic meters">Gravel</option>
+                    <option value="Sand" data-unit="cubic meters">Sand</option>
+                    <option value="Wood / Lumber" data-unit="pieces">Wood / Lumber</option>
+                    <option value="Bricks" data-unit="pieces">Bricks</option>
+                    <option value="Tiles" data-unit="pieces">Tiles</option>
+                    <option value="Glass" data-unit="square meters">Glass</option>
+                    <option value="Asphalt" data-unit="tons">Asphalt</option>
+                    <option value="PVC Pipes" data-unit="meters">PVC Pipes</option>
+                    <option value="Copper Wiring" data-unit="meters">Copper Wiring</option>
+                    <option value="Aluminum Sheets" data-unit="square meters">Aluminum Sheets</option>
+                    <option value="Paint" data-unit="custom">Paint</option>
+                    <option value="Insulation" data-unit="square meters">Insulation</option>
+                    <option value="Drywall / Gypsum" data-unit="sheets">Drywall / Gypsum</option>
           </select>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="currentQuantity" style="margin-bottom: 4px;">Current Quantity</label>
-          <input type="number" id="currentQuantity" readonly style="width: 100%;" />
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="quantityChange" style="margin-bottom: 4px;">Quantity Change</label>
-          <input type="number" id="quantityChange" placeholder="Enter positive number to add, negative to subtract" style="width: 100%;" />
+
+              <!-- Current Quantity Display -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label fw-bold">Current Quantity</label>
+                  <div class="input-group">
+                    <input type="text" id="currentQuantityDisplay" class="form-control form-control-lg" readonly />
+                    <span class="input-group-text" id="currentUnitDisplay"></span>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="newQuantity" style="margin-bottom: 4px;">New Quantity</label>
-          <input type="number" id="newQuantity" readonly style="width: 100%;" />
         </div>
-        <div style="text-align: center; width: 100%;">
-          <button class="action-btn" type="button" onclick="confirmQuantityChange()" style="width:50%; text-align: center;">Update</button>
+              </div>
+
+              <!-- Quantity Management Section -->
+              <div class="col-12">
+                <div class="card bg-light mb-3">
+                  <div class="card-body">
+                    <h6 class="card-title mb-3">Quantity Management</h6>
+                    
+                    <!-- Used Quantity Section -->
+                    <div class="mb-3">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Used Quantity</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleUsedQuantityInput()">
+                          <i class="fas fa-minus-circle me-1"></i>Use Quantity
+                        </button>
+                      </div>
+                      <div id="usedQuantityInput" class="input-group" style="display: none;">
+                        <input type="number" id="usedQuantity" class="form-control" min="0.01" step="0.01" placeholder="Enter quantity used" />
+                        <span class="input-group-text" id="usedUnitDisplay"></span>
+                        <button type="button" class="btn btn-danger" onclick="confirmUsedQuantity()">
+                          <i class="fas fa-check me-1"></i>Confirm
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Add Quantity Section -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Add Quantity</label>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleAddQuantityInput()">
+                          <i class="fas fa-plus-circle me-1"></i>Add Quantity
+                        </button>
+                      </div>
+                      <div id="addQuantityInput" class="input-group" style="display: none;">
+                        <input type="number" id="addQuantity" class="form-control" min="0.01" step="0.01" placeholder="Enter quantity to add" />
+                        <span class="input-group-text" id="addUnitDisplay"></span>
+                        <button type="button" class="btn btn-success" onclick="confirmAddQuantity()">
+                          <i class="fas fa-check me-1"></i>Confirm
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Final Quantity Display -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label fw-bold">Final Quantity</label>
+                  <div class="input-group">
+                    <input type="number" id="finalQuantity" name="quantity" class="form-control form-control-lg" readonly />
+                    <span class="input-group-text" id="finalUnitDisplay"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Other Fields -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="editReorderLevel" class="form-label fw-bold">Reorder Level</label>
+                  <input type="number" id="editReorderLevel" name="reorder_level" class="form-control form-control-lg" min="0" />
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="editSupplierId" class="form-label fw-bold">Supplier</label>
+                  <select class="form-select form-select-lg" id="editSupplierId" name="supplier_id">
+                    <option value="">Select Supplier</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="form-group">
+                  <label for="editRemarks" class="form-label fw-bold">Remarks</label>
+                  <textarea id="editRemarks" name="remarks" class="form-control form-control-lg" rows="3"></textarea>
+                </div>
+              </div>
         </div>
       </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="confirmQuantityChange()">
+            <i class="fas fa-save me-2"></i>Update Material
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Add New Material Modal -->
-  <div id="addNewMaterialModal" class="modal">
+  <!-- Update Add New Material Modal -->
+  <div id="addNewMaterialModal" class="modal fade" tabindex="-1" aria-labelledby="addNewMaterialModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeAddNewMaterialModal()">&times;</button>
-      <h3>Add New Material</h3><br>
-      <form style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="newMaterialName" style="margin-bottom: 4px;">Material Name</label>
-          <input type="text" id="newMaterialName" placeholder="Enter material name" required style="width: 100%;" />
+        <div class="modal-header">
+          <h5 class="modal-title" id="addNewMaterialModalLabel">
+            <i class="fas fa-plus-circle me-2"></i>Add New Material
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="newMaterialUnit"  style="margin-bottom: 4px;">Unit</label>
-          <select id="newMaterialUnit"  required style="width: 100%;">
-            <option value="PCS">PCS</option>
-            <option value="KG">KG</option>
-            <option value="L">L</option>
-            <option value="M">M</option>
-            <option value="BOX">BOX</option>
-            <option value="SET">SET</option>
+        <div class="modal-body">
+          <form id="addNewMaterialForm">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="newMaterialType" class="form-label fw-bold">Material Type*</label>
+                  <select class="form-select form-select-lg" id="newMaterialType" name="material_type" required onchange="updateUnitField('new')">
+                    <option value="">Select Material</option>
+                    <option value="Cement" data-unit="bags">Cement</option>
+                    <option value="Concrete" data-unit="cubic meters">Concrete</option>
+                    <option value="Steel" data-unit="kg">Steel</option>
+                    <option value="Rebar" data-unit="kg">Rebar</option>
+                    <option value="Gravel" data-unit="cubic meters">Gravel</option>
+                    <option value="Sand" data-unit="cubic meters">Sand</option>
+                    <option value="Wood / Lumber" data-unit="pieces">Wood / Lumber</option>
+                    <option value="Bricks" data-unit="pieces">Bricks</option>
+                    <option value="Tiles" data-unit="pieces">Tiles</option>
+                    <option value="Glass" data-unit="square meters">Glass</option>
+                    <option value="Asphalt" data-unit="tons">Asphalt</option>
+                    <option value="PVC Pipes" data-unit="meters">PVC Pipes</option>
+                    <option value="Copper Wiring" data-unit="meters">Copper Wiring</option>
+                    <option value="Aluminum Sheets" data-unit="square meters">Aluminum Sheets</option>
+                    <option value="Paint" data-unit="custom">Paint</option>
+                    <option value="Insulation" data-unit="square meters">Insulation</option>
+                    <option value="Drywall / Gypsum" data-unit="sheets">Drywall / Gypsum</option>
           </select>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; width: 100%;">
-          <label for="newMaterialQuantity" style="margin-bottom: 4px;">Quantity</label>
-          <input type="number" id="newMaterialQuantity" placeholder="Enter quantity" min="1" required style="width: 100%;" />
         </div>
-        <div style="text-align: center; width: 100%;">
-          <button style="width:50%; text-align: center;" class="action-btn" type="button" onclick="confirmAddNewMaterial()">Add</button>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="newQuantity" class="form-label fw-bold">Quantity*</label>
+                  <input type="number" id="newQuantity" name="quantity" class="form-control form-control-lg" min="0.01" step="0.01" required onchange="updatePaintUnit('new')" />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="newUnit" class="form-label fw-bold">Unit*</label>
+                  <div class="input-group">
+                    <input type="text" id="newUnit" name="unit" class="form-control form-control-lg" readonly />
+                    <select class="form-select form-select-lg" id="newPaintUnitSelect" style="display: none;" onchange="updatePaintUnitSelection('new')">
+                      <option value="ml">Milliliters (ml)</option>
+                      <option value="pints">Pints</option>
+                      <option value="quarts">Quarts</option>
+                      <option value="gallons">Gallons</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="newReorderLevel" class="form-label fw-bold">Reorder Level</label>
+                  <input type="number" id="newReorderLevel" name="reorder_level" class="form-control form-control-lg" min="0" />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="newSupplierId" class="form-label fw-bold">Supplier</label>
+                  <select class="form-select form-select-lg" id="newSupplierId" name="supplier_id">
+                    <option value="">Select Supplier</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-group">
+                  <label for="newRemarks" class="form-label fw-bold">Remarks</label>
+                  <textarea id="newRemarks" name="remarks" class="form-control form-control-lg" rows="3"></textarea>
+                </div>
+              </div>
         </div>
       </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="confirmAddNewMaterial()">
+            <i class="fas fa-save me-2"></i>Add Material
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Delete Modal -->
-  <div id="deleteModal" class="modal">
-    <div class="modal-content" style="max-width: 350px; text-align: center; padding: 32px 24px;">
-      <div style="font-size: 48px; color: #ef4444; margin-bottom: 12px;">
-        <i class="bi bi-exclamation-triangle-fill"></i>
+  <!-- Update Delete Modal -->
+  <div id="deleteModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-5">
+          <div class="mb-4">
+            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
       </div>
-      <h3 style="color: #ef4444; margin-bottom: 10px;">Delete Item?</h3>
-      <p style="color: #64748b; margin-bottom: 24px;">Are you sure you want to delete this item?</p>
-      <div style="display: flex; gap: 12px; justify-content: center;">
-        <button style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" class="action-btn" onclick="confirmDelete()">Delete</button>
-        <button style="background-color: #f1f5f9; color: #334155; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" class="action-btn" onclick="closeDeleteModal()">Cancel</button>
+          <h3 class="mb-3 text-danger">Delete Item?</h3>
+          <p class="text-muted mb-4">Are you sure you want to delete this item? This action cannot be undone.</p>
+          <div class="d-flex justify-content-center gap-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+              <i class="fas fa-trash me-2"></i>Delete
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Add Confirmation Modal -->
+  <div id="confirmChangesModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <i class="fas fa-question-circle text-primary" style="font-size: 4rem;"></i>
+                </div>
+                <h3 class="mb-3">Confirm Changes?</h3>
+                <p class="text-muted mb-4">Are you sure you want to save these changes to the material?</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="proceedWithSave()">
+                        <i class="fas fa-check me-2"></i>Yes, Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Success Modal -->
+<div id="successModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="success-icon mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                </div>
+                <h3 class="mb-3 text-success">Changes Saved Successfully!</h3>
+                <p class="text-muted mb-4">
+                    The material has been updated successfully.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-success px-4 py-2" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-2"></i>OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+  <!-- Add Bootstrap JS Bundle before our custom scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const items = [
-      { id: 1, name: 'Steel Rod', quantity: 150, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 2, name: 'Nail', quantity: 10, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 3, name: 'Screw', quantity: 50, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 4, name: 'Cement', quantity: 150, unit: 'KG', supplier: 'Supplier A' },
-      { id: 5, name: 'Yero', quantity: 150, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 6, name: 'Plywood', quantity: 150, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 7, name: 'Paint', quantity: 150, unit: 'L', supplier: 'Supplier A' },
-      { id: 8, name: 'Cement Bag', quantity: 50, unit: 'PCS', supplier: 'Supplier B' },
-      { id: 9, name: 'Wood Plank', quantity: 200, unit: 'PCS', supplier: 'Supplier C' },
-      { id: 10, name: 'Pako', quantity: 150, unit: 'PCS', supplier: 'Supplier A' },
-      { id: 11, name: 'Pintura', quantity: 150, unit: 'L', supplier: 'Supplier D' }
-    ];
-
+    let items = [];
     let currentPage = 1;
     let itemsPerPage = 10;
-    let filteredItems = [...items];
+    let filteredItems = [];
     let currentStatusFilter = 'all';
+    let activeModal = null;
+    let suppliers = [];
+
+    // Initialize Bootstrap modals when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalIds = ['addMaterialModal', 'addNewMaterialModal', 'deleteModal'];
+        
+        modalIds.forEach(modalId => {
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                // Remove any existing modal instance
+                const existingModal = bootstrap.Modal.getInstance(modalElement);
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+
+                // Create new modal instance with updated options
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+
+                // Add event listeners for modal events
+                modalElement.addEventListener('show.bs.modal', function() {
+                    // Remove any existing backdrops
+                    const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+                    existingBackdrops.forEach(backdrop => backdrop.remove());
+                    
+                    // Create new backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    document.body.appendChild(backdrop);
+                    
+                    // Ensure modal is on top
+                    modalElement.style.zIndex = '1060';
+                    
+                    activeModal = modalElement;
+                });
+
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    // Ensure form elements are focusable
+                    const inputs = modalElement.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        input.style.pointerEvents = 'auto';
+                    });
+                });
+
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    // Clean up backdrop
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    
+                    if (activeModal === modalElement) {
+                        activeModal = null;
+                    }
+                });
+            }
+        });
+
+        // Initialize the page
+        initializePage();
+        fetchSuppliers();
+    });
+
+    // Fetch all inventory items
+    async function fetchInventoryItems() {
+        try {
+            const response = await fetch('/scm/api/inventory');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch inventory items');
+            }
+            const data = await response.json();
+            
+            // Debug log to see what we're getting
+            console.log('Inventory data received:', data);
+            
+            if (!data || !Array.isArray(data.items)) {
+                console.error('Invalid data format received:', data);
+                throw new Error('Invalid data format received from server');
+            }
+
+            items = data.items.map(item => ({
+                ...item,
+                quantity: parseFloat(item.quantity) || 0,
+                reorder_level: parseFloat(item.reorder_level) || 0
+            }));
+            
+            filteredItems = [...items];
+            renderTable();
+        } catch (error) {
+            console.error('Error fetching inventory:', error);
+            showToast(error.message || 'Error loading inventory items', 'error');
+        }
+    }
 
     function renderTable() {
       const tableBody = document.querySelector('#material-table tbody');
@@ -551,24 +1161,44 @@
       const end = start + itemsPerPage;
       const paginatedItems = filteredItems.slice(start, end);
 
+      // Update entries count
+      const currentEntries = document.getElementById('currentEntries');
+      const totalEntries = document.getElementById('totalEntries');
+      if (currentEntries) currentEntries.textContent = paginatedItems.length;
+      if (totalEntries) totalEntries.textContent = filteredItems.length;
+
+      if (paginatedItems.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="fas fa-inbox fa-2x mb-2"></i>
+              <p class="mb-0">No inventory items found</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
       tableBody.innerHTML = paginatedItems.map(item => `
         <tr>
-          <td>${item.id}</td>
-          <td>${item.name}</td>
-          <td>${item.unit}</td>
-          <td>${item.quantity}</td>
-          <td>
-            <span class="status-badge ${getStatusClass(item.quantity)}">
-              ${getStatusText(item.quantity)}
+          <td class="align-middle">${item.inventory_id}</td>
+          <td class="align-middle">${item.material_type}</td>
+          <td class="align-middle">${item.unit}</td>
+          <td class="align-middle">${item.quantity.toLocaleString()}</td>
+          <td class="align-middle">
+            <span class="status-badge ${getStatusClass(item.quantity, item.reorder_level)}">
+              ${getStatusText(item.quantity, item.reorder_level)}
             </span>
           </td>
-          <td>
-            <button class="btn btn-sm btn-info me-1" onclick="openAddMaterialModal(${item.id})" title="Edit Material">
+          <td class="align-middle">
+            <div class="action-buttons">
+              <button class="btn btn-sm btn-info" onclick="openAddMaterialModal(${item.inventory_id})" title="Edit Material">
               <i class="fas fa-edit"></i> Edit
             </button>
-            <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${item.id})" title="Remove Material">
+              <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${item.inventory_id})" title="Remove Material">
               <i class="fas fa-trash"></i> Delete
             </button>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -576,286 +1206,886 @@
       renderPagination();
     }
 
+    function getStatusClass(quantity, reorderLevel) {
+        if (quantity <= reorderLevel) return 'status-low';
+        if (quantity <= reorderLevel * 1.5) return 'status-medium';
+        return 'status-good';
+    }
+
+    function getStatusText(quantity, reorderLevel) {
+        if (quantity <= reorderLevel) return 'Low stock';
+        if (quantity <= reorderLevel * 1.5) return 'Medium';
+        return 'Good';
+    }
+
+    // Update the confirmQuantityChange function to show confirmation first
+    function confirmQuantityChange() {
+        const editModal = document.getElementById('addMaterialModal');
+        const confirmModal = document.getElementById('confirmChangesModal');
+        
+        // Ensure edit modal backdrop is visible but not interactive
+        const editModalBackdrop = document.querySelector('.modal-backdrop');
+        if (editModalBackdrop) {
+            editModalBackdrop.style.zIndex = '1040';
+        }
+        
+        // Show confirmation modal with higher z-index
+        const modal = new bootstrap.Modal(confirmModal, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        modal.show();
+    }
+
+    // Add new function to handle the actual save after confirmation
+    async function proceedWithSave() {
+        try {
+            // Close confirmation modal first
+            const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmChangesModal'));
+            if (confirmModal) {
+                confirmModal.hide();
+            }
+
+            // Rest of the existing proceedWithSave code...
+            const inventoryId = currentAddMaterialItemId;
+            const materialType = document.getElementById('editMaterialType').value;
+            const finalQuantity = document.getElementById('finalQuantity').value;
+            const unit = document.getElementById('currentUnitDisplay').textContent;
+            const reorderLevel = document.getElementById('editReorderLevel').value;
+            const supplierId = document.getElementById('editSupplierId').value;
+            const remarks = document.getElementById('editRemarks').value;
+
+            if (!materialType || !finalQuantity || !unit) {
+                showToast('Please fill out all required fields', 'error');
+                return;
+            }
+
+            const response = await fetch(`/scm/api/inventory/${inventoryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    material_type: materialType,
+                    quantity: parseFloat(finalQuantity),
+                    unit: unit,
+                    reorder_level: reorderLevel ? parseFloat(reorderLevel) : null,
+                    supplier_id: supplierId ? parseInt(supplierId) : null,
+                    remarks: remarks
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update material');
+            }
+
+            // Close the edit modal
+            closeAddMaterialModal();
+
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+
+            // Refresh the inventory list when success modal is closed
+            document.getElementById('successModal').addEventListener('hidden.bs.modal', function () {
+                fetchInventoryItems();
+            }, { once: true });
+
+        } catch (error) {
+            console.error('Error updating material:', error);
+            showToast('Error updating material', 'error');
+        }
+    }
+
+    // Update confirmAddNewMaterial to include confirmation
+    function confirmAddNewMaterial() {
+        const modal = new bootstrap.Modal(document.getElementById('confirmChangesModal'));
+        modal.show();
+    }
+
+    // Add new function to handle new material save after confirmation
+    async function proceedWithNewMaterial() {
+        const materialType = document.getElementById('newMaterialType').value;
+        const quantity = document.getElementById('newQuantity').value;
+        const unit = document.getElementById('newUnit').value;
+        const reorderLevel = document.getElementById('newReorderLevel').value;
+        const supplierId = document.getElementById('newSupplierId').value;
+        const remarks = document.getElementById('newRemarks').value;
+
+        if (!materialType || !quantity || !unit) {
+            showToast('Please fill out all required fields', 'error');
+            return;
+        }
+
+        try {
+            // Close confirmation modal
+            const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmChangesModal'));
+            if (confirmModal) {
+                confirmModal.hide();
+            }
+
+            const response = await fetch('/scm/api/inventory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    material_type: materialType,
+                    quantity: parseFloat(quantity),
+                    unit: unit,
+                    reorder_level: reorderLevel ? parseFloat(reorderLevel) : null,
+                    supplier_id: supplierId ? parseInt(supplierId) : null,
+                    remarks: remarks
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add material');
+            }
+
+            // Close the add new material modal
+            closeAddNewMaterialModal();
+
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+
+            // Refresh the inventory list when success modal is closed
+            document.getElementById('successModal').addEventListener('hidden.bs.modal', function () {
+                fetchInventoryItems();
+            }, { once: true });
+
+        } catch (error) {
+            console.error('Error adding material:', error);
+            showToast('Error adding material', 'error');
+        }
+    }
+
+    // Add styles for the modals
+    const style = document.createElement('style');
+    style.textContent = `
+        .success-icon {
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #successModal .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        #successModal .modal-body {
+            padding: 3rem 2rem;
+        }
+
+        #successModal h3 {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        #successModal p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        #confirmChangesModal .modal-content {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        #confirmChangesModal .modal-body {
+            padding: 3rem 2rem;
+        }
+
+        #confirmChangesModal h3 {
+            font-weight: 600;
+            color: #1a237e;
+        }
+
+        #confirmChangesModal p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Add pagination functions
     function renderPagination() {
-      const paginationControls = document.getElementById('paginationControls');
-      const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-      
-      paginationControls.innerHTML = '';
-      
-      if (currentPage > 1) {
-        const prevButton = document.createElement('button');
-        prevButton.innerHTML = '&laquo;';
-        prevButton.onclick = () => goToPage(currentPage - 1);
-        paginationControls.appendChild(prevButton);
-      }
-      
-      for (let i = 1; i <= totalPages; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.textContent = i;
-        pageButton.onclick = () => goToPage(i);
-        if (i === currentPage) pageButton.classList.add('active');
-        paginationControls.appendChild(pageButton);
-      }
-      
-      if (currentPage < totalPages) {
-        const nextButton = document.createElement('button');
-        nextButton.innerHTML = '&raquo;';
-        nextButton.onclick = () => goToPage(currentPage + 1);
-        paginationControls.appendChild(nextButton);
-      }
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+        const paginationContainer = document.getElementById('paginationControls');
+        
+        if (!paginationContainer) return;
+
+        let paginationHTML = '';
+        
+        // Previous button
+        paginationHTML += `
+            <button 
+                onclick="changePage(${currentPage - 1})" 
+                ${currentPage === 1 ? 'disabled' : ''}
+                class="pagination-btn"
+            >
+                Previous
+            </button>
+        `;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHTML += `
+                <button 
+                    onclick="changePage(${i})" 
+                    class="pagination-btn ${i === currentPage ? 'active' : ''}"
+                >
+                    ${i}
+                </button>
+            `;
+        }
+
+        // Next button
+        paginationHTML += `
+            <button 
+                onclick="changePage(${currentPage + 1})" 
+                ${currentPage === totalPages ? 'disabled' : ''}
+                class="pagination-btn"
+            >
+                Next
+            </button>
+        `;
+
+        paginationContainer.innerHTML = paginationHTML;
     }
 
-    function goToPage(page) {
-      currentPage = page;
-      renderTable();
+    function changePage(newPage) {
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+          renderTable();
+        }
     }
 
-    function handleSearch(value) {
-      const clearButton = document.querySelector('.clear-search');
-      if (value.trim() !== '') {
-        clearButton.classList.add('visible');
-      } else {
-        clearButton.classList.remove('visible');
-      }
-      filterMaterials(value);
+    // Add search and filter functions
+    function handleSearch(searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredItems = items.filter(item => 
+            item.material_type.toLowerCase().includes(searchLower) ||
+            item.unit.toLowerCase().includes(searchLower) ||
+            item.inventory_id.toString().includes(searchTerm)
+        );
+        currentPage = 1;
+        renderTable();
     }
 
     function clearMaterialSearch() {
-      const searchInput = document.querySelector('.material-search');
-      const statusFilter = document.querySelector('.status-filter');
-      searchInput.value = '';
-      statusFilter.value = 'all';
-      currentStatusFilter = 'all';
-      document.querySelector('.clear-search').classList.remove('visible');
-      filterMaterials('');
-    }
-
-    function filterMaterials(searchTerm) {
-      const searchTermLower = searchTerm.toLowerCase();
-      filteredItems = items.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(searchTermLower) ||
-                            item.id.toString().includes(searchTermLower) ||
-                            item.unit.toLowerCase().includes(searchTermLower);
-        
-        const matchesStatus = currentStatusFilter === 'all' || 
-                            getStatusText(item.quantity).toLowerCase() === currentStatusFilter;
-        
-        return matchesSearch && matchesStatus;
-      });
-      
-      currentPage = 1;
-      renderTable();
+        document.querySelector('.material-search').value = '';
+        filteredItems = [...items];
+        currentPage = 1;
+        renderTable();
     }
 
     function filterByStatus(status) {
-      currentStatusFilter = status;
-      const searchInput = document.querySelector('.material-search');
-      filterMaterials(searchInput.value);
-    }
-
-    function getStatusClass(quantity) {
-      if (quantity < 50) return 'status-low';
-      if (quantity <= 100) return 'status-medium';
-      return 'status-good';
-    }
-
-    function getStatusText(quantity) {
-      if (quantity < 50) return 'Low stock';
-      if (quantity <= 100) return 'Medium';
-      return 'Good';
-    }
-
-    let itemIdToDelete = null;
-    let currentAddMaterialItemId = null;
-
-    function openDeleteModal(itemId) {
-      itemIdToDelete = itemId;
-      document.getElementById('deleteModal').style.display = 'block';
-    }
-
-    function closeDeleteModal() {
-      document.getElementById('deleteModal').style.display = 'none';
-      itemIdToDelete = null;
-    }
-
-    function confirmDelete() {
-      if (itemIdToDelete !== null) {
-        const index = items.findIndex(item => item.id === itemIdToDelete);
-        if (index !== -1) {
-          items.splice(index, 1);
-          filteredItems = [...items];
-          renderTable();
-          showToast("Material deleted successfully!");
+        currentStatusFilter = status;
+        if (status === 'all') {
+            filteredItems = [...items];
+        } else {
+            filteredItems = items.filter(item => {
+                const itemStatus = getStatusText(item.quantity, item.reorder_level).toLowerCase();
+                return itemStatus === status.toLowerCase();
+            });
         }
-      }
-      closeDeleteModal();
-    }
-
-    function openAddMaterialModal(itemId) {
-      currentAddMaterialItemId = itemId;
-      const item = items.find(i => i.id === itemId);
-      if (item) {
-        document.getElementById('editMaterialName').value = item.name;
-        document.getElementById('editMaterialUnit').value = item.unit;
-        document.getElementById('currentQuantity').value = item.quantity;
-        document.getElementById('quantityChange').value = '';
-        document.getElementById('newQuantity').value = item.quantity;
-        document.getElementById('addMaterialModal').style.display = 'block';
-        
-        document.getElementById('quantityChange').addEventListener('input', calculateNewQuantity);
-      }
-    }
-
-    function calculateNewQuantity() {
-      const currentQty = parseInt(document.getElementById('currentQuantity').value) || 0;
-      const changeQty = parseInt(document.getElementById('quantityChange').value) || 0;
-      const newQty = currentQty + changeQty;
-      document.getElementById('newQuantity').value = newQty >= 0 ? newQty : 0;
-    }
-
-    function closeAddMaterialModal() {
-      document.getElementById('addMaterialModal').style.display = 'none';
-      clearAddMaterialForm();
-    }
-
-    function clearAddMaterialForm() {
-      document.getElementById('editMaterialName').value = '';
-      document.getElementById('editMaterialUnit').value = 'PCS';
-      document.getElementById('currentQuantity').value = '';
-      document.getElementById('quantityChange').value = '';
-      document.getElementById('newQuantity').value = '';
-      document.getElementById('quantityChange').removeEventListener('input', calculateNewQuantity);
-    }
-
-    function confirmQuantityChange() {
-      const name = document.getElementById('editMaterialName').value.trim();
-      const unit = document.getElementById('editMaterialUnit').value;
-      const changeQty = parseInt(document.getElementById('quantityChange').value) || 0;
-      const newQty = parseInt(document.getElementById('newQuantity').value);
-
-      if (!name) {
-        alert("Please enter a material name.");
-        return;
-      }
-
-      if (newQty < 0) {
-        alert("Quantity cannot be negative.");
-        return;
-      }
-
-      const item = items.find(i => i.id === currentAddMaterialItemId);
-      if (item) {
-        item.name = name;
-        item.unit = unit;
-        item.quantity = newQty;
+        currentPage = 1;
         renderTable();
-        showToast("Material updated successfully!");
-      }
-
-      closeAddMaterialModal();
-    }
-
-    function openAddNewMaterialModal() {
-      document.getElementById('addNewMaterialModal').style.display = 'block';
-    }
-
-    function closeAddNewMaterialModal() {
-      document.getElementById('addNewMaterialModal').style.display = 'none';
-      clearAddNewMaterialForm();
-    }
-
-    function clearAddNewMaterialForm() {
-      document.getElementById('newMaterialName').value = '';
-      document.getElementById('newMaterialUnit').value = 'PCS';
-      document.getElementById('newMaterialQuantity').value = '';
-    }
-
-    function confirmAddNewMaterial() {
-      const name = document.getElementById('newMaterialName').value.trim();
-      const unit = document.getElementById('newMaterialUnit').value;
-      const quantity = parseInt(document.getElementById('newMaterialQuantity').value);
-
-      if (!name || isNaN(quantity)) {
-        alert("Please fill out all fields correctly.");
-        return;
-      }
-
-      if (quantity < 1) {
-        alert("Quantity must be at least 1.");
-        return;
-      }
-
-      const newItem = {
-        id: items.length + 1,
-        name: name,
-        unit: unit,
-        quantity: quantity,
-        supplier: 'Default Supplier'
-      };
-
-      items.push(newItem);
-      filteredItems = [...items];
-      renderTable();
-      showToast("New material added successfully!");
-      closeAddNewMaterialModal();
-    }
-
-    // Toast notification
-    const toast = document.createElement('div');
-    toast.id = 'toast';
-    toast.style.cssText = 'display:none; position:fixed; top:10%; left:50%; transform:translate(-50%,-50%); background:#F8FAFC; color:#1E293B; padding:16px 24px; border-radius:8px; z-index:9999; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.2);';
-    document.body.appendChild(toast);
-
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.style.display = 'block';
-      toast.style.opacity = '1';
-      setTimeout(() => {
-        toast.style.transition = 'opacity 0.5s';
-        toast.style.opacity = '0';
-        setTimeout(() => {
-          toast.style.display = 'none';
-          toast.style.transition = '';
-        }, 500);
-      }, 1500);
     }
 
     function setEntriesPerPage() {
-      const select = document.getElementById('entriesPerPage');
-      itemsPerPage = parseInt(select.value);
-      currentPage = 1;
-      renderTable();
+        const select = document.getElementById('entriesPerPage');
+        itemsPerPage = parseInt(select.value);
+        currentPage = 1;
+        renderTable();
     }
 
-    // Initialize
-    function initializePage() {
-      const select = document.getElementById('entriesPerPage');
-      itemsPerPage = parseInt(select.value);
-      renderTable();
+    // Modal functions
+    function openAddNewMaterialModal() {
+        try {
+            // Hide any active modal first
+            if (activeModal) {
+                const currentModal = bootstrap.Modal.getInstance(activeModal);
+                if (currentModal) {
+                    currentModal.hide();
+                }
+            }
+
+            const modalElement = document.getElementById('addNewMaterialModal');
+            if (!modalElement) {
+                throw new Error('Modal element not found');
+            }
+
+            // Remove any existing backdrops
+            const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+            existingBackdrops.forEach(backdrop => backdrop.remove());
+
+            // Create new modal instance
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+
+            // Show modal
+            modal.show();
+
+            // Ensure form elements are clickable
+            setTimeout(() => {
+                const inputs = modalElement.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.style.pointerEvents = 'auto';
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error opening modal:', error);
+            alert('Error opening modal. Please refresh the page and try again.');
+        }
     }
 
-    // Call initialize when the page loads
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
+    function closeAddNewMaterialModal() {
+        try {
+            const modalElement = document.getElementById('addNewMaterialModal');
+            if (!modalElement) return;
+
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+
+            // Clean up backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            // Reset form
+            document.getElementById('addNewMaterialForm').reset();
+            document.getElementById('newUnit').value = '';
+            document.getElementById('newPaintUnitSelect').style.display = 'none';
+
+            if (activeModal === modalElement) {
+                activeModal = null;
+            }
+        } catch (error) {
+            console.error('Error closing modal:', error);
+        }
+    }
+
+    function openDeleteModal(inventoryId) {
+        itemIdToDelete = inventoryId;
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+
+    function closeDeleteModal() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+        modal.hide();
+        itemIdToDelete = null;
+    }
+
+    // Add this function to handle opening the edit modal
+    async function openAddMaterialModal(inventoryId) {
+        try {
+            // Store the current item ID
+            currentAddMaterialItemId = inventoryId;
+
+            // Find the item in our items array
+            const item = items.find(i => i.inventory_id === inventoryId);
+            if (!item) {
+                throw new Error('Item not found');
+            }
+
+            // Store current quantity for calculations
+            currentQuantity = parseFloat(item.quantity) || 0;
+
+            // Get modal element
+            const modalElement = document.getElementById('addMaterialModal');
+            if (!modalElement) {
+                throw new Error('Modal element not found');
+            }
+
+            // Hide any active modal first
+            if (activeModal) {
+                const currentModal = bootstrap.Modal.getInstance(activeModal);
+                if (currentModal) {
+                    currentModal.hide();
+                }
+            }
+
+            // Remove any existing backdrops
+            const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+            existingBackdrops.forEach(backdrop => backdrop.remove());
+
+            // Create new modal instance
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+
+            // Set up modal shown event
+            modalElement.addEventListener('shown.bs.modal', function onModalShown() {
+                // Remove the event listener to prevent multiple bindings
+                modalElement.removeEventListener('shown.bs.modal', onModalShown);
+
+                // Populate form fields
+                document.getElementById('editMaterialType').value = item.material_type;
+                document.getElementById('currentQuantityDisplay').value = item.quantity;
+                document.getElementById('currentUnitDisplay').textContent = item.unit;
+                document.getElementById('finalQuantity').value = item.quantity;
+                document.getElementById('finalUnitDisplay').textContent = item.unit;
+                document.getElementById('editReorderLevel').value = item.reorder_level || '';
+                document.getElementById('editSupplierId').value = item.supplier_id || '';
+                document.getElementById('editRemarks').value = item.remarks || '';
+
+                // Update unit displays
+                document.getElementById('usedUnitDisplay').textContent = item.unit;
+                document.getElementById('addUnitDisplay').textContent = item.unit;
+
+                // Reset quantity management sections
+                document.getElementById('usedQuantityInput').style.display = 'none';
+                document.getElementById('addQuantityInput').style.display = 'none';
+                isUsedQuantityOpen = false;
+                isAddQuantityOpen = false;
+
+                // Handle paint unit selection if material is paint
+                if (item.material_type === 'Paint') {
+                    const paintUnitSelect = document.getElementById('editPaintUnitSelect');
+                    if (paintUnitSelect) {
+                        paintUnitSelect.style.display = 'block';
+                        paintUnitSelect.value = item.unit;
+                    }
+                }
+
+                // Ensure form elements are clickable
+                const inputs = modalElement.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.style.pointerEvents = 'auto';
+                });
+            });
+
+            // Show the modal
+            modal.show();
+            activeModal = modalElement;
+
+        } catch (error) {
+            console.error('Error opening edit modal:', error);
+            showToast('Error opening edit modal. Please try again.', 'error');
+        }
+    }
+
+    function closeAddMaterialModal() {
+        try {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addMaterialModal'));
+            if (modal) {
+                modal.hide();
+            }
+
+            // Reset form and clear values
+            const form = document.getElementById('editMaterialForm');
+            if (form) {
+                form.reset();
+            }
+
+            // Reset quantity management displays
+            const displays = [
+                'currentQuantityDisplay',
+                'currentUnitDisplay',
+                'usedUnitDisplay',
+                'addUnitDisplay',
+                'finalUnitDisplay',
+                'finalQuantity'
+            ];
+
+            displays.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (element.tagName === 'INPUT') {
+                        element.value = '';
+                    } else {
+                        element.textContent = '';
+                    }
+                }
+            });
+
+            // Hide quantity input sections
+            const usedQuantityInput = document.getElementById('usedQuantityInput');
+            const addQuantityInput = document.getElementById('addQuantityInput');
+            if (usedQuantityInput) usedQuantityInput.style.display = 'none';
+            if (addQuantityInput) addQuantityInput.style.display = 'none';
+
+            // Reset state variables
+            currentAddMaterialItemId = null;
+            currentQuantity = 0;
+            isUsedQuantityOpen = false;
+            isAddQuantityOpen = false;
+
+            // Clean up backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            if (activeModal === document.getElementById('addMaterialModal')) {
+                activeModal = null;
+            }
+        } catch (error) {
+            console.error('Error closing modal:', error);
+        }
+    }
+
+    // Initialize variables
+    let itemIdToDelete = null;
+    let currentAddMaterialItemId = null;
+
+    // Initialize the page
+    async function initializePage() {
+        try {
+            await fetchInventoryItems();
+            const select = document.getElementById('entriesPerPage');
+            if (select) {
+                itemsPerPage = parseInt(select.value);
+            }
+        } catch (error) {
+            console.error('Error initializing page:', error);
+            showToast('Error loading inventory data', 'error');
+        }
+    }
+
+    // Add toast notification element if it doesn't exist
+    if (!document.getElementById('toast')) {
+    const toast = document.createElement('div');
+    toast.id = 'toast';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1080 !important; /* Higher than all modals */
+            display: none;
+            transition: opacity 0.5s;
+        `;
+    document.body.appendChild(toast);
+    }
+
+    // Update showToast function
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+
+        // Create a new toast element if it doesn't exist
+        if (!document.body.contains(toast)) {
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.style.display = 'block';
+        toast.style.backgroundColor = type === 'error' ? '#dc3545' : '#28a745';
+        toast.style.color = 'white';
+        toast.style.opacity = '1';
+        toast.style.zIndex = '1080'; // Ensure toast is always on top
+
+        // Position toast relative to the viewport
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const toastHeight = toast.offsetHeight;
+        const toastWidth = toast.offsetWidth;
+
+        // Position in top-right corner with some padding
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.left = 'auto';
+        toast.style.transform = 'none';
+
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.5s';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.style.display = 'none';
+                toast.style.transition = '';
+            }, 500);
+        }, 3000);
+    }
+
+    // Add these new functions for material type and unit handling
+    function updateUnitField(formType) {
+        const prefix = formType === 'new' ? 'new' : 'edit';
+        const materialSelect = document.getElementById(`${prefix}MaterialType`);
+        const unitDisplay = formType === 'new' ? 
+            document.getElementById(`${prefix}Unit`) : 
+            document.getElementById('currentUnitDisplay');
+        const paintUnitSelect = document.getElementById(`${prefix}PaintUnitSelect`);
+        const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+        
+        if (!materialSelect || !unitDisplay) {
+            console.error('Required elements not found:', { materialSelect, unitDisplay });
+            return;
+        }
+        
+        if (selectedOption.value === 'Paint') {
+            if (paintUnitSelect) {
+                paintUnitSelect.style.display = 'block';
+                updatePaintUnit(formType);
+            }
+        } else {
+            if (paintUnitSelect) {
+                paintUnitSelect.style.display = 'none';
+            }
+            if (selectedOption.value) {
+                const unit = selectedOption.getAttribute('data-unit');
+                unitDisplay.value = unit;
+                // Update all unit displays in edit mode
+                if (formType === 'edit') {
+                    document.getElementById('usedUnitDisplay').textContent = unit;
+                    document.getElementById('addUnitDisplay').textContent = unit;
+                    document.getElementById('finalUnitDisplay').textContent = unit;
+                }
+            } else {
+                unitDisplay.value = '';
+                if (formType === 'edit') {
+                    document.getElementById('usedUnitDisplay').textContent = '';
+                    document.getElementById('addUnitDisplay').textContent = '';
+                    document.getElementById('finalUnitDisplay').textContent = '';
+                }
+            }
+        }
+    }
+
+    function updatePaintUnit(formType) {
+        const prefix = formType === 'new' ? 'new' : 'edit';
+        const materialSelect = document.getElementById(`${prefix}MaterialType`);
+        const unitDisplay = formType === 'new' ? 
+            document.getElementById(`${prefix}Unit`) : 
+            document.getElementById('currentUnitDisplay');
+        const paintUnitSelect = document.getElementById(`${prefix}PaintUnitSelect`);
+        const quantityInput = document.getElementById(`${prefix}Quantity`);
+        
+        if (!materialSelect || !unitDisplay || !paintUnitSelect || !quantityInput) {
+            console.error('Required elements not found:', { materialSelect, unitDisplay, paintUnitSelect, quantityInput });
+            return;
+        }
+        
+        if (materialSelect.value === 'Paint') {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            let selectedUnit;
+            
+            if (quantity <= 0) {
+                selectedUnit = 'gallons';
+            } else if (quantity < 0.5) {
+                selectedUnit = 'ml';
+            } else if (quantity < 1) {
+                selectedUnit = 'pints';
     } else {
-      initializePage();
+                selectedUnit = 'gallons';
+            }
+            
+            paintUnitSelect.value = selectedUnit;
+            unitDisplay.value = selectedUnit;
+            
+            // Update all unit displays in edit mode
+            if (formType === 'edit') {
+                document.getElementById('usedUnitDisplay').textContent = selectedUnit;
+                document.getElementById('addUnitDisplay').textContent = selectedUnit;
+                document.getElementById('finalUnitDisplay').textContent = selectedUnit;
+            }
+        }
     }
-  </script>
 
-  <script>
-    // Sidebar toggle functionality
-    document.getElementById('sidebar-toggle').onclick = function() {
-      const sidebar = document.getElementById('sidebar');
-      const content = document.getElementById('content');
-      if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-        sidebar.style.display = 'block';
-        content.style.marginLeft = '300px';
-      } else {
-        sidebar.style.display = 'none';
-        content.style.marginLeft = '0';
+    function updatePaintUnitSelection(formType) {
+        const prefix = formType === 'new' ? 'new' : 'edit';
+        const paintUnitSelect = document.getElementById(`${prefix}PaintUnitSelect`);
+        const unitDisplay = formType === 'new' ? 
+            document.getElementById(`${prefix}Unit`) : 
+            document.getElementById('currentUnitDisplay');
+        
+        if (!paintUnitSelect || !unitDisplay) {
+            console.error('Required elements not found:', { paintUnitSelect, unitDisplay });
+            return;
+        }
+        
+        const selectedUnit = paintUnitSelect.value;
+        unitDisplay.value = selectedUnit;
+        
+        // Update all unit displays in edit mode
+        if (formType === 'edit') {
+            document.getElementById('usedUnitDisplay').textContent = selectedUnit;
+            document.getElementById('addUnitDisplay').textContent = selectedUnit;
+            document.getElementById('finalUnitDisplay').textContent = selectedUnit;
+        }
+    }
+
+    // Add fetchSuppliers function
+    async function fetchSuppliers() {
+      try {
+        console.log('Fetching active suppliers...');
+        const response = await fetch('/scm/suppliers?status=active');
+        if (!response.ok) throw new Error('Failed to fetch suppliers');
+        const data = await response.json();
+        suppliers = data.filter(supplier => supplier.status === 'active');
+        console.log('Fetched active suppliers:', suppliers.length);
+        
+        // Update supplier dropdowns in both modals
+        updateSupplierDropdowns();
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        showToast('Failed to load suppliers. Please try again later.', 'error');
       }
-    };
+    }
+
+    // Add function to update supplier dropdowns
+    function updateSupplierDropdowns() {
+      const supplierSelects = [
+        document.getElementById('editSupplierId'),
+        document.getElementById('newSupplierId')
+      ];
+
+      supplierSelects.forEach(select => {
+        if (select) {
+          // Clear existing options except the first one
+          while (select.options.length > 1) {
+            select.remove(1);
+          }
+
+          // Add supplier options
+          suppliers.forEach(supplier => {
+            const option = document.createElement('option');
+            option.value = supplier.supplier_id;
+            option.textContent = `${supplier.supplier_name} (${supplier.contact_name})`;
+            select.appendChild(option);
+          });
+        }
+      });
+    }
+
+    // Add these new functions for quantity management
+    let currentQuantity = 0;
+    let isUsedQuantityOpen = false;
+    let isAddQuantityOpen = false;
+
+    function toggleUsedQuantityInput() {
+      const usedQuantityInput = document.getElementById('usedQuantityInput');
+      const addQuantityInput = document.getElementById('addQuantityInput');
+      
+      if (isAddQuantityOpen) {
+        addQuantityInput.style.display = 'none';
+        isAddQuantityOpen = false;
+      }
+      
+      if (isUsedQuantityOpen) {
+        usedQuantityInput.style.display = 'none';
+        isUsedQuantityOpen = false;
+      } else {
+        usedQuantityInput.style.display = 'flex';
+        isUsedQuantityOpen = true;
+        document.getElementById('usedQuantity').value = '';
+        document.getElementById('usedQuantity').focus();
+      }
+    }
+
+    function toggleAddQuantityInput() {
+      const usedQuantityInput = document.getElementById('usedQuantityInput');
+      const addQuantityInput = document.getElementById('addQuantityInput');
+      
+      if (isUsedQuantityOpen) {
+        usedQuantityInput.style.display = 'none';
+        isUsedQuantityOpen = false;
+      }
+      
+      if (isAddQuantityOpen) {
+        addQuantityInput.style.display = 'none';
+        isAddQuantityOpen = false;
+      } else {
+        addQuantityInput.style.display = 'flex';
+        isAddQuantityOpen = true;
+        document.getElementById('addQuantity').value = '';
+        document.getElementById('addQuantity').focus();
+      }
+    }
+
+    function confirmUsedQuantity() {
+      const usedQuantity = parseFloat(document.getElementById('usedQuantity').value);
+      if (isNaN(usedQuantity) || usedQuantity <= 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+      }
+      
+      if (usedQuantity > currentQuantity) {
+        showToast('Used quantity cannot be greater than current quantity', 'error');
+        return;
+      }
+      
+      const finalQuantity = currentQuantity - usedQuantity;
+      document.getElementById('finalQuantity').value = finalQuantity;
+      
+      // Hide the input
+      document.getElementById('usedQuantityInput').style.display = 'none';
+      isUsedQuantityOpen = false;
+      
+      showToast('Quantity updated successfully');
+    }
+
+    function confirmAddQuantity() {
+      const addQuantity = parseFloat(document.getElementById('addQuantity').value);
+      if (isNaN(addQuantity) || addQuantity <= 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+      }
+      
+      const finalQuantity = currentQuantity + addQuantity;
+      document.getElementById('finalQuantity').value = finalQuantity;
+      
+      // Hide the input
+      document.getElementById('addQuantityInput').style.display = 'none';
+      isAddQuantityOpen = false;
+      
+      showToast('Quantity updated successfully');
+    }
   </script>
 </body>
 </html>
