@@ -333,7 +333,7 @@
         </li>
         
         <li class="nav-item">
-          <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+          <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
         </li>
         <li class="nav-item">
           <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
@@ -343,7 +343,7 @@
           <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
         </li>
         <li class="nav-item">
-          <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+          <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Request Material</span></a>
         </li>
         <li class="nav-item">
             <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
@@ -358,13 +358,6 @@
     <!-- Request Form -->
     <div class="request-form">
       <form id="purchaseRequestForm">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="requestDate" class="form-label">Request Date</label>
-            <input type="date" class="form-control" id="requestDate" required>
-          </div>
-        </div>
-
         <div class="row mb-3">
           <div class="col-md-4">
             <label for="materialType" class="form-label">Material Type</label>
@@ -452,7 +445,7 @@
           <div class="modal-header">
             <h5 class="modal-title" id="submitConfirmationModalLabel">Confirm Purchase Request</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
+          </div>
           <div class="modal-body">
             <div id="formMessages" style="display: none;">
               <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
@@ -722,10 +715,11 @@
 
     // Show submit confirmation modal
     function showSubmitConfirmation() {
-      const requestDate = document.getElementById('requestDate').value;
+      // Get current date in YYYY-MM-DD format
+      const currentDate = new Date().toISOString().split('T')[0];
 
       // Update confirmation modal content
-      document.getElementById('confirmRequestDate').textContent = requestDate;
+      document.getElementById('confirmRequestDate').textContent = currentDate;
 
       // Update materials list
       const materialsList = document.getElementById('confirmMaterialsList');
@@ -743,7 +737,8 @@
 
     // Submit request
     function submitRequest() {
-      const requestDate = document.getElementById('requestDate').value;
+      // Get current date in YYYY-MM-DD format
+      const currentDate = new Date().toISOString().split('T')[0];
 
       // Hide any previous messages
       document.getElementById('errorMessage').style.display = 'none';
@@ -751,24 +746,24 @@
       document.getElementById('formMessages').style.display = 'block';
 
       // Validate required fields
-      if (!requestDate || materials.length === 0) {
-        document.getElementById('errorMessage').innerHTML = 'Please fill in all required fields and add at least one material!';
+      if (materials.length === 0) {
+        document.getElementById('errorMessage').innerHTML = 'Please add at least one material!';
         document.getElementById('errorMessage').style.display = 'block';
         
         setTimeout(() => {
           document.getElementById('errorMessage').style.display = 'none';
         }, 2000);
-    return;
-  }
+        return;
+      }
 
       try {
         // Generate a new request ID
         const requestId = 'PR' + String(Object.keys(requests).length + 1).padStart(3, '0');
 
         // Create the new request object
-  const newRequest = {
+        const newRequest = {
           id: requestId,
-          requestDate: requestDate,
+          requestDate: currentDate,
           approvalDate: null,
           status: 'Pending',
           materials: [...materials]
@@ -782,7 +777,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${requestId}</td>
-          <td>${requestDate}</td>
+          <td>${currentDate}</td>
           <td>-</td>
           <td><span class="badge bg-warning">Pending</span></td>
           <td>
@@ -828,7 +823,6 @@
 
     // Reset form fields
     function resetFormFields() {
-      document.getElementById('requestDate').valueAsDate = new Date();
       materials = [];
       updateMaterialsList();
       updateSubmitButton();

@@ -384,6 +384,19 @@ app.get('/developer/developer_finished_projects', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_finished_projects.html')); // Adjusted path
 }); 
 
+
+// ====================
+  //   Supplier Routes
+  // ====================  
+
+  app.get('/supplier/supplier_dashboard', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'supplier', 'supplier_dashboard.html')); // Adjusted path
+  });
+
+  app.get('/supplier/materials', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'supplier', 'materials.html')); // Adjusted path
+  });
+
 };
 
 module.exports = htmlRoutes;
