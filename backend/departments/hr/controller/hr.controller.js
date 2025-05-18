@@ -4,6 +4,7 @@ const moment = require('moment');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { sendEmailNotification, sendHireNotification, sendRejectNotification } = require('../../../utils/emailService');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -542,15 +543,13 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             // Fetch the applicant's details using the ID
             const application = await HRModel.getApplicationById(id);
 
-            // If the status is 'Ready for Interview', send an email notification
+            // Send appropriate email notification
             if (status === 'Ready for Interview') {
                 await sendEmailNotification(application.email, status);
-            }
-            else if (status === 'Accepted') {
-                await sendEmailNotification(application.email, status); // No date/time needed
-            }
-            else if (status === 'Rejected') {
-                await sendEmailNotification(application.email, status); // No date/time needed
+            } else if (status === 'Accepted') {
+                await sendHireNotification(application.email);
+            } else if (status === 'Rejected') {
+                await sendRejectNotification(application.email);
             }
 
             res.status(200).json({ message: `Status updated to ${status}` });
@@ -564,13 +563,13 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     
         try {
             // 1. Schedule the interview
-            await HRModel.scheduleInterview(id, date, time); // this should update interview_date, interview_time, and status
+            await HRModel.scheduleInterview(id, date, time);
     
             // 2. Get the applicant's info
             const applicant = await HRModel.getApplicationById(id);
     
             // 3. Send email notification with schedule
-            await sendEmailNotification(applicant.email, 'Ready for Interview', date, time);
+            await sendEmailNotification(applicant.email, 'Interview Schedule - M.D. Buendia Construction Inc.', date, time);
     
             res.status(200).json({ message: "Interview scheduled and email sent successfully." });
         } catch (error) {

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Purchase Request</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/js/side_top.js"></script>
+  <style>
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .material-list {
+      margin-top: 20px;
+    }
+    .material-item {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-add-material {
+      margin-top: 10px;
+    }
+    .table th {
+      background-color: #f8f9fa;
+    }
+    .materials-list {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+    .recent-requests {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-top: 30px;
+    }
+    .recent-requests h4 {
+      color: #495057;
+      margin-bottom: 20px;
+    }
+    .table {
+      background: white;
+      border-radius: 5px;
+    }
+    .table thead {
+      background: #f8f9fa;
+    }
+    .btn-group {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .date-range {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 15px;
+    }
+    
+    .date-range input[type="date"] {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .date-range span {
+      color: #666;
+    }
+
+    .date-sort-options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .date-component-select {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .date-component-select select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background-color: #1e293b;
+      color: #fff;
+    }
+
+    .date-component-select select:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    .date-component-select button {
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .status-filter {
+      margin-bottom: 20px;
+    }
+
+    .status-filter select {
+      width: 200px;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+    }
+
+    .filter-left {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .filter-right {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .status-filter {
+      margin-bottom: 0;
+    }
+
+    .status-filter select {
+      width: 200px;
+      padding: 8px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background-color: #1e293b;
+      color: #fff;
+    }
+
+    .quick-filters select {
+      width: 200px;
+      padding: 8px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background-color: #1e293b;
+      color: #fff;
+    }
+
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-range input[type="date"] {
+      padding: 8px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background-color: #1e293b;
+      color: #fff;
+    }
+
+    .date-range span {
+      color: #94a3b8;
+    }
+
+    .status-cell {
+      font-weight: 500;
+    }
+
+    .status-cell.pending {
+      color: #ff6a00; /* Orange color */
+    }
+
+    .status-cell.approved {
+      color: #22c55e; /* Green color */
+    }
+
+    .status-cell.rejected {
+      color: #ef4444; /* Red color */
+    }
+
+    .status-cell.draft {
+      color: #94a3b8; /* Gray color */
+    }
+
+    .quick-filters {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .quick-filters .action-btn {
+      white-space: nowrap;
+    }
+
+    .edit-input {
+      background-color: #1e293b;
+      color: #fff;
+      border: 1px solid #334155;
+      padding: 4px 8px;
+      border-radius: 4px;
+      width: 100%;
+    }
+    .edit-input:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+    .edit-input[type="number"] {
+      width: 80px;
+    }
+    .edit-input[type="text"] {
+      width: 150px;
+    }
+    .action-btn i.bi-check-lg {
+      color: #22c55e;
+    }
+  </style>
+</head>
+<body>
+           <!-- Topbar -->
+           <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
+    </div>
+      <ul class="list-unstyled">
+        <li class="nav-item">
+          <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+        </li>
+        <li class="nav-item">
+          <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+        </li>
+        <li class="nav-item">
+          <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+        </li>
+        
+        <li class="nav-item">
+          <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Request Material</span></a>
+        </li>
+        <li class="nav-item">
+          <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
+        </li>
+       
+        <li class="nav-item">
+          <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+        </li>
+        <li class="nav-item">
+          <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Purchase Request</span></a>
+        </li>
+        <li class="nav-item">
+            <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+        </li>
+        <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+      </ul>
+    </div>
+  
+    <div id="content">
+    <h2>Purchase Request</h2>
+
+    <!-- Request Form -->
+    <div class="request-form">
+      <form id="purchaseRequestForm">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="requestDate" class="form-label">Request Date</label>
+            <input type="date" class="form-control" id="requestDate" required>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="materialType" class="form-label">Material Type</label>
+            <select class="form-select" id="materialType" required>
+              <option value="">Select Material Type...</option>
+              <option value="cement">Cement</option>
+              <option value="steel">Steel</option>
+              <option value="wood">Wood</option>
+              <option value="bricks">Bricks</option>
+              <option value="sand">Sand</option>
+          </select>
+        </div>
+          <div class="col-md-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity" min="1" required>
+          </div>
+          <div class="col-md-3">
+            <label for="unit" class="form-label">Unit</label>
+            <select class="form-select" id="unit" required>
+              <option value="">Select Unit...</option>
+              <option value="kg">Kilograms (kg)</option>
+              <option value="bags">Bags</option>
+              <option value="pieces">Pieces</option>
+              <option value="cubic">Cubic Meters</option>
+          </select>
+        </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-success w-100" onclick="addMaterial()">
+              <i class="fas fa-plus"></i> Add
+            </button>
+        </div>
+      </div>
+
+        <!-- Materials List -->
+        <div class="materials-list">
+          <h5>Materials to Purchase</h5>
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Material Type</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="materialsList">
+                <!-- Materials will be added here dynamically -->
+              </tbody>
+            </table>
+    </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary" id="submitRequest" onclick="showSubmitConfirmation()" disabled>
+              <i class="fas fa-paper-plane"></i> Submit Request
+            </button>
+        </div>
+        </div>
+      </form>
+      </div>
+
+    <!-- Recent Requests Table -->
+    <div class="recent-requests">
+      <h4>Purchase Requests</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Request Date</th>
+            <th>Approval Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recentRequests">
+          <!-- Requests will be added here dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal fade" id="submitConfirmationModal" tabindex="-1" aria-labelledby="submitConfirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="submitConfirmationModalLabel">Confirm Purchase Request</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+          <div class="modal-body">
+            <div id="formMessages" style="display: none;">
+              <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+              <div id="successMessage" class="alert alert-success" style="display: none;"></div>
+            </div>
+            <div id="confirmationContent">
+              <p>Please confirm the following details:</p>
+              <div class="mb-3">
+                <strong>Request Date:</strong> <span id="confirmRequestDate"></span>
+              </div>
+              <div class="mb-3">
+                <strong>Materials:</strong>
+                <ul id="confirmMaterialsList" class="list-unstyled">
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" id="modalFooter">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="submitRequest()">Confirm Request</button>
+          </div>
+        </div>
+    </div>
+  </div>
+
+    <!-- Request Details Modal -->
+    <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="requestDetailsModalLabel">Request Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+          <div class="modal-body">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <p><strong>Request ID:</strong> <span id="modalRequestId"></span></p>
+                <p><strong>Request Date:</strong> <span id="modalRequestDate"></span></p>
+  </div>
+              <div class="col-md-6">
+                <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+                <p><strong>Approval Date:</strong> <span id="modalApprovalDate"></span></p>
+      </div>
+            </div>
+            <h6>Requested Materials</h6>
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Material Type</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                  </tr>
+                </thead>
+                <tbody id="modalMaterialsList">
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-danger" id="cancelRequestBtn" style="display: none;" onclick="cancelRequest()">Cancel Request</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Edit Material Modal -->
+    <div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+    <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editMaterialModalLabel">Edit Material</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+          <div class="modal-body">
+            <form id="editMaterialForm">
+              <div class="mb-3">
+                <label for="editMaterialType" class="form-label">Material Type</label>
+                <select class="form-select" id="editMaterialType" required>
+                  <option value="">Select Material Type...</option>
+                  <option value="cement">Cement</option>
+                  <option value="steel">Steel</option>
+                  <option value="wood">Wood</option>
+                  <option value="bricks">Bricks</option>
+                  <option value="sand">Sand</option>
+          </select>
+        </div>
+              <div class="mb-3">
+                <label for="editQuantity" class="form-label">Quantity</label>
+                <input type="number" class="form-control" id="editQuantity" min="1" required>
+              </div>
+              <div class="mb-3">
+                <label for="editUnit" class="form-label">Unit</label>
+                <select class="form-select" id="editUnit" required>
+                  <option value="">Select Unit...</option>
+                  <option value="kg">Kilograms (kg)</option>
+                  <option value="bags">Bags</option>
+                  <option value="pieces">Pieces</option>
+                  <option value="cubic">Cubic Meters</option>
+                </select>
+        </div>
+      </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveMaterialEdit()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bootstrap JS and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Sidebar functionality
+    document.getElementById('sidebar-toggle').onclick = function() {
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+            sidebar.style.display = 'block';
+            content.style.marginLeft = '300px';
+        } else {
+            sidebar.style.display = 'none';
+            content.style.marginLeft = '0';
+        }
+    };
+
+    // Global variables
+    let materials = [];
+    let editingIndex = -1;
+    let requests = {};
+
+    // Add material to the list
+    function addMaterial() {
+      const requestDate = document.getElementById('requestDate').value;
+      const materialType = document.getElementById('materialType');
+      const quantity = document.getElementById('quantity');
+      const unit = document.getElementById('unit');
+
+      // Validate other inputs
+      if (!materialType.value || !quantity.value || !unit.value) {
+        alert('Please fill in all material details');
+        return;
+      }
+
+      const material = {
+        type: materialType.options[materialType.selectedIndex].text,
+        typeValue: materialType.value,
+        quantity: quantity.value,
+        unit: unit.options[unit.selectedIndex].text,
+        unitValue: unit.value
+      };
+
+      if (editingIndex >= 0) {
+        // Update existing material
+        materials[editingIndex] = material;
+        editingIndex = -1;
+      } else {
+        // Add new material
+        materials.push(material);
+      }
+
+      // Clear form fields after adding/updating
+      resetMaterialForm();
+      
+      updateMaterialsList();
+      updateSubmitButton();
+    }
+
+    // Update the materials list in the table
+    function updateMaterialsList() {
+      const tbody = document.getElementById('materialsList');
+      tbody.innerHTML = '';
+
+      materials.forEach((material, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${material.type}</td>
+          <td>${material.quantity}</td>
+          <td>${material.unit}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-info me-1" onclick="openEditModal(${index})" title="Edit Material">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeMaterial(${index})" title="Remove Material">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Open edit modal
+    function openEditModal(index) {
+      const material = materials[index];
+      document.getElementById('editMaterialType').value = material.typeValue;
+      document.getElementById('editQuantity').value = material.quantity;
+      document.getElementById('editUnit').value = material.unitValue;
+      editingIndex = index;
+
+      const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+      editModal.show();
+    }
+
+    // Save material edit
+    function saveMaterialEdit() {
+      const materialType = document.getElementById('editMaterialType');
+      const quantity = document.getElementById('editQuantity');
+      const unit = document.getElementById('editUnit');
+
+      // Validate inputs
+      if (!materialType.value || !quantity.value || !unit.value) {
+        alert('Please fill in all material details');
+        return;
+      }
+
+      // Show confirmation dialog
+      if (confirm('Are you sure you want to save these changes?')) {
+        const material = {
+          type: materialType.options[materialType.selectedIndex].text,
+          typeValue: materialType.value,
+          quantity: quantity.value,
+          unit: unit.options[unit.selectedIndex].text,
+          unitValue: unit.value
+        };
+
+        // Update the material
+        materials[editingIndex] = material;
+        editingIndex = -1;
+
+        // Update the list and close modal
+        updateMaterialsList();
+        const editModal = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
+        editModal.hide();
+
+        // Show success message
+        alert('Material updated successfully!');
+      }
+    }
+
+    // Remove material
+    function removeMaterial(index) {
+      if (confirm('Are you sure you want to remove this material?')) {
+        materials.splice(index, 1);
+        updateMaterialsList();
+        updateSubmitButton();
+      }
+    }
+
+    // Reset material form
+    function resetMaterialForm() {
+      document.getElementById('materialType').value = '';
+      document.getElementById('quantity').value = '';
+      document.getElementById('unit').value = '';
+      editingIndex = -1;
+    }
+
+    // Update submit button state
+    function updateSubmitButton() {
+      const submitButton = document.getElementById('submitRequest');
+      submitButton.disabled = materials.length === 0;
+    }
+
+    // Show submit confirmation modal
+    function showSubmitConfirmation() {
+      const requestDate = document.getElementById('requestDate').value;
+
+      // Update confirmation modal content
+      document.getElementById('confirmRequestDate').textContent = requestDate;
+
+      // Update materials list
+      const materialsList = document.getElementById('confirmMaterialsList');
+      materialsList.innerHTML = '';
+      materials.forEach(material => {
+        const li = document.createElement('li');
+        li.textContent = `${material.type} - ${material.quantity} ${material.unit}`;
+        materialsList.appendChild(li);
+      });
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('submitConfirmationModal'));
+      modal.show();
+    }
+
+    // Submit request
+    function submitRequest() {
+      const requestDate = document.getElementById('requestDate').value;
+
+      // Hide any previous messages
+      document.getElementById('errorMessage').style.display = 'none';
+      document.getElementById('successMessage').style.display = 'none';
+      document.getElementById('formMessages').style.display = 'block';
+
+      // Validate required fields
+      if (!requestDate || materials.length === 0) {
+        document.getElementById('errorMessage').innerHTML = 'Please fill in all required fields and add at least one material!';
+        document.getElementById('errorMessage').style.display = 'block';
+        
+        setTimeout(() => {
+          document.getElementById('errorMessage').style.display = 'none';
+        }, 2000);
+    return;
+  }
+
+      try {
+        // Generate a new request ID
+        const requestId = 'PR' + String(Object.keys(requests).length + 1).padStart(3, '0');
+
+        // Create the new request object
+  const newRequest = {
+          id: requestId,
+          requestDate: requestDate,
+          approvalDate: null,
+          status: 'Pending',
+          materials: [...materials]
+        };
+
+        // Add to requests object
+        requests[requestId] = newRequest;
+
+        // Add to the recent requests table
+        const tbody = document.getElementById('recentRequests');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${requestId}</td>
+          <td>${requestDate}</td>
+          <td>-</td>
+          <td><span class="badge bg-warning">Pending</span></td>
+          <td>
+            <button class="btn btn-sm btn-primary me-1" onclick="viewRequestDetails('${requestId}')" title="View Request Details">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        `;
+        tbody.insertBefore(row, tbody.firstChild);
+
+        // Reset form fields
+        resetFormFields();
+
+        // Hide confirmation content and show success message
+        document.getElementById('confirmationContent').style.display = 'none';
+        document.getElementById('modalFooter').style.display = 'none';
+        document.getElementById('successMessage').innerHTML = 'Purchase request submitted successfully!';
+        document.getElementById('successMessage').style.display = 'block';
+
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('submitConfirmationModal'));
+          modal.hide();
+          
+          // Reset modal content for next use
+          setTimeout(() => {
+            document.getElementById('confirmationContent').style.display = 'block';
+            document.getElementById('modalFooter').style.display = 'block';
+            document.getElementById('formMessages').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+          }, 500);
+        }, 2000);
+
+      } catch (error) {
+        document.getElementById('errorMessage').innerHTML = 'An error occurred while submitting the request. Please try again.';
+        document.getElementById('errorMessage').style.display = 'block';
+        
+        setTimeout(() => {
+          document.getElementById('errorMessage').style.display = 'none';
+        }, 2000);
+      }
+    }
+
+    // Reset form fields
+    function resetFormFields() {
+      document.getElementById('requestDate').valueAsDate = new Date();
+      materials = [];
+      updateMaterialsList();
+      updateSubmitButton();
+    }
+
+    // View request details
+    function viewRequestDetails(requestId) {
+      const request = requests[requestId];
+      if (!request) return;
+
+      // Update modal content
+      document.getElementById('modalRequestId').textContent = request.id;
+      document.getElementById('modalRequestDate').textContent = request.requestDate;
+      document.getElementById('modalApprovalDate').textContent = request.approvalDate || '-';
+      
+      // Update status with appropriate badge
+      let statusBadge;
+      switch(request.status) {
+        case 'Pending':
+          statusBadge = '<span class="badge bg-warning">Pending</span>';
+      break;
+        case 'Approved':
+          statusBadge = '<span class="badge bg-success">Approved</span>';
+      break;
+        case 'Cancelled':
+          statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+      break;
+    default:
+          statusBadge = '<span class="badge bg-warning">Pending</span>';
+      }
+      document.getElementById('modalStatus').innerHTML = statusBadge;
+
+      // Update materials list
+      const materialsList = document.getElementById('modalMaterialsList');
+      materialsList.innerHTML = '';
+      request.materials.forEach(material => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${material.type}</td>
+          <td>${material.quantity}</td>
+          <td>${material.unit}</td>
+        `;
+        materialsList.appendChild(row);
+      });
+
+      // Show/hide cancel button based on status
+      const cancelBtn = document.getElementById('cancelRequestBtn');
+      cancelBtn.style.display = request.status === 'Pending' ? 'block' : 'none';
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+      modal.show();
+    }
+
+    // Cancel request
+    function cancelRequest() {
+      if (confirm('Are you sure you want to cancel this request?')) {
+        const requestId = document.getElementById('modalRequestId').textContent;
+        const request = requests[requestId];
+        
+  if (request) {
+          // Update request status
+          request.status = 'Cancelled';
+          
+          // Update the status in the table
+          const rows = document.getElementById('recentRequests').getElementsByTagName('tr');
+          for (let row of rows) {
+            if (row.cells[0].textContent === requestId) {
+              row.cells[3].innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+              break;
+            }
+          }
+
+          // Update the status in the modal
+          document.getElementById('modalStatus').innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+          
+          // Hide the cancel button
+          document.getElementById('cancelRequestBtn').style.display = 'none';
+        }
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal'));
+        modal.hide();
+        alert('Request cancelled successfully');
+      }
+    }
+</script>
+
+<!-- Add Date Sort Modal -->
+<div id="dateSortModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeDateSortModal()">&times;</button>
+    <h2>Sort by Date</h2>
+    <div class="date-sort-options">
+      <button class="action-btn" onclick="sortByToday()">Today</button>
+      <div class="date-component-select">
+        <select id="daySelect" class="search-bar">
+          <option value="">Select Day</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="13">13</option>
+          <option value="14">14</option>
+          <option value="15">15</option>
+          <option value="16">16</option>
+          <option value="17">17</option>
+          <option value="18">18</option>
+          <option value="19">19</option>
+          <option value="20">20</option>
+          <option value="21">21</option>
+          <option value="22">22</option>
+          <option value="23">23</option>
+          <option value="24">24</option>
+          <option value="25">25</option>
+          <option value="26">26</option>
+          <option value="27">27</option>
+          <option value="28">28</option>
+          <option value="29">29</option>
+          <option value="30">30</option>
+          <option value="31">31</option>
+        </select>
+        <select id="monthSelect" class="search-bar">
+          <option value="">Select Month</option>
+          <option value="0">January</option>
+          <option value="1">February</option>
+          <option value="2">March</option>
+          <option value="3">April</option>
+          <option value="4">May</option>
+          <option value="5">June</option>
+          <option value="6">July</option>
+          <option value="7">August</option>
+          <option value="8">September</option>
+          <option value="9">October</option>
+          <option value="10">November</option>
+          <option value="11">December</option>
+        </select>
+        <select id="yearSelect" class="search-bar">
+          <option value="">Select Year</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+        <button class="action-btn" onclick="applyDateSort()">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="display:none; position:fixed; top:10%; left:50%; transform:translate(-50%,-50%); background:#F8FAFC; color:#1E293B; padding:16px 24px; border-radius:8px; z-index:9999; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.2);"></div>
+</body>
+</html>

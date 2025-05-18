@@ -100,6 +100,72 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        /* Status badge styles */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .status-available {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-sold {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .status-reserved {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .status-pending {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .status-archived {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        /* Status filter dropdown */
+        .status-filter {
+            margin-left: 10px;
+            width: auto;
+        }
+
+        /* Property image thumbnail styles */
+        .property-thumbnail {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background-color: #f8f9fa; /* Light gray background for placeholder */
+        }
+
+        .property-thumbnail:hover {
+            transform: scale(1.1);
+        }
+
+        /* Image preview modal styles */
+        .image-preview-modal .modal-dialog {
+            max-width: 800px;
+        }
+
+        .image-preview-modal .modal-body img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
@@ -231,7 +297,17 @@
 
             <!-- Search Bar and Entries Per Page -->
             <div class="search-container">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search properties by name..." onkeyup="filterProperties()">
+                <div class="d-flex align-items-center">
+                    <input type="text" id="searchBar" class="form-control" placeholder="Search properties by name..." onkeyup="filterProperties()">
+                    <select id="statusFilter" class="form-select status-filter" onchange="filterProperties()">
+                        <option value="">All Statuses</option>
+                        <option value="available">Available</option>
+                        <option value="sold">Sold</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="pending">Pending</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
                 <!-- Entries per page -->
                 <div>
                     <label for="entriesPerPage" class="form-label">Entries per page:</label>
@@ -254,6 +330,7 @@
             <table class="table properties-table">
                 <thead>
                     <tr>
+                        <th>Image</th>
                         <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon" id="sortId"></i></th>
                         <th onclick="sortTable(1)">Name <i class="fas fa-sort sort-icon" id="sortName"></i></th>
                         <th onclick="sortTable(2)">Location <i class="fas fa-sort sort-icon" id="sortLocation"></i></th>
@@ -314,6 +391,21 @@
                 </div>
             </div>
 
+            <!-- Image Preview Modal -->
+            <div class="modal fade image-preview-modal" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="imagePreviewModalLabel">Property Image</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <img src="" alt="Property Image Preview" id="previewImage">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -323,23 +415,12 @@
     <script src="/public/js/side_top.js"></script>
     
     <script>
-    
-
-        // Handling the delete functionality for the property
+        // Global variables
+        let properties = [];
+        let itemsPerPage = 5;
+        let currentPage = 1;
+        let filteredProperties = null;
         let propertyToDelete = null;
-
-        function confirmDelete(propertyId) {
-            propertyToDelete = propertyId;
-            $('#deletePropertyModal').modal('show');
-        }
-
-        // Handle the actual delete confirmation
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-            properties = properties.filter(property => property.id !== propertyToDelete);
-            $('#deletePropertyModal').modal('hide');
-            renderProperties();
-        });
-        // Sorting directions
         let currentSortDirection = {
             id: 'asc',
             name: 'asc',
@@ -350,21 +431,75 @@
             addedDate: 'asc'
         };
 
-        // Sample property data with images
-        let properties = [
-            { id: 1, name: 'Pagsibol', location: 'Sto. Tomas, Batangas', price: '₱1,867,910', type: 'House', status: 'Available', addedDate: '2023-01-01', 
-            imageUrl: '/images/pagsibol.png', description: 'This spacious and modern home is designed for comfort and sustainability.', parking: 2, bedrooms: 3, bathrooms: 2, floors: 2 },
-            // Add more properties here as needed
-            { id: 2, name: 'Pasinaya', location: 'Sto. Tomas, Batangas', price: '₱1,867,910', type: 'House', status: 'Available', addedDate: '2023-01-01',
-            imageUrl: '/images/pagsibol.png', description: 'This spacious and modern home is designed for comfort and sustainability.', parking: 2, bedrooms: 3, bathrooms: 2, floors: 2 },
-            { id: 3, name: 'Tiarra Premiere', location: 'Sto. Tomas, Batangas', price: '₱1,867,910', type: 'House', status: 'Available', addedDate: '2023-01-01',
-            imageUrl: '/images/pagsibol.png', description: 'This spacious and modern home is designed for comfort and sustainability.', parking: 2, bedrooms: 3, bathrooms: 2, floors: 2 }
-          
-        ];
+        // Base64 encoded placeholder image (1x1 transparent pixel)
+        const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjcwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNzAiIGZpbGw9IiNmOGY5ZmEiLz48dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
-        let itemsPerPage = 5;
-        let currentPage = 1;
-        let filteredProperties = null;
+        // Fetch properties from the server
+        async function fetchProperties() {
+            try {
+                console.log('Fetching properties...');
+                const response = await fetch('/crm/properties');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    console.error('Server response:', errorData);
+                    throw new Error(errorData?.error || `Server responded with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Received properties:', data);
+
+                if (!Array.isArray(data)) {
+                    console.error('Invalid data format received:', data);
+                    throw new Error('Invalid data format received from server');
+                }
+
+                properties = data;
+                renderProperties();
+            } catch (error) {
+                console.error('Error details:', error);
+                // Only show alert if properties array is empty
+                if (properties.length === 0) {
+                    alert('Failed to load properties. Please try again later.');
+                } else {
+                    console.log('Using cached properties data');
+                }
+            }
+        }
+
+        // Call fetchProperties when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, fetching properties...');
+            fetchProperties();
+        });
+
+        // Handling the delete functionality for the property
+        function confirmDelete(propertyId) {
+            propertyToDelete = propertyId;
+            $('#deletePropertyModal').modal('show');
+        }
+
+        // Handle the actual delete confirmation
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+            try {
+                const response = await fetch(`/crm/properties/${propertyToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete property');
+                }
+
+                // Remove the property from the local array
+                properties = properties.filter(property => property.id !== propertyToDelete);
+                $('#deletePropertyModal').modal('hide');
+                renderProperties();
+            } catch (error) {
+                console.error('Error deleting property:', error);
+                alert('Failed to delete property. Please try again later.');
+            }
+        });
 
         // Sorting function
         function sortTable(colIndex) {
@@ -415,53 +550,87 @@
             renderProperties();
         }
 
-        // Render properties function
-function renderProperties() {
-    const list = filteredProperties || properties;
-    const propertiesList = document.getElementById('propertiesList');
-    propertiesList.innerHTML = '';
+        // Function to get status badge HTML
+        function getStatusBadge(status) {
+            if (!status) return '';
+            const statusClass = `status-${status.toLowerCase()}`;
+            return `<span class="status-badge ${statusClass}">${status}</span>`;
+        }
 
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = currentPage * itemsPerPage;
-    const currentProperties = list.slice(start, end);
+        function renderProperties() {
+            const list = filteredProperties || properties;
+            const propertiesList = document.getElementById('propertiesList');
+            propertiesList.innerHTML = '';
 
-    currentProperties.forEach(property => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${property.id}</td>
-            <td>${property.name}</td>
-            <td>${property.location}</td>
-            <td>${property.price}</td>
-            <td>${property.type}</td>
-            <td>${property.status}</td>
-            <td>${property.addedDate}</td>
-            <td>
-                <button class="btn btn-info btn-sm" onclick="viewProperty(${property.id})">View</button>
-                <!-- Modify Edit button to link to edit_properties.html -->
-                <a href="/crm/edit_properties?id=${property.id}" class="btn btn-warning btn-sm">Edit</a>
-                <button class="btn btn-danger btn-sm" onclick="confirmDelete(${property.id})">Delete</button>
-            </td>
-        `;
-        propertiesList.appendChild(row);
-    });
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = currentPage * itemsPerPage;
+            const currentProperties = list.slice(start, end);
 
-    renderPagination();
-    updateEntriesMessage();
-}
+            currentProperties.forEach(property => {
+                const imageUrl = `/uploads/properties/${property.imageUrl}`;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <img src="${imageUrl}" 
+                             alt="${property.name}" 
+                             class="property-thumbnail"
+                             onclick="showImagePreview('${property.imageUrl}')"
+                             onerror="handleImageError(this, '${property.imageUrl}')"
+                             onload="handleImageLoad(this, '${property.imageUrl}')">
+                    </td>
+                    <td>${property.id}</td>
+                    <td>${property.name}</td>
+                    <td>${property.location}</td>
+                    <td>${property.price}</td>
+                    <td>${property.type}</td>
+                    <td>${getStatusBadge(property.status)}</td>
+                    <td>${property.addedDate}</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="viewProperty(${property.id})">View</button>
+                        <a href="/crm/edit_properties?property_id=${property.id}" class="btn btn-warning btn-sm">Edit</a>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(${property.id})" 
+                            ${property.status === 'sold' || property.status === 'archived' ? 'disabled' : ''}>
+                            Delete
+                        </button>
+                    </td>
+                `;
+                propertiesList.appendChild(row);
+            });
 
+            renderPagination();
+            updateEntriesMessage();
+        }
 
-        // Function to view property details (e.g., show in a modal)
+        function handleImageLoad(img, imageUrl) {
+            // Optionally log or handle image load
+        }
+
+        function handleImageError(img, imageUrl) {
+            img.onerror = null;
+            img.src = PLACEHOLDER_IMAGE;
+        }
+
+        function showImagePreview(imageUrl) {
+            const previewImage = document.getElementById('previewImage');
+            const fullImageUrl = `/uploads/properties/${imageUrl}`;
+            previewImage.src = fullImageUrl;
+            previewImage.onerror = function() {
+                this.src = PLACEHOLDER_IMAGE;
+            };
+            $('#imagePreviewModal').modal('show');
+        }
+
         function viewProperty(propertyId) {
-            const property = properties.find(property => property.id === propertyId);
+            const property = properties.find(p => p.id === propertyId);
             if (property) {
                 const modalContent = `
                     <div>
-                        <img src="${property.imageUrl}" alt="Property Image" class="img-fluid mb-3" />
+                        <img src="/uploads/properties/${property.imageUrl}" alt="Property Image" class="img-fluid mb-3" />
                         <h4>${property.name}</h4>
                         <p><strong>Location:</strong> ${property.location}</p>
                         <p><strong>Price:</strong> ${property.price}</p>
                         <p><strong>Type:</strong> ${property.type}</p>
-                        <p><strong>Status:</strong> ${property.status}</p>
+                        <p><strong>Status:</strong> ${getStatusBadge(property.status)}</p>
                         <p><strong>Added Date:</strong> ${property.addedDate}</p>
                         <p><strong>Description:</strong> ${property.description}</p>
                         <p><strong>Parking:</strong> ${property.parking} Parking</p>
@@ -470,26 +639,74 @@ function renderProperties() {
                         <p><strong>Floors:</strong> ${property.floors} Floors</p>
                     </div>
                 `;
-
                 const modalElement = document.getElementById('viewPropertyModal');
                 modalElement.querySelector('.modal-body').innerHTML = modalContent;
                 $('#viewPropertyModal').modal('show');
             }
         }
 
-        // Pagination, filtering, and entry functions...
+        function renderPagination() {
+            const list = filteredProperties || properties;
+            const totalPages = Math.ceil(list.length / itemsPerPage);
+            const paginationControls = document.getElementById('paginationControls');
+            paginationControls.innerHTML = '';
 
-        renderProperties();
-        // Function to filter properties based on search input
-        function filterProperties() {
-            const searchInput = document.getElementById('searchBar').value.toLowerCase();
-            filteredProperties = properties.filter(property => property.name.toLowerCase().includes(searchInput));
-            currentPage = 1; // Reset to first page after filtering
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <button class="page-link" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    Previous
+                </button>
+            `;
+            paginationControls.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+                li.innerHTML = `
+                    <button class="page-link" onclick="changePage(${i})">
+                        ${i}
+                    </button>
+                `;
+                paginationControls.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <button class="page-link" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next
+                </button>
+            `;
+            paginationControls.appendChild(nextLi);
+        }
+
+        function changePage(newPage) {
+            const list = filteredProperties || properties;
+            const totalPages = Math.ceil(list.length / itemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderProperties();
+            }
+        }
+
+        function updateEntriesMessage() {
+            const list = filteredProperties || properties;
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, list.length);
+            const total = list.length;
+            document.getElementById('showingEntries').textContent = 
+                `Showing ${start} to ${end} of ${total} entries`;
+        }
+
+        function setEntriesPerPage() {
+            itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
+            currentPage = 1;
             renderProperties();
         }
-        
-        
     </script>
 </body>
-
 </html>
