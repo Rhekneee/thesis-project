@@ -552,26 +552,11 @@
 
         // Function to get status badge HTML
         function getStatusBadge(status) {
+            if (!status) return '';
             const statusClass = `status-${status.toLowerCase()}`;
             return `<span class="status-badge ${statusClass}">${status}</span>`;
         }
 
-        // Update filterProperties function to include status filter
-        function filterProperties() {
-            const searchInput = document.getElementById('searchBar').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-            
-            filteredProperties = properties.filter(property => {
-                const matchesSearch = property.name.toLowerCase().includes(searchInput);
-                const matchesStatus = !statusFilter || property.status.toLowerCase() === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
-            
-            currentPage = 1; // Reset to first page after filtering
-            renderProperties();
-        }
-
-        // Update renderProperties function to use status badges
         function renderProperties() {
             const list = filteredProperties || properties;
             const propertiesList = document.getElementById('propertiesList');
@@ -582,10 +567,7 @@
             const currentProperties = list.slice(start, end);
 
             currentProperties.forEach(property => {
-                console.log('Rendering property:', property);
                 const imageUrl = `/uploads/properties/${property.imageUrl}`;
-                console.log('Image URL:', imageUrl);
-                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -619,32 +601,25 @@
             updateEntriesMessage();
         }
 
-        // Add image load/error handlers
         function handleImageLoad(img, imageUrl) {
-            console.log('Image loaded successfully:', imageUrl);
+            // Optionally log or handle image load
         }
 
         function handleImageError(img, imageUrl) {
-            console.error('Failed to load image:', imageUrl);
-            img.onerror = null; // Prevent infinite loop
+            img.onerror = null;
             img.src = PLACEHOLDER_IMAGE;
         }
 
-        // Update showImagePreview function to include logging
         function showImagePreview(imageUrl) {
-            console.log('Showing image preview for:', imageUrl);
             const previewImage = document.getElementById('previewImage');
             const fullImageUrl = `/uploads/properties/${imageUrl}`;
-            console.log('Full image URL:', fullImageUrl);
             previewImage.src = fullImageUrl;
             previewImage.onerror = function() {
-                console.error('Failed to load preview image:', fullImageUrl);
                 this.src = PLACEHOLDER_IMAGE;
             };
             $('#imagePreviewModal').modal('show');
         }
 
-        // Update viewProperty function to show status badge
         function viewProperty(propertyId) {
             const property = properties.find(p => p.id === propertyId);
             if (property) {
@@ -664,14 +639,12 @@
                         <p><strong>Floors:</strong> ${property.floors} Floors</p>
                     </div>
                 `;
-
                 const modalElement = document.getElementById('viewPropertyModal');
                 modalElement.querySelector('.modal-body').innerHTML = modalContent;
                 $('#viewPropertyModal').modal('show');
             }
         }
 
-        // Function to render pagination controls
         function renderPagination() {
             const list = filteredProperties || properties;
             const totalPages = Math.ceil(list.length / itemsPerPage);
@@ -711,37 +684,29 @@
             paginationControls.appendChild(nextLi);
         }
 
-        // Function to change page
         function changePage(newPage) {
             const list = filteredProperties || properties;
             const totalPages = Math.ceil(list.length / itemsPerPage);
-            
             if (newPage >= 1 && newPage <= totalPages) {
                 currentPage = newPage;
                 renderProperties();
             }
         }
 
-        // Function to update entries message
         function updateEntriesMessage() {
             const list = filteredProperties || properties;
             const start = (currentPage - 1) * itemsPerPage + 1;
             const end = Math.min(currentPage * itemsPerPage, list.length);
             const total = list.length;
-            
             document.getElementById('showingEntries').textContent = 
                 `Showing ${start} to ${end} of ${total} entries`;
         }
 
-        // Function to set entries per page
         function setEntriesPerPage() {
             itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
-            currentPage = 1; // Reset to first page
+            currentPage = 1;
             renderProperties();
         }
-
-        renderProperties();
     </script>
 </body>
-
 </html>

@@ -272,7 +272,7 @@
                         <div class="form-text">Dynamic virtual tour feature will be available in future updates.</div>
                     </div>
 
-            <!-- Coming Soon Modal -->
+                    <!-- Add Coming Soon Modal -->
             <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -297,8 +297,9 @@
         </form>
     </div>
 </div>
+    </div>
 
-<!-- Success Modal -->
+    <!-- Success Message Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -316,7 +317,7 @@
     </div>
 </div>
 
-<!-- Error Modal -->
+    <!-- Error Message Modal -->
 <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -334,64 +335,11 @@
     </div>
 </div>
 
-
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
-        // Function to populate locations
-        async function fetchLocations() {
-            const locationSelect = document.getElementById('location');
-            if (!locationSelect) {
-                console.error('Location select element not found!');
-                return;
-            }
-
-            try {
-                console.log('Fetching locations...');
-                const response = await fetch('/crm/properties/locations');
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('Received data:', data);
-                
-                // Clear existing options
-                locationSelect.innerHTML = '<option value="">Select a location</option>';
-                
-                if (data.success && Array.isArray(data.locations) && data.locations.length > 0) {
-                    console.log(`Adding ${data.locations.length} locations to select`);
-                    
-                    data.locations.forEach(location => {
-                        const option = new Option(location, location);
-                        locationSelect.add(option);
-                    });
-                    
-                    console.log('Select element after population:', {
-                        optionsCount: locationSelect.options.length,
-                        options: Array.from(locationSelect.options).map(opt => opt.value)
-                    });
-                } else {
-                    console.warn('No locations found in response:', data);
-                }
-            } catch (error) {
-                console.error('Error fetching locations:', error);
-                // Show error in the select element
-                locationSelect.innerHTML = '<option value="">Error loading locations</option>';
-            }
-        }
-
-        // Call fetchLocations when the page is fully loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', fetchLocations);
-        } else {
-            fetchLocations();
-        }
-
         // Handle custom property type input
         document.getElementById('propertyTypeSelect').addEventListener('change', function() {
             const customContainer = document.getElementById('customPropertyTypeContainer');
@@ -435,39 +383,38 @@
         // Handle form submission
         document.getElementById('propertyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const form = this;
             const formData = new FormData();
 
-            // Disable submit button and show loading state
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
-
-            try {
                 // Validate property image
                 const propertyImage = document.getElementById('property_image').files[0];
                 if (!propertyImage) {
-                    throw new Error('Please select a property image.');
+                document.getElementById('errorModalBody').textContent = 'Please select a property image.';
+                $('#errorModal').modal('show');
+                return;
                 }
 
                 // Validate property image size and type
-                const maxSize = 2 * 1024 * 1024; // 2MB
+            const maxSize = 5 * 1024 * 1024; // 5MB
                 const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-                
+
                 if (propertyImage.size > maxSize) {
-                    throw new Error('Property image must be less than 2MB. Please choose a smaller image.');
+                document.getElementById('errorModalBody').textContent = 'Property image must be less than 5MB.';
+                $('#errorModal').modal('show');
+                return;
                 }
 
-            if (!allowedTypes.includes(propertyImage.type)) {
+                if (!allowedTypes.includes(propertyImage.type)) {
                 document.getElementById('errorModalBody').textContent = 'Property image must be JPEG, PNG, or GIF.';
                 $('#errorModal').modal('show');
                 return;
-            }
+                }
 
-            // Disable submit button
+                // Disable submit button
             const submitBtn = document.getElementById('submitPropertyBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
 
             try {
                 // Add all form fields to FormData
@@ -490,10 +437,9 @@
                     body: formData
                 });
 
-                const result = await uploadPromise;
-                console.log('Server response:', result);
+                const result = await response.json();
 
-                if (result.success) {
+                if (response.ok) {
                     $('#successModal').modal('show');
                 } else {
                     throw new Error(result.error || 'Failed to create property');
@@ -503,7 +449,6 @@
                 document.getElementById('errorModalBody').textContent = error.message || 'An error occurred while adding the property. Please try again.';
                 $('#errorModal').modal('show');
             } finally {
-                // Re-enable submit button
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Add Property';
             }

@@ -32,7 +32,7 @@
                     <a class="nav-link active" href="/crm/index">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/crm/properties">Properties</a>
+                    <a class="nav-link" href="/crm/list_properties">Properties</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/crm/developer">Developers</a>
@@ -111,110 +111,51 @@
         </form>
     </div>
 
-<!-- Property 1 -->
-<div class="row mb-5">
-    <div class="col-lg-6">
-        <img src="/public/image/pagsibol.png" alt="Tiarra Premiere" class="img-fluid rounded shadow-lg" style="width: 100%; height: 300px; object-fit: cover;">
-    </div>
-    <div class="col-lg-6">
-        <h3>Tiarra Premiere</h3>
-        <p>This spacious and modern home in Sto. Tomas, Batangas is designed for comfort and sustainability.</p>
-        <p><strong>₱1,867,910</strong></p>
-        <p>
-            <i class="fa fa-car"></i> 2 Parking &nbsp;&nbsp;
-            <i class="fa fa-bed"></i> 3 Bedrooms &nbsp;&nbsp;
-            <i class="fa fa-bath"></i> 2 Bathrooms &nbsp;&nbsp;
-            <i class="fa fa-layer-group"></i> 2 Floors
-        </p>
-        <div class="d-flex flex-wrap gap-2 mt-3">
-            <a href="/crm/vtour" class="btn btn-primary" target="_blank">
-                <i class="fa fa-eye"></i> View Virtual Tour
-            </a>
-            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal"  data-property="Tiarra Premiere">
-                <i class="fa fa-car"></i> Request Tripping
-            </button>
-        </div>
-    </div>
-</div>
+    <!-- Dynamic Property List -->
+    <div id="propertyList"></div>
 
-<!-- Property 2 -->
-<div class="row mb-5">
-    <div class="col-lg-6">
-        <img src="/public/image/bianca.png" alt="Cielo Townhouse" class="img-fluid rounded shadow-lg" style="width: 100%; height: 300px; object-fit: cover;">
-    </div>
-    <div class="col-lg-6">
-        <h3>Cielo Townhouse</h3>
-        <p>Located in Rosario, Batangas, this elegant townhouse is perfect for modern families.</p>
-        <p><strong>₱1,982,149</strong></p>
-        <p>
-            <i class="fa fa-car"></i> 2 Parking &nbsp;&nbsp;
-            <i class="fa fa-bed"></i> 3 Bedrooms &nbsp;&nbsp;
-            <i class="fa fa-bath"></i> 2 Bathrooms &nbsp;&nbsp;
-            <i class="fa fa-layer-group"></i> 2 Floors
-        </p>
-        <div class="d-flex flex-wrap gap-2 mt-3">
-            <a href="virtual-tour.html" class="btn btn-primary" target="_blank">
-                <i class="fa fa-eye"></i> View Virtual Tour
-            </a>
-            <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#trippingModal" data-property="Cielo Townhouse">
-                <i class="fa fa-car"></i> Request Tripping
-            </button>
-        </div>
+</section>
 
-        <!-- Request Tripping Modal -->
-        <div class="modal fade" id="trippingModal" tabindex="-1" aria-labelledby="trippingModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content bg-light">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="trippingModalLabel">Request Tripping</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Request Tripping Modal (should be outside the dynamic property list) -->
+<div class="modal fade" id="trippingModal" tabindex="-1" aria-labelledby="trippingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-light">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trippingModalLabel">Request Tripping</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="trippingForm">
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="firstName" required>
                     </div>
-                    <div class="modal-body">
-                        <form id="trippingForm">
-                            <!-- First Name -->
-                            <div class="mb-3">
-                                <label for="firstName" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="firstName" required>
-                            </div>
-                            <!-- Last Name -->
-                            <div class="mb-3">
-                                <label for="lastName" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="lastName" required>
-                            </div>
-                            <!-- Email -->
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" required>
-                            </div>
-                            <!-- Contact Number -->
-                            <div class="mb-3">
-                                <label for="contactNumber" class="form-label">Contact Number</label>
-                                <input type="text" class="form-control" id="contactNumber" required>
-                            </div>
-                            <!-- Preferred Date -->
-                            <div class="mb-3">
-                                <label for="preferredDate" class="form-label">Preferred Date</label>
-                                <input type="date" class="form-control" id="preferredDate" required>
-                            </div>
-                            <!-- Pick Up Location -->
-                            <div class="mb-3">
-                                <label for="pickUpLocation" class="form-label">Pick Up Location</label>
-                                <input type="text" class="form-control" id="pickUpLocation" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="property" class="form-label">Property</label>
-                                <input type="text" class="form-control" id="property" readonly>
-                            </div>
-                            <button type="submit" class="btn btn-dark w-100">Submit Request</button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" required>
                     </div>
-                </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactNumber" class="form-label">Contact Number</label>
+                        <input type="text" class="form-control" id="contactNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="preferredDate" class="form-label">Preferred Date</label>
+                        <input type="date" class="form-control" id="preferredDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="property" class="form-label">Property</label>
+                        <input type="text" class="form-control" id="property" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Submit Request</button>
+                </form>
             </div>
         </div>
     </div>
 </div>
-
-</section>
 
 <!-- Footer -->
 <footer class="bg-dark text-light pt-4">
@@ -272,44 +213,115 @@ document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
     const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
 // Set the minimum date in the input field
-    document.getElementById("preferredDate").setAttribute("min", today);
+    const preferredDateInput = document.getElementById("preferredDate");
+    if (preferredDateInput) {
+        preferredDateInput.setAttribute("min", today);
+    }
 
     // Handle form submission for site visit request
-    document.getElementById("trippingForm").addEventListener("submit", async function(event) {
-    event.preventDefault();  // Prevent the form from submitting traditionally
+    const trippingForm = document.getElementById("trippingForm");
+    if (trippingForm) {
+        trippingForm.addEventListener("submit", async function(event) {
+            event.preventDefault();  // Prevent the form from submitting traditionally
 
-    // Prepare form data as an object
-    const formData = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        email: document.getElementById("email").value,
-        contactNumber: document.getElementById("contactNumber").value,
-        preferredDate: document.getElementById("preferredDate").value,
-        pickUpLocation: document.getElementById("pickUpLocation").value,
-        property: document.getElementById("property").value
-    };
+            // Prepare form data as an object
+            const formData = {
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                email: document.getElementById("email").value,
+                contactNumber: document.getElementById("contactNumber").value,
+                preferredDate: document.getElementById("preferredDate").value,
+                property: document.getElementById("property").value
+            };
 
-    try {
-        // Send the form data as a POST request
-        let response = await fetch(`${API_URL}/submitVisitRequest`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
+            try {
+                // Send the form data as a POST request
+                let response = await fetch(`${API_URL}/submitVisitRequest`, {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                let result = await response.json();
+                if (response.ok) {
+                    alert(result.message);  // Success message
+                } else {
+                    alert(result.error);  // Error message from backend
+                }
+            } catch (error) {
+                alert("Error submitting the request. Please try again.");
+                console.error("Error:", error);
+            }
         });
+    }
 
-        let result = await response.json();
-        if (response.ok) {
-            alert(result.message);  // Success message
-        } else {
-            alert(result.error);  // Error message from backend
-        }
+async function loadProperties() {
+    const container = document.getElementById('propertyList');
+    container.innerHTML = '';
+    try {
+        const response = await fetch('/crm/properties');
+        const properties = await response.json();
+        properties.forEach(property => {
+            const row = document.createElement('div');
+            row.className = 'row mb-5';
+            row.innerHTML = `
+                <div class="col-lg-6">
+                    <img src="/uploads/properties/${property.imageUrl}" alt="${property.name}" class="img-fluid rounded shadow-lg" style="width: 100%; height: 300px; object-fit: cover;">
+                </div>
+                <div class="col-lg-6">
+                    <h3>${property.name}</h3>
+                    <p>${property.description}</p>
+                    <p><strong>${property.price}</strong></p>
+                    <p>
+                        <i class="fa fa-car"></i> ${property.parking} Parking &nbsp;&nbsp;
+                        <i class="fa fa-bed"></i> ${property.bedrooms} Bedrooms &nbsp;&nbsp;
+                        <i class="fa fa-bath"></i> ${property.bathrooms} Bathrooms &nbsp;&nbsp;
+                        <i class="fa fa-layer-group"></i> ${property.floors} Floors
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <a href="/crm/vtour" class="btn btn-primary" target="_blank">
+                            <i class="fa fa-eye"></i> View Virtual Tour
+                        </a>
+                        <button class="btn btn-warning text-dark request-tripping-btn" data-property="${property.name}" data-bs-toggle="modal" data-bs-target="#trippingModal">
+                            <i class="fa fa-car"></i> Request Site Visit
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
     } catch (error) {
-        alert("Error submitting the request. Please try again.");
-        console.error("Error:", error);
+        container.innerHTML = '<p class="text-danger">Failed to load properties.</p>';
+        console.error(error);
+    }
+}
+// Call on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadProperties);
+} else {
+    loadProperties();
+}
+// Handle the "Request Site Visit" button click for dynamic properties
+// Use event delegation
+const propertyList = document.getElementById('propertyList');
+propertyList.addEventListener('click', function(event) {
+    if (event.target.closest('.request-tripping-btn')) {
+        const button = event.target.closest('.request-tripping-btn');
+        const property = button.getAttribute('data-property');
+        document.getElementById('property').value = property;
     }
 });
+
+// Example fix for addEventListener error
+const virtualTourInput = document.getElementById('virtual_tour_image');
+if (virtualTourInput) {
+    virtualTourInput.addEventListener('click', function(e) {
+        e.preventDefault();
+        // your code here (if needed)
+    });
+}
 
   </script>
   

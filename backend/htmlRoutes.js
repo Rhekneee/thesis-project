@@ -80,7 +80,7 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname,  '..', 'views', 'crm website', 'faqs.html')); // Adjusted path
   });
 
-  app.get('/crm/properties', (req, res) => {
+  app.get('/crm/list_properties', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm website', 'properties.html')); // Adjusted path
   });
   app.get('/crm/vtour', (req, res) => {    
