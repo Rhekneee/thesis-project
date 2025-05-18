@@ -591,68 +591,89 @@
 </div>
 
   <div id="content">
-    <!-- Manufacturing Material Requests Section -->
-    <div class="mt-4">
-      <h3>Manufacturing Material Requests</h3>
-      <div class="glass-card p-3 h-100 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-muted">Material requests submitted by manufacturing department</span>
-        </div>
-        <div class="data-table table-responsive">
-          <table class="table mb-0 align-middle text-center" id="manufacturing-requests-table">
-            <thead>
-              <tr>
-                <th class="text-center">Request No</th>
-                <th class="text-center">Project</th>
-                <th class="text-center">Requested By</th>
-                <th class="text-center">Request Date</th>
-                <th class="text-center">Source Type</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="manufacturingRequestsBody">
-              <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
-                  <i class="fa-regular fa-box me-2"></i>Loading manufacturing requests...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <h2>Purchase Requests</h2>
 
-    <!-- Delivery Table Section -->
-    <div class="mt-4">
-      <h3>Approved Materials for Delivery</h3>
-      <div class="glass-card p-3 h-100 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-muted">Materials approved and ready for delivery</span>
+    <!-- New Purchase Request Form -->
+    <form id="purchaseRequestForm" class="request-form mb-4">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="requestDate" class="form-label">Request Date</label>
+          <input type="date" class="form-control" id="requestDate" required />
         </div>
-        <div class="data-table table-responsive">
-          <table class="table mb-0 align-middle text-center" id="delivery-table">
-            <thead>
-              <tr>
-                <th class="text-center">Request ID</th>
-                <th class="text-center">Project</th>
-                <th class="text-center">Delivered Date</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="deliveryBody">
-              <tr>
-                <td colspan="4" class="text-center py-5 text-muted">
-                  <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="col-md-2">
+          <label for="department" class="form-label">Department</label>
+          <input type="text" class="form-control" id="department" value="logistics" readonly />
+        </div>
+        <div class="col-md-2">
+          <label for="materialType" class="form-label">Material Type</label>
+          <select class="form-select" id="materialType" required>
+            <option value="">Select Material</option>
+            <option value="Cement">Cement</option>
+            <option value="Concrete">Concrete</option>
+            <option value="Steel">Steel</option>
+            <option value="Rebar">Rebar</option>
+            <option value="Gravel">Gravel</option>
+            <option value="Sand">Sand</option>
+            <option value="Wood / Lumber">Wood / Lumber</option>
+            <option value="Bricks">Bricks</option>
+            <option value="Tiles">Tiles</option>
+            <option value="Glass">Glass</option>
+            <option value="Asphalt">Asphalt</option>
+            <option value="PVC Pipes">PVC Pipes</option>
+            <option value="Copper Wiring">Copper Wiring</option>
+            <option value="Aluminum Sheets">Aluminum Sheets</option>
+            <option value="Paint">Paint</option>
+            <option value="Insulation">Insulation</option>
+            <option value="Drywall / Gypsum">Drywall / Gypsum</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <label for="quantity" class="form-label">Quantity</label>
+          <input type="number" class="form-control" id="quantity" min="1" required />
+        </div>
+        <div class="col-md-1">
+          <label for="unit" class="form-label">Unit</label>
+          <input type="text" class="form-control" id="unit" required />
+        </div>
+        <div class="col-md-3">
+          <label for="justification" class="form-label">Justification</label>
+          <input type="text" class="form-control" id="justification" required />
         </div>
       </div>
+      <div class="mt-3 text-end">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Submit Request</button>
+      </div>
+    </form>
+
+    <div class="materials-list">
+      <h5>Purchase Request List</h5>
+      <div class="table-responsive mb-3">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Request Date</th>
+              <th>Requested By</th>
+              <th>Department</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Justification</th>
+              <th>Status</th>
+              <th>Approved By</th>
+              <th>Approved Date</th>
+              <th>Remarks</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="purchaseRequestBody">
+            <!-- Table content will be dynamically inserted here -->
+          </tbody>
+        </table>
+      </div>
+      <div id="paginationPurchaseRequest" class="pagination">
+        <!-- Pagination buttons will be dynamically inserted here -->
+      </div>
     </div>
-  </div>
 
 
 
@@ -1744,258 +1765,137 @@
       submitMaterialRelease(deliveryData);
     }
 
-    function submitMaterialRelease(deliveryData) {
-      const release = window.pendingMaterialRelease;
-
-      const releaseData = {
-        request_no: release.requestNo,
-        delivery_type: deliveryData.delivery_type,
-        driver_id: deliveryData.driver_id,
-        vehicle_info: deliveryData.vehicle_info,
-        external_driver_name: deliveryData.external_driver_name,
-        external_vehicle_details: deliveryData.external_vehicle_details,
-        courier_service: deliveryData.courier_service
-      };
-
-      // Submit to backend
-      fetch('/scm/material-release', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(releaseData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Material release response:', data);
-        if (data.success) {
-          // Add materials to delivery table
-          addManufacturingMaterialsToDelivery(release.requestNo, release.project, release.selectedMaterials, release.sourceType);
-
-          // Refresh the manufacturing requests table from backend
-          loadManufacturingRequests();
-
-          // Hide the form and clear data
-          cancelMaterialRelease();
-          
-          showNotification(`Material release created successfully! ${release.selectedMaterials.length} material(s) have been released.`, 'success');
-      } else {
-          console.error('Material release failed:', data.error);
-          showNotification(data.error || 'Failed to create material release.', 'danger');
-        }
-      })
-      .catch(error => {
-        console.error('Error creating material release:', error);
-        showNotification('Failed to create material release. Please try again.', 'danger');
-      });
+    function closeRequestDetailsModal() {
+      const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+      modal.hide();
     }
 
-    // ===== Notification function =====
-    function showNotification(message, type = 'success') {
-      // Create notification element
-      const notification = document.createElement('div');
-      notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
-      notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
-      
-      notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
-      
-      // Add to body
-      document.body.appendChild(notification);
-      
-      // Auto remove after 4 seconds
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.remove();
-        }
-      }, 4000);
+    // Initialize
+    function initializePage() {
+      const select = document.getElementById('entriesPerPageRequest');
+      requestsPerPage = parseInt(select.value);
+      renderRequestTable();
     }
 
+    // Call initialize when the page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
 
-    // ===== Delivery Table Functionality =====
-    let deliveryItems = []; // Store approved requests for delivery
-    let currentDeliveryIndex = -1; // Track current delivery item being viewed
+    // Purchase Requests JS
+    let purchaseRequests = [];
+    let purchaseRequestsPerPage = 5;
+    let currentPurchaseRequestPage = 1;
+    let filteredPurchaseRequests = [];
 
-    function refreshDeliveryTable() {
-      const tbody = document.getElementById('deliveryBody');
-      tbody.innerHTML = '';
+    // Fetch purchase requests from backend
+    async function fetchPurchaseRequests() {
+      try {
+        const response = await fetch('/scm/purchase_requests');
+        if (!response.ok) throw new Error('Failed to fetch purchase requests');
+        purchaseRequests = await response.json();
+        filteredPurchaseRequests = [...purchaseRequests];
+        renderPurchaseRequestTable();
+      } catch (error) {
+        console.error(error);
+      }
+    }
 
-      if (deliveryItems.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" class="text-center py-5 text-muted">
-              <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
-            </td>
-          </tr>
+    // Render purchase request table
+    function renderPurchaseRequestTable() {
+      const tableBody = document.getElementById('purchaseRequestBody');
+      tableBody.innerHTML = '';
+      const start = (currentPurchaseRequestPage - 1) * purchaseRequestsPerPage;
+      const end = currentPurchaseRequestPage * purchaseRequestsPerPage;
+      const currentRequests = filteredPurchaseRequests.slice(start, end);
+      currentRequests.forEach(request => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${request.request_id}</td>
+          <td>${request.request_date ? request.request_date.split('T')[0] : ''}</td>
+          <td>${request.requested_by}</td>
+          <td>${request.department}</td>
+          <td>${request.quantity}</td>
+          <td>${request.unit}</td>
+          <td>${request.justification}</td>
+          <td><span class="badge bg-${getStatusColor(request.status)}">${request.status}</span></td>
+          <td>${request.approved_by || ''}</td>
+          <td>${request.approved_date ? request.approved_date.split('T')[0] : ''}</td>
+          <td>${request.remarks || ''}</td>
+          <td><!-- Action buttons here if needed --></td>
         `;
+        tableBody.appendChild(row);
+      });
+      renderPurchaseRequestPagination();
+    }
+
+    function renderPurchaseRequestPagination() {
+      const paginationControls = document.getElementById('paginationPurchaseRequest');
+      const totalPages = Math.ceil(filteredPurchaseRequests.length / purchaseRequestsPerPage);
+      paginationControls.innerHTML = '';
+      if (currentPurchaseRequestPage > 1) {
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '&laquo;';
+        prevButton.onclick = () => goToPurchaseRequestPage(currentPurchaseRequestPage - 1);
+        paginationControls.appendChild(prevButton);
+      }
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.onclick = () => goToPurchaseRequestPage(i);
+        if (i === currentPurchaseRequestPage) pageButton.classList.add('active');
+        paginationControls.appendChild(pageButton);
+      }
+      if (currentPurchaseRequestPage < totalPages) {
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '&raquo;';
+        nextButton.onclick = () => goToPurchaseRequestPage(currentPurchaseRequestPage + 1);
+        paginationControls.appendChild(nextButton);
+      }
+    }
+
+    function goToPurchaseRequestPage(page) {
+      currentPurchaseRequestPage = page;
+      renderPurchaseRequestTable();
+    }
+
+    // Handle form submission
+    const purchaseRequestForm = document.getElementById('purchaseRequestForm');
+    purchaseRequestForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const request_date = document.getElementById('requestDate').value;
+      const department = document.getElementById('department').value.trim();
+      const material_type = document.getElementById('materialType').value;
+      const quantity = document.getElementById('quantity').value;
+      const unit = document.getElementById('unit').value.trim();
+      const justification = document.getElementById('justification').value.trim();
+      if (!request_date || !department || !material_type || !quantity || !unit || !justification) {
+        alert('Please fill out all fields.');
         return;
       }
-
-      deliveryItems.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        
-        // Handle delivery status
-        const statusHtml = `<span class="status-badge ${getDeliveryStatusClass(item.status)}">${item.status}</span>`;
-        
-        tr.innerHTML = `
-          <td class="text-center">${item.requestid}</td>
-          <td class="text-center">${item.project}</td>
-          <td class="text-center">${item.deliveredDate && item.deliveredDate.trim() !== '' ? item.deliveredDate : '-'}</td>
-          <td class="text-center">${statusHtml}</td>
-          <td class="text-center">
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-secondary" onclick="viewDeliveryDetails(${index})">
-                <i class="fa-solid fa-eye"></i> View Details
-              </button>
-            </div>
-          </td>
-        `;
-        
-        tbody.appendChild(tr);
-      });
-    }
-
-    function getDeliveryStatusClass(status) {
-      switch(status) {
-        case 'Approved': return 'status-medium';
-        case 'Out for Delivery': return 'status-good';
-        case 'Delivered': return 'status-good';
-        default: return 'status-medium';
+      try {
+        const response = await fetch('/scm/purchase_requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_date, department, material_type, quantity, unit, justification })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          alert('Purchase request submitted successfully!');
+          purchaseRequestForm.reset();
+          fetchPurchaseRequests();
+        } else {
+          alert(result.error || 'Failed to submit purchase request.');
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
       }
-    }
-
-
-
-    function viewDeliveryDetails(index) {
-      const item = deliveryItems[index];
-      currentDeliveryIndex = index; // Store current index for modal actions
-      
-      // Update modal header information
-      document.getElementById('deliveryModalRequestId').textContent = item.requestid;
-      document.getElementById('deliveryModalProject').textContent = item.project;
-      document.getElementById('deliveryModalApprovedDate').textContent = item.approvedDate;
-      
-      // Update approval notes
-      const approvalNotesSection = document.getElementById('approvalNotesSection');
-      const approvalNotesElement = document.getElementById('deliveryModalApprovalNotes');
-      if (item.approvalNotes && item.approvalNotes.trim() !== '') {
-        approvalNotesElement.textContent = item.approvalNotes;
-        approvalNotesSection.style.display = 'block';
-      } else {
-        approvalNotesSection.style.display = 'none';
-      }
-      
-      // Update status with appropriate badge
-      let statusBadge;
-      switch(item.status) {
-        case 'Approved':
-          statusBadge = '<span class="status-badge status-medium">Approved</span>';
-          break;
-        case 'Out for Delivery':
-          statusBadge = '<span class="status-badge status-good">Out for Delivery</span>';
-          break;
-        case 'Delivered':
-          statusBadge = '<span class="status-badge status-good">Delivered</span>';
-          break;
-        default:
-          statusBadge = '<span class="status-badge status-medium">Unknown</span>';
-      }
-      document.getElementById('deliveryModalStatus').innerHTML = statusBadge;
-
-      // Render materials table
-      const materialsContainer = document.getElementById('deliveryModalMaterials');
-      materialsContainer.innerHTML = '';
-      
-      if (item.materials && item.materials.length > 0) {
-        const materialsTableDiv = document.createElement('div');
-        materialsTableDiv.className = 'materials-table mb-4';
-        
-        materialsTableDiv.innerHTML = `
-          <div class="table-responsive">
-            <table class="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Image</th>
-                  <th>Item Name</th>
-                  <th>Description</th>
-                  <th>Item Type</th>
-                  <th>Size</th>
-                  <th>Unit</th>
-                  <th>Quantity</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${item.materials.map(material => `
-                  <tr>
-                    <td class="text-center">
-                      <img src="${material.logo || 'https://via.placeholder.com/40x40/6c757d/ffffff?text=M'}" alt="Material image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
-                    </td>
-                    <td>${material.itemName || material.type}</td>
-                    <td>${material.description || '-'}</td>
-                    <td>${material.itemType || '-'}</td>
-                    <td>${material.size}</td>
-                    <td>${material.unit}</td>
-                    <td>${material.quantity}</td>
-                    <td>${material.notes}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-        materialsContainer.appendChild(materialsTableDiv);
-      } else {
-        materialsContainer.innerHTML = `
-          <div class="text-center py-4 text-muted">
-            <i class="fa-solid fa-box-open fa-2x mb-3"></i>
-            <p class="mb-0">No materials found for this delivery.</p>
-          </div>
-        `;
-      }
-
-      // Update button state based on current status
-      const outForDeliveryBtn = document.getElementById('modalOutForDeliveryBtn');
-      if (item.status === 'Approved') {
-        outForDeliveryBtn.disabled = false;
-        outForDeliveryBtn.innerHTML = '<i class="fa-solid fa-truck"></i> Out for Delivery';
-      } else if (item.status === 'Out for Delivery') {
-        outForDeliveryBtn.disabled = true;
-        outForDeliveryBtn.innerHTML = '<i class="fa-solid fa-truck"></i> Already Out for Delivery';
-      } else {
-        outForDeliveryBtn.disabled = true;
-        outForDeliveryBtn.innerHTML = '<i class="fa-solid fa-truck"></i> Out for Delivery';
-      }
-
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('deliveryDetailsModal'));
-      modal.show();
-    }
-
-    function markAsOutForDeliveryFromModal() {
-      if (currentDeliveryIndex === -1) return;
-      
-      if (confirm('Are you sure you want to mark this request as out for delivery?')) {
-        deliveryItems[currentDeliveryIndex].status = 'Out for Delivery';
-        refreshDeliveryTable();
-        
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deliveryDetailsModal'));
-      modal.hide();
-        
-        showNotification(`Request ${deliveryItems[currentDeliveryIndex].requestid} has been marked as out for delivery!`, 'success');
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Load manufacturing requests and employees
-      loadManufacturingRequests();
-      loadEmployees();
     });
 
+    // Fetch purchase requests on page load
+    fetchPurchaseRequests();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

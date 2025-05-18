@@ -119,8 +119,49 @@ const sendRejectNotification = async (to) => {
     }
 };
 
+// Email notification for new supplier account
+const sendSupplierAccountNotification = async (to, username, password, link) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: 'Welcome to MDB Construction – Your Supplier Account Details',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4f6ef5;">Welcome to MDB Construction!</h2>
+                    <p>Dear Valued Supplier,</p>
+                    <p>We are pleased to inform you that your supplier account has been successfully created in our system. Please find your login credentials below. For your security, we recommend changing your password after your first login.</p>
+                    <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Username:</strong> ${username}</p>
+                        <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
+                    </div>
+                    <p>You can access the supplier portal here:<br>
+                        <a href="${link}" style="color: #4f6ef5;">${link}</a>
+                    </p>
+                    <ul style="margin: 16px 0 16px 20px; color: #374151;">
+                        <li>Log in using the credentials above.</li>
+                        <li>Change your password immediately after logging in for the first time.</li>
+                        <li>Keep your login information confidential and do not share it with others.</li>
+                    </ul>
+                    <p>If you have any questions or require assistance, please contact our support team.</p>
+                    <br>
+                    <p>We look forward to a successful partnership.</p>
+                    <p>Best regards,<br>Supply Chain Management Team<br>MDB Construction</p>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Supplier account email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending supplier account email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
-    sendRejectNotification
+    sendRejectNotification,
+    sendSupplierAccountNotification
 }; 
