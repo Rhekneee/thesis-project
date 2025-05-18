@@ -405,41 +405,147 @@
     </div>
     <div id="content">
         <h2>Purchase Order Management</h2>
-        <div class="search-container mb-2">
-            <input type="text" id="searchBar" class="form-control" placeholder="Search by order ID or supplier...">
-            <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
-                <option value="all">All Status</option>
-                <option value="to-deliver">To Deliver</option>
-                <option value="received">Received</option>
-                <option value="paid">Paid</option>
-            </select>
-            <div class="entries-per-page ms-auto d-flex align-items-center">
-                <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
-                <select id="entriesPerPageSelect" class="form-select">
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                </select>
+        
+        <!-- Tabs for different views -->
+        <ul class="nav nav-tabs mb-4" id="poTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="estimations-tab" data-bs-toggle="tab" data-bs-target="#estimations" type="button" role="tab">
+                    <i class="fas fa-file-invoice-dollar"></i> Pending Estimations
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+                    <i class="fas fa-money-check-alt"></i> Payment Audit
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
+                    <i class="fas fa-shopping-cart"></i> All Orders
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="poTabContent">
+            <!-- Estimations Tab -->
+            <div class="tab-pane fade show active" id="estimations" role="tabpanel">
+                <div class="search-container mb-3">
+                    <input type="text" id="estimationSearchBar" class="form-control" placeholder="Search by order ID or supplier...">
+                    <div class="entries-per-page ms-auto">
+                        <label for="estimationEntriesPerPage" class="me-2">Entries per page:</label>
+                        <select id="estimationEntriesPerPage" class="form-select">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped" id="estimationTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Supplier</th>
+                                <th>Material</th>
+                                <th>Quantity</th>
+                                <th>Estimation Cost</th>
+                                <th>Requested By</th>
+                                <th>Department</th>
+                                <th>Date Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estimationList"></tbody>
+                    </table>
+                </div>
+                <div id="estimationPagination" class="d-flex justify-content-between align-items-center mt-3">
+                    <span id="estimationEntriesInfo"></span>
+                    <nav><ul class="pagination mb-0" id="estimationPaginationControls"></ul></nav>
+                </div>
             </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-striped" id="poTable">
-                <thead>
-                    <tr>
-                        <th onclick="sortPO('orderId')">Order ID <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPO('supplier')">Supplier <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPO('receivedDate')">Received Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Invoice</th>
-                        <th onclick="sortPO('status')">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="poList"></tbody>
-            </table>
-        </div>
-        <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
-            <span id="showingEntries"></span>
-            <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+
+            <!-- Payment Audit Tab -->
+            <div class="tab-pane fade" id="payments" role="tabpanel">
+                <div class="search-container mb-3">
+                    <input type="text" id="paymentSearchBar" class="form-control" placeholder="Search by order ID or supplier...">
+                    <select id="paymentStatusFilter" class="form-select ms-2">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending Payment</option>
+                        <option value="processing">Processing</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                    <div class="entries-per-page ms-auto">
+                        <label for="paymentEntriesPerPage" class="me-2">Entries per page:</label>
+                        <select id="paymentEntriesPerPage" class="form-select">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped" id="paymentAuditTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Supplier</th>
+                                <th>Amount</th>
+                                <th>Payment Type</th>
+                                <th>Payment Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentAuditList"></tbody>
+                    </table>
+                </div>
+                <div id="paymentPagination" class="d-flex justify-content-between align-items-center mt-3">
+                    <span id="paymentEntriesInfo"></span>
+                    <nav><ul class="pagination mb-0" id="paymentPaginationControls"></ul></nav>
+                </div>
+            </div>
+
+            <!-- All Orders Tab -->
+            <div class="tab-pane fade" id="orders" role="tabpanel">
+                <div class="search-container mb-2">
+                    <input type="text" id="searchBar" class="form-control" placeholder="Search by order ID or supplier...">
+                    <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
+                        <option value="all">All Status</option>
+                        <option value="to-deliver">To Deliver</option>
+                        <option value="received">Received</option>
+                        <option value="paid">Paid</option>
+                    </select>
+                    <div class="entries-per-page ms-auto d-flex align-items-center">
+                        <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
+                        <select id="entriesPerPageSelect" class="form-select">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="poTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortPO('orderId')">Order ID <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('supplier')">Supplier <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('receivedDate')">Received Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Invoice</th>
+                                <th onclick="sortPO('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poList"></tbody>
+                    </table>
+                </div>
+                <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
+                    <span id="showingEntries"></span>
+                    <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -592,6 +698,234 @@
                             <i class="fas fa-check"></i> Yes, Mark as Paid
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estimation Action Modal -->
+    <div class="modal fade" id="estimationActionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="estimationActionModalLabel">
+                        <i class="fas fa-file-invoice-dollar"></i> 
+                        <span id="estimationActionTitle">Review Estimation</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="estimation-details mb-4">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Order ID</label>
+                                <div id="modalEstimationOrderId" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Supplier</label>
+                                <div id="modalEstimationSupplier" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Material</label>
+                                <div id="modalEstimationMaterial" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity</label>
+                                <div id="modalEstimationQuantity" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Estimation Cost</label>
+                                <div id="modalEstimationCost" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Department</label>
+                                <div id="modalEstimationDepartment" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label">Justification</label>
+                                <div id="modalEstimationJustification" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <div class="mb-3">
+                            <label for="estimationRemarks" class="form-label">Remarks (required for rejection)</label>
+                            <textarea id="estimationRemarks" class="form-control" rows="3"></textarea>
+                        </div>
+                        <!-- Add payment type selection (only shown when approving) -->
+                        <div id="paymentTypeSection" class="mb-3" style="display: none;">
+                            <label class="form-label">Payment Type</label>
+                            <select id="paymentType" class="form-select">
+                                <option value="online">Online Payment</option>
+                                <option value="cod">Cash on Delivery (COD)</option>
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" id="rejectEstimationBtn" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button type="button" id="approveEstimationBtn" class="btn btn-success">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-money-bill-wave"></i> 
+                        <span id="paymentModalTitle">Process Payment</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="onlinePaymentSection">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Payment details will be sent to the supplier via email.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Amount</label>
+                            <div id="paymentAmount" class="form-control-plaintext fw-bold"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Instructions</label>
+                            <div class="form-control-plaintext">
+                                <p>1. Bank Transfer Details:</p>
+                                <ul>
+                                    <li>Bank: MDB Construction Bank</li>
+                                    <li>Account Number: 1234-5678-9012</li>
+                                    <li>Account Name: MDB Construction Corp.</li>
+                                </ul>
+                                <p>2. Please include the Order ID in the payment reference.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="codPaymentSection" style="display: none;">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Payment will be released after delivery confirmation.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Payment Amount</label>
+                            <div id="codPaymentAmount" class="form-control-plaintext fw-bold"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Instructions</label>
+                            <div class="form-control-plaintext">
+                                <p>1. Deliver to: MDB Construction Office</p>
+                                <p>2. Present the delivery receipt upon arrival</p>
+                                <p>3. Payment will be released after delivery confirmation</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="confirmPaymentBtn" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirm Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Transfer Approval Modal -->
+    <div class="modal fade" id="bankTransferModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-university"></i> 
+                        Bank Transfer Approval
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Please confirm the bank transfer details before approving.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Order ID</label>
+                        <div id="transferOrderId" class="form-control-plaintext fw-bold"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Supplier</label>
+                        <div id="transferSupplier" class="form-control-plaintext"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <div id="transferAmount" class="form-control-plaintext fw-bold"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bank Details</label>
+                        <div class="form-control-plaintext">
+                            <p class="mb-1">Bank: <span id="transferBankName"></span></p>
+                            <p class="mb-1">Account: <span id="transferAccountNumber"></span></p>
+                            <p class="mb-0">Account Holder: <span id="transferAccountHolder"></span></p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="transferReference" placeholder="Enter bank transfer reference number" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmTransferBtn" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirm Transfer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h4 id="successTitle" class="mb-3">Success!</h4>
+                    <p id="successMessage" class="mb-4 text-muted"></p>
+                    <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-2"></i>OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-circle fa-4x text-danger"></i>
+                    </div>
+                    <h4 id="errorTitle" class="mb-3">Error</h4>
+                    <p id="errorMessage" class="mb-4 text-muted"></p>
+                    <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -916,18 +1250,8 @@
             renderPOs();
         });
 
-        // Sidebar toggle logic
-        document.getElementById('sidebar-toggle').onclick = function() {
-            const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                sidebar.style.display = 'block';
-                content.style.marginLeft = '300px';
-            } else {
-                sidebar.style.display = 'none';
-                content.style.marginLeft = '0';
-            }
-        };
+    
+        
 
         // Add these new functions after the existing JavaScript code
         let currentInvoiceFile = null;
@@ -956,6 +1280,450 @@
 
         // Initial render
         renderPOs();
+
+        // Purchase Order Estimations
+        let estimations = [];
+        let currentEstimationPage = 1;
+        let estimationItemsPerPage = 5;
+        let currentEstimationId = null;
+
+        // Fetch purchase order estimations
+        async function fetchPurchaseOrderEstimations() {
+            try {
+                const response = await fetch('/finance/purchase-orders/estimations');
+                const data = await response.json();
+                
+                if (data.success) {
+                    estimations = data.orders;
+                    renderEstimations();
+                } else {
+                    showAlert('error', 'Failed to fetch purchase order estimations');
+                }
+            } catch (error) {
+                console.error('Error fetching estimations:', error);
+                showAlert('error', 'Failed to fetch purchase order estimations');
+            }
+        }
+
+        // Render estimations table
+        function renderEstimations() {
+            const estimationList = document.getElementById('estimationList');
+            estimationList.innerHTML = '';
+            
+            const startIndex = (currentEstimationPage - 1) * estimationItemsPerPage;
+            const endIndex = Math.min(startIndex + estimationItemsPerPage, estimations.length);
+            const paginatedEstimations = estimations.slice(startIndex, endIndex);
+
+            paginatedEstimations.forEach(estimation => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${estimation.po_id}</td>
+                    <td>${estimation.supplier_name}</td>
+                    <td>${estimation.material_type}</td>
+                    <td>${estimation.quantity} ${estimation.unit}</td>
+                    <td>₱${parseFloat(estimation.estimation_cost).toLocaleString()}</td>
+                    <td>${estimation.requested_by}</td>
+                    <td>${estimation.department}</td>
+                    <td>${new Date(estimation.created_date).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="reviewEstimation(${estimation.po_id})">
+                            <i class="fas fa-eye"></i> Review
+                        </button>
+                    </td>
+                `;
+                estimationList.appendChild(row);
+            });
+
+            updateEstimationPagination();
+            updateEstimationEntriesInfo();
+        }
+
+        // Update estimation pagination
+        function updateEstimationPagination() {
+            const totalPages = Math.ceil(estimations.length / estimationItemsPerPage);
+            const paginationControls = document.getElementById('estimationPaginationControls');
+            paginationControls.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentEstimationPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeEstimationPage(${currentEstimationPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentEstimationPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changeEstimationPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentEstimationPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeEstimationPage(${currentEstimationPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        // Change estimation page
+        function changeEstimationPage(newPage) {
+            const totalPages = Math.ceil(estimations.length / estimationItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentEstimationPage = newPage;
+                renderEstimations();
+            }
+            return false;
+        }
+
+        // Update estimation entries info
+        function updateEstimationEntriesInfo() {
+            const startIndex = (currentEstimationPage - 1) * estimationItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + estimationItemsPerPage - 1, estimations.length);
+            const info = document.getElementById('estimationEntriesInfo');
+            
+            if (estimations.length === 0) {
+                info.textContent = 'No entries to display';
+            } else {
+                info.textContent = `Showing ${startIndex} to ${endIndex} of ${estimations.length} entries`;
+            }
+        }
+
+        // Review estimation
+        function reviewEstimation(poId) {
+            const estimation = estimations.find(e => e.po_id === poId);
+            if (!estimation) return;
+
+            currentEstimationId = poId;
+            
+            // Update modal content
+            document.getElementById('modalEstimationOrderId').textContent = estimation.po_id;
+            document.getElementById('modalEstimationSupplier').textContent = estimation.supplier_name;
+            document.getElementById('modalEstimationMaterial').textContent = estimation.material_type;
+            document.getElementById('modalEstimationQuantity').textContent = `${estimation.quantity} ${estimation.unit}`;
+            document.getElementById('modalEstimationCost').textContent = `₱${parseFloat(estimation.estimation_cost).toLocaleString()}`;
+            document.getElementById('modalEstimationDepartment').textContent = estimation.department;
+            document.getElementById('modalEstimationJustification').textContent = estimation.justification;
+            
+            // Clear previous remarks
+            document.getElementById('estimationRemarks').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('estimationActionModal'));
+            modal.show();
+        }
+
+        // Handle estimation approval
+        async function handleEstimationAction(status) {
+            const remarks = document.getElementById('estimationRemarks').value.trim();
+            
+            if (status === 'Rejected' && !remarks) {
+                showAlert('error', 'Remarks are required when rejecting an estimation');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/finance/purchase-orders/${currentEstimationId}/estimation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status,
+                        remarks: status === 'Rejected' ? remarks : null
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (status === 'Approved') {
+                        // Get the current estimation details
+                        const estimation = estimations.find(e => e.po_id === currentEstimationId);
+                        if (!estimation) {
+                            showAlert('error', 'Estimation details not found');
+                            return;
+                        }
+
+                        // Update payment modal with estimation details
+                        const amount = `₱${parseFloat(estimation.estimation_cost).toLocaleString()}`;
+                        document.getElementById('paymentAmount').textContent = amount;
+                        document.getElementById('codPaymentAmount').textContent = amount;
+                        document.getElementById('paymentModalTitle').textContent = `Process Payment - ${estimation.po_id}`;
+
+                        // Close the estimation modal
+                        bootstrap.Modal.getInstance(document.getElementById('estimationActionModal')).hide();
+                        
+                        // Show success message
+                        showAlert('success', `Estimation approved successfully. Please proceed with payment.`);
+                        
+                        // Show payment modal
+                        const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                        paymentModal.show();
+
+                        // Reset payment type to default (online)
+                        document.getElementById('paymentType').value = 'online';
+                        document.getElementById('onlinePaymentSection').style.display = 'block';
+                        document.getElementById('codPaymentSection').style.display = 'none';
+                    } else {
+                        // For rejection, just close the modal and refresh
+                        bootstrap.Modal.getInstance(document.getElementById('estimationActionModal')).hide();
+                        showAlert('success', 'Estimation rejected successfully');
+                        await fetchPurchaseOrderEstimations();
+                    }
+                } else {
+                    showAlert('error', data.message || 'Failed to process estimation');
+                }
+            } catch (error) {
+                console.error('Error processing estimation:', error);
+                showAlert('error', 'Failed to process estimation');
+            }
+        }
+
+        // Add event listener for payment type change
+        document.getElementById('paymentType').addEventListener('change', function(e) {
+            const paymentType = e.target.value;
+            document.getElementById('onlinePaymentSection').style.display = paymentType === 'online' ? 'block' : 'none';
+            document.getElementById('codPaymentSection').style.display = paymentType === 'cod' ? 'block' : 'none';
+        });
+
+        // Add event listener for payment confirmation
+        document.getElementById('confirmPaymentBtn').addEventListener('click', async function() {
+            const paymentType = document.getElementById('paymentType').value;
+
+            try {
+                const response = await fetch(`/finance/purchase-orders/${currentEstimationId}/payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        payment_type: paymentType
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close payment modal
+                    bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+                    
+                    // Show success message
+                    const successMessage = paymentType === 'online' 
+                        ? 'Payment instructions have been sent to the supplier.'
+                        : 'Payment will be processed after delivery confirmation.';
+                    showAlert('success', successMessage);
+                    
+                    // Refresh estimations
+                    await fetchPurchaseOrderEstimations();
+                } else {
+                    showAlert('error', data.message || 'Failed to process payment');
+                }
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                showAlert('error', 'Failed to process payment');
+            }
+        });
+
+        // Event Listeners
+        document.getElementById('approveEstimationBtn').addEventListener('click', () => handleEstimationAction('Approved'));
+        document.getElementById('rejectEstimationBtn').addEventListener('click', () => handleEstimationAction('Rejected'));
+
+        document.getElementById('estimationSearchBar').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            estimations = estimations.filter(estimation => 
+                estimation.po_id.toString().includes(searchTerm) ||
+                estimation.supplier_name.toLowerCase().includes(searchTerm)
+            );
+            currentEstimationPage = 1;
+            renderEstimations();
+        });
+
+        document.getElementById('estimationEntriesPerPage').addEventListener('change', function(e) {
+            estimationItemsPerPage = parseInt(e.target.value);
+            currentEstimationPage = 1;
+            renderEstimations();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchPurchaseOrderEstimations();
+        });
+
+        // Update the showAlert function to use modals
+        function showAlert(type, message) {
+            if (type === 'success') {
+                document.getElementById('successMessage').textContent = message;
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+            } else if (type === 'error') {
+                document.getElementById('errorMessage').textContent = message;
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+            }
+        }
+
+        // Payment Audit List Variables
+        let paymentAuditList = [];
+        let currentPaymentPage = 1;
+        let paymentItemsPerPage = 5;
+        let paymentSearchValue = '';
+        let paymentStatusFilter = 'all';
+
+        // Fetch payment audit list
+        async function fetchPaymentAuditList() {
+            try {
+                const response = await fetch('/finance/payments/audit');
+                const data = await response.json();
+                
+                if (data.success) {
+                    paymentAuditList = data.payments;
+                    renderPaymentAuditList();
+                } else {
+                    showAlert('error', 'Failed to fetch payment audit list');
+                }
+            } catch (error) {
+                console.error('Error fetching payment audit list:', error);
+                showAlert('error', 'Failed to fetch payment audit list');
+            }
+        }
+
+        // Render payment audit list
+        function renderPaymentAuditList() {
+            const paymentList = document.getElementById('paymentAuditList');
+            paymentList.innerHTML = '';
+            
+            const filtered = paymentAuditList.filter(payment => {
+                // Status filter
+                if (paymentStatusFilter !== 'all' && payment.status !== paymentStatusFilter) return false;
+                // Search filter
+                const search = paymentSearchValue.toLowerCase();
+                return (
+                    payment.order_id.toLowerCase().includes(search) ||
+                    payment.supplier_name.toLowerCase().includes(search)
+                );
+            });
+
+            const startIndex = (currentPaymentPage - 1) * paymentItemsPerPage;
+            const endIndex = Math.min(startIndex + paymentItemsPerPage, filtered.length);
+            const paginated = filtered.slice(startIndex, endIndex);
+
+            paginated.forEach(payment => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${payment.order_id}</td>
+                    <td>${payment.supplier_name}</td>
+                    <td>₱${parseFloat(payment.amount).toLocaleString()}</td>
+                    <td>${payment.payment_type}</td>
+                    <td>${formatDate(payment.payment_date)}</td>
+                    <td><span class="badge bg-${getPaymentStatusColor(payment.status)}">${payment.status}</span></td>
+                    <td>
+                        ${payment.status === 'pending' ? `
+                            <button class="btn btn-sm btn-primary" onclick="approveBankTransfer('${payment.order_id}')">
+                                <i class="fas fa-check"></i> Approve Transfer
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-info" onclick="viewPaymentDetails('${payment.order_id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                `;
+                paymentList.appendChild(row);
+            });
+
+            updatePaymentPagination(filtered.length);
+            updatePaymentEntriesInfo(filtered.length);
+        }
+
+        // Helper function for payment status colors
+        function getPaymentStatusColor(status) {
+            switch(status) {
+                case 'pending': return 'warning';
+                case 'processing': return 'info';
+                case 'paid': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        // Approve bank transfer
+        async function approveBankTransfer(orderId) {
+            const payment = paymentAuditList.find(p => p.order_id === orderId);
+            if (!payment) return;
+
+            // Populate transfer modal
+            document.getElementById('transferOrderId').textContent = payment.order_id;
+            document.getElementById('transferSupplier').textContent = payment.supplier_name;
+            document.getElementById('transferAmount').textContent = `₱${parseFloat(payment.amount).toLocaleString()}`;
+            document.getElementById('transferBankName').textContent = payment.bank_name;
+            document.getElementById('transferAccountNumber').textContent = payment.account_number;
+            document.getElementById('transferAccountHolder').textContent = payment.account_holder;
+            document.getElementById('transferReference').value = '';
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('bankTransferModal'));
+            modal.show();
+        }
+
+        // Handle bank transfer confirmation
+        document.getElementById('confirmTransferBtn').addEventListener('click', async function() {
+            const orderId = document.getElementById('transferOrderId').textContent;
+            const referenceNumber = document.getElementById('transferReference').value.trim();
+
+            if (!referenceNumber) {
+                showAlert('error', 'Please enter a reference number');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/finance/payments/${orderId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reference_number: referenceNumber
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', 'Payment approved successfully');
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('bankTransferModal')).hide();
+                    // Refresh payment audit list
+                    await fetchPaymentAuditList();
+                } else {
+                    showAlert('error', data.message || 'Failed to approve payment');
+                }
+            } catch (error) {
+                console.error('Error approving payment:', error);
+                showAlert('error', 'Failed to approve payment');
+            }
+        });
+
+        // Event listeners for payment audit
+        document.getElementById('paymentSearchBar').addEventListener('input', function(e) {
+            paymentSearchValue = e.target.value;
+            currentPaymentPage = 1;
+            renderPaymentAuditList();
+        });
+
+        document.getElementById('paymentStatusFilter').addEventListener('change', function(e) {
+            paymentStatusFilter = e.target.value;
+            currentPaymentPage = 1;
+            renderPaymentAuditList();
+        });
+
+        document.getElementById('paymentEntriesPerPage').addEventListener('change', function(e) {
+            paymentItemsPerPage = parseInt(e.target.value);
+            currentPaymentPage = 1;
+            renderPaymentAuditList();
+        });
+
+        // Initialize payment audit list when tab is shown
+        document.getElementById('payments-tab').addEventListener('shown.bs.tab', function() {
+            fetchPaymentAuditList();
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

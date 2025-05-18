@@ -61,6 +61,30 @@
         }
     });
 
+    // Add session refresh endpoint
+    router.post('/refresh-session', (req, res) => {
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({ error: "No active session to refresh" });
+        }
+
+        try {
+            // Touch the session to extend its lifetime
+            req.session.touch();
+            
+            // Update last activity timestamp
+            req.session.lastActivity = Date.now();
+            
+            res.json({ 
+                success: true, 
+                message: "Session refreshed successfully",
+                user: req.session.user
+            });
+        } catch (error) {
+            console.error('Session refresh error:', error);
+            res.status(500).json({ error: "Failed to refresh session" });
+        }
+    });
+
     router.get('/getApplicationsByStatus', HRController.getApplicationsByStatus);
 
     // Route to update application status (POST method) 

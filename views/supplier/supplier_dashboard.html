@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/js/side_top.js"></script>
+  <title>Suppliers Dashboard</title>
+  <style>
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .request-form {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .material-list {
+      margin-top: 20px;
+    }
+    .material-item {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-add-material {
+      margin-top: 10px;
+    }
+    .table th {
+      background-color: #f8f9fa;
+    }
+    .materials-list {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .materials-list h5 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+    .recent-requests {
+      background: #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-top: 30px;
+    }
+    .recent-requests h4 {
+      color: #495057;
+      margin-bottom: 20px;
+    }
+    .table {
+      background: white;
+      border-radius: 5px;
+    }
+    .table thead {
+      background: #f8f9fa;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background-color: white;
+      color: #007bff;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .pagination button:disabled {
+      background-color: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .status-filter {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      background-color: white;
+      min-width: 150px;
+      max-width: 200px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: white;
+      color: #212529;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    /* Modal Styles */
+    .modal-content {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      padding: 1.75rem 2rem;
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .modal-title i {
+      margin-right: 12px;
+      font-size: 1.3em;
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+
+    .order-info {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .order-info .row {
+      margin-bottom: 1.25rem;
+    }
+
+    .order-info .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 0.85em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .invoice-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .invoice-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .invoice-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .modal-footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #e9ecef;
+      background: #fff;
+      border-radius: 0 0 16px 16px;
+    }
+
+    .modal-footer .btn {
+      padding: 0.7rem 1.75rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-footer .btn i {
+      font-size: 1.1em;
+    }
+
+    .modal-footer .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .btn-close:hover {
+      opacity: 1;
+    }
+
+    .close-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .close-btn:hover {
+      background: #bb2d3b;
+    }
+
+    .materials-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .materials-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      padding-right: 8px;
+    }
+
+    .materials-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .materials-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb {
+      background: #c5cae9;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb:hover {
+      background: #9fa8da;
+    }
+
+    .material-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .material-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #c5cae9;
+    }
+
+    .material-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .material-icon {
+      width: 40px;
+      height: 40px;
+      background: #e8eaf6;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5c6bc0;
+      font-size: 1.2em;
+    }
+
+    .material-name {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #1a237e;
+      flex: 1;
+    }
+
+    .material-details {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .material-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .detail-label {
+      font-size: 0.8em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+
+    /* Success Alert Styles */
+    .alert.fade {
+      transition: opacity 0.15s linear;
+    }
+    .alert.fade:not(.show) {
+      opacity: 0;
+    }
+    .alert.show {
+      opacity: 1;
+    }
+
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      
+      #invoicePDF, #invoicePDF * {
+        visibility: visible;
+      }
+      
+      #invoicePDF {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        background-color: white;
+      }
+
+      .modal, .modal-backdrop {
+        display: none !important;
+      }
+
+      @page {
+        size: letter;
+        margin: 0.5in;
+      }
+    }
+
+    /* Updated table alignment styles */
+    .table {
+      border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+      vertical-align: middle !important;
+      padding: 0.75rem !important;
+    }
+
+    .table td[rowspan] {
+      vertical-align: middle !important;
+    }
+
+    .amount-cell {
+      text-align: left !important;
+      vertical-align: middle !important;
+      white-space: nowrap;
+      padding: 0.75rem 1rem !important;
+    }
+
+    /* Add specific header alignment */
+    .table th.amount-header {
+      text-align: left;
+      padding: 0.75rem 1rem !important;
+    }
+
+    /* Ensure consistent row heights */
+    .table tr {
+      height: 3.5rem;
+    }
+
+    /* Ensure consistent cell spacing */
+    .table th, .table td {
+      padding: 0.75rem 1rem !important;
+    }
+
+    /* Hidden text style */
+    .hidden-text {
+      color: white;
+      user-select: none;
+    }
+
+    /* Hide input field */
+    .hidden-input {
+      display: none !important;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+   <!-- Topbar -->
+   <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+    <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+    <span class="company-title">MDB Construction</span>
+    </div>
+    <ul class="list-unstyled">
+      <li class="nav-item">
+        <a class="nav-item" href="/supplier/supplier_dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+      </li>
+      <li class="nav-item">
+          <a href="/supplier/materials"><i class="fas fa-box"></i> <span> Materials</span></a>
+      </li>
+      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+    </ul>
+    </div>
+
+
+
+  <div id="content">
+    <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h2>Supplier Invoice List</h2>
+
+    <div class="request-form">
+      <div class="row mb-3">
+        <div class="col-md-3 d-flex align-items-center">
+          <label for="entriesPerPage" class="form-label mb-0 me-2">Entries:</label>
+          <select id="entriesPerPage" class="form-select form-select-sm" onchange="setEntriesPerPage()">
+            <option value="5">5 entries</option>
+            <option value="10">10 entries</option>
+            <option value="15">15 entries</option>
+            <option value="20">20 entries</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-center">
+          <label for="statusFilter" class="form-label mb-0 me-2">Status:</label>
+          <select id="statusFilter" class="form-select form-select-sm" onchange="filterByStatus()">
+            <option value="all">All Status</option>
+
+            <option value="Pending">Pending</option>
+            <option value="Pending Estimation">Pending Estimation</option>
+            <option value="Approved">Approved</option>
+            <option value="Paid">Paid</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="materials-list">
+        <h5>Pending Orders</h5>
+        <div class="table-responsive mb-3">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th class="hidden-text">Order ID</th>
+                <th>Order Date</th>
+                <th>Material Type</th>
+                <th>Unit</th>
+                <th>Quantity</th>
+                <th class="amount-header">Estimated Cost</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="supplierdashboardBody">
+              <!-- Data rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="paginationControls" class="pagination">
+          <!-- Pagination buttons will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Alert -->
+  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+          <h5 class="mt-3" id="successMessage"></h5>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="orderDetailsModalLabel">
+            <i class="fas fa-file-invoice"></i> Order Details
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="container-fluid">
+            <div class="row g-0">
+              <!-- Order Details Section -->
+              <div class="col-12">
+                <div class="p-4">
+                  <div class="order-info">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="info-label">Order ID</div>
+                        <div id="modalOrderId" class="info-value"></div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="info-label">Status</div>
+                        <div id="modalStatus" class="info-value"></div>
+                    </div>
+                    </div>
+                    <div class="row mt-3">
+                      <div class="col-md-4">
+                        <div class="info-label">Order Approve Date</div>
+                        <div id="modalApproveDate" class="info-value"></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="info-label">Deliver Date</div>
+                        <div id="modalDeliverDate" class="info-value"></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="info-label">Finance Payment Date</div>
+                        <div id="modalFinanceApproveDate" class="info-value"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Materials Section -->
+            <div class="row g-0">
+              <div class="col-12">
+                <div class="p-4">
+                  <div class="materials-section">
+                    <h6><i class="fas fa-boxes"></i>Ordered Materials</h6>
+                    <div id="modalMaterials" class="materials-grid"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="d-flex justify-content-between w-100">
+            <div id="actionButtons" class="d-flex gap-2">
+              <!-- Action buttons will be dynamically inserted here -->
+            </div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times"></i> Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="invoiceModalLabel">
+            <i class="fas fa-file-invoice"></i> Invoice Details
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        <div class="modal-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6 class="text-muted">Invoice Number</h6>
+              <h5 id="viewInvoiceNumber"></h5>
+        </div>
+            <div class="col-md-6 text-md-end">
+              <h6 class="text-muted">Date</h6>
+              <h5 id="viewInvoiceDate"></h5>
+          </div>
+        </div>
+
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Materials</h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Material</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                      <th class="text-end">Price per Unit</th>
+                      <th class="text-end">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="viewInvoiceMaterials">
+                    <!-- Materials will be populated here -->
+                  </tbody>
+                  <tfoot class="table-light">
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                      <td class="text-end" id="viewInvoiceSubtotal"></td>
+                    </tr>
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Shipping Fee:</strong></td>
+                      <td class="text-end" id="viewInvoiceShipping"></td>
+                    </tr>
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
+                      <td class="text-end" id="viewInvoiceTotal"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><i class="fas fa-university me-2"></i>Bank Details</h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <h6 class="text-muted">Bank Name</h6>
+                  <p id="viewBankName" class="mb-3"></p>
+                </div>
+                <div class="col-md-4">
+                  <h6 class="text-muted">Account Number</h6>
+                  <p id="viewAccountNumber" class="mb-3"></p>
+                </div>
+                <div class="col-md-4">
+                  <h6 class="text-muted">Account Holder</h6>
+                  <p id="viewAccountHolder" class="mb-3"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="d-flex justify-content-between w-100">
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-primary" onclick="printInvoice()">
+                <i class="fas fa-print me-2"></i>Print Invoice
+            </button>
+              <button type="button" class="btn btn-success" onclick="downloadInvoice()">
+                <i class="fas fa-download me-2"></i>Download PDF
+            </button>
+          </div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Invoice Modal -->
+  <div class="modal fade" id="createInvoiceModal" tabindex="-1" aria-labelledby="createInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createInvoiceModalLabel">
+            <i class="fas fa-file-invoice"></i> Create Invoice
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="createInvoiceForm" onsubmit="event.preventDefault();">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Order ID</label>
+                <input type="text" class="form-control" id="invoiceOrderId" readonly>
+          </div>
+              <div class="col-md-6">
+                <label class="form-label">Invoice Date</label>
+                <input type="date" class="form-control" id="invoiceDate" required>
+        </div>
+      </div>
+
+            <div class="materials-section mb-4">
+              <h6 class="mb-3"><i class="fas fa-boxes"></i> Materials</h6>
+              <div id="invoiceMaterialsList" class="table-responsive">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Material</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                      <th>Price per Unit</th>
+                      <th>Total</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoiceMaterialsBody">
+                    <!-- Materials will be added here dynamically -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                      <td id="subtotalAmount" class="text-end"></td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+    </div>
+  </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Shipping Fee</label>
+                <div class="input-group">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control" id="shippingFee" required min="0" step="1" value="0" onchange="updateTotal()">
+      </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Total Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text">₱</span>
+                  <input type="text" class="form-control" id="totalAmount" readonly>
+                </div>
+              </div>
+            </div>
+
+            <div class="bank-details-section mb-4">
+              <h6 class="mb-3"><i class="fas fa-university"></i> Bank Account Details</h6>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Bank Name</label>
+                  <input type="text" class="form-control" id="bankName" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Account Number</label>
+                  <input type="text" class="form-control" id="accountNumber" required pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="20">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Account Holder</label>
+                  <input type="text" class="form-control" id="accountHolder" required>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+          <button type="button" class="btn btn-primary" onclick="confirmCreateInvoice()">
+            <i class="fas fa-check"></i> Create Invoice
+        </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add this hidden div for PDF generation -->
+  <div id="invoicePDF" style="display: none;">
+    <div class="p-4">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #1a237e;">INVOICE</h2>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+        <div>
+          <h4>Invoice Number:</h4>
+          <p id="pdfInvoiceNumber"></p>
+        </div>
+        <div style="text-align: right;">
+          <h4>Date:</h4>
+          <p id="pdfInvoiceDate"></p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 40px;">
+        <h4 style="margin-bottom: 20px;">Materials</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f8f9fa;">
+              <th style="border: 1px solid #dee2e6; padding: 12px;">Material</th>
+              <th style="border: 1px solid #dee2e6; padding: 12px;">Quantity</th>
+              <th style="border: 1px solid #dee2e6; padding: 12px;">Unit</th>
+              <th style="border: 1px solid #dee2e6; padding: 12px; text-align: right;">Price per Unit</th>
+              <th style="border: 1px solid #dee2e6; padding: 12px; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody id="pdfMaterialsBody">
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Subtotal:</strong></td>
+              <td id="pdfSubtotal" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
+            </tr>
+            <tr>
+              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Shipping Fee:</strong></td>
+              <td id="pdfShipping" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
+            </tr>
+            <tr>
+              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Total Amount:</strong></td>
+              <td id="pdfTotal" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="margin-bottom: 40px;">
+        <h4 style="margin-bottom: 20px;">Bank Details</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Bank Name</th>
+            <td id="pdfBankName" style="border: 1px solid #dee2e6; padding: 12px;"></td>
+          </tr>
+          <tr>
+            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Account Number</th>
+            <td id="pdfAccountNumber" style="border: 1px solid #dee2e6; padding: 12px;"></td>
+          </tr>
+          <tr>
+            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Account Holder</th>
+            <td id="pdfAccountHolder" style="border: 1px solid #dee2e6; padding: 12px;"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Material Availability Confirmation Modal -->
+  <div class="modal fade" id="materialAvailabilityModal" tabindex="-1" aria-labelledby="materialAvailabilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="materialAvailabilityModalLabel">
+            <i class="fas fa-exclamation-triangle text-warning"></i> Confirm Material Availability
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to mark <strong id="materialName"></strong> as not available?</p>
+          <p>This will exclude it from the total calculation.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-danger" id="confirmNotAvailable">
+            <i class="fas fa-check"></i> Confirm
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Set Estimated Cost Modal -->
+  <div class="modal fade" id="setEstimatedCostModal" tabindex="-1" aria-labelledby="setEstimatedCostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="setEstimatedCostModalLabel">
+            <i class="fas fa-calculator"></i> Set Estimated Cost
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="estimatedCostForm">
+            <input type="hidden" id="orderIdInput" class="hidden-input">
+            <div class="mb-3 hidden-input">
+              <label class="form-label">Order ID</label>
+              <input type="text" class="form-control" id="displayOrderId" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Material Type</label>
+              <input type="text" class="form-control" id="displayMaterialType" readonly>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Quantity</label>
+                <input type="text" class="form-control" id="displayQuantity" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Unit</label>
+                <input type="text" class="form-control" id="displayUnit" readonly>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Cost per Unit (₱)</label>
+              <div class="input-group">
+                <span class="input-group-text">₱</span>
+                <input type="number" class="form-control" id="estimatedCostPerUnit" required min="0" step="0.01" oninput="calculateTotalCost()">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Total Estimated Cost (₱)</label>
+              <div class="input-group">
+                <span class="input-group-text">₱</span>
+                <input type="text" class="form-control" id="totalEstimatedCost" readonly>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="submitEstimatedCost()">
+            <i class="fas fa-check"></i> Submit Cost
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Remove the hardcoded invoices array and material prices
+  let itemsPerPage = 5;
+  let currentPage = 1;
+  let filteredOrders = [];
+  let allOrders = [];
+
+  // Initialize the dashboard
+  document.addEventListener('DOMContentLoaded', async function() {
+    await loadPurchaseOrders();
+    initializeModals();
+  });
+
+  // Load purchase orders from the backend
+  async function loadPurchaseOrders() {
+    try {
+      console.log('Fetching purchase orders...'); // Debug log
+      const response = await fetch('/scm/purchase-orders');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch purchase orders: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('Received orders:', data); // Debug log
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Received invalid data format from server');
+      }
+
+      allOrders = data;
+      filteredOrders = [...allOrders];
+      console.log('Orders loaded:', allOrders.length); // Debug log
+      
+      // Log the first few orders to verify data structure
+      if (allOrders.length > 0) {
+        console.log('Sample order:', allOrders[0]);
+      }
+
+      renderTable();
+    } catch (error) {
+      console.error('Error loading purchase orders:', error);
+      showError('Failed to load purchase orders. Please try again later.');
+    }
+  }
+
+  // Render the purchase orders table
+  function renderTable() {
+    const tableBody = document.getElementById('supplierdashboardBody');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredOrders.slice(startIndex, endIndex);
+
+    console.log('Rendering table with orders:', currentItems.map(o => o.po_id)); // Debug log
+
+    tableBody.innerHTML = '';
+    
+    currentItems.forEach(order => {
+      const row = document.createElement('tr');
+      
+      // Format the estimated cost display
+      const estimatedCostDisplay = order.estimation_cost ? 
+        `₱${parseFloat(order.estimation_cost).toFixed(2)}` : '-';
+      
+      // Create action buttons based on status
+      let actionButtons = '';
+      switch(order.status) {
+        case 'Pending':
+          actionButtons = `
+            <button type="button" class="btn btn-sm btn-primary me-1" onclick="openSetEstimatedCostModal('${order.po_id}')" title="Set Estimated Cost">
+              <i class="fas fa-calculator"></i> Set Cost
+            </button>
+            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>`;
+          break;
+        case 'Pending Estimation':
+          actionButtons = `
+            <button type="button" class="btn btn-sm btn-primary me-1" onclick="openSetEstimatedCostModal('${order.po_id}')" title="Update Cost">
+              <i class="fas fa-calculator"></i> Update Cost
+            </button>
+            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>`;
+          break;
+        default:
+          actionButtons = `
+            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>`;
+      }
+      
+      row.innerHTML = `
+        <td class="hidden-text">${order.po_id}</td>
+        <td>${formatDate(order.order_date)}</td>
+        <td>${order.material_type}</td>
+        <td>${order.unit}</td>
+        <td>${order.quantity}</td>
+        <td class="amount-cell">${estimatedCostDisplay}</td>
+        <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
+        <td>${actionButtons}</td>
+      `;
+      
+      tableBody.appendChild(row);
+    });
+  
+    renderPagination();
+  }
+
+  // Set estimated cost for an order
+  async function submitEstimatedCost() {
+    const orderId = document.getElementById('orderIdInput').value;
+    const costPerUnit = parseFloat(document.getElementById('estimatedCostPerUnit').value);
+    const quantity = parseFloat(document.getElementById('displayQuantity').value);
+    const totalEstimatedCost = costPerUnit * quantity;
+
+    if (!costPerUnit || costPerUnit <= 0) {
+      alert('Please enter a valid cost per unit');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/scm/purchase-orders/${orderId}/cost`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Include cookies for session-based auth
+        body: JSON.stringify({ estimationCost: totalEstimatedCost })
+      });
+
+      if (response.status === 401) {
+        // Session expired or not logged in
+        window.location.href = '/'; // Redirect to login page
+      return;
+    }
+
+      if (response.status === 403) {
+        throw new Error('You are not authorized to update this order. Please check your permissions.');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update estimated cost');
+      }
+
+      // Close modal and show success message
+      const modal = bootstrap.Modal.getInstance(document.getElementById('setEstimatedCostModal'));
+      modal.hide();
+      showSuccess('Estimated cost submitted successfully');
+      
+      // Reload orders
+      await loadPurchaseOrders();
+    } catch (error) {
+      console.error('Error updating estimated cost:', error);
+      showError(error.message || 'Failed to update estimated cost. Please try again.');
+    }
+  }
+
+  // Create invoice for an order
+  async function submitInvoice() {
+    const orderId = document.getElementById('invoiceOrderId').value;
+    const invoiceData = {
+      invoice_number: document.getElementById('invoiceNumber').value,
+      invoice_date: document.getElementById('invoiceDate').value,
+      shipping_fee: parseFloat(document.getElementById('shippingFee').value),
+      bank_name: document.getElementById('bankName').value,
+      account_number: document.getElementById('accountNumber').value,
+      account_holder: document.getElementById('accountHolder').value
+    };
+
+    try {
+      const response = await fetch(`/scm/purchase-orders/${orderId}/invoice`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(invoiceData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create invoice');
+      }
+
+      // Close modal and show success message
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createInvoiceModal'));
+      modal.hide();
+      showSuccess('Invoice created successfully');
+      
+      // Reload orders
+      await loadPurchaseOrders();
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      showError('Failed to create invoice. Please try again.');
+    }
+  }
+
+  // Update order status
+  async function updateOrderStatus(orderId, newStatus) {
+    try {
+      const response = await fetch(`/scm/purchase-orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+
+      showSuccess(`Order status updated to ${newStatus}`);
+      await loadPurchaseOrders();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      showError('Failed to update order status. Please try again.');
+    }
+  }
+
+  // Helper functions
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  function getStatusColor(status) {
+    switch(status) {
+      case 'Pending': return 'warning';
+      case 'Pending Estimation': return 'info';
+      case 'Approved': return 'primary';
+      case 'Paid': return 'success';
+      case 'Cancelled': return 'danger';
+      default: return 'secondary';
+    }
+  }
+
+  function showSuccess(message) {
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    document.getElementById('successMessage').textContent = message;
+    successModal.show();
+  }
+
+  function showError(message) {
+    alert(message);
+  }
+
+  // Status update functions
+  function startDelivery(orderId) {
+    if (confirm('Are you sure you want to start delivery for this order?')) {
+      updateOrderStatus(orderId, 'In Transit');
+    }
+  }
+
+  function markAsDelivered(orderId) {
+    if (confirm('Are you sure you want to mark this order as delivered?')) {
+      updateOrderStatus(orderId, 'Completed');
+    }
+  }
+
+  // Filter and pagination functions
+  function filterByStatus() {
+    const status = document.getElementById('statusFilter').value;
+    filteredOrders = status === 'all' 
+      ? [...allOrders]
+      : allOrders.filter(order => order.status === status);
+    currentPage = 1;
+    renderTable();
+  }
+  
+  function setEntriesPerPage() {
+    itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
+    currentPage = 1;
+    renderTable();
+  }
+  
+  function renderPagination() {
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const pagination = document.getElementById('paginationControls');
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+      <button onclick="changePage(${currentPage - 1})" 
+              class="btn btn-sm" 
+              ${currentPage === 1 ? 'disabled' : ''}>
+        <i class="fas fa-chevron-left"></i>
+      </button>`;
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      paginationHTML += `
+        <button onclick="changePage(${i})" 
+                class="btn btn-sm ${i === currentPage ? 'active' : ''}">
+          ${i}
+        </button>`;
+    }
+    
+    // Next button
+    paginationHTML += `
+      <button onclick="changePage(${currentPage + 1})" 
+              class="btn btn-sm" 
+              ${currentPage === totalPages ? 'disabled' : ''}>
+        <i class="fas fa-chevron-right"></i>
+      </button>`;
+    
+    pagination.innerHTML = paginationHTML;
+  }
+
+  function changePage(page) {
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+    renderTable();
+    }
+  }
+
+  // Initialize all modals
+  function initializeModals() {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+      new bootstrap.Modal(modal);
+      
+      modal.addEventListener('hidden.bs.modal', function() {
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
+      });
+    });
+  }
+
+  function viewOrderDetails(orderId) {
+    const order = allOrders.find(o => o.po_id === orderId);
+    if (!order) return;
+
+    // Convert order ID to string and pad with zeros if needed
+    const orderIdStr = String(order.po_id).padStart(4, '0');
+    const displayOrderId = 'Order #' + orderIdStr.slice(-4);
+
+    // Update modal content
+    document.getElementById('modalOrderId').textContent = displayOrderId;
+    document.getElementById('modalStatus').innerHTML = `<span class="badge bg-${getStatusColor(order.status)}">${order.status}</span>`;
+    document.getElementById('modalApproveDate').textContent = order.estimation_submitted_at || '-';
+    document.getElementById('modalDeliverDate').textContent = '-';
+    document.getElementById('modalFinanceApproveDate').textContent = '-';
+
+    // Render materials
+    const materialsContainer = document.getElementById('modalMaterials');
+    materialsContainer.innerHTML = '';
+    
+        const materialDiv = document.createElement('div');
+        materialDiv.className = 'material-item';
+        materialDiv.innerHTML = `
+          <div class="material-header">
+            <div class="material-icon">
+              <i class="fas fa-box"></i>
+            </div>
+        <div class="material-name">${order.material_type}</div>
+          </div>
+          <div class="material-details">
+            <div class="material-detail">
+              <span class="detail-label">Quantity</span>
+          <span class="detail-value">${order.quantity}</span>
+            </div>
+            <div class="material-detail">
+              <span class="detail-label">Unit</span>
+          <span class="detail-value">${order.unit}</span>
+        </div>
+        <div class="material-detail">
+          <span class="detail-label">Estimated Cost</span>
+          <span class="detail-value">${order.estimation_cost ? `₱${parseFloat(order.estimation_cost).toFixed(2)}` : '-'}</span>
+            </div>
+          </div>
+        `;
+        materialsContainer.appendChild(materialDiv);
+
+    // Update action buttons based on status
+    const actionButtons = document.getElementById('actionButtons');
+    let buttonsHTML = '';
+    switch (order.status) {
+      case 'Pending':
+        buttonsHTML = `
+          <button type="button" class="btn btn-primary me-2" onclick="openSetEstimatedCostModal('${order.po_id}')">
+            <i class="fas fa-calculator"></i> Set Estimated Cost
+          </button>`;
+        break;
+      case 'Pending Estimation':
+        buttonsHTML = `
+          <button type="button" class="btn btn-primary me-2" onclick="openSetEstimatedCostModal('${order.po_id}')">
+            <i class="fas fa-calculator"></i> Update Cost
+          </button>`;
+        break;
+      default:
+        buttonsHTML = ''; // No action buttons for other statuses
+    }
+    actionButtons.innerHTML = buttonsHTML;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+    modal.show();
+  }
+
+  function approveOrder(orderId) {
+    if(confirm('Are you sure you want to approve this order?')) {
+      const order = allOrders.find(o => o.po_id === orderId);
+      if(order && order.status === 'Pending') {
+        order.status = 'Approved';
+        order.order_date = new Date().toISOString().split('T')[0];
+        renderTable();
+        // Close the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+        modal.hide();
+        // Show success message
+        showSuccessMessage('Order approved successfully!');
+      }
+    }
+  }
+
+  function rejectOrder(orderId) {
+    if(confirm('Are you sure you want to reject this order?')) {
+      const order = allOrders.find(o => o.po_id === orderId);
+      if(order) {
+        order.status = 'Rejected';
+        renderTable();
+        // Close the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+        modal.hide();
+        // Show success message
+        showSuccessMessage('Order rejected successfully!');
+      }
+    }
+  }
+
+  function createInvoice(orderId) {
+    try {
+      // Prevent any form submission
+      const form = document.getElementById('createInvoiceForm');
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        return false;
+      };
+
+      console.log('Creating invoice for order:', orderId);
+      const order = allOrders.find(o => o.po_id === orderId);
+      if (!order) {
+        console.error('Order not found:', orderId);
+        return;
+      }
+
+      try {
+        // Set order ID and default date
+        const orderIdInput = document.getElementById('invoiceOrderId');
+        const dateInput = document.getElementById('invoiceDate');
+        const materialsBody = document.getElementById('invoiceMaterialsBody');
+        const subtotalElement = document.getElementById('subtotalAmount');
+
+        if (!orderIdInput || !dateInput || !materialsBody || !subtotalElement) {
+          console.error('Required elements not found');
+          return;
+        }
+
+        orderIdInput.value = orderId;
+        dateInput.valueAsDate = new Date();
+
+        // Initialize or get availability status from the order
+        if (!order.materialAvailability) {
+          order.materialAvailability = {};
+          order.materials.forEach(material => {
+            order.materialAvailability[material.material] = true;
+          });
+        }
+
+        // Populate materials table
+        materialsBody.innerHTML = '';
+        let subtotal = 0;
+
+        order.materials.forEach((material, index) => {
+          const price = parseInt(materialPrices[material.material]) || 0;
+          const isAvailable = order.materialAvailability[material.material];
+          const total = (price && isAvailable) ? price * material.quantity : 0;
+          if (isAvailable) {
+            subtotal += total;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${material.material}</td>
+            <td>${material.quantity}</td>
+            <td>${material.unit}</td>
+            <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${price}</td>
+            <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${total}</td>
+            <td class="text-center">
+              <div class="d-flex gap-2 justify-content-center">
+                ${!price ? `
+                  <button class="btn btn-sm btn-primary" onclick="setMaterialPrice('${material.material}')">
+                    <i class="fas fa-plus-circle"></i> Set Price
+                  </button>
+                ` : ''}
+                ${isAvailable ? `
+                  <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); toggleMaterialAvailability('${material.material}', '${orderId}')" title="Mark as Not Available">
+                    <i class="fas fa-times"></i>
+                  </button>
+                ` : `
+                  <span class="badge bg-danger">Not Available</span>
+                `}
+              </div>
+            </td>
+          `;
+          materialsBody.appendChild(row);
+        });
+
+        // Set initial values
+        subtotalElement.textContent = `₱${subtotal}`;
+        document.getElementById('shippingFee').value = '0';
+        document.getElementById('totalAmount').value = subtotal;
+
+        // Show modal
+        const createInvoiceModal = new bootstrap.Modal(document.getElementById('createInvoiceModal'));
+        createInvoiceModal.show();
+      } catch (error) {
+        console.error('Error creating invoice:', error);
+      }
+    } catch (error) {
+      console.error('Error confirming invoice creation:', error);
+    }
+  }
+
+  function toggleMaterialAvailability(materialName, orderId) {
+    try {
+      // Show confirmation modal
+      const modal = new bootstrap.Modal(document.getElementById('materialAvailabilityModal'));
+      document.getElementById('materialName').textContent = materialName;
+      
+      // Set up confirmation button handler
+      const confirmButton = document.getElementById('confirmNotAvailable');
+      confirmButton.onclick = function(e) {
+        e.preventDefault(); // Prevent any default action
+        const order = allOrders.find(o => o.po_id === orderId);
+        if (order) {
+          order.materialAvailability[materialName] = false;
+          modal.hide();
+          createInvoice(orderId);
+          showSuccessMessage(`${materialName} marked as not available`);
+        }
+      };
+      
+      modal.show();
+    } catch (error) {
+      console.error('Error in toggleMaterialAvailability:', error);
+    }
+  }
+
+  function setMaterialPrice(materialName) {
+    const price = prompt(`Enter price for ${materialName}:`);
+    if (price !== null) {
+      const numPrice = parseFloat(price);
+      if (!isNaN(numPrice) && numPrice >= 0) {
+        materialPrices[materialName] = numPrice;
+        // Refresh the invoice display
+        const orderId = document.getElementById('invoiceOrderId').value;
+        createInvoice(orderId);
+      } else {
+        alert('Please enter a valid price (must be a number greater than or equal to 0)');
+      }
+    }
+  }
+
+  function updateTotal() {
+    try {
+      const subtotalText = document.getElementById('subtotalAmount').textContent;
+      const subtotal = parseInt(subtotalText.replace(/[^\d]/g, '')) || 0;
+      const shippingFee = parseInt(document.getElementById('shippingFee').value) || 0;
+      
+      // Calculate total
+      const total = subtotal + shippingFee;
+
+      // Update the display
+      document.getElementById('totalAmount').value = total;
+    } catch (error) {
+      console.error('Error updating total:', error);
+    }
+  }
+
+  function showSuccessMessage(message) {
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    document.getElementById('successMessage').textContent = message;
+    successModal.show();
+    setTimeout(() => {
+      successModal.hide();
+    }, 2000);
+  }
+
+  function closeAllModals() {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modalEl => {
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) {
+        modal.hide();
+      }
+    });
+    
+    // Remove any remaining backdrop and cleanup
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.remove();
+    }
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.removeProperty('overflow');
+  }
+
+  function confirmCreateInvoice() {
+    try {
+      const orderId = document.getElementById('invoiceOrderId').value;
+      const order = allOrders.find(o => o.po_id === orderId);
+      
+      if (order) {
+        // Get bank details
+        const bankName = document.getElementById('bankName').value;
+        const accountNumber = document.getElementById('accountNumber').value;
+        const accountHolder = document.getElementById('accountHolder').value;
+        const shippingFee = parseInt(document.getElementById('shippingFee').value) || 0;
+
+        // Validate bank details
+        if (!bankName || !accountNumber || !accountHolder) {
+          alert('Please fill in all bank account details');
+          return;
+        }
+
+        // Filter out unavailable materials
+        const availableMaterials = order.materials.filter(material => 
+          order.materialAvailability[material.material] !== false
+        );
+
+        if (availableMaterials.length === 0) {
+          alert('Cannot create invoice: No available materials');
+          return;
+        }
+
+        // Generate invoice number
+        const invoiceNumber = 'INV' + orderId.substring(3);
+        
+        // Create a new order object with only available materials
+        const newOrder = {
+          ...order,
+          status: 'Pending Payment',
+          invoice: invoiceNumber,
+          invoiceDate: document.getElementById('invoiceDate').value,
+          shippingFee: shippingFee,
+          bankDetails: {
+            bankName,
+            accountNumber,
+            accountHolder
+          },
+          materials: availableMaterials,
+          originalMaterials: [...order.materials],
+          materialAvailability: { ...order.materialAvailability }
+        };
+
+        // Update the invoices array
+        const orderIndex = allOrders.findIndex(o => o.po_id === orderId);
+        if (orderIndex !== -1) {
+          allOrders[orderIndex] = newOrder;
+          filteredOrders = [...allOrders];
+        }
+
+        // Close modals
+        closeAllModals();
+
+        // Clear invoice view modal content
+        document.getElementById('viewInvoiceMaterials').innerHTML = '';
+        document.getElementById('pdfMaterialsBody').innerHTML = '';
+        document.getElementById('viewInvoiceNumber').textContent = '';
+        document.getElementById('viewInvoiceDate').textContent = '';
+        document.getElementById('viewInvoiceSubtotal').textContent = '';
+        document.getElementById('viewInvoiceShipping').textContent = '';
+        document.getElementById('viewInvoiceTotal').textContent = '';
+        document.getElementById('viewBankName').textContent = '';
+        document.getElementById('viewAccountNumber').textContent = '';
+        document.getElementById('viewAccountHolder').textContent = '';
+
+        // Show success message
+        showSuccessMessage('Invoice created successfully! Invoice number: ' + invoiceNumber);
+
+        // Update table
+        renderTable();
+
+        // Show invoice details after a short delay
+        setTimeout(() => {
+          viewInvoice(invoiceNumber, orderId);
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error confirming invoice creation:', error);
+    }
+  }
+
+  function viewPaymentProof(orderId) {
+    const invoice = allOrders.find(o => o.po_id === orderId);
+    if (invoice && invoice.paymentProof) {
+      // Update modal title
+      document.getElementById('invoiceModalLabel').innerHTML = `
+        <i class="fas fa-receipt"></i> Payment Proof - ${orderId}
+      `;
+      
+      // Show the payment proof in the modal
+      const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+      modal.show();
+
+      // Update modal content to show payment proof
+      document.getElementById('viewInvoiceNumber').textContent = invoice.po_id;
+      document.getElementById('viewInvoiceDate').textContent = invoice.finance_approve_date || 'Pending';
+      
+      // You might want to adjust this part based on how you want to display the payment proof
+      const modalBody = document.querySelector('#invoiceModal .modal-body');
+      modalBody.innerHTML = `
+        <div class="text-center">
+          <img src="/payment_proofs/${invoice.paymentProof}" class="img-fluid" alt="Payment Proof">
+        </div>
+      `;
+    }
+  }
+
+  function viewInvoice(invoiceNumber, orderId) {
+    const order = allOrders.find(o => o.po_id === orderId);
+    if (!order || !order.invoice) return;
+
+    try {
+      // Set invoice details
+      document.getElementById('viewInvoiceNumber').textContent = order.invoice;
+      document.getElementById('viewInvoiceDate').textContent = order.invoiceDate;
+      document.getElementById('pdfInvoiceNumber').textContent = order.invoice;
+      document.getElementById('pdfInvoiceDate').textContent = order.invoiceDate;
+      
+      // Populate materials tables
+      const materialsBody = document.getElementById('viewInvoiceMaterials');
+      const pdfMaterialsBody = document.getElementById('pdfMaterialsBody');
+      materialsBody.innerHTML = '';
+      pdfMaterialsBody.innerHTML = '';
+      let subtotal = 0;
+
+      const allMaterials = order.originalMaterials || order.materials;
+      allMaterials.forEach(material => {
+        const price = parseInt(materialPrices[material.material]) || 0;
+        const isAvailable = !order.materialAvailability || order.materialAvailability[material.material] !== false;
+        const total = isAvailable ? price * material.quantity : 0;
+        if (isAvailable) {
+          subtotal += total;
+        }
+
+        // Modal row
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            ${material.material}
+            ${!isAvailable ? '<span class="badge bg-danger ms-2">Not Available</span>' : ''}
+          </td>
+          <td>${material.quantity}</td>
+          <td>${material.unit}</td>
+          <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${price}</td>
+          <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${total}</td>
+        `;
+        if (!isAvailable) {
+          row.classList.add('table-secondary');
+        }
+        materialsBody.appendChild(row);
+
+        // PDF row
+        const pdfRow = document.createElement('tr');
+        pdfRow.innerHTML = `
+          <td style="border: 1px solid #dee2e6; padding: 12px;">
+            ${material.material}
+            ${!isAvailable ? '<span style="color: #dc3545; margin-left: 8px;">(Not Available)</span>' : ''}
+          </td>
+          <td style="border: 1px solid #dee2e6; padding: 12px;">${material.quantity}</td>
+          <td style="border: 1px solid #dee2e6; padding: 12px;">${material.unit}</td>
+          <td style="border: 1px solid #dee2e6; padding: 12px; text-align: right; ${!isAvailable ? 'color: #6c757d;' : ''}">₱${price}</td>
+          <td style="border: 1px solid #dee2e6; padding: 12px; text-align: right; ${!isAvailable ? 'color: #6c757d;' : ''}">₱${total}</td>
+        `;
+        pdfMaterialsBody.appendChild(pdfRow);
+      });
+
+      // Set totals
+      const totalWithShipping = subtotal + (order.shippingFee || 0);
+      document.getElementById('viewInvoiceSubtotal').textContent = `₱${subtotal}`;
+      document.getElementById('viewInvoiceShipping').textContent = `₱${order.shippingFee || 0}`;
+      document.getElementById('viewInvoiceTotal').textContent = `₱${totalWithShipping}`;
+      
+      document.getElementById('pdfSubtotal').textContent = `₱${subtotal}`;
+      document.getElementById('pdfShipping').textContent = `₱${order.shippingFee || 0}`;
+      document.getElementById('pdfTotal').textContent = `₱${totalWithShipping}`;
+
+      // Set bank details
+      document.getElementById('viewBankName').textContent = order.bankDetails.bankName;
+      document.getElementById('viewAccountNumber').textContent = order.bankDetails.accountNumber;
+      document.getElementById('viewAccountHolder').textContent = order.bankDetails.accountHolder;
+      
+      document.getElementById('pdfBankName').textContent = order.bankDetails.bankName;
+      document.getElementById('pdfAccountNumber').textContent = order.bankDetails.accountNumber;
+      document.getElementById('pdfAccountHolder').textContent = order.bankDetails.accountHolder;
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+      modal.show();
+    } catch (error) {
+      console.error('Error viewing invoice:', error);
+    }
+  }
+
+  function printInvoice() {
+    // Show the invoice content
+    const element = document.getElementById('invoicePDF');
+    element.style.display = 'block';
+    
+    // Print the document
+    window.print();
+    
+    // Hide the invoice content after printing
+    setTimeout(() => {
+      element.style.display = 'none';
+    }, 500);
+  }
+
+  function downloadInvoice() {
+    const element = document.getElementById('invoicePDF');
+    const opt = {
+      margin: [0.5, 0.5],
+      filename: `invoice_${document.getElementById('pdfInvoiceNumber').textContent}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        logging: true
+      },
+      jsPDF: { 
+        unit: 'in', 
+        format: 'letter', 
+        orientation: 'portrait'
+      }
+    };
+
+    // Make sure the hidden div is temporarily visible for PDF generation
+    element.style.display = 'block';
+    
+    // Generate PDF
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Hide the element again after PDF generation
+      element.style.display = 'none';
+    });
+  }
+
+  renderTable();
+
+  // Sidebar toggle functionality
+  document.getElementById('sidebar-toggle').onclick = function() {
+    const sidebar = document.getElementById('sidebar');
+    const content = document.getElementById('content');
+    if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+      sidebar.style.display = 'block';
+      content.style.marginLeft = '300px';
+    } else {
+      sidebar.style.display = 'none';
+      content.style.marginLeft = '0';
+    }
+  };
+
+  // Initialize
+  function initializePage() {
+    const select = document.getElementById('entriesPerPage');
+    itemsPerPage = parseInt(select.value);
+    renderTable();
+  }
+
+  // Call initialize when the page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePage);
+  } else {
+    initializePage();
+  }
+
+  function resetCreateInvoiceForm() {
+    // Reset shipping fee
+    document.getElementById('shippingFee').value = '0';
+    
+    // Reset bank details
+    document.getElementById('bankName').value = '';
+    document.getElementById('accountNumber').value = '';
+    document.getElementById('accountHolder').value = '';
+    
+    // Reset material availability
+    const order = allOrders.find(o => o.po_id === document.getElementById('invoiceOrderId').value);
+    if (order) {
+      order.materialAvailability = {};
+      order.materials.forEach(material => {
+        order.materialAvailability[material.material] = true;
+      });
+    }
+  }
+
+  // Add event listener for modal close
+  document.getElementById('createInvoiceModal').addEventListener('hidden.bs.modal', function () {
+    resetCreateInvoiceForm();
+  });
+
+  function openSetEstimatedCostModal(orderId) {
+    console.log('Opening modal for order:', orderId);
+    console.log('Available orders:', allOrders);
+    
+    let order = allOrders.find(o => o.po_id === orderId);
+    if (!order) {
+      order = allOrders.find(o => String(o.po_id) === String(orderId));
+    }
+    if (!order) {
+      order = allOrders.find(o => Number(o.po_id) === Number(orderId));
+    }
+    
+    if (!order) {
+      console.error('Order not found:', orderId);
+      console.error('Available order IDs:', allOrders.map(o => o.po_id));
+      return;
+    }
+    
+    try {
+      console.log('Found order:', order);
+      
+      // Convert order ID to string and pad with zeros if needed
+      const orderIdStr = String(order.po_id).padStart(4, '0');
+      const displayOrderId = 'Order #' + orderIdStr.slice(-4);
+      
+      // Populate modal fields
+      document.getElementById('orderIdInput').value = order.po_id;
+      document.getElementById('displayOrderId').value = displayOrderId;
+      document.getElementById('displayMaterialType').value = order.material_type;
+      document.getElementById('displayQuantity').value = order.quantity;
+      document.getElementById('displayUnit').value = order.unit;
+      document.getElementById('estimatedCostPerUnit').value = '';
+      document.getElementById('totalEstimatedCost').value = '';
+      
+      // Initialize and show modal
+      const modalElement = document.getElementById('setEstimatedCostModal');
+      if (!modalElement) {
+        console.error('Modal element not found');
+        return;
+      }
+
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    } catch (error) {
+      console.error('Error opening modal:', error);
+      console.error('Error details:', {
+        orderId,
+        order,
+        modalElement: document.getElementById('setEstimatedCostModal')
+      });
+    }
+  }
+
+  function calculateTotalCost() {
+    const costPerUnit = parseFloat(document.getElementById('estimatedCostPerUnit').value) || 0;
+    const quantity = parseFloat(document.getElementById('displayQuantity').value) || 0;
+    const totalCost = costPerUnit * quantity;
+    document.getElementById('totalEstimatedCost').value = totalCost.toFixed(2);
+  }
+</script>
+</body>
+</html>
