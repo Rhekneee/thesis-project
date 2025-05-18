@@ -96,6 +96,62 @@ const SCMModel = {
         const values = [supplier_name, contact_email, hashedPassword];
         const [result] = await db.query(query, values);
         return result.insertId;
+    },
+
+    // Update supplier details
+    updateSupplier: async (supplierId, supplierData) => {
+        const query = `
+            UPDATE supplier_account SET
+                supplier_name = ?,
+                contact_name = ?,
+                contact_email = ?,
+                contact_phone = ?,
+                address = ?,
+                city = ?,
+                postal_code = ?,
+                country = ?,
+                account_number = ?,
+                payment_terms = ?,
+                status = ?,
+                updated_at = NOW()
+            WHERE supplier_id = ?
+        `;
+        const values = [
+            supplierData.supplier_name,
+            supplierData.contact_name,
+            supplierData.contact_email,
+            supplierData.contact_phone,
+            supplierData.address,
+            supplierData.city,
+            supplierData.postal_code,
+            supplierData.country,
+            supplierData.account_number,
+            supplierData.payment_terms,
+            supplierData.status || 'active',
+            supplierId
+        ];
+        const [result] = await db.query(query, values);
+        return result;
+    },
+
+    // Add a new purchase request
+    addPurchaseRequest: async (requestData) => {
+        const query = `
+            INSERT INTO purchase_requests (
+                request_date, requested_by, department, quantity, unit, justification, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [
+            requestData.request_date,
+            requestData.requested_by,
+            requestData.department,
+            requestData.quantity,
+            requestData.unit,
+            requestData.justification,
+            requestData.status || 'Pending'
+        ];
+        const [result] = await db.query(query, values);
+        return result.insertId;
     }
 };
 
