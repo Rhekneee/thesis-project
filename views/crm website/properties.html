@@ -222,37 +222,124 @@ document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
     const trippingForm = document.getElementById("trippingForm");
     if (trippingForm) {
         trippingForm.addEventListener("submit", async function(event) {
-            event.preventDefault();  // Prevent the form from submitting traditionally
+            event.preventDefault();
 
-            // Prepare form data as an object
-            const formData = {
-                firstName: document.getElementById("firstName").value,
-                lastName: document.getElementById("lastName").value,
-                email: document.getElementById("email").value,
-                contactNumber: document.getElementById("contactNumber").value,
-                preferredDate: document.getElementById("preferredDate").value,
-                property: document.getElementById("property").value
+            // Get form elements
+            const firstNameInput = document.getElementById("firstName");
+            const lastNameInput = document.getElementById("lastName");
+            const emailInput = document.getElementById("email");
+            const contactNumberInput = document.getElementById("contactNumber");
+            const preferredDateInput = document.getElementById("preferredDate");
+            const propertyInput = document.getElementById("property");
+
+            // Log form values for debugging
+            console.log('Form Values:', {
+                firstName: firstNameInput?.value,
+                lastName: lastNameInput?.value,
+                email: emailInput?.value,
+                contactNumber: contactNumberInput?.value,
+                preferredDate: preferredDateInput?.value,
+                property: propertyInput?.value
+            });
+
+            // Validate all required fields exist
+            const requiredFields = {
+                firstName: firstNameInput?.value?.trim(),
+                lastName: lastNameInput?.value?.trim(),
+                email: emailInput?.value?.trim(),
+                contactNumber: contactNumberInput?.value?.trim(),
+                preferredDate: preferredDateInput?.value,
+                property: propertyInput?.value?.trim()
             };
 
+            // Check for missing or empty fields
+            const missingFields = Object.entries(requiredFields)
+                .filter(([_, value]) => !value)
+                .map(([key]) => key);
+
+            if (missingFields.length > 0) {
+                console.error('Missing fields:', missingFields);
+                alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            // Validate email format
+            if (!emailInput.value.includes('@') || !emailInput.value.includes('.')) {
+                alert("Please enter a valid email address");
+                return;
+            }
+
+            // Validate date is not in the past
+            const selectedDate = new Date(preferredDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                alert("Please select a future date for the site visit");
+                return;
+            }
+
+            // Prepare form data
+            const formData = {
+                firstName: firstNameInput.value.trim(),
+                lastName: lastNameInput.value.trim(),
+                email: emailInput.value.trim(),
+                contactNumber: contactNumberInput.value.trim(),
+                preferredDate: preferredDateInput.value,
+                property: propertyInput.value.trim()
+            };
+
+            // Log the final form data being sent
+            console.log('Submitting form data:', formData);
+
             try {
-                // Send the form data as a POST request
-                let response = await fetch(`${API_URL}/submitVisitRequest`, {
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+
+                const response = await fetch(`${API_URL}/submitVisitRequest`, {
                     method: "POST",
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
 
-                let result = await response.json();
-                if (response.ok) {
-                    alert(result.message);  // Success message
-                } else {
-                    alert(result.error);  // Error message from backend
+                // Log the raw response for debugging
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    throw new Error('Invalid server response');
                 }
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to submit request');
+                }
+
+                // Success
+                alert(result.message || "Your site visit request has been submitted successfully!");
+                
+                // Reset form and close modal
+                this.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('trippingModal'));
+                modal.hide();
+
             } catch (error) {
-                alert("Error submitting the request. Please try again.");
-                console.error("Error:", error);
+                console.error('Error submitting form:', error);
+                alert(error.message || "Error submitting the request. Please try again.");
+            } finally {
+                // Reset button state
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Submit Request';
             }
         });
     }
