@@ -254,13 +254,13 @@ const CRMController = {
     // Handle the submission of a site visit request
     createVisitRequest: async (req, res) => {
         try {
-            const { firstName, lastName, email, contactNumber, preferredDate, pickUpLocation, property } = req.body;
+            const { firstName, lastName, email, contactNumber, preferredDate, property } = req.body;
 
             const fullName = `${firstName} ${lastName}`;
             console.log("Full Name:", fullName);
 
             // Validate incoming data
-            if (!firstName || !lastName || !email || !contactNumber || !preferredDate || !pickUpLocation || !property ) {
+            if (!firstName || !lastName || !email || !contactNumber || !preferredDate || !property ) {
                 return res.status(400).json({ error: "Missing required fields in the form" });
             }
 
@@ -277,7 +277,6 @@ const CRMController = {
                 contact: contactNumber,
                 property: property || 'Unknown',  // Default property if not provided
                 preferredDate,
-                pickUpLocation,
                 agent: 'Unassigned',  // Default agent value
             });
 

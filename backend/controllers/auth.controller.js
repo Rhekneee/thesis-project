@@ -233,6 +233,8 @@ exports.login = async (req, res) => {
             is_external: false
         };
         console.log("📝 DEBUG: Session data set:", req.session.user);
+        console.log("🔍 DEBUG: Session ID:", req.session.id);
+        console.log("🔍 DEBUG: Session cookie:", req.session.cookie);
 
         // Determine redirect path based on role
         let redirectPath = '/dashboard';

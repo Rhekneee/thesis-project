@@ -12,6 +12,7 @@ const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
 const scmRoutes = require('./departments/supply/routes/scm.routes');
+const manuRoutes = require('./departments/manufacturing/routes/manufacturing.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -34,20 +35,32 @@ const sessionStore = new MySQLStore({
 
 // Session Setup
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_secret_key', // Use environment variable
-    resave: true, // Changed to true to prevent session loss
+    secret: process.env.SESSION_SECRET || 'your_secret_key',
+    resave: true,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+        secure: false, // Changed to false to allow HTTP in development and testing
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        sameSite: 'strict', // Protect against CSRF
+        maxAge: 1000 * 60 * 60 * 24,
+        sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects
         path: '/'
     },
-    rolling: true, // Refresh session on activity
-    name: 'sessionId' // Custom session name
+    rolling: true,
+    name: 'sessionId'
 }));
+
+// Add session debug middleware
+app.use((req, res, next) => {
+    console.log('🔍 Session Debug:', {
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        hasUser: !!req.session?.user,
+        cookie: req.session?.cookie,
+        path: req.path
+    });
+    next();
+});
 
 // Add session error handling
 app.use((err, req, res, next) => {
