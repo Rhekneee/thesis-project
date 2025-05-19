@@ -1,0 +1,1913 @@
++<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Topbar styling */
+        .topbar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 300px;
+            height: 60px;
+            background-color: #343a40;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .topbar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 20px;
+        }
+
+        .topbar-logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .menu-toggle {
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: -20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .menu-toggle:hover {
+            color: #ddd;
+        }
+
+        .menu-toggle.rotated {
+            transform: rotate(180deg);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .notification-icon {
+            position: relative;
+            margin-right: 20px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-icon i {
+            font-size: 18px;
+            color: white;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            border: 2px solid #343a40;
+            z-index: 1002;
+        }
+
+        /* Profile section styling */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+            cursor: pointer;
+            height: 100%;
+            padding: 0;
+            position: relative;
+            top: -8px;
+            gap: 15px;
+        }
+
+        .profile-info {
+            margin-right: 0;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            padding-top: 15px;
+        }
+
+        .profile-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .profile-position {
+            color: #ccc;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .profile-picture {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            margin: 0;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        /* Sidebar styling */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: width 0.3s ease;
+            color: white;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        #sidebar.collapsed {
+            overflow: visible !important;
+            width: 80px !important;
+        }
+
+        /* Ensure sidebar is always visible */
+        #sidebar, #sidebar.collapsed {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Content area styling */
+        #content {
+            margin-left: 300px;
+            margin-top: 60px; /* Match topbar height */
+            padding: 0;
+            transition: margin-left 0.3s ease;
+            width: calc(100% - 300px);
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow-x: hidden;
+        }
+
+        /* Update collapsed states */
+        #sidebar.collapsed + .topbar {
+            left: 80px;
+        }
+
+        #sidebar.collapsed + .topbar + #content {
+            margin-left: 80px;
+            width: calc(100% - 80px);
+        }
+
+        /* Topbar styling */
+        .topbar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 300px;
+            height: 60px;
+            background-color: #343a40;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+        }
+
+        /* Wrapper styling */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        /* Body styling */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Menu toggle button */
+        .menu-toggle {
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .menu-toggle:hover {
+            color: #ddd;
+        }
+
+
+        /* Sidebar header in collapsed state */
+        #sidebar.collapsed .sidebar-header {
+            padding: 0;
+            text-align: center;
+        }
+
+        #sidebar.collapsed .sidebar-header img {
+            max-width: 50px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        #sidebar.collapsed .sidebar-header .company-title {
+            display: none;
+        }
+
+        /* Menu items in collapsed state */
+        #sidebar.collapsed ul li a {
+            padding: 10px 0 !important;
+            justify-content: center !important;
+        }
+
+        #sidebar.collapsed ul li a i {
+            margin-right: 0 !important;
+        }
+
+        #sidebar.collapsed ul li a span {
+            display: none !important;
+        }
+
+        /* Ensure proper spacing in collapsed state */
+        #sidebar.collapsed ul {
+            margin-bottom: 80px;
+        }
+
+        /* Adjust logout button in collapsed state */
+        #sidebar.collapsed ul li.logout {
+            width: 80px;
+        }
+
+        #sidebar.collapsed ul li.logout a {
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        #sidebar.collapsed ul li.logout a i {
+            margin: 0;
+        }
+
+        #sidebar.collapsed ul li.logout a span {
+            display: none;
+        }
+
+        /* Collapsed state styles */
+        body.sidebar-collapsed .topbar {
+            left: 80px;
+        }
+
+        body.sidebar-collapsed #content {
+            margin-left: 80px;
+            width: calc(100% - 80px);
+        }
+
+        #sidebar ul {
+            flex: 1;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+            overflow-y: auto;
+            padding-bottom: 60px; /* Add padding to prevent content from being hidden behind logout */
+            position: relative;
+        }
+
+        #sidebar ul li {
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        #sidebar ul li a {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 15px;
+            padding: 10px 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        #sidebar ul li a i:first-child {
+            width: 20px;
+            text-align: center;
+            margin-right: 15px;
+            font-size: 18px;
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+
+        #sidebar.collapsed ul li a {
+            justify-content: center;
+            padding: 10px 0;
+            width: 80px;
+        }
+
+        #sidebar.collapsed ul li a i:first-child {
+            margin-right: 0;
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        #sidebar.collapsed ul li a span {
+            display: none !important;
+        }
+
+        #sidebar.collapsed .collapse {
+            display: none !important;
+        }
+
+        #sidebar.collapsed .sidebar-header .company-title {
+            display: none;
+        }
+
+        #sidebar.collapsed .sidebar-header img {
+            max-width: 60px;
+            padding: 0 5px;
+            transform: translateY(-20px);
+        }
+
+        /* Fixed logout button */
+        #sidebar ul li.logout {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 300px;
+            background-color: #343a40;
+            padding: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1002;
+            transition: width 0.3s ease;
+        }
+
+        #sidebar.collapsed ul li.logout {
+            width: 80px;
+        }
+
+        #sidebar ul li.logout a {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 20px;
+        }
+
+        #sidebar.collapsed ul li.logout a {
+            justify-content: center;
+            padding: 0;
+        }
+
+        /* Remove any margin/padding from the last menu item */
+        #sidebar ul li:last-child:not(.logout) {
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        /* Style for nested items */
+        .collapse .nav-item a {
+            padding-left: 45px;
+            font-size: 14px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            margin-bottom: 2px;
+        }
+
+        .collapse .nav-item {
+            margin: 0;
+            padding: 0;
+            height: 28px;
+            line-height: 28px;
+        }
+
+        /* Remove transition from collapse */
+        .collapse {
+            transition: none !important;
+        }
+
+        .collapsing {
+            transition: none !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+
+        /* Remove Bootstrap's default collapse transition */
+        .collapse:not(.show) {
+            display: none;
+        }
+
+        /* Keep hover transitions for menu items */
+        #sidebar .collapse .nav-item a {
+            transition: all 0.2s ease !important;
+        }
+
+        #sidebar.collapsed .collapse .nav-item a {
+            transition: all 0.2s ease !important;
+        }
+
+        /* Remove animation from slideIn */
+        @keyframes slideIn {
+            from {
+                opacity: 1;
+                transform: none;
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* Sidebar header styling */
+        #sidebar .sidebar-header {
+            padding: 0 15px;
+            height: 60px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #sidebar .sidebar-header img {
+            max-width: 50px;
+            padding: 0;
+            margin: 0;
+            transform: none;
+        }
+
+        .sidebar-header .company-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            white-space: nowrap;
+            margin: 0;
+            padding: 0;
+            transform: none;
+        }
+
+        /* Sidebar styling */
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            left: 0;
+            top: 0;
+            transition: width 0.3s ease;
+            color: white;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        #sidebar ul {
+            flex: 1;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+        /* Collapsed state styles */
+        #sidebar.collapsed .sidebar-header {
+            padding: 0 20px;
+            height: 60px;
+            justify-content: center;
+        }
+
+        #sidebar.collapsed .sidebar-header img {
+            max-width: 40px;
+            padding: 0;
+            margin: 0;
+            transform: none;
+        }
+
+        #sidebar.collapsed .sidebar-header .company-title {
+            display: none;
+        }
+
+        /* Notification dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 60px;
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1001;
+            margin-top: 5px;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        .notification-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mark-all-read {
+            color: #007bff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .mark-all-read:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-item {
+            padding: 6px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-title {
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+
+        .notification-time {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.2;
+        }
+
+        /* Media Query for smaller screens */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 80px;
+            }
+            .topbar {
+                left: 80px;
+            }
+            #content {
+                margin-left: 80px;
+            }
+        }
+
+        /* Icon styling for sidebar toggle */
+        #sidebar-toggle {
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Rotate the icon when the dropdown is open */
+        .rotate {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        #content h2 {
+            font-size: 28px;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Additional Styling for the charts */
+        .chart-container {
+            margin-top: 20px;
+            padding: 0 20px;
+        }
+
+        .kpi-card {
+            margin: 10px 0;
+            height: 100%;
+        }
+
+        .row {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Update dropdown indicator styles */
+        .nav-item a {
+            position: relative;
+        }
+
+        .nav-item a[data-bs-toggle="collapse"]::after {
+            content: '\f107';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item a[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+            transform: rotate(180deg);
+        }
+
+        /* Update the menu items to include proper spacing */
+        #sidebar ul li a {
+            padding-right: 30px;
+        }
+
+        #sidebar.collapsed ul li a::after {
+            display: none;
+        }
+
+        /* Add animation for dropdown items */
+        .collapse {
+            transition: all 0.3s ease;
+        }
+
+        .collapse.show {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Style for nested items */
+        .collapse .nav-item a {
+            padding-left: 40px;
+            font-size: 0.9em;
+        }
+
+        /* Add styles for the title */
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header .company-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar.collapsed .sidebar-header .company-title {
+            display: none;
+        }
+
+        /* Hover effect for the Logout item */
+        #sidebar ul li.logout a:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Collapsed state dropdown hover */
+        #sidebar.collapsed .collapse {
+            display: none !important;
+            position: absolute;
+            left: 80px;
+            top: 0;
+            width: 200px;
+            background-color: #343a40;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            margin-top: 0;
+            padding: 4px 0;
+        }
+
+        /* Show dropdown on hover in collapsed state */
+        #sidebar.collapsed .nav-item:hover .collapse {
+            display: block !important;
+        }
+
+        /* Adjust hover area for collapsed state */
+        #sidebar.collapsed .nav-item {
+            position: relative;
+        }
+
+        /* Ensure dropdowns don't overlap with other elements */
+        #sidebar.collapsed .nav-item:hover {
+            z-index: 1001;
+        }
+
+        /* Style for dropdown items in collapsed state */
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 8px 15px;
+            justify-content: flex-start;
+            white-space: nowrap;
+            height: 32px;
+            min-height: 32px;
+            max-height: 32px;
+            line-height: 16px;
+        }
+
+        #sidebar.collapsed .collapse .nav-item a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block;
+        }
+
+        /* Add transition for smooth hover effect */
+        #sidebar.collapsed .collapse {
+            transition: opacity 0.2s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #sidebar.collapsed .nav-item:hover .collapse {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Ensure proper positioning of dropdowns */
+        #sidebar.collapsed .nav-item {
+            position: relative;
+        }
+
+        #sidebar.collapsed .nav-item .collapse {
+            position: fixed !important;
+            left: 80px !important;
+            top: 0 !important;
+            width: 300px !important;
+            background: #343a40 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+            z-index: 9999 !important;
+            display: none !important;
+            border-radius: 4px !important;
+            padding: 8px 0 !important;
+            margin-top: -8px !important;
+        }
+
+        /* Calculate top position for each submenu based on parent position */
+        #sidebar.collapsed .nav-item:nth-child(1) .collapse { top: 60px !important; } /* Dashboard */
+        #sidebar.collapsed .nav-item:nth-child(2) .collapse { top: 100px !important; } /* Attendance */
+        #sidebar.collapsed .nav-item:nth-child(3) .collapse { top: 140px !important; } /* Payroll */
+        #sidebar.collapsed .nav-item:nth-child(4) .collapse { top: 180px !important; } /* Employee */
+        #sidebar.collapsed .nav-item:nth-child(5) .collapse { top: 220px !important; } /* Recruitment */
+
+        /* Keep the critical hover trigger */
+        #sidebar.collapsed .nav-item:hover .collapse {
+            display: block !important;
+            animation: slideIn 0.2s ease forwards !important;
+        }
+
+        /* Ensure proper z-index stacking */
+        #sidebar.collapsed .nav-item {
+            z-index: 1 !important;
+        }
+
+        #sidebar.collapsed .nav-item:hover {
+            z-index: 1001 !important;
+        }
+
+        /* Ensure the submenu stays above other content */
+        #sidebar.collapsed .collapse {
+            z-index: 9999 !important;
+        }
+
+        /* Animation for collapsed state */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Ensure proper overflow handling */
+        #sidebar.collapsed {
+            overflow: visible !important;
+        }
+
+        /* Adjust main content to prevent overlap */
+        #sidebar.collapsed + .topbar + #content {
+            margin-left: 80px !important;
+            width: calc(100% - 80px) !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+
+        /* Update submenu item styles for consistent spacing and text visibility */
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 10px 20px !important;
+            margin: 2px 8px !important;
+            border-radius: 4px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            max-height: 36px !important;
+            line-height: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 14px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 16px) !important; /* Ensure full width minus margins */
+        }
+
+        /* Ensure text is always visible in submenu items */
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: auto !important;
+            margin-left: 10px !important;
+        }
+
+        /* Consistent icon styling */
+        #sidebar.collapsed .collapse .nav-item a i {
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 10px !important;
+            font-size: 14px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Adjust specific menu positions for better alignment */
+        #sidebar.collapsed .nav-item:nth-child(1) .collapse { top: 60px !important; } /* Dashboard */
+        #sidebar.collapsed .nav-item:nth-child(2) .collapse { top: 100px !important; } /* Attendance */
+        #sidebar.collapsed .nav-item:nth-child(3) .collapse { top: 140px !important; } /* Payroll */
+        #sidebar.collapsed .nav-item:nth-child(4) .collapse { top: 180px !important; } /* Employee */
+        #sidebar.collapsed .nav-item:nth-child(5) .collapse { top: 220px !important; } /* Recruitment */
+
+        /* Ensure submenu container has proper width and padding */
+        #sidebar.collapsed .collapse {
+            position: fixed !important;
+            left: 80px !important;
+            width: 280px !important; /* Increased width */
+            background: #343a40 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important; /* Enhanced shadow */
+            z-index: 9999 !important;
+            padding: 12px 0 !important; /* Increased padding */
+            border-radius: 6px !important; /* Slightly larger radius */
+            margin-top: -12px !important; /* Adjust for new padding */
+        }
+
+        /* Consistent spacing between submenu items */
+        #sidebar.collapsed .collapse .nav-item {
+            margin: 4px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        /* Ensure proper hover state */
+        #sidebar.collapsed .collapse .nav-item a:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            transform: translateX(6px) !important; /* Slightly larger movement */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Add shadow on hover */
+        }
+
+        /* Update separator style */
+        #sidebar.collapsed .collapse .nav-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            margin-bottom: 4px !important;
+        }
+
+        /* Ensure proper text alignment and spacing */
+        #sidebar.collapsed .collapse .nav-item a {
+            justify-content: flex-start !important;
+            gap: 10px !important;
+        }
+
+        /* Keep the critical hover trigger */
+        #sidebar.collapsed .nav-item:hover .collapse {
+            display: block !important;
+            animation: slideIn 0.2s ease forwards !important;
+        }
+
+        /* Update animation for smoother appearance */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Styles for expanded sidebar submenu */
+        #sidebar:not(.collapsed) .collapse {
+            background: linear-gradient(to right, #343a40, #2c3136) !important;
+            margin: 4px 0 !important;
+            padding: 12px 0 !important;
+            border-radius: 6px !important;
+            position: relative !important;
+            left: 0 !important;
+            width: 100% !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Update expanded state submenu items */
+        #sidebar:not(.collapsed) .collapse .nav-item a {
+            padding: 12px 24px !important;
+            margin: 4px 12px !important;
+            border-radius: 6px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 40px !important;
+            line-height: 18px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 15px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 24px) !important;
+        }
+
+        /* Enhanced hover effect for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            transform: translateX(6px) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Icon styling for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a i {
+            width: 24px !important;
+            text-align: center !important;
+            margin-right: 12px !important;
+            font-size: 16px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Text styling for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item a span {
+            margin-left: 12px !important;
+            font-weight: 500 !important;
+            letter-spacing: 0.3px !important;
+        }
+
+        /* Separator for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            margin-bottom: 4px !important;
+        }
+
+        /* Consistent spacing for expanded state */
+        #sidebar:not(.collapsed) .collapse .nav-item {
+            margin: 4px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        /* Ensure proper text alignment and spacing */
+        #sidebar:not(.collapsed) .collapse .nav-item a {
+            justify-content: flex-start !important;
+            gap: 10px !important;
+        }
+
+        /* Update submenu item styles for both collapsed and expanded states */
+        #sidebar .collapse .nav-item a,
+        #sidebar.collapsed .collapse .nav-item a {
+            padding: 8px 20px !important;
+            margin: 2px 8px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            line-height: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+            color: white !important;
+            font-size: 14px !important;
+            white-space: nowrap !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+            width: calc(100% - 16px) !important;
+        }
+
+        /* Consistent icon styling for both states */
+        #sidebar .collapse .nav-item a i,
+        #sidebar.collapsed .collapse .nav-item a i {
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 10px !important;
+            font-size: 14px !important;
+            flex-shrink: 0 !important;
+            line-height: 1 !important;
+            vertical-align: middle !important;
+        }
+
+        /* Text alignment for both states */
+        #sidebar .collapse .nav-item a span,
+        #sidebar.collapsed .collapse .nav-item a span {
+            display: inline-block !important;
+            line-height: 1 !important;
+            vertical-align: middle !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Ensure proper vertical alignment */
+        #sidebar .collapse .nav-item,
+        #sidebar.collapsed .collapse .nav-item {
+            margin: 2px 0 !important;
+            padding: 0 !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        /* Adjust spacing between items */
+        #sidebar .collapse .nav-item:not(:last-child),
+        #sidebar.collapsed .collapse .nav-item:not(:last-child) {
+            margin-bottom: 2px !important;
+        }
+
+        /* Ensure container has proper spacing */
+        #sidebar .collapse,
+        #sidebar.collapsed .collapse {
+            padding: 8px 0 !important;
+        }
+
+        /* Logout container styling */
+        .logout-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 300px;
+            background-color: #343a40;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1002;
+            transition: width 0.3s ease;
+        }
+
+        #sidebar.collapsed .logout-container {
+            width: 80px;
+        }
+
+        /* Logout link styling */
+        .logout-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 20px !important;
+            color: white !important;
+            text-decoration: none !important;
+            height: 60px !important;
+            transition: all 0.2s ease !important;
+            background: transparent !important;
+        }
+
+        #sidebar.collapsed .logout-link {
+            justify-content: center !important;
+            padding: 12px 0 !important;
+        }
+
+        /* Logout icon styling */
+        .logout-link i {
+            font-size: 18px !important;
+            width: 20px !important;
+            text-align: center !important;
+            margin-right: 15px !important;
+            transition: margin 0.3s ease !important;
+        }
+
+        #sidebar.collapsed .logout-link i {
+            margin-right: 0 !important;
+        }
+
+        /* Logout text styling */
+        .logout-text {
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        #sidebar.collapsed .logout-text {
+            display: none !important;
+        }
+
+        /* Hover effect for logout */
+        .logout-link:hover {
+            background-color: #dc3545 !important;
+            color: white !important;
+            transform: translateX(6px) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        #sidebar.collapsed .logout-link:hover {
+            transform: translateX(0) !important;
+        }
+
+        /* Add custom alert styles */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .custom-alert.error {
+            background-color: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+    
+</head>
+
+<body>
+    <!-- Add custom alert div at the start of body -->
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+    <div id="wrapper">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                        <span class="profile-name">John Doe</span>
+                        <span class="profile-position">HR Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Notification Dropdown -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Leave Request</div>
+                        <div class="notification-time">5 minutes ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">Payroll Processed</div>
+                        <div class="notification-time">1 hour ago</div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-title">New Employee Added</div>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item" href="/crm/crm_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/crm/crm_daily_attendance"><i class="fas fa-calendar-check"></i> Daily Attendance</a></li>
+                        <li class="nav-item"><a href="/crm/crm_leave_request"><i class="fas fa-file-invoice"></i> Request Leave</a></li>
+                        <li class="nav-item"><a href="/crm/crm_work_adjustment"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
+                <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>   
+                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
+                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <!-- Properties Section with sub-options -->
+                 <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
+                        <i class="fas fa-home"></i>
+                        <span>Properties</span>
+                    </a>
+                    <ul class="collapse" id="properties">
+                        <li class="nav-item"><a href="/crm/property_list"><i class="fas fa-eye"></i> <span>View Properties</span></a></li>
+                        <li class="nav-item"><a href="/crm/add_properties"><i class="fas fa-plus-circle"></i> <span>Add New Property</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> <span>Transactions</span></a></li>
+               
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col">
+            <h1>Developers Approval</h1>
+                    </div>
+                    <div class="col-auto">
+                        <button id="bulkApproveBtn" class="btn btn-success" disabled>
+                            <i class="fas fa-check-circle"></i> Approve Selected
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Developers Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="developersTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="selectAll">
+                                            </div>
+                                        </th>
+                                        <th>Username</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Company</th>
+                                        <th>Position</th>
+                                        <th>Contact</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Table rows will be populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Developer Modal -->
+            <div class="modal fade" id="viewDeveloperModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Developer Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-4 text-center mb-3">
+                                    <img id="modalProfilePicture" src="" alt="Profile Picture" class="img-fluid rounded-circle" style="max-width: 200px;">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Username:</label>
+                                            <p id="modalUsername"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Email:</label>
+                                            <p id="modalEmail"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Full Name:</label>
+                                            <p id="modalFullName"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Position:</label>
+                                            <p id="modalPosition"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Contact Number:</label>
+                                            <p id="modalContact"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Company Name:</label>
+                                            <p id="modalCompany"></p>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <label class="fw-bold">Company Address:</label>
+                                            <p id="modalAddress"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Company TIN:</label>
+                                            <p id="modalTin"></p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="fw-bold">Registration Date:</label>
+                                            <p id="modalDate"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="rejectDeveloper()">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="approveDeveloper()">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject Reason Modal -->
+            <div class="modal fade" id="rejectReasonModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Reject Developer</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="rejectReason" class="form-label">Reason for Rejection</label>
+                                <textarea class="form-control" id="rejectReason" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="submitRejection()">Submit Rejection</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    
+        // Add notification toggle functionality
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function markAllAsRead() {
+            const badge = document.querySelector('.notification-badge');
+            badge.style.display = 'none';
+            // Add your logic here to mark notifications as read
+        }
+
+        // Close notification dropdown when clicking outside
+        window.onclick = function(event) {
+            const dropdown = document.getElementById('notificationDropdown');
+            if (!event.target.matches('.notification-icon') && !event.target.matches('.notification-icon *')) {
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+        
+        /* Update toggle function */
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            // Toggle collapsed class on sidebar
+            sidebar.classList.toggle('collapsed');
+            
+            // Update topbar and content positions
+            if (sidebar.classList.contains('collapsed')) {
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            // Set initial state
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const topbar = document.querySelector('.topbar');
+            const content = document.getElementById('content');
+            
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                topbar.style.left = '80px';
+                content.style.marginLeft = '80px';
+                content.style.width = 'calc(100% - 80px)';
+            } else {
+                sidebar.classList.remove('collapsed');
+                topbar.style.left = '300px';
+                content.style.marginLeft = '300px';
+                content.style.width = 'calc(100% - 300px)';
+            }
+        });
+ 
+        // Function to fetch user info
+        async function getUserInfo() {
+            try {
+                console.log('=== Fetching User Info ===');
+                
+                const sessionResponse = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+
+                const sessionData = await sessionResponse.json();
+                console.log('Full session data:', sessionData);
+                console.log('User active status from session:', sessionData.user?.is_active);
+                console.log('User role from session:', sessionData.user?.role_name);
+
+                if (!sessionData.user || !sessionData.user.employee_id) {
+                    throw new Error('No employee ID in session');
+                }
+
+                // Fetch employee details
+                const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
+                    credentials: 'include'
+                });
+
+                if (!employeeResponse.ok) {
+                    throw new Error('Failed to fetch employee details');
+                }
+
+                const employeeData = await employeeResponse.json();
+                console.log('Full employee data:', employeeData);
+
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+
+                if (profileName && profilePosition) {
+                    profileName.textContent = employeeData.full_name || 'Not Set';
+                    profilePosition.textContent = employeeData.role_name || 'Not Set';
+                }
+
+                // Update profile picture with proper path handling
+                if (employeeData.profile_picture) {
+                    // Extract just the filename if it's a full path
+                    const filename = employeeData.profile_picture.includes('/') 
+                        ? employeeData.profile_picture.split('/').pop() 
+                        : employeeData.profile_picture;
+                    
+                    // Add timestamp to prevent caching
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                    console.log('Loading profile picture from:', imageUrl);
+                    
+                    topbarProfilePicture.src = imageUrl;
+
+                    // If the path was a full path, update it in the database
+                    if (employeeData.profile_picture.includes('/')) {
+                        try {
+                            const updateResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}/profile-picture`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ profile_picture: filename }),
+                                credentials: 'include'
+                            });
+
+                            if (!updateResponse.ok) {
+                                console.error('Failed to update profile picture path in database');
+                            } else {
+                                console.log('Successfully updated profile picture path in database');
+                            }
+                        } catch (error) {
+                            console.error('Error updating profile picture path:', error);
+                        }
+                    }
+                } else {
+                    console.log('No profile picture found, using default');
+                    topbarProfilePicture.src = '/hr/default-profile-picture';
+                }
+
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize sidebar and fetch user info
+            getUserInfo();
+            
+            // Initialize developers table
+            fetchPendingDevelopers();
+            document.getElementById('bulkApproveBtn').addEventListener('click', bulkApproveDevelopers);
+        });
+
+        let currentDeveloperId = null;
+        let selectedDevelopers = new Set();
+
+        // Fetch and display pending developers
+        async function fetchPendingDevelopers() {
+            try {
+                const response = await fetch('/hr/developers/pending', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch developers');
+                
+                const developers = await response.json();
+                const tbody = document.querySelector('#developersTable tbody');
+                tbody.innerHTML = '';
+
+                developers.forEach(dev => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input developer-checkbox" type="checkbox" 
+                                       value="${dev.id}" onchange="handleCheckboxChange(this)">
+                            </div>
+                        </td>
+                        <td>${dev.username}</td>
+                        <td>${dev.first_name} ${dev.middle_name ? dev.middle_name + ' ' : ''}${dev.surname}</td>
+                        <td>${dev.email}</td>
+                        <td>${dev.company_name}</td>
+                        <td>${dev.position}</td>
+                        <td>${dev.contact_number}</td>
+                        <td><span class="badge bg-warning">Pending</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewDeveloper(${dev.id})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to fetch developers', true);
+            }
+        }
+
+        // Handle select all checkbox
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.developer-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+                handleCheckboxChange(checkbox);
+            });
+        });
+
+        // Handle individual checkbox changes
+        function handleCheckboxChange(checkbox) {
+            const developerId = checkbox.value;
+            if (checkbox.checked) {
+                selectedDevelopers.add(developerId);
+            } else {
+                selectedDevelopers.delete(developerId);
+            }
+            document.getElementById('bulkApproveBtn').disabled = selectedDevelopers.size === 0;
+        }
+
+        // View developer details
+        async function viewDeveloper(id) {
+            try {
+                const response = await fetch(`/hr/developers/${id}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch developer details');
+                
+                const developer = await response.json();
+                currentDeveloperId = developer.id;
+
+                // Update modal content
+                document.getElementById('modalUsername').textContent = developer.username;
+                document.getElementById('modalEmail').textContent = developer.email;
+                document.getElementById('modalFullName').textContent = 
+                    `${developer.first_name} ${developer.middle_name ? developer.middle_name + ' ' : ''}${developer.surname}`;
+                document.getElementById('modalPosition').textContent = developer.position;
+                document.getElementById('modalContact').textContent = developer.contact_number;
+                document.getElementById('modalCompany').textContent = developer.company_name;
+                document.getElementById('modalAddress').textContent = developer.company_address;
+                document.getElementById('modalTin').textContent = developer.company_tin;
+                document.getElementById('modalDate').textContent = new Date(developer.created_at).toLocaleDateString();
+
+                // Update profile picture
+                const profilePic = document.getElementById('modalProfilePicture');
+                if (developer.profile_picture) {
+                    profilePic.src = `/uploads/developer_profiles/${developer.profile_picture}`;
+                } else {
+                    profilePic.src = '/hr/default-profile-picture';
+                }
+
+                // Show modal
+                new bootstrap.Modal(document.getElementById('viewDeveloperModal')).show();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to fetch developer details', true);
+            }
+        }
+
+        // Approve single developer
+        async function approveDeveloper() {
+            if (!currentDeveloperId) return;
+            
+            try {
+                const response = await fetch(`/hr/developers/${currentDeveloperId}/approve`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to approve developer');
+                
+                showAlert('Developer approved successfully');
+                fetchPendingDevelopers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to approve developer', true);
+            }
+        }
+
+        // Bulk approve developers
+        async function bulkApproveDevelopers() {
+            if (selectedDevelopers.size === 0) return;
+
+            try {
+                const results = await Promise.all(
+                    Array.from(selectedDevelopers).map(id =>
+                        fetch(`/hr/developers/${id}/approve`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        }).then(res => res.ok ? { id, success: true } : { id, success: false }))
+                );
+
+                const failed = results.filter(r => !r.success);
+                if (failed.length > 0) {
+                    showAlert(`Failed to approve some developers: ${failed.map(f => f.id).join(', ')}`, true);
+                } else {
+                    showAlert('All selected developers approved successfully');
+                }
+
+                selectedDevelopers.clear();
+                document.getElementById('selectAll').checked = false;
+                document.getElementById('bulkApproveBtn').disabled = true;
+                fetchPendingDevelopers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to approve developers', true);
+            }
+        }
+
+        // Show reject reason modal
+        function rejectDeveloper() {
+            new bootstrap.Modal(document.getElementById('rejectReasonModal')).show();
+        }
+
+        // Submit rejection
+        async function submitRejection() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                showAlert('Please provide a reason for rejection', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/hr/developers/${currentDeveloperId}/reject`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                if (!response.ok) throw new Error('Failed to reject developer');
+
+                showAlert('Developer rejected successfully');
+                document.getElementById('rejectReason').value = '';
+                bootstrap.Modal.getInstance(document.getElementById('rejectReasonModal')).hide();
+                fetchPendingDevelopers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to reject developer', true);
+            }
+        }
+
+        // Add showAlert function
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'custom-alert' + (isError ? ' error' : '');
+            alertMessage.textContent = message;
+            alert.style.display = 'block';
+
+            setTimeout(() => {
+                alert.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                    alert.style.animation = 'slideIn 0.5s ease-out';
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html> 
