@@ -418,28 +418,34 @@
                     </ul>
                 </div>
         
-        <!-- Main content area -->
-        <div id="content">
-            <h2>Project Progress</h2>
+       <!-- Main content area -->
+       <div id="content">
+        <!-- Button to toggle sidebar with icon -->
+        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
 
-            <div class="search-container">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
-                <select id="filterDropdown" class="form-select" title="Filter projects by status">
-                    <option value="all">All Projects</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="finished">Finished</option>
+        <h2>Project Progress</h2>
+
+        <div class="search-container">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
+            <select id="filterDropdown" class="form-select" title="Filter projects by status">
+                <option value="all">All Projects</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="finished">Finished</option>
+            </select>
+            <div class="entries-per-page">
+                <label for="entriesPerPage">Entries per page:</label>
+                <select id="entriesPerPage" class="form-select" title="Select number of entries to display per page">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
                 </select>
-                <div class="entries-per-page">
-                    <label for="entriesPerPage">Entries per page:</label>
-                    <select id="entriesPerPage" class="form-select" title="Select number of entries to display per page">
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                    </select>
-                </div>
             </div>
+        </div>
 
-            <!-- Project Table -->
+        <!-- Project Table -->
+        <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-striped" id="projectsTable">
                     <thead>
@@ -459,690 +465,963 @@
                     <tbody id="projectsList"></tbody>
                 </table>
             </div>
+        </div>
 
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+        <div id="entriesMessage">
+            <span id="showingEntries"></span>
+            <nav><ul class="pagination" id="paginationControls"></ul></nav>
+        </div>
+
+        <!-- Update Progress Content -->
+        <div id="updateProgressContent" class="container-fluid mt-4" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Update Project Progress</h3>
+                <button class="btn btn-secondary" onclick="closeUpdateProgress()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+            <div class="row g-4 mb-4">
+                <!-- Left: Project Details -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <img id="updateProjectImage" src="" class="project-img mb-3" alt="Project Image">
+                                <h4 id="updateProjectName" class="card-title mb-0"></h4>
+                                <span id="updateProjectStatus" class="badge mt-2"></span>
+                            </div>
+                            <div class="project-meta">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <i class="fas fa-clock text-warning me-2"></i>
+                                        <strong>Deadline:</strong>
+                                    </div>
+                                    <span id="updateDeadline"></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                        <strong>Location:</strong>
+                                    </div>
+                                    <span id="updateLocation"></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <i class="fas fa-user-tie text-info me-2"></i>
+                                        <strong>Foreman:</strong>
+                                    </div>
+                                    <span id="updateForeman"></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <i class="fas fa-chart-line text-success me-2"></i>
+                                        <strong>Total Progress:</strong>
+                                    </div>
+                                    <span id="updateTotalProgress">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right: Chart -->
+                <div class="col-md-8">
+                    <div class="chart-container bg-white p-3 rounded shadow-sm">
+                        <canvas id="progressChart" height="200"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <!-- Update Progress Content -->
-            <div id="updateProgressContent" class="container-fluid mt-4" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3>Update Project Progress</h3>
-                    <button class="btn btn-secondary" onclick="closeUpdateProgress()">
-                        <i class="fas fa-times"></i> Close
-                    </button>
-                </div>
-                <div class="row g-4 mb-4">
-                    <!-- Left: Project Details -->
-                    <div class="col-md-4">
-                        <div class="card shadow-sm">
-                            <div class="card-body">
-                                <div class="text-center mb-4">
-                                    <img id="updateProjectImage" src="" class="project-img mb-3" alt="Project Image">
-                                    <h4 id="updateProjectName" class="card-title mb-0"></h4>
-                                    <span id="updateProjectStatus" class="badge mt-2"></span>
-                                </div>
-                                <div class="project-meta">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <i class="fas fa-clock text-warning me-2"></i>
-                                            <strong>Deadline:</strong>
-                                        </div>
-                                        <span id="updateDeadline"></span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
-                                            <strong>Location:</strong>
-                                        </div>
-                                        <span id="updateLocation"></span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <i class="fas fa-user-tie text-info me-2"></i>
-                                            <strong>Foreman:</strong>
-                                        </div>
-                                        <span id="updateForeman"></span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <i class="fas fa-chart-line text-success me-2"></i>
-                                            <strong>Total Progress:</strong>
-                                        </div>
-                                        <span id="updateTotalProgress">0%</span>
-                                    </div>
-                                </div>
+            <!-- New Progress Form -->
+            <div class="progress-form mb-4">
+                <h5>-- New Progress --</h5>
+                <form id="newProgressForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="divisionSelect" class="form-label">Division:</label>
+                            <select class="form-select" id="divisionSelect" required>
+                                <option value="">SELECT DIVISION</option>
+                                <option value="Foundation">Foundation</option>
+                                <option value="Structural">Structural</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Finishing">Finishing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="progressInput" class="form-label">Progress:</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="progressInput" min="0" max="100" required>
+                                <span class="input-group-text">%</span>
                             </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="progressImage" class="form-label">Image:</label>
+                            <input type="file" class="form-control" id="progressImage" accept="image/*">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-2"></i>Add Progress
+                            </button>
                         </div>
                     </div>
-                    <!-- Right: Chart -->
-                    <div class="col-md-8">
-                        <div class="chart-container bg-white p-3 rounded shadow-sm">
-                            <canvas id="progressChart" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
+                </form>
+            </div>
 
-                <!-- New Progress Form -->
-                <div class="progress-form mb-4">
-                    <h5>-- New Progress --</h5>
-                    <form id="newProgressForm">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-md-4">
-                                <label for="divisionSelect" class="form-label">Division:</label>
-                                <select class="form-select" id="divisionSelect" required>
-                                    <option value="">SELECT DIVISION</option>
-                                    <option value="Floor">Floor</option>
-                                    <option value="Layout">Layout</option>
-                                    <option value="Sample">Sample</option>
-                                    <option value="Windows">Windows</option>
-                                    <option value="Roof">Roof</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="progressInput" class="form-label">Progress:</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control" id="progressInput" min="0" max="100" required>
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="progressImage" class="form-label">Image:</label>
-                                <input type="file" class="form-control" id="progressImage" accept="image/*">
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Add Progress</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Division Progress Table -->
-                <div class="division-table">
-                    <h5>Divisions</h5>
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Image</th>
-                                <th>Division</th>
-                                <th>Progress</th>
-                                <th>Date Updated</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="divisionProgressBody">
-                            <!-- Sample rows will be inserted by JS -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Division Progress Table -->
+            <div class="division-table">
+                <h5>Divisions</h5>
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Image</th>
+                            <th>Division</th>
+                            <th>Progress</th>
+                            <th>Date Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="divisionProgressBody">
+                        <!-- Sample rows will be inserted by JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Project Details Modal -->
-    <div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="projectModalLabel">Project Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="project-image-container">
-                                <img id="modalProjectImage" src="" alt="Project Image" class="img-fluid rounded">
-                                <span id="modalStatus" class="project-status-badge"></span>
-                            </div>
+<!-- Project Details Modal -->
+<div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="projectModalLabel">Project Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="project-image-container">
+                            <img id="modalProjectImage" src="" alt="Project Image" class="img-fluid rounded">
+                            <span id="modalStatus" class="project-status-badge"></span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="project-details">
-                                <h4 id="modalProjectName" class="mb-4"></h4>
-                                <div class="project-info-item">
-                                    <span class="meta-label"><i class="fas fa-building"></i> Developer:</span>
-                                    <span id="modalDeveloper" class="meta-value"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="project-details">
+                            <h4 id="modalProjectName" class="mb-4"></h4>
+                            <div class="project-info-item">
+                                <span class="meta-label"><i class="fas fa-building"></i> Developer:</span>
+                                <span id="modalDeveloper" class="meta-value"></span>
+                            </div>
+                            <div class="project-info-item">
+                                <span class="meta-label"><i class="fas fa-user-tie"></i> Foreman:</span>
+                                <span id="modalForeman" class="meta-value"></span>
+                            </div>
+                            <div class="project-info-item">
+                                <span class="meta-label"><i class="fas fa-map-marker-alt"></i> Location:</span>
+                                <span id="modalLocation" class="meta-value"></span>
+                            </div>
+                            <div class="project-info-item">
+                                <span class="meta-label"><i class="fas fa-calendar-alt"></i> Deadline:</span>
+                                <span id="modalDeadline" class="meta-value"></span>
+                            </div>
+                            <div class="progress-section">
+                                <span class="meta-label"><i class="fas fa-tasks"></i> Progress:</span>
+                                <div class="progress-bar mt-2">
+                                    <div id="modalProgressBar" class="progress-bar-fill"></div>
                                 </div>
-                                <div class="project-info-item">
-                                    <span class="meta-label"><i class="fas fa-user-tie"></i> Foreman:</span>
-                                    <span id="modalForeman" class="meta-value"></span>
-                                </div>
-                                <div class="project-info-item">
-                                    <span class="meta-label"><i class="fas fa-map-marker-alt"></i> Location:</span>
-                                    <span id="modalLocation" class="meta-value"></span>
-                                </div>
-                                <div class="project-info-item">
-                                    <span class="meta-label"><i class="fas fa-calendar-alt"></i> Deadline:</span>
-                                    <span id="modalDeadline" class="meta-value"></span>
-                                </div>
-                                <div class="progress-section">
-                                    <span class="meta-label"><i class="fas fa-tasks"></i> Progress:</span>
-                                    <div class="progress-bar mt-2">
-                                        <div id="modalProgressBar" class="progress-bar-fill"></div>
-                                    </div>
-                                    <small id="modalProgressText" class="text-muted"></small>
-                                </div>
+                                <small id="modalProgressText" class="text-muted"></small>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap JS, Chart.js, and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/side_top.js"></script>
-    <script>
-        // Sample data for projects
-        const projects = [
-            {
-                id: 1,
-                name: 'Residential Complex A',
-                developer: 'John Smith',
-                foreman: 'Michael Brown',
-                location: 'Manila',
-                deadline: '2024-12-31',
-                status: 'On Going',
-                progress: 0,
-                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
-                submissionDate: '2024-01-01',
-                manufacturingCost: 30000000,
-                divisionProgress: []
-            },
-            {
-                id: 2,
-                name: 'Commercial Building B',
-                developer: 'Maria Garcia',
-                foreman: 'David Wilson',
-                location: 'Makati',
-                deadline: '2025-06-30',
-                status: 'Finished',
-                progress: 100,
-                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
-                submissionDate: '2024-02-01',
-                manufacturingCost: 45000000,
-                divisionProgress: []
-            },
-            {
-                id: 3,
-                name: 'Office Tower C',
-                developer: 'Robert Johnson',
-                foreman: 'James Anderson',
-                location: 'Quezon City',
-                deadline: '2025-08-20',
-                status: 'On Going',
-                progress: 0,
-                image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D',
-                submissionDate: '2024-03-01',
-                manufacturingCost: 60000000,
-                divisionProgress: []
+<!-- Add these modals before the closing body tag -->
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmProgressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle me-2"></i>Confirm Progress
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                <p class="mb-0" id="confirmProgressMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmAddProgressBtn">
+                    <i class="fas fa-check me-2"></i>Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="successMessage"></h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Modal -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
+                <h5 class="mt-3" id="warningMessage"></h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Edit Progress Modal before the closing body tag -->
+<div class="modal fade" id="editProgressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Progress
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProgressForm">
+                    <div class="mb-3">
+                        <label for="editDivisionSelect" class="form-label">Division:</label>
+                        <select class="form-select" id="editDivisionSelect" required>
+                            <option value="Foundation">Foundation</option>
+                            <option value="Structural">Structural</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Finishing">Finishing</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProgressInput" class="form-label">Progress:</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="editProgressInput" min="0" max="100" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProgressImage" class="form-label">Image:</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <img id="currentProgressImage" src="" alt="Current Progress" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            <input type="file" class="form-control" id="editProgressImage" accept="image/*">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmEditProgressBtn">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS, Chart.js, and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Sample data for projects
+    const projects = [
+        {
+            id: 1,
+            name: 'Residential Complex A',
+            developer: 'John Smith',
+            foreman: 'Michael Brown',
+            location: 'Manila',
+            deadline: '2024-12-31',
+            status: 'On Going',
+            progress: 0,
+            image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
+            submissionDate: '2024-01-01',
+            manufacturingCost: 30000000,
+            divisionProgress: []
+        },
+        {
+            id: 2,
+            name: 'Commercial Building B',
+            developer: 'Maria Garcia',
+            foreman: 'David Wilson',
+            location: 'Makati',
+            deadline: '2025-06-30',
+            status: 'Finished',
+            progress: 100,
+            image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
+            submissionDate: '2024-02-01',
+            manufacturingCost: 45000000,
+            divisionProgress: []
+        },
+        {
+            id: 3,
+            name: 'Office Tower C',
+            developer: 'Robert Johnson',
+            foreman: 'James Anderson',
+            location: 'Quezon City',
+            deadline: '2025-08-20',
+            status: 'On Going',
+            progress: 0,
+            image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D',
+            submissionDate: '2024-03-01',
+            manufacturingCost: 60000000,
+            divisionProgress: []
+        }
+    ];
+
+    // Global variables
+    let currentPage = 1;
+    let itemsPerPage = 5;
+    let currentSortColumn = 0;
+    let currentSortDirection = 'asc';
+    let filteredProjects = [...projects];
+    let currentProjectId = null;
+    let divisionProgress = [];
+    let progressChart;
+    let currentEditIndex = null;
+    let editProgressModal = null;
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeSidebar();
+        initializeEventListeners();
+        renderTable();
+        editProgressModal = new bootstrap.Modal(document.getElementById('editProgressModal'));
+    });
+
+    // Initialize sidebar
+    function initializeSidebar() {
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+
+        sidebarToggle.addEventListener('click', function() {
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
             }
-        ];
-
-        // Global variables
-        let currentPage = 1;
-        let itemsPerPage = 5;
-        let currentSortColumn = 0;
-        let currentSortDirection = 'asc';
-        let filteredProjects = [...projects];
-        let currentProjectId = null;
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeSidebar();
-            initializeEventListeners();
-            renderTable();
         });
 
-        // Initialize sidebar
-        function initializeSidebar() {
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-
-            sidebarToggle.addEventListener('click', function() {
-                if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                    sidebar.style.display = 'block';
-                    content.style.marginLeft = '300px';
-                } else {
-                    sidebar.style.display = 'none';
-                    content.style.marginLeft = '0';
-                }
+        // Handle submenu toggles
+        document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('data-bs-target'));
+                target.classList.toggle('show');
             });
+        });
+    }
 
-            // Handle submenu toggles
-            document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(element => {
-                element.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('data-bs-target'));
-                    target.classList.toggle('show');
-                });
-            });
-        }
-
-        // Initialize event listeners
-        function initializeEventListeners() {
-            document.getElementById('searchBar').addEventListener('input', filterProjects);
-            document.getElementById('filterDropdown').addEventListener('change', filterProjects);
-            document.getElementById('entriesPerPage').addEventListener('change', function() {
-                itemsPerPage = parseInt(this.value);
-                currentPage = 1;
-                renderTable();
-            });
-        }
-
-        // Filter projects based on search and filter criteria
-        function filterProjects() {
-            const searchValue = document.getElementById('searchBar').value.toLowerCase();
-            const filterValue = document.getElementById('filterDropdown').value;
-
-            filteredProjects = projects.filter(project => {
-                const matchesSearch = 
-                    project.name.toLowerCase().includes(searchValue) ||
-                    project.developer.toLowerCase().includes(searchValue) ||
-                    project.foreman.toLowerCase().includes(searchValue) ||
-                    project.location.toLowerCase().includes(searchValue);
-
-                const matchesFilter = filterValue === 'all' || 
-                    (filterValue === 'ongoing' && project.status === 'On Going') ||
-                    (filterValue === 'finished' && project.status === 'Finished');
-
-                return matchesSearch && matchesFilter;
-            });
-
+    // Initialize event listeners
+    function initializeEventListeners() {
+        document.getElementById('searchBar').addEventListener('input', filterProjects);
+        document.getElementById('filterDropdown').addEventListener('change', filterProjects);
+        document.getElementById('entriesPerPage').addEventListener('change', function() {
+            itemsPerPage = parseInt(this.value);
             currentPage = 1;
             renderTable();
+        });
+    }
+
+    // Filter projects based on search and filter criteria
+    function filterProjects() {
+        const searchValue = document.getElementById('searchBar').value.toLowerCase();
+        const filterValue = document.getElementById('filterDropdown').value;
+
+        filteredProjects = projects.filter(project => {
+            const matchesSearch = 
+                project.name.toLowerCase().includes(searchValue) ||
+                project.developer.toLowerCase().includes(searchValue) ||
+                project.foreman.toLowerCase().includes(searchValue) ||
+                project.location.toLowerCase().includes(searchValue);
+
+            const matchesFilter = filterValue === 'all' || 
+                (filterValue === 'ongoing' && project.status === 'On Going') ||
+                (filterValue === 'finished' && project.status === 'Finished');
+
+            return matchesSearch && matchesFilter;
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    // Sort table
+    function sortTable(columnIndex) {
+        if (currentSortColumn === columnIndex) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = columnIndex;
+            currentSortDirection = 'asc';
         }
 
-        // Sort table
-        function sortTable(columnIndex) {
-            if (currentSortColumn === columnIndex) {
-                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSortColumn = columnIndex;
-                currentSortDirection = 'asc';
+        filteredProjects.sort((a, b) => {
+            let valueA = a[getColumnKey(columnIndex)];
+            let valueB = b[getColumnKey(columnIndex)];
+
+            if (columnIndex === 4) { // Deadline column
+                valueA = new Date(valueA);
+                valueB = new Date(valueB);
             }
 
-            filteredProjects.sort((a, b) => {
-                let valueA = a[getColumnKey(columnIndex)];
-                let valueB = b[getColumnKey(columnIndex)];
+            if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
+            if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
 
-                if (columnIndex === 4) { // Deadline column
-                    valueA = new Date(valueA);
-                    valueB = new Date(valueB);
-                }
+        renderTable();
+    }
 
-                if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
-                if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
+    // Get column key based on index
+    function getColumnKey(index) {
+        const keys = ['id', 'name', 'developer', 'foreman', 'location', 'deadline', 'status', 'progress'];
+        return keys[index];
+    }
 
+    // Render table with pagination
+    function renderTable() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredProjects.length);
+        const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+        const tbody = document.getElementById('projectsList');
+        tbody.innerHTML = '';
+
+        paginatedProjects.forEach(project => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${project.id}</td>
+                <td>${project.name}</td>
+                <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                <td>${project.developer}</td>
+                <td>${project.foreman}</td>
+                <td>${project.location}</td>
+                <td>${project.deadline}</td>
+                <td><span class="badge bg-${getStatusColor(project.status)}">${project.status}</span></td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
+                    </div>
+                    <small class="text-muted">${project.progress}%</small>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn edit-btn" onclick="updateProject(${project.id})" title="Update Progress">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        updatePagination();
+        updateEntriesMessage();
+    }
+
+    // Get status color
+    function getStatusColor(status) {
+        switch (status) {
+            case 'On Going': return 'primary';
+            case 'Finished': return 'success';
+            default: return 'secondary';
+        }
+    }
+
+    // Update pagination controls
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+        const paginationControls = document.getElementById('paginationControls');
+        paginationControls.innerHTML = '';
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
+        paginationControls.appendChild(prevLi);
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            paginationControls.appendChild(li);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
+        paginationControls.appendChild(nextLi);
+    }
+
+    // Change page
+    function changePage(newPage) {
+        const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
             renderTable();
         }
+    }
 
-        // Get column key based on index
-        function getColumnKey(index) {
-            const keys = ['id', 'name', 'developer', 'foreman', 'location', 'deadline', 'status', 'progress'];
-            return keys[index];
-        }
+    // Update entries message
+    function updateEntriesMessage() {
+        const startIndex = (currentPage - 1) * itemsPerPage + 1;
+        const endIndex = Math.min(startIndex + itemsPerPage - 1, filteredProjects.length);
+        const message = `Showing ${startIndex} to ${endIndex} of ${filteredProjects.length} entries`;
+        document.getElementById('showingEntries').textContent = message;
+    }
 
-        // Render table with pagination
-        function renderTable() {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, filteredProjects.length);
-            const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+    // View project details
+    function viewProject(projectId) {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
 
-            const tbody = document.getElementById('projectsList');
-            tbody.innerHTML = '';
+        // Update modal content
+        document.getElementById('modalProjectImage').src = project.image;
+        document.getElementById('modalProjectName').textContent = project.name;
+        document.getElementById('modalDeveloper').textContent = project.developer;
+        document.getElementById('modalForeman').textContent = project.foreman;
+        document.getElementById('modalLocation').textContent = project.location;
+        document.getElementById('modalDeadline').textContent = project.deadline;
+        
+        const statusBadge = document.getElementById('modalStatus');
+        statusBadge.textContent = project.status;
+        statusBadge.className = `project-status-badge bg-${getStatusColor(project.status)}`;
+        
+        const progressBar = document.getElementById('modalProgressBar');
+        progressBar.style.width = `${project.progress}%`;
+        document.getElementById('modalProgressText').textContent = `${project.progress}%`;
 
-            paginatedProjects.forEach(project => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${project.id}</td>
-                    <td>${project.name}</td>
-                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
-                    <td>${project.developer}</td>
-                    <td>${project.foreman}</td>
-                    <td>${project.location}</td>
-                    <td>${project.deadline}</td>
-                    <td><span class="badge bg-${getStatusColor(project.status)}">${project.status}</span></td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
-                        </div>
-                        <small class="text-muted">${project.progress}%</small>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn edit-btn" onclick="updateProject(${project.id})" title="Update Progress">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+        modal.show();
+    }
 
-            updatePagination();
-            updateEntriesMessage();
-        }
-
-        // Get status color
-        function getStatusColor(status) {
-            switch (status) {
-                case 'On Going': return 'primary';
-                case 'Finished': return 'success';
-                default: return 'secondary';
+    // Initialize chart
+    function initializeChart() {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        progressChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing', 'Total'],
+                datasets: [{
+                    label: 'Progress (%)',
+                    data: [0, 0, 0, 0, 0, 0],
+                    backgroundColor: ['#f8b195', '#f8b195', '#f8b195', '#f8b195', '#f8b195', '#90ee90'],
+                    borderRadius: 5,
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed.y}%`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '-- Project Progress --',
+                        font: { size: 18 }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        title: { display: true, text: 'Progress (%)' },
+                        ticks: { stepSize: 10 }
+                    }
+                }
             }
-        }
+        });
+    }
 
-        // Update pagination controls
-        function updatePagination() {
-            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-            const paginationControls = document.getElementById('paginationControls');
-            paginationControls.innerHTML = '';
+    // Load division progress
+    function loadDivisionProgress() {
+        if (!currentProjectId) return;
+        
+        const project = projects.find(p => p.id === currentProjectId);
+        if (!project) return;
 
-            // Previous button
-            const prevLi = document.createElement('li');
-            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
-            paginationControls.appendChild(prevLi);
+        // Use the project's stored division progress
+        divisionProgress = [...project.divisionProgress];
+        renderDivisionTable();
+        updateChart();
+    }
 
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                const li = document.createElement('li');
-                li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
-                paginationControls.appendChild(li);
+    // Render division table
+    function renderDivisionTable() {
+        const tbody = document.getElementById('divisionProgressBody');
+        tbody.innerHTML = '';
+        
+        divisionProgress.forEach((division, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <img src="${division.img}" class="division-img" alt="Division Image" 
+                        style="cursor: pointer;" onclick="previewImage('${division.img}')">
+                </td>
+                <td>${division.division}</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${division.progress}%"></div>
+                    </div>
+                    <small class="text-muted">${division.progress}%</small>
+                </td>
+                <td>${division.date}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editDivision(${index})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Update chart with current progress
+    function updateChart() {
+        const progressData = [0, 0, 0, 0, 0, 0];
+        const divisions = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+        
+        divisionProgress.forEach(division => {
+            const index = divisions.indexOf(division.division);
+            if (index !== -1) {
+                progressData[index] = division.progress;
             }
+        });
 
-            // Next button
-            const nextLi = document.createElement('li');
-            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
-            paginationControls.appendChild(nextLi);
-        }
+        // Calculate total progress
+        progressData[5] = Math.round(progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5);
+        
+        // Update total progress display
+        document.getElementById('updateTotalProgress').textContent = `${progressData[5]}%`;
 
-        // Change page
-        function changePage(newPage) {
-            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-            if (newPage >= 1 && newPage <= totalPages) {
-                currentPage = newPage;
+        // Update progress in the main table
+        if (currentProjectId) {
+            const project = projects.find(p => p.id === currentProjectId);
+            if (project) {
+                project.progress = progressData[5];
+                project.divisionProgress = [...divisionProgress];
                 renderTable();
             }
         }
 
-        // Update entries message
-        function updateEntriesMessage() {
-            const startIndex = (currentPage - 1) * itemsPerPage + 1;
-            const endIndex = Math.min(startIndex + itemsPerPage - 1, filteredProjects.length);
-            const message = `Showing ${startIndex} to ${endIndex} of ${filteredProjects.length} entries`;
-            document.getElementById('showingEntries').textContent = message;
-        }
+        progressChart.data.datasets[0].data = progressData;
+        progressChart.update();
+    }
 
-        // View project details
-        function viewProject(projectId) {
-            const project = projects.find(p => p.id === projectId);
-            if (!project) return;
+    // Update project button click handler
+    function updateProject(projectId) {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
 
-            // Update modal content
-            document.getElementById('modalProjectImage').src = project.image;
-            document.getElementById('modalProjectName').textContent = project.name;
-            document.getElementById('modalDeveloper').textContent = project.developer;
-            document.getElementById('modalForeman').textContent = project.foreman;
-            document.getElementById('modalLocation').textContent = project.location;
-            document.getElementById('modalDeadline').textContent = project.deadline;
-            
-            const statusBadge = document.getElementById('modalStatus');
-            statusBadge.textContent = project.status;
-            statusBadge.className = `project-status-badge bg-${getStatusColor(project.status)}`;
-            
-            const progressBar = document.getElementById('modalProgressBar');
-            progressBar.style.width = `${project.progress}%`;
-            document.getElementById('modalProgressText').textContent = `${project.progress}%`;
+        currentProjectId = projectId;
 
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('projectModal'));
-            modal.show();
-        }
+        // Update project details
+        document.getElementById('updateProjectImage').src = project.image;
+        document.getElementById('updateProjectName').textContent = project.name;
+        document.getElementById('updateProjectName').setAttribute('data-project-id', project.id);
+        const statusBadge = document.getElementById('updateProjectStatus');
+        statusBadge.textContent = project.status;
+        statusBadge.className = `badge bg-${getStatusColor(project.status)}`;
+        document.getElementById('updateDeadline').textContent = project.deadline;
+        document.getElementById('updateLocation').textContent = project.location;
+        document.getElementById('updateForeman').textContent = project.foreman;
+        document.getElementById('updateTotalProgress').textContent = `${project.progress}%`;
 
-        // Add these new functions after the existing script
-        let divisionProgress = [];
-        let progressChart;
+        // Show update progress content
+        const updateContent = document.getElementById('updateProgressContent');
+        updateContent.style.display = 'block';
+        
+        // Scroll to the content
+        updateContent.scrollIntoView({ behavior: 'smooth' });
 
-        // Initialize chart
-        function initializeChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            progressChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Floor', 'Layout', 'Sample', 'Windows', 'Roof', 'Total'],
-                    datasets: [{
-                        label: 'Progress (%)',
-                        data: [0, 0, 0, 0, 0, 0],
-                        backgroundColor: ['#f8b195', '#f8b195', '#f8b195', '#f8b195', '#f8b195', '#90ee90'],
-                        borderRadius: 5,
-                    }]
-                },
-                options: {
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.label}: ${context.parsed.y}%`;
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: '-- Project Progress --',
-                            font: { size: 18 }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 100,
-                            title: { display: true, text: 'Progress (%)' },
-                            ticks: { stepSize: 10 }
-                        }
-                    }
-                }
-            });
+        // Initialize chart if not already initialized
+        if (!progressChart) {
+            initializeChart();
         }
 
         // Load division progress
-        function loadDivisionProgress() {
-            if (!currentProjectId) return;
-            
-            const project = projects.find(p => p.id === currentProjectId);
-            if (!project) return;
+        loadDivisionProgress();
+    }
 
-            // Use the project's stored division progress
-            divisionProgress = [...project.divisionProgress];
-            renderDivisionTable();
-            updateChart();
-        }
+    // Initialize form handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('newProgressForm');
+        const progressInput = document.getElementById('progressInput');
+        let pendingProgressData = null;
 
-        // Render division table
-        function renderDivisionTable() {
-            const tbody = document.getElementById('divisionProgressBody');
-            tbody.innerHTML = '';
-            
-            divisionProgress.forEach((division, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><img src="${division.img}" class="division-img" alt="Division Image"></td>
-                    <td>${division.division}</td>
-                    <td>${division.progress}%</td>
-                    <td>${division.date}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editDivision(${index})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+        // Validate progress input
+        progressInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (value < 0) this.value = 0;
+            if (value > 100) this.value = 100;
+        });
 
-        // Update chart with current progress
-        function updateChart() {
-            const progressData = [0, 0, 0, 0, 0, 0];
-            const divisions = ['Floor', 'Layout', 'Sample', 'Windows', 'Roof'];
+        // Handle form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            divisionProgress.forEach(division => {
-                const index = divisions.indexOf(division.division);
-                if (index !== -1) {
-                    progressData[index] = division.progress;
-                }
+            const division = document.getElementById('divisionSelect').value;
+            const progress = parseInt(progressInput.value);
+            const date = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: '2-digit' 
             });
 
-            // Calculate total progress
-            progressData[5] = Math.round(progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5);
+            // Handle image upload
+            const file = document.getElementById('progressImage').files[0];
+            let imgUrl = 'https://via.placeholder.com/60x60?text=Img';
             
-            // Update total progress display
-            document.getElementById('updateTotalProgress').textContent = `${progressData[5]}%`;
-
-            // Update progress in the main table
-            if (currentProjectId) {
-                const project = projects.find(p => p.id === currentProjectId);
-                if (project) {
-                    project.progress = progressData[5];
-                    project.divisionProgress = [...divisionProgress];
-                    renderTable();
+            if (file) {
+                try {
+                    imgUrl = await handleImageUpload(file);
+                } catch (error) {
+                    alert('Error uploading image. Using placeholder instead.');
                 }
             }
 
-            progressChart.data.datasets[0].data = progressData;
-            progressChart.update();
-        }
+            // Store the progress data for later use
+            pendingProgressData = { img: imgUrl, division, progress, date };
 
-        // Update project button click handler
-        function updateProject(projectId) {
-            const project = projects.find(p => p.id === projectId);
-            if (!project) return;
-
-            currentProjectId = projectId;
-
-            // Update project details
-            document.getElementById('updateProjectImage').src = project.image;
-            document.getElementById('updateProjectName').textContent = project.name;
-            document.getElementById('updateProjectName').setAttribute('data-project-id', project.id);
-            const statusBadge = document.getElementById('updateProjectStatus');
-            statusBadge.textContent = project.status;
-            statusBadge.className = `badge bg-${getStatusColor(project.status)}`;
-            document.getElementById('updateDeadline').textContent = project.deadline;
-            document.getElementById('updateLocation').textContent = project.location;
-            document.getElementById('updateForeman').textContent = project.foreman;
-            document.getElementById('updateTotalProgress').textContent = `${project.progress}%`;
-
-            // Show update progress content
-            const updateContent = document.getElementById('updateProgressContent');
-            updateContent.style.display = 'block';
+            // Show confirmation modal
+            document.getElementById('confirmProgressMessage').textContent = 
+                `Are you sure you want to add ${progress}% progress for ${division}?`;
             
-            // Scroll to the content
-            updateContent.scrollIntoView({ behavior: 'smooth' });
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmProgressModal'));
+            confirmModal.show();
+        });
 
-            // Initialize chart if not already initialized
-            if (!progressChart) {
-                initializeChart();
-            }
+        // Handle confirmation button click
+        document.getElementById('confirmAddProgressBtn').addEventListener('click', function() {
+            if (pendingProgressData) {
+                // Add new progress
+                divisionProgress.push(pendingProgressData);
+                renderDivisionTable();
+                updateChart();
 
-            // Load division progress
-            loadDivisionProgress();
-        }
-
-        // Initialize form handlers
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('newProgressForm');
-            const progressInput = document.getElementById('progressInput');
-
-            // Validate progress input
-            progressInput.addEventListener('input', function() {
-                let value = parseInt(this.value);
-                if (value < 0) this.value = 0;
-                if (value > 100) this.value = 100;
-            });
-
-            // Handle form submission
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
+                // Show success message
+                document.getElementById('successMessage').textContent = 
+                    `Successfully added ${pendingProgressData.progress}% progress for ${pendingProgressData.division}`;
                 
-                const division = document.getElementById('divisionSelect').value;
-                const progress = parseInt(progressInput.value);
-                const date = new Date().toLocaleDateString('en-US', { 
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+
+                // Reset form and close confirmation modal
+                form.reset();
+                bootstrap.Modal.getInstance(document.getElementById('confirmProgressModal')).hide();
+
+                // Clear pending data
+                pendingProgressData = null;
+
+                // Auto-hide success message after 2 seconds
+                setTimeout(() => {
+                    successModal.hide();
+                }, 2000);
+            }
+        });
+    });
+
+    // Handle image upload
+    async function handleImageUpload(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Edit division progress
+    function editDivision(index) {
+        currentEditIndex = index;
+        const division = divisionProgress[index];
+
+        // Set form values
+        document.getElementById('editDivisionSelect').value = division.division;
+        document.getElementById('editProgressInput').value = division.progress;
+        document.getElementById('currentProgressImage').src = division.img;
+        document.getElementById('editProgressImage').value = ''; // Reset file input
+
+        // Show modal
+        editProgressModal.show();
+    }
+
+    // Close update progress
+    function closeUpdateProgress() {
+        document.getElementById('updateProgressContent').style.display = 'none';
+        currentProjectId = null;
+    }
+
+    // Add image preview function
+    function previewImage(src) {
+        const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+        document.getElementById('modalProjectImage').src = src;
+        document.getElementById('modalProjectName').textContent = 'Progress Image';
+        modal.show();
+    }
+
+    // Initialize edit modal
+    document.addEventListener('DOMContentLoaded', function() {
+        editProgressModal = new bootstrap.Modal(document.getElementById('editProgressModal'));
+        
+        // Handle edit progress input validation
+        document.getElementById('editProgressInput').addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (value < 0) this.value = 0;
+            if (value > 100) this.value = 100;
+        });
+
+        // Handle edit form submission
+        document.getElementById('confirmEditProgressBtn').addEventListener('click', async function() {
+            if (currentEditIndex === null) return;
+
+            const division = document.getElementById('editDivisionSelect').value;
+            const progress = parseInt(document.getElementById('editProgressInput').value);
+            const file = document.getElementById('editProgressImage').files[0];
+            let imgUrl = divisionProgress[currentEditIndex].img;
+
+            if (file) {
+                try {
+                    imgUrl = await handleImageUpload(file);
+                } catch (error) {
+                    showWarningMessage('Error uploading image. Keeping current image.');
+                }
+            }
+
+            // Update the progress data
+            divisionProgress[currentEditIndex] = {
+                ...divisionProgress[currentEditIndex],
+                division,
+                progress,
+                img: imgUrl,
+                date: new Date().toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
                     day: '2-digit' 
-                });
+                })
+            };
 
-                // Handle image upload
-                const file = document.getElementById('progressImage').files[0];
-                let imgUrl = 'https://via.placeholder.com/60x60?text=Img';
-                
-                if (file) {
-                    try {
-                        imgUrl = await handleImageUpload(file);
-                    } catch (error) {
-                        alert('Error uploading image. Using placeholder instead.');
-                    }
-                }
+            // Update the UI
+            renderDivisionTable();
+            updateChart();
 
-                // Add new progress
-                divisionProgress.push({ img: imgUrl, division, progress, date });
-                renderDivisionTable();
-                updateChart();
-                form.reset();
-            });
+            // Show success message
+            document.getElementById('successMessage').textContent = 
+                `Successfully updated progress for ${division}`;
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+
+            // Close edit modal
+            editProgressModal.hide();
+
+            // Reset current edit index
+            currentEditIndex = null;
+
+            // Auto-hide success message
+            setTimeout(() => {
+                successModal.hide();
+            }, 2000);
         });
+    });
 
-        // Handle image upload
-        async function handleImageUpload(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.readAsDataURL(file);
-            });
+    // Function to show success message
+    function showSuccessMessage(message) {
+        document.getElementById('successMessage').textContent = message;
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+        setTimeout(() => {
+            successModal.hide();
+        }, 2000);
+    }
+
+    // Function to show warning message
+    function showWarningMessage(message) {
+        document.getElementById('warningMessage').textContent = message;
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+        warningModal.show();
+        setTimeout(() => {
+            warningModal.hide();
+        }, 2000);
+    }
+
+    // Function to show confirmation dialog
+    function showConfirmationDialog(message, onConfirm) {
+        document.getElementById('confirmProgressMessage').textContent = message;
+        const confirmationModal = new bootstrap.Modal(document.getElementById('confirmProgressModal'));
+        
+        // Remove any existing event listeners
+        const confirmBtn = document.getElementById('confirmAddProgressBtn');
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new event listener
+        newConfirmBtn.addEventListener('click', () => {
+            onConfirm();
+            confirmationModal.hide();
+        });
+        
+        confirmationModal.show();
+    }
+
+    // Update the addProgress function to use the new confirmation dialog
+    function addProgress() {
+        const project = document.getElementById('projectSelect').value;
+        const division = document.getElementById('divisionSelect').value;
+        const progress = document.getElementById('progressInput').value;
+        const notes = document.getElementById('notesInput').value;
+
+        if (!project || !division || !progress) {
+            showWarningMessage('Please fill in all required fields!');
+            return;
         }
 
-        // Edit division progress
-        function editDivision(index) {
-            const division = divisionProgress[index];
-            const newProgress = prompt('Enter new progress (0-100):', division.progress);
-            
-            if (newProgress !== null) {
-                const progress = parseInt(newProgress);
-                if (!isNaN(progress) && progress >= 0 && progress <= 100) {
-                    division.progress = progress;
-                    division.date = new Date().toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: '2-digit' 
-                    });
-                    renderDivisionTable();
-                    updateChart();
-                } else {
-                    alert('Please enter a valid progress value between 0 and 100');
-                }
-            }
-        }
-
-        // Close update progress
-        function closeUpdateProgress() {
-            document.getElementById('updateProgressContent').style.display = 'none';
-            currentProjectId = null;
-        }
-    </script>
+        showConfirmationDialog('Are you sure you want to add this progress update?', () => {
+            // Your existing progress addition logic here
+            // After successful addition:
+            showSuccessMessage('Progress updated successfully!');
+            // Reset form and update table
+            document.getElementById('progressForm').reset();
+            updateProgressTable();
+        });
+    }
+</script>
 </body>
 </html>

@@ -12,8 +12,8 @@ const CRMModel = {
     // Store the site visit request in the database
     storeVisitRequest: async (data) => {
         const query = `
-            INSERT INTO site_visit_requests (name, email, contact, property, preferred_date, pickup, agent, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'new', NOW())`;
+            INSERT INTO site_visit_requests (name, email, contact, property, preferred_date, agent, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'new', NOW())`;
 
         await db.execute(query, [
             data.name,            // Full Name (first + last)
@@ -21,7 +21,6 @@ const CRMModel = {
             data.contact,
             data.property,        // Property value
             data.preferredDate,    // Time slot (e.g., "09:00:00")
-            data.pickUpLocation,
             data.agent            // Default agent or provided agent
         ]);
     },
