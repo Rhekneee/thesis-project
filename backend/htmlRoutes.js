@@ -384,6 +384,9 @@ app.get('/developer/developer_finished_projects', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'developer_finished_projects.html')); // Adjusted path
 }); 
 
+app.get('/developer/profile', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'developer', 'profile.html')); // Adjusted path
+}); 
 
 // ====================
   //   Supplier Routes
