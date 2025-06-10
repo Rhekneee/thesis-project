@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Profile</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+        /* Base Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        #wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        /* Profile Container */
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .profile-picture-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            position: relative;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-picture-upload {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            padding: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .profile-picture-container:hover .profile-picture-upload {
+            opacity: 1;
+        }
+
+        .profile-header-content {
+            flex: 1;
+        }
+
+        .profile-header-content h2 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .profile-header-content p {
+            margin: 0;
+            color: #6c757d;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+
+        .form-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        /* Alert Styles */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .custom-alert.error {
+            background-color: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Loading and Error States */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #fff3f3;
+            color: #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ffcdd2;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="customAlert" class="custom-alert">
+        <i class="fas fa-check-circle"></i>
+        <span id="alertMessage"></span>
+    </div>
+
+    <div id="topbar"></div>
+    
+    <div class="profile-container">
+        <!-- Dynamic Back Button -->
+        <div class="back-button mb-4">
+            <a id="dashboardLink" href="/hr/hr_admin" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-picture-container">
+                <img id="profilePicture" src="/hr/default-profile-picture" alt="Profile Picture" class="profile-picture">
+                <label for="profilePictureInput" class="profile-picture-upload">
+                    <i class="fas fa-camera"></i> Change Photo
+                </label>
+                <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="profile-header-content">
+                <h2 id="userName">Loading...</h2>
+                <p id="userRole" class="text-muted">Loading...</p>
+                <div id="statusBadge" class="status-badge">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h3>Personal Information</h3>
+                <form id="personalInfoForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="fullName" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employee ID</label>
+                            <input type="text" class="form-control" id="employeeId" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Position</label>
+                            <input type="text" class="form-control" id="position" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contact Number</label>
+                            <input type="tel" class="form-control" id="contact" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Birthday</label>
+                            <input type="date" class="form-control" id="birthday" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" required>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Emergency Contact Section -->
+            <div class="form-section">
+                <h3>Emergency Contact</h3>
+                <form id="emergencyContactForm">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Contact Name</label>
+                            <input type="text" class="form-control" id="emergencyName" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Relationship</label>
+                            <select class="form-select" id="emergencyRelationship" required>
+                                <option value="">Select relationship</option>
+                                <option value="Spouse">Spouse</option>
+                                <option value="Parent">Parent</option>
+                                <option value="Sibling">Sibling</option>
+                                <option value="Child">Child</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Contact Number</label>
+                            <input type="tel" class="form-control" id="emergencyPhone" required>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security Section -->
+            <div class="form-section">
+                <h3>Security Settings</h3>
+                
+                <!-- Change Password Form -->
+                <div class="mb-4">
+                    <h5 class="mb-3">Change Password</h5>
+                    <form id="passwordForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Change Password</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Security Questions Form -->
+                <div class="mt-4">
+                    <h5 class="mb-3">Security Questions</h5>
+                    <form id="securityQuestionsForm">
+                        <div class="security-questions">
+                            <div class="mb-3">
+                                <label class="form-label">Question 1</label>
+                                <select class="form-select" id="question1" required>
+                                    <option value="">Select a question</option>
+                                    <option value="What was your first pet's name?">What was your first pet's name?</option>
+                                    <option value="In which city were you born?">In which city were you born?</option>
+                                    <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                                    <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                                    <option value="What is the name of your favorite childhood teacher?">What is the name of your favorite childhood teacher?</option>
+                                </select>
+                                <input type="text" class="form-control mt-2" id="answer1" placeholder="Your answer" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Question 2</label>
+                                <select class="form-select" id="question2" required>
+                                    <option value="">Select a question</option>
+                                    <option value="What was your first pet's name?">What was your first pet's name?</option>
+                                    <option value="In which city were you born?">In which city were you born?</option>
+                                    <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                                    <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                                    <option value="What is the name of your favorite childhood teacher?">What is the name of your favorite childhood teacher?</option>
+                                </select>
+                                <input type="text" class="form-control mt-2" id="answer2" placeholder="Your answer" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Question 3</label>
+                                <select class="form-select" id="question3" required>
+                                    <option value="">Select a question</option>
+                                    <option value="What was your first pet's name?">What was your first pet's name?</option>
+                                    <option value="In which city were you born?">In which city were you born?</option>
+                                    <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                                    <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                                    <option value="What is the name of your favorite childhood teacher?">What is the name of your favorite childhood teacher?</option>
+                                </select>
+                                <input type="text" class="form-control mt-2" id="answer3" placeholder="Your answer" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Security Questions</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Load topbar
+        $(document).ready(function() {
+            $("#topbar").load("/public/components/topbar.html", function() {
+                // After topbar loads, initialize profile
+                initializeProfile();
+            });
+        });
+
+        async function initializeProfile() {
+            try {
+                // Get user info from session
+                const response = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const sessionData = await response.json();
+                console.log('Session data:', sessionData);
+
+                if (!sessionData.user || !sessionData.user.employee_id) {
+                    throw new Error('No employee data in session');
+                }
+
+                // Fetch employee details
+                const employeeResponse = await fetch(`/hr/employees/${sessionData.user.employee_id}`, {
+                    credentials: 'include'
+                });
+
+                if (!employeeResponse.ok) {
+                    throw new Error('Failed to fetch employee details');
+                }
+
+                const employeeData = await employeeResponse.json();
+                console.log('Employee data:', employeeData);
+
+                // Populate profile data
+                document.getElementById('userName').textContent = employeeData.full_name || 'Employee';
+                document.getElementById('userRole').textContent = employeeData.role_name || 'Employee';
+                
+                // Set status badge
+                const statusBadge = document.getElementById('statusBadge');
+                const isActive = employeeData.is_deleted === 0 && (employeeData.is_active === 1 || employeeData.is_active === '1');
+                if (isActive) {
+                    statusBadge.className = 'status-badge status-active';
+                    statusBadge.textContent = 'Active';
+                } else {
+                    statusBadge.className = 'status-badge status-inactive';
+                    statusBadge.textContent = 'Inactive';
+                }
+
+                // Set profile picture
+                if (employeeData.profile_picture) {
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${employeeData.profile_picture}?t=${timestamp}`;
+                    document.getElementById('profilePicture').src = imageUrl;
+                }
+
+                // Populate form fields
+                document.getElementById('fullName').value = employeeData.full_name || '';
+                document.getElementById('employeeId').value = employeeData.employee_id || '';
+                document.getElementById('department').value = employeeData.department_name || '';
+                document.getElementById('position').value = employeeData.role_name || '';
+                document.getElementById('email').value = employeeData.email || '';
+                document.getElementById('contact').value = employeeData.contact || '';
+                document.getElementById('birthday').value = employeeData.birthday || '';
+                document.getElementById('address').value = employeeData.address || '';
+                document.getElementById('emergencyName').value = employeeData.emergency_contact_name || '';
+                document.getElementById('emergencyRelationship').value = employeeData.emergency_contact_relationship || '';
+                document.getElementById('emergencyPhone').value = employeeData.emergency_contact_phone || '';
+
+                // Load security questions
+                await loadSecurityQuestions();
+
+            } catch (error) {
+                console.error('Error initializing profile:', error);
+                showAlert('Failed to load profile data. Please try again.', true);
+            }
+        }
+
+        async function loadSecurityQuestions() {
+            try {
+                const response = await fetch('/hr/security-questions', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load security questions');
+                }
+
+                const questions = await response.json();
+                if (questions) {
+                    $('#question1').val(questions.question1);
+                    $('#question2').val(questions.question2);
+                    $('#question3').val(questions.question3);
+                    $('#answer1').val(questions.answer1);
+                    $('#answer2').val(questions.answer2);
+                    $('#answer3').val(questions.answer3);
+                }
+            } catch (error) {
+                console.error('Error loading security questions:', error);
+            }
+        }
+
+        // Add showAlert function
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'custom-alert' + (isError ? ' error' : '');
+            alertMessage.textContent = message;
+            alert.style.display = 'block';
+
+            setTimeout(() => {
+                alert.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                    alert.style.animation = 'slideIn 0.5s ease-out';
+                }, 500);
+            }, 3000);
+        }
+
+        // Handle form submissions
+        document.getElementById('personalInfoForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const formData = {
+                    contact: document.getElementById('contact').value,
+                    birthday: document.getElementById('birthday').value,
+                    address: document.getElementById('address').value
+                };
+
+                const response = await fetch('/hr/profile/contact', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to update contact information');
+                
+                showAlert('Contact information updated successfully!');
+            } catch (error) {
+                console.error('Error updating contact information:', error);
+                showAlert('Failed to update contact information', true);
+            }
+        });
+
+        document.getElementById('emergencyContactForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const formData = {
+                    emergency_contact_name: document.getElementById('emergencyName').value,
+                    emergency_contact_relationship: document.getElementById('emergencyRelationship').value,
+                    emergency_contact_phone: document.getElementById('emergencyPhone').value
+                };
+
+                const response = await fetch('/hr/profile/emergency-contact', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to update emergency contact information');
+                
+                showAlert('Emergency contact information updated successfully!');
+            } catch (error) {
+                console.error('Error updating emergency contact information:', error);
+                showAlert('Failed to update emergency contact information', true);
+            }
+        });
+
+        // Handle profile picture upload
+        document.getElementById('profilePictureInput')?.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Check file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('Image size should be less than 5MB', true);
+                return;
+            }
+
+            // Check file type
+            if (!file.type.match('image.*')) {
+                showAlert('Please select an image file', true);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('profile_picture', file);
+
+                const response = await fetch('/hr/profile/picture', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to upload profile picture');
+
+                const result = await response.json();
+                const timestamp = new Date().getTime();
+                const imageUrl = `/uploads/profile_pictures/${result.filename}?t=${timestamp}`;
+                document.getElementById('profilePicture').src = imageUrl;
+                
+                showAlert('Profile picture updated successfully!');
+            } catch (error) {
+                console.error('Error uploading profile picture:', error);
+                showAlert('Failed to upload profile picture', true);
+            }
+        });
+
+        // Initialize profile when page loads
+        document.addEventListener('DOMContentLoaded', initializeProfile);
+    </script>
+</body>
+</html> 
