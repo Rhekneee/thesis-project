@@ -398,7 +398,31 @@ const CRMModel = {
         query += ' WHERE property_id = ?';
         params.push(propertyId);
         await db.execute(query, params);
-    }
+    },
+
+    // Get developer by ID
+    getDeveloperById: async (id) => {
+        try {
+            const query = `
+                SELECT 
+                    da.*,
+                    u.email,
+                    u.username,
+                    u.role_id,
+                    r.name as role_name
+                FROM developer_accounts da
+                JOIN users u ON da.id = u.id
+                JOIN roles r ON u.role_id = r.id
+                WHERE da.id = ?
+            `;
+
+            const [developers] = await db.query(query, [id]);
+            return developers[0] || null;
+        } catch (error) {
+            console.error('Error in getDeveloperById model:', error);
+            throw error;
+        }
+    },
 };
 
 module.exports = CRMModel;
