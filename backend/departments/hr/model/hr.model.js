@@ -41,54 +41,76 @@ const HRModel = {
     },
 
     // 🔹 Create a new user with username included
-    createUser: async (email, role_id, full_name) => {
-        console.log("🔹 Role being passed to createUser:", role_id, "Type:", typeof role_id);
+    createUser: async (email, role_id, username) => {
+        console.log("🔹 Creating user with:", { email, role_id, username });
 
         if (!role_id) {
             throw new Error("❌ Role ID is required and cannot be null");
+        }
+
+        // Validate inputs
+        if (!email || !username) {
+            throw new Error("❌ Email and username are required");
+        }
+
+        // Test database connection first
+        try {
+            const [testResult] = await db.query("SELECT 1 as test");
+            console.log("🔹 Database connection test successful");
+        } catch (error) {
+            console.error("❌ Database connection test failed:", error);
+            throw new Error("Database connection failed");
         }
 
         const defaultPassword = "default123";
         // Hash the default password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+        console.log("🔹 Password hashed successfully");
 
-        // 🧠 Step 1: Get permission_id from role_permission
-        let permission_id = null;
+        // Check if email already exists
         try {
-            const permissionQuery = `
-                SELECT id
-                FROM role_permission
-                WHERE role_id = ? 
-                LIMIT 1;
-            `;
-            const [rows] = await db.query(permissionQuery, [role_id]);
-
-            if (rows.length > 0) {
-                permission_id = rows[0].permission_id;
+            const [existingUser] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+            if (existingUser.length > 0) {
+                throw new Error("User with this email already exists");
             }
+            console.log("🔹 Email is unique, proceeding with insert");
         } catch (error) {
-            console.error("❌ Error fetching permission_id:", error);
-            throw new Error("Failed to fetch permission_id for the role");
+            if (error.message.includes("already exists")) {
+                throw error;
+            }
+            console.error("❌ Error checking existing user:", error);
         }
 
-        // 🧾 Step 2: Insert the user with permission_id and hashed password
+        // 🧾 Insert the user with hashed password
         const userInsertQuery = `
-            INSERT INTO users (email, username, role_id, password) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO users (email, username, role_id, password, created_at, is_active) 
+            VALUES (?, ?, ?, ?, NOW(), 1)
         `;
 
         try {
+            console.log("🔹 About to execute user insert query");
+            console.log("🔹 Query:", userInsertQuery);
+            console.log("🔹 Values:", [email, username, role_id, "***hashed***"]);
+            
             const [result] = await db.query(userInsertQuery, [
                 email,
-                full_name,
+                username, // Use the full_name as username
                 role_id,
-                hashedPassword,
+                hashedPassword
             ]);
 
+            console.log("✅ User created successfully with ID:", result.insertId);
+            console.log("✅ Result object:", result);
             return result.insertId;
         } catch (error) {
             console.error("❌ Error creating user:", error);
+            console.error("❌ SQL Error details:", {
+                message: error.message,
+                sqlMessage: error.sqlMessage,
+                code: error.code,
+                sql: error.sql
+            });
             throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
         }
     },

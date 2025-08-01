@@ -249,6 +249,13 @@
                     <small class="form-text text-muted">We'll never share your email.</small>
                 </div>
 
+                <!-- Position Applying For -->
+                <div class="mb-3">
+                    <label class="form-label">Position Applying For</label>
+                    <input type="text" class="form-control" id="position_display" readonly>
+                    <input type="hidden" id="role_id" name="role_id">
+                </div>
+
                 <!-- Resume Upload -->
                 <div class="mb-3">
                     <label for="resume" class="form-label">Upload Resume (PDF only)</label>
@@ -372,6 +379,7 @@
         formData.append("birthdate", document.getElementById("birthdate").value);
         formData.append("phone", document.getElementById("phone").value);
         formData.append("email", document.getElementById("email").value);
+        formData.append("role_id", document.getElementById("role_id").value); // Append role_id
         formData.append("resume", resumeFile);
 
         try {
@@ -397,10 +405,12 @@
 
     // Load job postings
     document.addEventListener('DOMContentLoaded', function() {
+        let jobPostingsData = [];
         function loadJobPostings() {
             fetch('/crm/job-postings')
                 .then(response => response.json())
                 .then(data => {
+                    jobPostingsData = data.jobPostings;
                     const grid = document.getElementById('jobPostingsGrid');
                     grid.innerHTML = '';
 
@@ -428,7 +438,7 @@
                                                 ₱${job.salary}
                                             </div>
                                         </div>
-                                        <button class="btn btn-apply" onclick="openApplyModal('${job.role_name} - ${job.position_name}')">
+                                        <button class="btn btn-apply" onclick="openApplyModal('${job.role_id}', '${job.position_name}', '${job.role_name}')">
                                             Apply Now
                                         </button>
                                     </div>
@@ -441,9 +451,11 @@
                 .catch(error => console.error('Error loading job postings:', error));
         }
 
-        // Function to open apply modal with job title
-        window.openApplyModal = function(positionName) {
-            document.getElementById('applyModalLabel').textContent = `Apply for ${positionName}`;
+        // Function to open apply modal with job info
+        window.openApplyModal = function(roleId, positionName, roleName) {
+            document.getElementById('applyModalLabel').textContent = `Apply for ${positionName} (${roleName})`;
+            document.getElementById('position_display').value = `${positionName} (${roleName})`;
+            document.getElementById('role_id').value = roleId;
             const modal = new bootstrap.Modal(document.getElementById('applyModal'));
             modal.show();
         };

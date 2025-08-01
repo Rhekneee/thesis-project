@@ -160,9 +160,50 @@ const sendSupplierAccountNotification = async (to, username, password, link) => 
     }
 };
 
+// Email notification for new employee account
+const sendEmployeeAccountNotification = async (to, username, password, link) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: 'Welcome to MDB Construction – Your Employee Account Details',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4f6ef5;">Welcome to MDB Construction!</h2>
+                    <p>Dear New Employee,</p>
+                    <p>We are excited to welcome you to the team! Your employee account has been created. Please find your login credentials below. For your security, we recommend changing your password after your first login.</p>
+                    <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Username:</strong> ${username}</p>
+                        <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
+                    </div>
+                    <p>You can access the employee portal here:<br>
+                        <a href="${link}" style="color: #4f6ef5;">${link}</a>
+                    </p>
+                    <ul style="margin: 16px 0 16px 20px; color: #374151;">
+                        <li>Log in using the credentials above.</li>
+                        <li>Change your password immediately after logging in for the first time.</li>
+                        <li>Keep your login information confidential and do not share it with others.</li>
+                    </ul>
+                    <p>If you have any questions or require assistance, please contact our HR team.</p>
+                    <br>
+                    <p>We look forward to working with you!</p>
+                    <p>Best regards,<br>HR Department<br>MDB Construction</p>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Employee account email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending employee account email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
     sendRejectNotification,
-    sendSupplierAccountNotification
+    sendSupplierAccountNotification,
+    sendEmployeeAccountNotification
 }; 
