@@ -249,18 +249,24 @@
                     <small class="form-text text-muted">We'll never share your email.</small>
                 </div>
 
+                <!-- Position Applying For -->
+                <div class="mb-3">
+                    <label class="form-label">Position Applying For</label>
+                    <input type="text" class="form-control" id="position_display" readonly>
+                    <input type="hidden" id="role_id" name="role_id">
+                </div>
+
                 <!-- Resume Upload -->
                 <div class="mb-3">
                     <label for="resume" class="form-label">Upload Resume (PDF only)</label>
                     <input class="form-control" type="file" id="resume" accept="application/pdf" required />
                     <small class="form-text text-muted">Only PDF files are accepted.</small>
                     <p id="fileError" style="color: red; display: none;">Please upload a valid PDF file.</p>
-                </div>
-
-                <!-- PDF Preview -->
-                <div id="pdfPreview" style="display: none;">
-                    <h5>Preview Your Resume:</h5>
-                    <canvas id="pdfViewer"></canvas>
+                    <!-- PDF Preview Container -->
+                    <div id="pdfPreviewContainer" style="margin-top: 1rem; display: none;">
+                        <p class="fw-bold">Preview Your Resume:</p>
+                        <canvas id="pdfPreview" style="width: 100%; border: 1px solid #ccc;"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -271,7 +277,7 @@
         </form>
       </div>
     </div>
-  </div>
+</div>
   
   <!-- Footer -->
   <footer class="bg-dark text-light pt-4 mt-5">
@@ -312,143 +318,151 @@
         ? 'http://localhost:4000/crm' 
         : `${window.location.origin}/crm`;
 
-    // Handle form submission and PDF rendering
-    document.getElementById("applicationForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
+    // PDF Preview Logic
+    document.getElementById('resume').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        const previewContainer = document.getElementById('pdfPreviewContainer');
+        const canvas = document.getElementById('pdfPreview');
+        const fileError = document.getElementById('fileError');
 
-    // Get the resume file
-    const resumeFile = document.getElementById("resume").files[0];
+        if (file && file.type === "application/pdf") {
+            fileError.style.display = "none";
+            previewContainer.style.display = "block";
 
-    // Check if the file is a PDF
-    if (resumeFile && resumeFile.type !== "application/pdf") {
-        document.getElementById("fileError").style.display = "block";
-        return; // Stop submission if file is not PDF
-    } else {
-        document.getElementById("fileError").style.display = "none"; // Hide error if PDF is valid
-    }
+            const fileReader = new FileReader();
+            fileReader.onload = function() {
+                const typedarray = new Uint8Array(this.result);
 
-    // Prepare form data
-    let formData = new FormData();
-    formData.append("firstname", document.getElementById("firstname").value);
-    formData.append("lastname", document.getElementById("lastname").value);
-    formData.append("middleinitial", document.getElementById("middleinitial").value);
-    formData.append("age", document.getElementById("age").value);
-    formData.append("birthdate", document.getElementById("birthdate").value);
-    formData.append("phone", document.getElementById("phone").value);
-    formData.append("email", document.getElementById("email").value);
-    formData.append("resume", resumeFile); // Ensure you are appending the file
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                    // Render the first page
+                    pdf.getPage(1).then(function(page) {
+                        const viewport = page.getViewport({ scale: 1.2 });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
 
-    try {
-        // Show loading spinner (optional, can be added to improve UX)
-        let response = await fetch(`${API_URL}/upload`, {
-            method: "POST",
-            body: formData
-        });
-
-        let result = await response.json();
-
-        if (response.ok) {
-            alert(result.message); // Success message
-            $('#applyModal').modal('hide'); // Hide the modal after successful submission
-            document.getElementById("applicationForm").reset(); // Reset the form fields
+                        const renderContext = {
+                            canvasContext: canvas.getContext('2d'),
+                            viewport: viewport
+                        };
+                        page.render(renderContext);
+                    });
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
         } else {
-            alert(result.error); // Error message from backend
+            previewContainer.style.display = "none";
+            if (file) fileError.style.display = "block";
         }
-    } catch (error) {
-        alert("Error uploading resume. Please try again.");
-        console.error("Error:", error);
-    }
-});
+    });
 
-  
-    // Render PDF preview on file selection
-    document.getElementById('resume').addEventListener('change', function (event) {
-    const resumeFile = event.target.files[0];
-    if (resumeFile && resumeFile.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async function (e) {
-            const pdfData = e.target.result;
-            const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+    // Handle form submission
+    document.getElementById("applicationForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
 
-            try {
-                const pdfDocument = await loadingTask.promise;
-                const page = await pdfDocument.getPage(1);  // Get the first page
-                const viewport = page.getViewport({ scale: 1 });
-                const canvas = document.getElementById('pdfViewer');
-                const context = canvas.getContext('2d');
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
+        // Get the resume file
+        const resumeFile = document.getElementById("resume").files[0];
 
-                // Use the await keyword to ensure page.render() completes
-                await page.render({ canvasContext: context, viewport: viewport });
+        // Check if the file is a PDF
+        if (resumeFile && resumeFile.type !== "application/pdf") {
+            document.getElementById("fileError").style.display = "block";
+            return; // Stop submission if file is not PDF
+        } else {
+            document.getElementById("fileError").style.display = "none"; // Hide error if PDF is valid
+        }
 
-                document.getElementById('pdfPreview').style.display = 'block'; // Show preview
-            } catch (error) {
-                console.error('Error rendering PDF:', error);
+        // Prepare form data
+        let formData = new FormData();
+        formData.append("firstname", document.getElementById("firstname").value);
+        formData.append("lastname", document.getElementById("lastname").value);
+        formData.append("middleinitial", document.getElementById("middleinitial").value);
+        formData.append("age", document.getElementById("age").value);
+        formData.append("birthdate", document.getElementById("birthdate").value);
+        formData.append("phone", document.getElementById("phone").value);
+        formData.append("email", document.getElementById("email").value);
+        formData.append("role_id", document.getElementById("role_id").value); // Append role_id
+        formData.append("resume", resumeFile);
+
+        try {
+            let response = await fetch(`${API_URL}/upload`, {
+                method: "POST",
+                body: formData
+            });
+
+            let result = await response.json();
+
+            if (response.ok) {
+                alert(result.message); // Success message
+                $('#applyModal').modal('hide'); // Hide the modal after successful submission
+                document.getElementById("applicationForm").reset(); // Reset the form fields
+            } else {
+                alert(result.error); // Error message from backend
             }
-        };
-        reader.readAsArrayBuffer(resumeFile);
-    }
-});
+        } catch (error) {
+            alert("Error uploading resume. Please try again.");
+            console.error("Error:", error);
+        }
+    });
 
-// Add this after your existing scripts
-document.addEventListener('DOMContentLoaded', function() {
     // Load job postings
-    function loadJobPostings() {
-        fetch('/crm/job-postings')
-            .then(response => response.json())
-            .then(data => {
-                const grid = document.getElementById('jobPostingsGrid');
-                grid.innerHTML = '';
+    document.addEventListener('DOMContentLoaded', function() {
+        let jobPostingsData = [];
+        function loadJobPostings() {
+            fetch('/crm/job-postings')
+                .then(response => response.json())
+                .then(data => {
+                    jobPostingsData = data.jobPostings;
+                    const grid = document.getElementById('jobPostingsGrid');
+                    grid.innerHTML = '';
 
-                data.jobPostings.forEach(job => {
-                    const card = document.createElement('div');
-                    card.className = 'col-md-6 col-lg-4';
-                    card.innerHTML = `
-                        <div class="card job-card">
-                            <div class="card-body">
-                                <div class="job-role">${job.role_name}</div>
-                                <h5 class="job-title">${job.position_name}</h5>
-                                <div class="job-details">
-                                    <p><strong>Description</strong>${job.job_description}</p>
-                                    <p><strong>Qualifications</strong>${job.qualifications}</p>
-                                    <p><strong>Location</strong>${job.location}</p>
-                                    <p><strong>How to Apply</strong>${job.how_to_apply}</p>
-                                </div>
-                                <div class="job-meta">
-                                    <div>
-                                        <div class="job-deadline">
-                                            <i class="fas fa-clock"></i>
-                                            <span>Deadline: ${new Date(job.application_deadline).toLocaleDateString()}</span>
-                                        </div>
-                                        <div class="job-salary mt-3">
-                                            ₱${job.salary}
-                                        </div>
+                    data.jobPostings.forEach(job => {
+                        const card = document.createElement('div');
+                        card.className = 'col-md-6 col-lg-4';
+                        card.innerHTML = `
+                            <div class="card job-card">
+                                <div class="card-body">
+                                    <div class="job-role">${job.role_name}</div>
+                                    <h5 class="job-title">${job.position_name}</h5>
+                                    <div class="job-details">
+                                        <p><strong>Description</strong>${job.job_description}</p>
+                                        <p><strong>Qualifications</strong>${job.qualifications}</p>
+                                        <p><strong>Location</strong>${job.location}</p>
+                                        <p><strong>How to Apply</strong>${job.how_to_apply}</p>
                                     </div>
-                                    <button class="btn btn-apply" onclick="openApplyModal('${job.role_name} - ${job.position_name}')">
-                                        Apply Now
-                                    </button>
+                                    <div class="job-meta">
+                                        <div>
+                                            <div class="job-deadline">
+                                                <i class="fas fa-clock"></i>
+                                                <span>Deadline: ${new Date(job.application_deadline).toLocaleDateString()}</span>
+                                            </div>
+                                            <div class="job-salary mt-3">
+                                                ₱${job.salary}
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-apply" onclick="openApplyModal('${job.role_id}', '${job.position_name}', '${job.role_name}')">
+                                            Apply Now
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            })
-            .catch(error => console.error('Error loading job postings:', error));
-    }
+                        `;
+                        grid.appendChild(card);
+                    });
+                })
+                .catch(error => console.error('Error loading job postings:', error));
+        }
 
-    // Function to open apply modal with job title
-    window.openApplyModal = function(positionName) {
-        document.getElementById('applyModalLabel').textContent = `Apply for ${positionName}`;
-        const modal = new bootstrap.Modal(document.getElementById('applyModal'));
-        modal.show();
-    };
+        // Function to open apply modal with job info
+        window.openApplyModal = function(roleId, positionName, roleName) {
+            document.getElementById('applyModalLabel').textContent = `Apply for ${positionName} (${roleName})`;
+            document.getElementById('position_display').value = `${positionName} (${roleName})`;
+            document.getElementById('role_id').value = roleId;
+            const modal = new bootstrap.Modal(document.getElementById('applyModal'));
+            modal.show();
+        };
 
-    // Initial load
-    loadJobPostings();
-});
-
+        // Initial load
+        loadJobPostings();
+    });
   </script>
   
 </body>

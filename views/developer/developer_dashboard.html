@@ -205,13 +205,13 @@
                             <i class="fas fa-bell"></i>
                             <span class="notification-badge"></span>
                         </div>
-                        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                        <div class="profile-section" onclick="window.location.href='/profile'">
                             <div class="profile-info">
                                 <div class="profile-name"></div>
                                 <div class="profile-position"></div>
                             </div>
                             <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                                <img src="/crm/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
                             </div>
                         </div>
                     </div>
@@ -617,35 +617,46 @@
                 const profilePicture = document.getElementById('profilePicture');
                 const topbarProfilePicture = document.getElementById('topbarProfilePicture');
 
-                // Simple function to set profile picture
-                const setProfilePicture = (imgElement, imagePath) => {
+                // Function to preload image
+                const preloadImage = (url) => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(url);
+                        img.onerror = () => reject(new Error('Failed to load image'));
+                        img.src = url;
+                    });
+                };
+
+                // Function to set profile picture
+                const setProfilePicture = async (imgElement, imagePath) => {
                     if (!imgElement) return;
                     
-                    if (imagePath) {
-                        const filename = imagePath.includes('/') 
-                            ? imagePath.split('/').pop() 
-                            : imagePath;
-                        
-                        const timestamp = new Date().getTime();
-                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
-                        
-                        imgElement.src = imageUrl;
-                        
-                        imgElement.onerror = () => {
-                            console.error('Failed to load image:', imageUrl);
-                            imgElement.src = '/crm/default-profile-picture';
-                        };
-                    } else {
+                    try {
+                        if (imagePath) {
+                            const filename = imagePath.includes('/') 
+                                ? imagePath.split('/').pop() 
+                                : imagePath;
+                            
+                            const timestamp = new Date().getTime();
+                            const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                            
+                            // Try to preload the image
+                            await preloadImage(imageUrl);
+                            imgElement.src = imageUrl;
+                        } else {
+                            throw new Error('No image path provided');
+                        }
+                    } catch (error) {
+                        console.log('Using default profile picture:', error.message);
                         imgElement.src = '/crm/default-profile-picture';
                     }
                 };
 
                 // Set both profile pictures
-                const imagePath = developerData.profile_picture;
-                console.log('Setting profile pictures with path:', imagePath);
-                
-                setProfilePicture(profilePicture, imagePath);
-                setProfilePicture(topbarProfilePicture, imagePath);
+                await Promise.all([
+                    setProfilePicture(profilePicture, developerData.profile_picture),
+                    setProfilePicture(topbarProfilePicture, developerData.profile_picture)
+                ]);
 
                 // Update profile information
                 const profileName = document.querySelector('.profile-name');
