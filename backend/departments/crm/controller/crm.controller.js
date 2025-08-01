@@ -3,6 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const bcrypt = require('bcrypt');
+const db = require('../../../db');  // Fix the database import path
 
 // ✅ CommonJS-compatible PDF.js import
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
@@ -329,7 +330,8 @@ const CRMController = {
                 resume: resumeFileName,
                 age,
                 birthdate,
-                middleinitial
+                middleinitial,
+                role_id: req.body.role_id ? Number(req.body.role_id) : null // Ensure role_id is a number or null
             });
 
             res.status(201).json({ message: "Application submitted successfully!" });
@@ -734,6 +736,58 @@ const CRMController = {
         } catch (error) {
             console.error("Error updating property:", error);
             res.status(500).json({ error: "Failed to update property" });
+        }
+    },
+
+    // Get developer details by ID
+    getDeveloperById: async (req, res) => {
+        try {
+            const { id } = req.params;
+            console.log('🔍 DEBUG: Fetching developer details for ID:', id);
+
+            // Use CRMModel instead of direct db query
+            const developer = await CRMModel.getDeveloperById(id);
+            console.log('🔍 DEBUG: Developer query result:', developer ? 'Found' : 'Not found');
+
+            if (!developer) {
+                console.log('❌ DEBUG: No developer found with ID:', id);
+                return res.status(404).json({ 
+                    success: false,
+                    error: "Developer not found" 
+                });
+            }
+
+            console.log('✅ DEBUG: Developer found:', developer);
+
+            // Return developer profile
+            res.json({
+                success: true,
+                profile: {
+                    id: developer.id,
+                    username: developer.username,
+                    email: developer.email,
+                    first_name: developer.first_name,
+                    middle_name: developer.middle_name,
+                    surname: developer.surname,
+                    position: developer.position,
+                    contact_number: developer.contact_number,
+                    company_name: developer.company_name,
+                    company_address: developer.company_address,
+                    company_tin: developer.company_tin,
+                    profile_picture: developer.profile_picture,
+                    status: developer.status,
+                    role_name: developer.role_name,
+                    created_at: developer.created_at,
+                    updated_at: developer.updated_at
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ DEBUG: Error in getDeveloperById:', error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to fetch developer details" 
+            });
         }
     }
 };

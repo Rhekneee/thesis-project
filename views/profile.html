@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - ERP System</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .profile-picture-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e0e0e0;
+        }
+
+        .profile-picture-upload {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #007bff;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .profile-picture-upload:hover {
+            background: #0056b3;
+        }
+
+        .profile-picture-upload input {
+            display: none;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+            color: #333;
+        }
+
+        .profile-role {
+            color: #666;
+            margin: 0.5rem 0;
+        }
+
+        .profile-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .profile-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .profile-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .edit-button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0;
+        }
+
+        .edit-button:hover {
+            text-decoration: underline;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            margin-bottom: 1rem;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .user-type-section {
+            display: none;
+        }
+
+        .user-type-section.active {
+            display: block;
+        }
+
+        .back-button {
+            margin-bottom: 1rem;
+        }
+
+        .back-button a {
+            color: #666;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-button a:hover {
+            color: #333;
+        }
+
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 4px;
+            color: white;
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .custom-alert.success {
+            background: #28a745;
+        }
+
+        .custom-alert.error {
+            background: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="/dashboard">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading profile data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Failed to load profile data. Please try again later.</p>
+        </div>
+
+        <!-- Profile Content -->
+        <div id="profileContent" style="display: none;">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-picture-container">
+                    <img id="profilePicture" src="/crm/default-profile-picture" alt="Profile Picture" class="profile-picture">
+                    <label class="profile-picture-upload" title="Change Profile Picture">
+                        <i class="fas fa-camera"></i>
+                        <input type="file" accept="image/*" onchange="handleImageSelect(event)">
+                    </label>
+                </div>
+                <div class="profile-info">
+                    <h1 id="profileHeaderName" class="profile-name">Loading...</h1>
+                    <p id="profileRole" class="profile-role">Loading...</p>
+                    <span id="statusBadge" class="profile-status">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Profile Sections -->
+            <div class="profile-sections">
+                <!-- Personal Information Section -->
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Personal Information</h2>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Username</div>
+                            <div id="profileUsername" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Email</div>
+                            <div id="profileEmail" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Full Name</div>
+                            <div id="profileName" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Position</div>
+                            <div id="profilePosition" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div id="profileStatus" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Member Since</div>
+                            <div id="profileCreatedAt" class="info-value">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Specific Section -->
+                <div id="employeeSection" class="profile-section user-type-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Employee Information</h2>
+                        <button class="edit-button" onclick="toggleEditForm('employeeContactForm')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                    <div id="employeeInfo" class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Department</div>
+                            <div id="profileDepartment" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Employee ID</div>
+                            <div id="profileEmployeeId" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Contact Number</div>
+                            <div id="profileContact" class="info-value">Loading...</div>
+                        </div>
+                    </div>
+                    <form id="employeeContactForm" class="edit-form" style="display: none;" onsubmit="updateEmployeeContact(event)">
+                        <div class="form-group">
+                            <label for="editContact">Contact Number</label>
+                            <input type="tel" id="editContact" name="contact_number" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm('employeeContactForm')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Third Party Specific Section -->
+                <div id="thirdPartySection" class="profile-section user-type-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Company Information</h2>
+                        <button class="edit-button" onclick="toggleEditForm('thirdPartyContactForm')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                    <div id="thirdPartyInfo" class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Company Name</div>
+                            <div id="profileCompanyName" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Company Address</div>
+                            <div id="profileCompanyAddress" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Company TIN</div>
+                            <div id="profileCompanyTin" class="info-value">Loading...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Contact Number</div>
+                            <div id="profileThirdPartyContact" class="info-value">Loading...</div>
+                        </div>
+                    </div>
+                    <form id="thirdPartyContactForm" class="edit-form" style="display: none;" onsubmit="updateThirdPartyContact(event)">
+                        <div class="form-group">
+                            <label for="editCompanyName">Company Name</label>
+                            <input type="text" id="editCompanyName" name="company_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCompanyAddress">Company Address</label>
+                            <input type="text" id="editCompanyAddress" name="company_address" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCompanyTin">Company TIN</label>
+                            <input type="text" id="editCompanyTin" name="company_tin" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editContact">Contact Number</label>
+                            <input type="tel" id="editContact" name="contact_number" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm('thirdPartyContactForm')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Security Section -->
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Security</h2>
+                    </div>
+                    <form id="changePasswordForm" onsubmit="changePassword(event)">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" name="current_password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" name="new_password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" name="confirm_password" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Alert -->
+        <div id="customAlert" class="custom-alert">
+            <span id="alertMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        // Function to show loading state
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'none';
+        }
+
+        // Function to show error state
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('profileContent').style.display = 'none';
+        }
+
+        // Function to show profile content
+        function showProfile() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+        }
+
+        // Function to toggle edit form visibility
+        function toggleEditForm(formId) {
+            const form = document.getElementById(formId);
+            const infoDiv = form.previousElementSibling;
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            infoDiv.style.display = infoDiv.style.display === 'none' ? 'grid' : 'none';
+        }
+
+        // Function to format date
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Function to populate employee data
+        function populateEmployeeData(data) {
+            document.getElementById('employeeSection').classList.add('active');
+            document.getElementById('thirdPartySection').classList.remove('active');
+            
+            document.getElementById('profileDepartment').textContent = data.department || 'N/A';
+            document.getElementById('profileEmployeeId').textContent = data.employee_id || 'N/A';
+            document.getElementById('profileContact').textContent = data.contact_number || 'N/A';
+            
+            document.getElementById('editContact').value = data.contact_number || '';
+        }
+
+        // Function to populate third party data
+        function populateThirdPartyData(data) {
+            document.getElementById('employeeSection').classList.remove('active');
+            document.getElementById('thirdPartySection').classList.add('active');
+            
+            document.getElementById('profileCompanyName').textContent = data.company_name || 'N/A';
+            document.getElementById('profileCompanyAddress').textContent = data.company_address || 'N/A';
+            document.getElementById('profileCompanyTin').textContent = data.company_tin || 'N/A';
+            document.getElementById('profileThirdPartyContact').textContent = data.contact_number || 'N/A';
+            
+            document.getElementById('editCompanyName').value = data.company_name || '';
+            document.getElementById('editCompanyAddress').value = data.company_address || '';
+            document.getElementById('editCompanyTin').value = data.company_tin || '';
+            document.getElementById('editContact').value = data.contact_number || '';
+        }
+
+        // Function to populate profile data
+        async function populateProfileData() {
+            showLoading();
+            try {
+                // Fetch user profile data
+                const response = await fetch('/api/profile', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile data');
+                }
+
+                const data = await response.json();
+                console.log('Profile data:', data);
+
+                if (!data.success || !data.profile) {
+                    throw new Error('Invalid profile data received');
+                }
+
+                const profileData = data.profile;
+
+                // Update status badge
+                const isActive = profileData.status === 'active';
+                const statusBadge = document.getElementById('statusBadge');
+                if (statusBadge) {
+                    if (isActive) {
+                        statusBadge.className = 'profile-status status-active';
+                        statusBadge.textContent = 'Active';
+                    } else {
+                        statusBadge.className = 'profile-status status-inactive';
+                        statusBadge.textContent = 'Inactive';
+                    }
+                }
+
+                // Populate common fields
+                document.getElementById('profileHeaderName').textContent = profileData.full_name || 'N/A';
+                document.getElementById('profileRole').textContent = profileData.role_name || 'N/A';
+                document.getElementById('profileUsername').textContent = profileData.username || 'N/A';
+                document.getElementById('profileEmail').textContent = profileData.email || 'N/A';
+                document.getElementById('profileName').textContent = profileData.full_name || 'N/A';
+                document.getElementById('profilePosition').textContent = profileData.position || 'N/A';
+                document.getElementById('profileStatus').textContent = profileData.status || 'N/A';
+                document.getElementById('profileCreatedAt').textContent = formatDate(profileData.created_at) || 'N/A';
+
+                // Update profile picture
+                const profilePicture = document.getElementById('profilePicture');
+                if (profileData.profile_picture) {
+                    const filename = profileData.profile_picture.includes('/') 
+                        ? profileData.profile_picture.split('/').pop() 
+                        : profileData.profile_picture;
+                    
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                    
+                    profilePicture.src = imageUrl;
+                    profilePicture.onerror = () => {
+                        profilePicture.src = '/crm/default-profile-picture';
+                    };
+                } else {
+                    profilePicture.src = '/crm/default-profile-picture';
+                }
+
+                // Populate user type specific data
+                if (profileData.user_type === 'employee') {
+                    populateEmployeeData(profileData);
+                } else if (profileData.user_type === 'developer' || profileData.user_type === 'supplier') {
+                    populateThirdPartyData(profileData);
+                }
+
+                showProfile();
+            } catch (error) {
+                console.error('Error in populateProfileData:', error);
+                showError();
+            }
+        }
+
+        // Function to update employee contact information
+        async function updateEmployeeContact(event) {
+            event.preventDefault();
+            try {
+                const formData = {
+                    contact_number: document.getElementById('editContact').value
+                };
+
+                const response = await fetch('/api/profile/contact', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update contact information');
+                }
+
+                showAlert('Contact information updated successfully!');
+                toggleEditForm('employeeContactForm');
+                await populateProfileData();
+            } catch (error) {
+                console.error('Error updating contact info:', error);
+                showAlert('Failed to update contact information', true);
+            }
+        }
+
+        // Function to update third party contact information
+        async function updateThirdPartyContact(event) {
+            event.preventDefault();
+            try {
+                const formData = {
+                    contact_number: document.getElementById('editContact').value,
+                    company_name: document.getElementById('editCompanyName').value,
+                    company_address: document.getElementById('editCompanyAddress').value,
+                    company_tin: document.getElementById('editCompanyTin').value
+                };
+
+                const response = await fetch('/api/profile/contact', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update contact information');
+                }
+
+                showAlert('Contact information updated successfully!');
+                toggleEditForm('thirdPartyContactForm');
+                await populateProfileData();
+            } catch (error) {
+                console.error('Error updating contact info:', error);
+                showAlert('Failed to update contact information', true);
+            }
+        }
+
+        // Function to handle profile picture upload
+        async function handleImageSelect(event) {
+            try {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('profile_picture', file);
+
+                const response = await fetch('/api/profile/picture', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload profile picture');
+                }
+
+                showAlert('Profile picture updated successfully!');
+                await populateProfileData();
+            } catch (error) {
+                console.error('Error uploading profile picture:', error);
+                showAlert('Failed to update profile picture', true);
+            }
+        }
+
+        // Function to change password
+        async function changePassword(event) {
+            event.preventDefault();
+            try {
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    showAlert('New passwords do not match', true);
+                    return;
+                }
+
+                const response = await fetch('/api/profile/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to change password');
+                }
+
+                showAlert('Password changed successfully!');
+                document.getElementById('changePasswordForm').reset();
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showAlert('Failed to change password', true);
+            }
+        }
+
+        // Function to show alert
+        function showAlert(message, isError = false) {
+            const alert = document.getElementById('customAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = `custom-alert ${isError ? 'error' : 'success'}`;
+            alertMessage.textContent = message;
+            
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        // Call populateProfileData when page loads
+        window.addEventListener('load', populateProfileData);
+    </script>
+</body>
+</html> 

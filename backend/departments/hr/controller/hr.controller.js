@@ -4,7 +4,7 @@ const moment = require('moment');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { sendEmailNotification, sendHireNotification, sendRejectNotification } = require('../../../utils/emailService');
+const { sendEmailNotification, sendHireNotification, sendRejectNotification, sendSupplierAccountNotification, sendEmployeeAccountNotification } = require('../../../utils/emailService');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -82,21 +82,14 @@ const HRController = {
     
             console.log("🔹 Valid Role ID:", role_id);
     
-            // Check if the user exists, create user if not
-            let user_id = await HRModel.getUserIdByEmail(email);
-            if (!user_id) {
-                console.log("🔹 Creating new user...");
-                user_id = await HRModel.createUser(email, role_id, full_name);
-            }
-    
-            // Generate the employee ID (based on the year and auto-increment after 1006)
+                        // Generate the employee ID (based on the year and auto-increment after 1006)
             const year = new Date().getFullYear();
             let nextEmployeeId = null;
-    
+
             // Check the last employee ID
             const lastEmployee = await HRModel.getLastEmployeeId();
             const lastEmployeeId = lastEmployee ? lastEmployee.employee_id : null;
-    
+
             // If the last employee ID is within the predefined range (2025-1000 to 2025-1006)
             const predefinedEmployeeIds = ['2025-1000', '2025-1001', '2025-1002', '2025-1003', '2025-1004', '2025-1005'];
             if (predefinedEmployeeIds.includes(lastEmployeeId)) {
@@ -107,6 +100,37 @@ const HRController = {
                 nextEmployeeId = lastEmployeeId
                     ? `${year}-${(parseInt(lastEmployeeId.split('-')[1]) + 1).toString().padStart(3, '0')}`
                     : `${year}-1006`;  // If no employees yet, start from 2025-1006
+            }
+
+            // Check if the user exists, create user if not
+            let user_id = await HRModel.getUserIdByEmail(email);
+            console.log("🔹 Checking if user exists for email:", email, "User ID found:", user_id);
+            
+            if (!user_id) {
+                console.log("🔹 Creating new user with full_name as username:", full_name);
+                console.log("🔹 Role ID:", role_id, "Type:", typeof role_id);
+                try {
+                    user_id = await HRModel.createUser(email, role_id, full_name);
+                    console.log("✅ User created successfully with ID:", user_id);
+                    
+                    // Verify the user was actually created
+                    const verifyUser = await HRModel.getUserIdByEmail(email);
+                    if (!verifyUser) {
+                        throw new Error("User creation verification failed");
+                    }
+                    console.log("✅ User creation verified, User ID:", verifyUser);
+                } catch (error) {
+                    console.error("❌ Error creating user:", error);
+                    console.error("❌ Error details:", {
+                        message: error.message,
+                        stack: error.stack,
+                        sqlMessage: error.sqlMessage,
+                        code: error.code
+                    });
+                    throw new Error("Failed to create user account: " + error.message);
+                }
+            } else {
+                console.log("🔹 User already exists with ID:", user_id);
             }
     
             // Prepare the employee data
@@ -542,6 +566,69 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
             // Fetch the applicant's details using the ID
             const application = await HRModel.getApplicationById(id);
+
+            // --- NEW: Auto-create user and employee on hire ---
+            if (status === 'Accepted' && application) {
+                // 1. Generate employee_id first (needed for username)
+                const year = new Date().getFullYear();
+                const lastEmployee = await HRModel.getLastEmployeeId();
+                const lastEmployeeId = lastEmployee ? lastEmployee.employee_id : null;
+                let nextEmployeeId;
+                if (lastEmployeeId) {
+                    nextEmployeeId = `${year}-${(parseInt(lastEmployeeId.split('-')[1]) + 1).toString().padStart(4, '0')}`;
+                } else {
+                    nextEmployeeId = `${year}-1000`;
+                }
+
+                // 2. Use application's role_id
+                const roleId = application.role_id;
+
+                // 3. Check if user already exists
+                let user_id = await HRModel.getUserIdByEmail(application.email);
+                let isNewUser = false;
+                if (!user_id) {
+                    // Username is the new employee_id - Set is_active to 0 for new hires
+                    user_id = await HRModel.createUserWithInactiveStatus(application.email, roleId, nextEmployeeId);
+                    isNewUser = true;
+                }
+
+                // 4. Prepare employee data (fill missing fields with defaults)
+                const employeeData = {
+                    user_id,
+                    email: application.email,
+                    role_id: roleId,
+                    full_name: application.full_name,
+                    contact: application.phone || '',
+                    address: '',
+                    birthday: application.birthdate || null,
+                    employment_status: 'Full-time', // Default to Full-time for hired applicants
+                    educational_background: '',
+                    emergency_contact_name: '',
+                    emergency_contact_relationship: '',
+                    emergency_contact_phone: '',
+                    employee_id: nextEmployeeId,
+                };
+                await HRModel.addEmployee(employeeData);
+
+                // 6. Send credentials email to the applicant (employee onboarding)
+                await sendEmployeeAccountNotification(
+                    application.email,
+                    nextEmployeeId, // username
+                    'default123',
+                    'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                );
+
+                // 5. Add credentials to response (like SCM)
+                if (isNewUser) {
+                    return res.status(200).json({
+                        message: `Status updated to ${status}`,
+                        username: nextEmployeeId,
+                        defaultPassword: 'default123',
+                        loginUrl: 'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                    });
+                }
+            }
+            // --- END NEW ---
 
             // Send appropriate email notification
             if (status === 'Ready for Interview') {

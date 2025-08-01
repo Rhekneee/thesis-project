@@ -42,8 +42,8 @@ const CRMModel = {
     // Store applicant data into the database
     storeApplication: async (data) => {
         const query = `
-            INSERT INTO applications (full_name, email, phone, resume, age, birthdate, middleinitial, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO applications (full_name, email, phone, resume, age, birthdate, middleinitial, role_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
         `;
         await db.execute(query, [
             data.full_name,
@@ -52,7 +52,8 @@ const CRMModel = {
             data.resume,
             data.age,
             data.birthdate,
-            data.middleinitial
+            data.middleinitial,
+            data.role_id // <-- Add role_id here
         ]);
     },
 
@@ -398,7 +399,31 @@ const CRMModel = {
         query += ' WHERE property_id = ?';
         params.push(propertyId);
         await db.execute(query, params);
-    }
+    },
+
+    // Get developer by ID
+    getDeveloperById: async (id) => {
+        try {
+            const query = `
+                SELECT 
+                    da.*,
+                    u.email,
+                    u.username,
+                    u.role_id,
+                    r.name as role_name
+                FROM developer_accounts da
+                JOIN users u ON da.id = u.id
+                JOIN roles r ON u.role_id = r.id
+                WHERE da.id = ?
+            `;
+
+            const [developers] = await db.query(query, [id]);
+            return developers[0] || null;
+        } catch (error) {
+            console.error('Error in getDeveloperById model:', error);
+            throw error;
+        }
+    },
 };
 
 module.exports = CRMModel;

@@ -7,14 +7,38 @@ const { CRMController, upload, developerUpload, handlePropertyUpload } = require
 
 // Add route to serve default profile picture
 router.get('/default-profile-picture', (req, res) => {
-    const defaultPicturePath = path.join(__dirname, '..', '..', '..', 'uploads', 'profile_pictures', 'default-profile.png');
+    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads', 'profile_pictures');
+    const defaultPicturePath = path.join(uploadsDir, 'default-profile.png');
+    
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
     
     // Check if default picture exists
     if (fs.existsSync(defaultPicturePath)) {
         res.sendFile(defaultPicturePath);
-    } else {
-        // If default picture doesn't exist, create a simple gray circle
-        const canvas = require('canvas');
+        return;
+    }
+
+    // If default picture doesn't exist, try to create it
+    try {
+        // Check if canvas is installed
+        let canvas;
+        try {
+            canvas = require('canvas');
+        } catch (error) {
+            console.error('Canvas package not installed:', error);
+            // If canvas is not installed, send a simple SVG circle
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                <circle cx="100" cy="100" r="100" fill="#e0e0e0"/>
+            </svg>`;
+            res.type('image/svg+xml');
+            res.send(svg);
+            return;
+        }
+
+        // Create a simple gray circle using canvas
         const c = canvas.createCanvas(200, 200);
         const ctx = c.getContext('2d');
         
@@ -31,6 +55,14 @@ router.get('/default-profile-picture', (req, res) => {
         // Send the image
         res.type('image/png');
         res.send(buffer);
+    } catch (error) {
+        console.error('Error creating default profile picture:', error);
+        // If anything fails, send a simple SVG circle
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+            <circle cx="100" cy="100" r="100" fill="#e0e0e0"/>
+        </svg>`;
+        res.type('image/svg+xml');
+        res.send(svg);
     }
 });
 
@@ -48,7 +80,10 @@ router.delete('/job-postings/:id', CRMController.deleteJobPosting);
 
 // Developer Registration Route
 router.post('/developer/register', developerUpload.single('profile_picture'), CRMController.registerDeveloper);
-  router.get('/developer/check-session', CRMController.checkSession);
+router.get('/developer/check-session', CRMController.checkSession);
+
+// Add route to get developer details by ID
+router.get('/developer/:id', CRMController.getDeveloperById);
 
 // Property Management Routes
 router.get('/properties', CRMController.getAllProperties);
@@ -56,5 +91,19 @@ router.get('/properties/:id', CRMController.getPropertyById);
 router.post('/properties', handlePropertyUpload, CRMController.createProperty);
 router.put('/properties/:id', handlePropertyUpload, CRMController.updateProperty);
 router.get('/active-developers', CRMController.getActiveDeveloperCompanies);
+
+// Developer session check route
+router.get('/developer/check-session', (req, res) => {
+    if (req.session && req.session.user && req.session.user.is_external) {
+        res.json({
+            id: req.session.user.id,
+            username: req.session.user.username,
+            email: req.session.user.email,
+            role_name: req.session.user.role_name
+        });
+    } else {
+        res.status(401).json({ error: 'Not logged in as developer' });
+    }
+});
 
 module.exports = router;

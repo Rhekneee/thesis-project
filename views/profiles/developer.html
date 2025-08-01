@@ -995,19 +995,19 @@
             </div>
             <ul class="list-unstyled">
                 <li class="nav-item">
-                    <a href="/developer/profile" class="nav-link">
+                    <a href="/profile" class="nav-link">
                         <i class="fas fa-user"></i>
                         <span>Profile</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/developer/security_questions" class="nav-link">
+                    <a href="/security-questions" class="nav-link">
                         <i class="fas fa-question-circle"></i>
                         <span>Security Questions</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/developer/change-password" class="nav-link">
+                    <a href="/change-password" class="nav-link">
                         <i class="fas fa-key"></i>
                         <span>Change Password</span>
                     </a>
@@ -1266,7 +1266,8 @@
             try {
                 console.log('=== Fetching User Info ===');
                 
-                const sessionResponse = await fetch('/crm/developer/check-session', {
+                // Get user type from session
+                const sessionResponse = await fetch('/check-session', {
                     credentials: 'include'
                 });
 
@@ -1281,73 +1282,22 @@
                     throw new Error('No user ID in session');
                 }
 
-                // Fetch developer details using id from CRM routes
-                const developerResponse = await fetch(`/crm/developer/${sessionData.id}`, {
+                // Fetch supplier details
+                const supplierResponse = await fetch(`/scm/supplier/${sessionData.id}`, {
                     credentials: 'include'
                 });
 
-                if (!developerResponse.ok) {
-                    throw new Error('Failed to fetch developer details');
+                if (!supplierResponse.ok) {
+                    throw new Error('Failed to fetch supplier details');
                 }
 
-                const responseData = await developerResponse.json();
-                console.log('Developer response data:', responseData);
-
-                if (!responseData.success || !responseData.profile) {
-                    throw new Error('Invalid developer data received');
-                }
-
-                const developerData = responseData.profile;
-                console.log('Developer data:', developerData);
-
-                // Update profile pictures
-                const profilePicture = document.getElementById('profilePicture');
-                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-
-                // Simple function to set profile picture
-                const setProfilePicture = (imgElement, imagePath) => {
-                    if (!imgElement) return;
-                    
-                    if (imagePath) {
-                        const filename = imagePath.includes('/') 
-                            ? imagePath.split('/').pop() 
-                            : imagePath;
-                        
-                        const timestamp = new Date().getTime();
-                        const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
-                        
-                        imgElement.src = imageUrl;
-                        
-                        imgElement.onerror = () => {
-                            console.error('Failed to load image:', imageUrl);
-                            imgElement.src = '/crm/default-profile-picture';
-                        };
-                    } else {
-                        imgElement.src = '/crm/default-profile-picture';
-                    }
-                };
-
-                // Set both profile pictures
-                const imagePath = developerData.profile_picture;
-                console.log('Setting profile pictures with path:', imagePath);
-                
-                setProfilePicture(profilePicture, imagePath);
-                setProfilePicture(topbarProfilePicture, imagePath);
-
-                // Update profile information
-                const profileName = document.querySelector('.profile-name');
-                const profilePosition = document.querySelector('.profile-position');
-                const statusBadge = document.getElementById('statusBadge');
-
-                if (profileName && profilePosition) {
-                    const fullName = `${developerData.first_name} ${developerData.middle_name ? developerData.middle_name + ' ' : ''}${developerData.surname}`;
-                    profileName.textContent = fullName || 'Developer';
-                    profilePosition.textContent = developerData.position || 'Developer';
-                }
+                const supplierData = await supplierResponse.json();
+                console.log('Supplier data:', supplierData);
 
                 // Update status badge
+                const isActive = supplierData.status === 'active';
+                const statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
-                    const isActive = developerData.status === 'active';
                     if (isActive) {
                         statusBadge.className = 'status-badge status-active';
                         statusBadge.textContent = 'Active';
@@ -1357,13 +1307,71 @@
                     }
                 }
 
+                // Populate personal information
+                document.getElementById('profileUsername').textContent = supplierData.email || 'N/A';
+                document.getElementById('profileEmail').textContent = supplierData.email || 'N/A';
+                document.getElementById('profileName').textContent = supplierData.contact_person || 'N/A';
+                document.getElementById('profilePosition').textContent = 'Supplier';
+                document.getElementById('profileStatus').textContent = supplierData.status || 'N/A';
+                document.getElementById('profileCreatedAt').textContent = formatDate(supplierData.created_at) || 'N/A';
+
+                // Update header name
+                document.getElementById('profileHeaderName').textContent = supplierData.contact_person || 'N/A';
+
+                // Populate company information
+                document.getElementById('profileCompanyName').textContent = supplierData.company_name || 'N/A';
+                document.getElementById('profileCompanyAddress').textContent = supplierData.address || 'N/A';
+                document.getElementById('profileCompanyTin').textContent = supplierData.account_number || 'N/A';
+                document.getElementById('profileContact').textContent = supplierData.contact || 'N/A';
+
+                // Populate edit fields
+                document.getElementById('editCompanyName').value = supplierData.company_name || '';
+                document.getElementById('editCompanyAddress').value = supplierData.address || '';
+                document.getElementById('editCompanyTin').value = supplierData.account_number || '';
+                document.getElementById('editContact').value = supplierData.contact || '';
+
+                // Update profile pictures
+                const profilePicture = document.getElementById('profilePicture');
+                const topbarProfilePicture = document.getElementById('topbarProfilePicture');
+                
+                if (supplierData.profile_picture) {
+                    const filename = supplierData.profile_picture.includes('/') 
+                        ? supplierData.profile_picture.split('/').pop() 
+                        : supplierData.profile_picture;
+                    
+                    const timestamp = new Date().getTime();
+                    const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
+                    
+                    profilePicture.src = imageUrl;
+                    topbarProfilePicture.src = imageUrl;
+                    
+                    profilePicture.onerror = () => {
+                        profilePicture.src = '/default-profile-picture';
+                    };
+                    topbarProfilePicture.onerror = () => {
+                        topbarProfilePicture.src = '/default-profile-picture';
+                    };
+                } else {
+                    profilePicture.src = '/default-profile-picture';
+                    topbarProfilePicture.src = '/default-profile-picture';
+                }
+
+                // Update topbar profile info
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                if (profileName && profilePosition) {
+                    profileName.textContent = supplierData.contact_person || 'Supplier';
+                    profilePosition.textContent = 'Supplier';
+                }
+
+                showProfile();
             } catch (error) {
                 console.error('Error in getUserInfo:', error);
                 // Set default images on error
                 const profilePicture = document.getElementById('profilePicture');
                 const topbarProfilePicture = document.getElementById('topbarProfilePicture');
-                if (profilePicture) profilePicture.src = '/crm/default-profile-picture';
-                if (topbarProfilePicture) topbarProfilePicture.src = '/crm/default-profile-picture';
+                if (profilePicture) profilePicture.src = '/default-profile-picture';
+                if (topbarProfilePicture) topbarProfilePicture.src = '/default-profile-picture';
             }
         }
 
@@ -1400,9 +1408,9 @@
         }
 
         // Function to update status badge
-        function updateStatusBadge(developerData) {
+        function updateStatusBadge(userData) {
             const badge = document.getElementById('statusBadge');
-            const isActive = developerData.status === 'active';
+            const isActive = userData.status === 'active';
             
             if (isActive) {
                 badge.className = 'status-badge status-active';
@@ -1418,7 +1426,7 @@
             showLoading();
             try {
                 // Fetch session data
-                const response = await fetch('/developer/check-session', {
+                const response = await fetch('/check-session', {
                     credentials: 'include'
                 });
 
@@ -1426,34 +1434,27 @@
                     throw new Error('Failed to fetch user info');
                 }
 
-                const data = await response.json();
-                console.log('Session data:', data);
+                const sessionData = await response.json();
+                console.log('Session data:', sessionData);
 
-                if (!data.id) {
+                if (!sessionData.id) {
                     throw new Error('No user ID in session');
                 }
 
-                // Fetch developer details using id from CRM routes
-                const developerResponse = await fetch(`/crm/developer/${data.id}`, {
+                // Fetch supplier details
+                const supplierResponse = await fetch(`/scm/supplier/${sessionData.id}`, {
                     credentials: 'include'
                 });
 
-                if (!developerResponse.ok) {
-                    throw new Error('Failed to fetch developer details');
+                if (!supplierResponse.ok) {
+                    throw new Error('Failed to fetch supplier details');
                 }
 
-                const responseData = await developerResponse.json();
-                console.log('Developer response data:', responseData);
-
-                if (!responseData.success || !responseData.profile) {
-                    throw new Error('Invalid developer data received');
-                }
-
-                const developerData = responseData.profile;
-                console.log('Developer data:', developerData);
+                const supplierData = await supplierResponse.json();
+                console.log('Supplier data:', supplierData);
 
                 // Update status badge
-                const isActive = developerData.status === 'active';
+                const isActive = supplierData.status === 'active';
                 const statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
                     if (isActive) {
@@ -1465,68 +1466,37 @@
                     }
                 }
 
-                // Populate personal information with fallbacks for null values
-                document.getElementById('profileUsername').textContent = developerData.username || 'N/A';
-                document.getElementById('profileEmail').textContent = developerData.email || 'N/A';
-                
-                // Format the full name with proper handling of all name parts
-                const formatFullName = (data) => {
-                    const parts = [];
-                    
-                    // Add surname first if it exists
-                    if (data.surname) {
-                        parts.push(data.surname);
-                    }
-                    
-                    // Add first name if it exists
-                    if (data.first_name) {
-                        parts.push(data.first_name);
-                    }
-                    
-                    // Add middle name if it exists
-                    if (data.middle_name) {
-                        parts.push(data.middle_name);
-                    }
-                    
-                    // If no name parts exist, return N/A
-                    if (parts.length === 0) {
-                        return 'N/A';
-                    }
-                    
-                    // Join all parts with commas and spaces
-                    return parts.join(', ');
-                };
-                
-                const fullName = formatFullName(developerData);
-                console.log('Formatted full name:', fullName);
-                
-                // Update all name displays
-                document.getElementById('profileHeaderName').textContent = fullName;
-                document.getElementById('profileName').textContent = fullName;
-                document.getElementById('profilePosition').textContent = developerData.position || 'Developer';
-                document.getElementById('profileStatus').textContent = developerData.status || 'N/A';
-                document.getElementById('profileCreatedAt').textContent = formatDate(developerData.created_at) || 'N/A';
+                // Populate personal information
+                document.getElementById('profileUsername').textContent = supplierData.email || 'N/A';
+                document.getElementById('profileEmail').textContent = supplierData.email || 'N/A';
+                document.getElementById('profileName').textContent = supplierData.contact_person || 'N/A';
+                document.getElementById('profilePosition').textContent = 'Supplier';
+                document.getElementById('profileStatus').textContent = supplierData.status || 'N/A';
+                document.getElementById('profileCreatedAt').textContent = formatDate(supplierData.created_at) || 'N/A';
 
-                // Populate company information with fallbacks
-                document.getElementById('profileCompanyName').textContent = developerData.company_name || 'N/A';
-                document.getElementById('profileCompanyAddress').textContent = developerData.company_address || 'N/A';
-                document.getElementById('profileCompanyTin').textContent = developerData.company_tin || 'N/A';
-                document.getElementById('profileContact').textContent = developerData.contact_number || 'N/A';
+                // Update header name
+                document.getElementById('profileHeaderName').textContent = supplierData.contact_person || 'N/A';
 
-                // Populate edit fields with empty strings instead of null
-                document.getElementById('editCompanyName').value = developerData.company_name || '';
-                document.getElementById('editCompanyAddress').value = developerData.company_address || '';
-                document.getElementById('editCompanyTin').value = developerData.company_tin || '';
-                document.getElementById('editContact').value = developerData.contact_number || '';
+                // Populate company information
+                document.getElementById('profileCompanyName').textContent = supplierData.company_name || 'N/A';
+                document.getElementById('profileCompanyAddress').textContent = supplierData.address || 'N/A';
+                document.getElementById('profileCompanyTin').textContent = supplierData.account_number || 'N/A';
+                document.getElementById('profileContact').textContent = supplierData.contact || 'N/A';
 
-                // Update profile picture
+                // Populate edit fields
+                document.getElementById('editCompanyName').value = supplierData.company_name || '';
+                document.getElementById('editCompanyAddress').value = supplierData.address || '';
+                document.getElementById('editCompanyTin').value = supplierData.account_number || '';
+                document.getElementById('editContact').value = supplierData.contact || '';
+
+                // Update profile pictures
                 const profilePicture = document.getElementById('profilePicture');
                 const topbarProfilePicture = document.getElementById('topbarProfilePicture');
                 
-                if (developerData.profile_picture) {
-                    const filename = developerData.profile_picture.includes('/') 
-                        ? developerData.profile_picture.split('/').pop() 
-                        : developerData.profile_picture;
+                if (supplierData.profile_picture) {
+                    const filename = supplierData.profile_picture.includes('/') 
+                        ? supplierData.profile_picture.split('/').pop() 
+                        : supplierData.profile_picture;
                     
                     const timestamp = new Date().getTime();
                     const imageUrl = `/uploads/profile_pictures/${filename}?t=${timestamp}`;
@@ -1535,14 +1505,22 @@
                     topbarProfilePicture.src = imageUrl;
                     
                     profilePicture.onerror = () => {
-                        profilePicture.src = '/crm/default-profile-picture';
+                        profilePicture.src = '/default-profile-picture';
                     };
                     topbarProfilePicture.onerror = () => {
-                        topbarProfilePicture.src = '/crm/default-profile-picture';
+                        topbarProfilePicture.src = '/default-profile-picture';
                     };
                 } else {
-                    profilePicture.src = '/crm/default-profile-picture';
-                    topbarProfilePicture.src = '/crm/default-profile-picture';
+                    profilePicture.src = '/default-profile-picture';
+                    topbarProfilePicture.src = '/default-profile-picture';
+                }
+
+                // Update topbar profile info
+                const profileName = document.querySelector('.profile-name');
+                const profilePosition = document.querySelector('.profile-position');
+                if (profileName && profilePosition) {
+                    profileName.textContent = supplierData.contact_person || 'Supplier';
+                    profilePosition.textContent = 'Supplier';
                 }
 
                 showProfile();
@@ -1676,7 +1654,7 @@
 
         async function saveCompanyInfo() {
             try {
-                const sessionResponse = await fetch('/developer/check-session', {
+                const sessionResponse = await fetch('/check-session', {
                     credentials: 'include'
                 });
                 
@@ -1692,11 +1670,11 @@
                 const companyData = {
                     company_name: document.getElementById('editCompanyName').value,
                     company_address: document.getElementById('editCompanyAddress').value,
-                    company_tin: document.getElementById('editCompanyTin').value,
-                    contact_number: document.getElementById('editContact').value
+                    account_number: document.getElementById('editCompanyTin').value,
+                    contact: document.getElementById('editContact').value
                 };
 
-                const response = await fetch(`/crm/developer/${sessionData.id}/company`, {
+                const response = await fetch(`/scm/supplier/${sessionData.id}/company`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1709,8 +1687,8 @@
                     // Update displayed values
                     document.getElementById('profileCompanyName').textContent = companyData.company_name || 'N/A';
                     document.getElementById('profileCompanyAddress').textContent = companyData.company_address || 'N/A';
-                    document.getElementById('profileCompanyTin').textContent = companyData.company_tin || 'N/A';
-                    document.getElementById('profileContact').textContent = companyData.contact_number || 'N/A';
+                    document.getElementById('profileCompanyTin').textContent = companyData.account_number || 'N/A';
+                    document.getElementById('profileContact').textContent = companyData.contact || 'N/A';
 
                     // Exit edit mode
                     const companySection = document.getElementById('companySection');
@@ -1745,7 +1723,7 @@
             }
 
             try {
-                const sessionResponse = await fetch('/crm/developer/check-session', {
+                const sessionResponse = await fetch('/check-session', {
                     credentials: 'include'
                 });
                 
@@ -1761,7 +1739,7 @@
                 const formData = new FormData();
                 formData.append('profile_picture', file);
 
-                const response = await fetch(`/crm/developer/${sessionData.id}/profile-picture`, {
+                const response = await fetch(`/scm/supplier/${sessionData.id}/profile-picture`, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
@@ -1807,8 +1785,8 @@
                 const topbarProfilePicture = document.getElementById('topbarProfilePicture');
                 
                 // If main picture is default but topbar has the actual picture, copy it
-                if (profilePicture && profilePicture.src === '/crm/default-profile-picture' && 
-                    topbarProfilePicture && topbarProfilePicture.src !== '/crm/default-profile-picture') {
+                if (profilePicture && profilePicture.src === '/default-profile-picture' && 
+                    topbarProfilePicture && topbarProfilePicture.src !== '/default-profile-picture') {
                     profilePicture.src = topbarProfilePicture.src;
                     console.log('Backup: Restored main profile picture from topbar');
                 }

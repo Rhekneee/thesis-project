@@ -8,6 +8,7 @@ const path = require('path');
 const db = require("./db");
 
 const authRoutes = require('./routes/auth.routes');
+const profileRoutes = require('./routes/profile.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
@@ -92,6 +93,33 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/profile', (req, res, next) => {
+    console.log('🔍 Profile route accessed');
+    console.log('Session user:', req.session?.user);
+    
+    // Check user type from session
+    if (req.session?.user?.is_supplier) {
+        console.log('✅ Serving supplier profile');
+        // Serve the supplier profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'supplier.html'));
+    } else if (req.session?.user?.is_external && req.session.user.role_name === 'developer') {
+        console.log('✅ Serving developer profile');
+        // Serve the developer profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'developer.html'));
+    } else if (req.session?.user?.is_external) {
+        console.log('✅ Serving other external user profile');
+        // For other external users, use regular profile routes
+        profileRoutes(req, res, next);
+    } else {
+        console.log('✅ Serving employee profile');
+        // For internal users (employees), use regular profile routes
+        profileRoutes(req, res, next);
+    }
+});
+
+// Add route for profile API endpoints
+app.use('/api/profile', profileRoutes);
+
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
@@ -99,6 +127,20 @@ app.use('/scm', scmRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
+
+// Developer session check route
+app.get('/developer/check-session', (req, res) => {
+    if (req.session && req.session.user && req.session.user.is_external) {
+        res.json({
+            id: req.session.user.id,
+            username: req.session.user.username,
+            email: req.session.user.email,
+            role_name: req.session.user.role_name
+        });
+    } else {
+        res.status(401).json({ error: 'Not logged in as developer' });
+    }
+});
 
 // Default Route - Login
 app.get('/', (req, res) => {
