@@ -587,8 +587,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 let user_id = await HRModel.getUserIdByEmail(application.email);
                 let isNewUser = false;
                 if (!user_id) {
-                    // Username is the new employee_id
-                    user_id = await HRModel.createUser(application.email, roleId, nextEmployeeId);
+                    // Username is the new employee_id - Set is_active to 0 for new hires
+                    user_id = await HRModel.createUserWithInactiveStatus(application.email, roleId, nextEmployeeId);
                     isNewUser = true;
                 }
 

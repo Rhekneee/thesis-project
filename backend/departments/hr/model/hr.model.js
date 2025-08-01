@@ -115,6 +115,81 @@ const HRModel = {
         }
     },
 
+    // 🔹 Create a new user with inactive status (for new hires)
+    createUserWithInactiveStatus: async (email, role_id, username) => {
+        console.log("🔹 Creating user with inactive status:", { email, role_id, username });
+
+        if (!role_id) {
+            throw new Error("❌ Role ID is required and cannot be null");
+        }
+
+        // Validate inputs
+        if (!email || !username) {
+            throw new Error("❌ Email and username are required");
+        }
+
+        // Test database connection first
+        try {
+            const [testResult] = await db.query("SELECT 1 as test");
+            console.log("🔹 Database connection test successful");
+        } catch (error) {
+            console.error("❌ Database connection test failed:", error);
+            throw new Error("Database connection failed");
+        }
+
+        const defaultPassword = "default123";
+        // Hash the default password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+        console.log("🔹 Password hashed successfully");
+
+        // Check if email already exists
+        try {
+            const [existingUser] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+            if (existingUser.length > 0) {
+                throw new Error("User with this email already exists");
+            }
+            console.log("🔹 Email is unique, proceeding with insert");
+        } catch (error) {
+            if (error.message.includes("already exists")) {
+                throw error;
+            }
+            console.error("❌ Error checking existing user:", error);
+        }
+
+        // 🧾 Insert the user with hashed password and inactive status
+        const userInsertQuery = `
+            INSERT INTO users (email, username, role_id, password, created_at, is_active) 
+            VALUES (?, ?, ?, ?, NOW(), 0)
+        `;
+
+        try {
+            console.log("🔹 About to execute user insert query with inactive status");
+            console.log("🔹 Query:", userInsertQuery);
+            console.log("🔹 Values:", [email, username, role_id, "***hashed***"]);
+            
+            const [result] = await db.query(userInsertQuery, [
+                email,
+                username, // Use the full_name as username
+                role_id,
+                hashedPassword
+            ]);
+
+            console.log("✅ User created successfully with inactive status, ID:", result.insertId);
+            console.log("✅ Result object:", result);
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error creating user with inactive status:", error);
+            console.error("❌ SQL Error details:", {
+                message: error.message,
+                sqlMessage: error.sqlMessage,
+                code: error.code,
+                sql: error.sql
+            });
+            throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
+        }
+    },
+
     // 🔹 Get user ID by email
     getUserIdByEmail: async (email) => {
         try {
