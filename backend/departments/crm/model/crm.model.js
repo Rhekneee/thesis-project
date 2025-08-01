@@ -42,8 +42,8 @@ const CRMModel = {
     // Store applicant data into the database
     storeApplication: async (data) => {
         const query = `
-            INSERT INTO applications (full_name, email, phone, resume, age, birthdate, middleinitial, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO applications (full_name, email, phone, resume, age, birthdate, middleinitial, role_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
         `;
         await db.execute(query, [
             data.full_name,
@@ -52,7 +52,8 @@ const CRMModel = {
             data.resume,
             data.age,
             data.birthdate,
-            data.middleinitial
+            data.middleinitial,
+            data.role_id // <-- Add role_id here
         ]);
     },
 

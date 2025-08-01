@@ -330,7 +330,8 @@ const CRMController = {
                 resume: resumeFileName,
                 age,
                 birthdate,
-                middleinitial
+                middleinitial,
+                role_id: req.body.role_id ? Number(req.body.role_id) : null // Ensure role_id is a number or null
             });
 
             res.status(201).json({ message: "Application submitted successfully!" });

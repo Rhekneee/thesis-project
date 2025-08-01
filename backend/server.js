@@ -94,15 +94,32 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', (req, res, next) => {
-    // Check if user is a developer
-    if (req.session?.user?.is_external) {
-        // Redirect to developer profile
-        res.redirect('/developer/profile');
+    console.log('🔍 Profile route accessed');
+    console.log('Session user:', req.session?.user);
+    
+    // Check user type from session
+    if (req.session?.user?.is_supplier) {
+        console.log('✅ Serving supplier profile');
+        // Serve the supplier profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'supplier.html'));
+    } else if (req.session?.user?.is_external && req.session.user.role_name === 'developer') {
+        console.log('✅ Serving developer profile');
+        // Serve the developer profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'developer.html'));
+    } else if (req.session?.user?.is_external) {
+        console.log('✅ Serving other external user profile');
+        // For other external users, use regular profile routes
+        profileRoutes(req, res, next);
     } else {
-        // Use the regular profile routes for other users
+        console.log('✅ Serving employee profile');
+        // For internal users (employees), use regular profile routes
         profileRoutes(req, res, next);
     }
 });
+
+// Add route for profile API endpoints
+app.use('/api/profile', profileRoutes);
+
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);

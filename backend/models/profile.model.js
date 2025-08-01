@@ -30,10 +30,21 @@ const ProfileModel = {
                     query = `
                         SELECT 
                             u.id, u.email, u.is_active,
-                            s.supplier_id, s.company_name, s.contact_person, s.birthday,
-                            s.address, s.contact, s.profile_picture
+                            sa.supplier_id, sa.supplier_name as company_name, 
+                            sa.contact_name as contact_person,
+                            sa.contact_email as email,
+                            sa.contact_phone as contact,
+                            sa.address,
+                            sa.city,
+                            sa.postal_code,
+                            sa.country,
+                            sa.account_number,
+                            sa.payment_terms,
+                            sa.status,
+                            sa.created_at,
+                            sa.updated_at
                         FROM users u
-                        LEFT JOIN suppliers s ON u.id = s.user_id
+                        LEFT JOIN supplier_account sa ON u.username = sa.supplier_name
                         WHERE u.id = ?
                     `;
                     break;
@@ -143,7 +154,7 @@ const ProfileModel = {
                     query = 'UPDATE employees SET profile_picture = ? WHERE user_id = ?';
                     break;
                 case 'supplier':
-                    query = 'UPDATE suppliers SET profile_picture = ? WHERE user_id = ?';
+                    query = 'UPDATE supplier_account SET profile_picture = ? WHERE supplier_name = (SELECT username FROM users WHERE id = ?)';
                     break;
                 case 'developer':
                     query = 'UPDATE developers SET profile_picture = ? WHERE user_id = ?';
