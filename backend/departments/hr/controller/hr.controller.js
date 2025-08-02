@@ -107,11 +107,12 @@ const HRController = {
             console.log("🔹 Checking if user exists for email:", email, "User ID found:", user_id);
             
             if (!user_id) {
-                console.log("🔹 Creating new user with full_name as username:", full_name);
+                console.log("🔹 Creating new user with onboarding pending status:", full_name);
                 console.log("🔹 Role ID:", role_id, "Type:", typeof role_id);
                 try {
-                    user_id = await HRModel.createUser(email, role_id, full_name);
-                    console.log("✅ User created successfully with ID:", user_id);
+                    // Use createUserWithOnboardingPending to set onboarding_completed = 0
+                    user_id = await HRModel.createUserWithOnboardingPending(email, role_id, nextEmployeeId);
+                    console.log("✅ User created successfully with onboarding pending, ID:", user_id);
                     
                     // Verify the user was actually created
                     const verifyUser = await HRModel.getUserIdByEmail(email);
@@ -210,9 +211,7 @@ const HRController = {
 
 
     getAllPermissions: async () => {
-        const query = "SELECT * FROM permissions";  // Query to get all permissions
-        const [permissions] = await db.query(query);
-        return permissions;
+        return await HRModel.getAllPermissions();
     },
     
     // 🔹 Update an existing employee (Manager Only)
@@ -587,8 +586,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 let user_id = await HRModel.getUserIdByEmail(application.email);
                 let isNewUser = false;
                 if (!user_id) {
-                    // Username is the new employee_id - Set is_active to 0 for new hires
-                    user_id = await HRModel.createUserWithInactiveStatus(application.email, roleId, nextEmployeeId);
+                    // Username is the new employee_id - Set is_active to 1 but with onboarding pending
+                    user_id = await HRModel.createUserWithOnboardingPending(application.email, roleId, nextEmployeeId);
                     isNewUser = true;
                 }
 
@@ -1833,6 +1832,524 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         } catch (error) {
             console.error('Error rejecting developer:', error);
             res.status(500).json({ error: 'Failed to reject developer' });
+        }
+    },
+
+    // Pre-onboarding Documents Controllers
+    getPreOnboardingDocuments: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            const documents = await HRModel.getPreOnboardingDocuments(employeeId);
+            res.json({ documents });
+        } catch (error) {
+            console.error('Error fetching pre-onboarding documents:', error);
+            res.status(500).json({ error: 'Failed to fetch pre-onboarding documents' });
+        }
+    },
+
+    uploadPreOnboardingDocument: async (req, res) => {
+        try {
+            const { employeeId, documentType } = req.params;
+
+            if (!employeeId || !documentType) {
+                return res.status(400).json({ error: 'Employee ID and document type are required' });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            // Generate file path
+            const filePath = req.file.filename;
+
+            await HRModel.uploadPreOnboardingDocument(employeeId, documentType, filePath);
+            res.json({ message: 'Document uploaded successfully', filePath });
+        } catch (error) {
+            console.error('Error uploading pre-onboarding document:', error);
+            res.status(500).json({ error: 'Failed to upload document' });
+        }
+    },
+
+    reviewPreOnboardingDocument: async (req, res) => {
+        try {
+            const { employeeId, documentType } = req.params;
+            const { status, remarks } = req.body;
+            const reviewedBy = req.session?.user?.id;
+
+            if (!employeeId || !documentType || !status) {
+                return res.status(400).json({ error: 'Employee ID, document type, and status are required' });
+            }
+
+            if (!['approved', 'rejected'].includes(status)) {
+                return res.status(400).json({ error: 'Status must be either "approved" or "rejected"' });
+            }
+
+            await HRModel.reviewPreOnboardingDocument(employeeId, documentType, status, remarks, reviewedBy);
+            res.json({ message: 'Document reviewed successfully' });
+        } catch (error) {
+            console.error('Error reviewing pre-onboarding document:', error);
+            res.status(500).json({ error: 'Failed to review document' });
+        }
+    },
+
+    getOnboardingStatus: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            const status = await HRModel.getOnboardingStatus(employeeId);
+            res.json(status);
+        } catch (error) {
+            console.error('Error getting onboarding status:', error);
+            res.status(500).json({ error: 'Failed to get onboarding status' });
+        }
+    },
+
+    completeOnboarding: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            await HRModel.completeOnboarding(employeeId);
+            res.json({ message: 'Onboarding completed successfully' });
+        } catch (error) {
+            console.error('Error completing onboarding:', error);
+            res.status(500).json({ error: error.message || 'Failed to complete onboarding' });
+        }
+    },
+
+    // Check user onboarding status (for frontend to show/hide onboarding form)
+    checkUserOnboardingStatus: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: checkUserOnboardingStatus called');
+            console.log('🔍 HR Controller: Session user:', req.session?.user);
+            
+            if (!req.session?.user?.id) {
+                console.log('🔍 HR Controller: No user ID in session');
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            console.log('🔍 HR Controller: User ID:', userId);
+            
+            const onboardingCompleted = await HRModel.checkUserOnboardingStatus(userId);
+            console.log('🔍 HR Controller: Onboarding completed:', onboardingCompleted);
+            
+            const response = { 
+                onboardingCompleted,
+                showOnboardingForm: !onboardingCompleted
+            };
+            console.log('🔍 HR Controller: Sending response:', response);
+            
+            res.json(response);
+        } catch (error) {
+            console.error('🔍 HR Controller: Error checking user onboarding status:', error);
+            res.status(500).json({ error: 'Failed to check onboarding status' });
+        }
+    },
+
+    // Document Types Management
+    getAllDocumentTypes: async (req, res) => {
+        try {
+            const types = await HRModel.getAllDocumentTypes();
+            res.json({ types });
+        } catch (error) {
+            console.error('Error fetching document types:', error);
+            res.status(500).json({ error: 'Failed to fetch document types' });
+        }
+    },
+
+    addDocumentType: async (req, res) => {
+        try {
+            const { documentType, requiredForRoleId, requiredForDepartmentId, isRequired } = req.body;
+
+            if (!documentType) {
+                return res.status(400).json({ error: 'Document type is required' });
+            }
+
+            const id = await HRModel.addDocumentType(documentType, requiredForRoleId, requiredForDepartmentId, isRequired);
+            res.status(201).json({ message: 'Document type added successfully', id });
+        } catch (error) {
+            console.error('Error adding document type:', error);
+            res.status(500).json({ error: 'Failed to add document type' });
+        }
+    },
+
+    updateDocumentType: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { documentType, requiredForRoleId, requiredForDepartmentId, isRequired } = req.body;
+
+            if (!documentType) {
+                return res.status(400).json({ error: 'Document type is required' });
+            }
+
+            const success = await HRModel.updateDocumentType(id, documentType, requiredForRoleId, requiredForDepartmentId, isRequired);
+            
+            if (!success) {
+                return res.status(404).json({ error: 'Document type not found' });
+            }
+
+            res.json({ message: 'Document type updated successfully' });
+        } catch (error) {
+            console.error('Error updating document type:', error);
+            res.status(500).json({ error: 'Failed to update document type' });
+        }
+    },
+
+    deleteDocumentType: async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const success = await HRModel.deleteDocumentType(id);
+            
+            if (!success) {
+                return res.status(404).json({ error: 'Document type not found' });
+            }
+
+            res.json({ message: 'Document type deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting document type:', error);
+            res.status(500).json({ error: 'Failed to delete document type' });
+        }
+    },
+
+    // Check if user needs pre-onboarding
+    checkIfUserNeedsPreOnboarding: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: checkIfUserNeedsPreOnboarding called');
+            
+            if (!req.session?.user?.id) {
+                console.log('🔍 HR Controller: No user ID in session');
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            console.log('🔍 HR Controller: User ID:', userId);
+            
+            const onboardingStatus = await HRModel.checkIfUserNeedsPreOnboarding(userId);
+            console.log('🔍 HR Controller: Onboarding status:', onboardingStatus);
+            
+            res.json(onboardingStatus);
+        } catch (error) {
+            console.error('🔍 HR Controller: Error checking if user needs pre-onboarding:', error);
+            res.status(500).json({ error: 'Failed to check pre-onboarding status' });
+        }
+    },
+
+    // Initialize pre-onboarding for legacy employee (admin function)
+    initializePreOnboardingForLegacyEmployee: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: initializePreOnboardingForLegacyEmployee called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { employeeId } = req.params;
+            
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID is required' });
+            }
+
+            const result = await HRModel.initializePreOnboardingForLegacyEmployee(employeeId);
+            res.json({ 
+                success: true, 
+                message: 'Pre-onboarding initialized for legacy employee',
+                employeeId 
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error initializing pre-onboarding for legacy employee:', error);
+            res.status(500).json({ error: 'Failed to initialize pre-onboarding' });
+        }
+    },
+
+    // Check if current user can verify onboarding for target user
+    checkVerificationPermissions: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: checkVerificationPermissions called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const currentUserId = req.session.user.id;
+            const { targetUserId } = req.params;
+            
+            if (!targetUserId) {
+                return res.status(400).json({ error: 'Target user ID is required' });
+            }
+
+            const canVerify = await HRModel.canVerifyOnboarding(currentUserId, targetUserId);
+            const verifierRole = await HRModel.getVerifierRoleForUser(targetUserId);
+            
+            res.json({
+                canVerify,
+                verifierRole,
+                currentUserId,
+                targetUserId
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error checking verification permissions:', error);
+            res.status(500).json({ error: 'Failed to check verification permissions' });
+        }
+    },
+
+    // Get required documents for a specific role
+    getRequiredDocumentsForRole: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getRequiredDocumentsForRole called');
+            
+            const { roleId } = req.params;
+            
+            if (!roleId) {
+                return res.status(400).json({ error: 'Role ID is required' });
+            }
+
+            const documents = await HRModel.getRequiredDocumentsForRole(roleId);
+            
+            res.json({
+                roleId,
+                documents,
+                count: documents.length
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error fetching required documents:', error);
+            res.status(500).json({ error: 'Failed to fetch required documents' });
+        }
+    },
+
+    // Initialize pre-onboarding for a specific user (with role-based documents)
+    initializePreOnboardingForUser: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: initializePreOnboardingForUser called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { userId } = req.params;
+            
+            if (!userId) {
+                return res.status(400).json({ error: 'User ID is required' });
+            }
+
+            // Check if current user can verify this user
+            const canVerify = await HRModel.canVerifyOnboarding(req.session.user.id, userId);
+            
+            if (!canVerify) {
+                return res.status(403).json({ 
+                    error: 'Insufficient permissions to initialize pre-onboarding for this user' 
+                });
+            }
+
+            // Get user details using model
+            const user = await HRModel.getUserDetailsWithRole(userId);
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            // Get required documents for this role
+            const requiredDocuments = await HRModel.getRequiredDocumentsForRole(user.role_id);
+            
+            if (requiredDocuments.length === 0) {
+                return res.json({ 
+                    message: 'No required documents for this role',
+                    roleName: user.role_name,
+                    roleId: user.role_id
+                });
+            }
+
+            // Initialize documents for this user using model
+            await HRModel.initializeDocumentsForUser(userId, user.employee_id || userId, requiredDocuments);
+            
+            res.json({
+                success: true,
+                message: `Initialized ${requiredDocuments.length} pre-onboarding documents`,
+                roleName: user.role_name,
+                roleId: user.role_id,
+                documents: requiredDocuments
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error initializing pre-onboarding:', error);
+            res.status(500).json({ error: 'Failed to initialize pre-onboarding' });
+        }
+    },
+
+    // Initialize pre-onboarding documents for new employee (automatic)
+    initializePreOnboardingForNewEmployee: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: initializePreOnboardingForNewEmployee called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            
+            // Get user details using model
+            const user = await HRModel.getUserDetailsWithRole(userId);
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            // Check if documents already exist using model
+            const documentsExist = await HRModel.checkDocumentsExist(user.employee_id);
+
+            if (documentsExist) {
+                return res.json({ 
+                    message: 'Pre-onboarding documents already initialized',
+                    roleName: user.role_name,
+                    roleId: user.role_id
+                });
+            }
+            
+            // Get required documents for this role
+            const requiredDocuments = await HRModel.getRequiredDocumentsForRole(user.role_id);
+            
+            if (requiredDocuments.length === 0) {
+                // Use default documents if no role-specific documents
+                const defaultDocs = await HRModel.getDefaultDocuments();
+                
+                if (defaultDocs.length === 0) {
+                    return res.json({ 
+                        message: 'No required documents found for this role',
+                        roleName: user.role_name,
+                        roleId: user.role_id
+                    });
+                }
+                
+                // Initialize default documents using model
+                await HRModel.initializeDocumentsForUser(userId, user.employee_id, defaultDocs);
+                
+                res.json({
+                    success: true,
+                    message: `Initialized ${defaultDocs.length} default pre-onboarding documents`,
+                    roleName: user.role_name,
+                    roleId: user.role_id,
+                    documents: defaultDocs
+                });
+            } else {
+                // Initialize role-specific documents using model
+                await HRModel.initializeDocumentsForUser(userId, user.employee_id, requiredDocuments);
+                
+                res.json({
+                    success: true,
+                    message: `Initialized ${requiredDocuments.length} role-specific pre-onboarding documents`,
+                    roleName: user.role_name,
+                    roleId: user.role_id,
+                    documents: requiredDocuments
+                });
+            }
+        } catch (error) {
+            console.error('🔍 HR Controller: Error initializing pre-onboarding for new employee:', error);
+            res.status(500).json({ error: 'Failed to initialize pre-onboarding' });
+        }
+    },
+
+    // Get user data (employee ID)
+    getUserData: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getUserData called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            
+            // Get user details using model
+            const user = await HRModel.getUserData(userId);
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            res.json({
+                userId: user.id,
+                employeeId: user.employee_id
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error getting user data:', error);
+            res.status(500).json({ error: 'Failed to get user data' });
+        }
+    },
+
+    // Get onboarding documents for employee
+    getOnboardingDocuments: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getOnboardingDocuments called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { employeeId } = req.params;
+            
+            // Get documents using model
+            const documents = await HRModel.getOnboardingDocuments(employeeId);
+
+            res.json({
+                documents: documents
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error getting onboarding documents:', error);
+            res.status(500).json({ error: 'Failed to get documents' });
+        }
+    },
+
+    // Upload onboarding document
+    uploadOnboardingDocument: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: uploadOnboardingDocument called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { employeeId, documentType } = req.params;
+            
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            const file = req.file;
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.mimetype)) {
+                return res.status(400).json({ error: 'Invalid file type. Only PDF, JPG, and PNG files are allowed.' });
+            }
+
+            // Validate file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                return res.status(400).json({ error: 'File size must be less than 5MB' });
+            }
+
+            // Update document status using model
+            await HRModel.updateDocumentStatus(employeeId, documentType, file.filename);
+
+            res.json({
+                success: true,
+                message: 'Document uploaded successfully',
+                filename: file.filename
+            });
+        } catch (error) {
+            console.error('🔍 HR Controller: Error uploading document:', error);
+            res.status(500).json({ error: 'Failed to upload document' });
         }
     }
 };

@@ -115,9 +115,9 @@ const HRModel = {
         }
     },
 
-    // 🔹 Create a new user with inactive status (for new hires)
-    createUserWithInactiveStatus: async (email, role_id, username) => {
-        console.log("🔹 Creating user with inactive status:", { email, role_id, username });
+    // 🔹 Create a new user with onboarding pending status (for new hires)
+    createUserWithOnboardingPending: async (email, role_id, username) => {
+        console.log("🔹 Creating user with onboarding pending status:", { email, role_id, username });
 
         if (!role_id) {
             throw new Error("❌ Role ID is required and cannot be null");
@@ -157,14 +157,14 @@ const HRModel = {
             console.error("❌ Error checking existing user:", error);
         }
 
-        // 🧾 Insert the user with hashed password and inactive status
+        // 🧾 Insert the user with hashed password and active status but onboarding pending
         const userInsertQuery = `
-            INSERT INTO users (email, username, role_id, password, created_at, is_active) 
-            VALUES (?, ?, ?, ?, NOW(), 0)
+            INSERT INTO users (email, username, role_id, password, created_at, is_active, onboarding_completed) 
+            VALUES (?, ?, ?, ?, NOW(), 1, 0)
         `;
 
         try {
-            console.log("🔹 About to execute user insert query with inactive status");
+            console.log("🔹 About to execute user insert query with onboarding pending");
             console.log("🔹 Query:", userInsertQuery);
             console.log("🔹 Values:", [email, username, role_id, "***hashed***"]);
             
@@ -175,11 +175,11 @@ const HRModel = {
                 hashedPassword
             ]);
 
-            console.log("✅ User created successfully with inactive status, ID:", result.insertId);
+            console.log("✅ User created successfully with onboarding pending, ID:", result.insertId);
             console.log("✅ Result object:", result);
             return result.insertId;
         } catch (error) {
-            console.error("❌ Error creating user with inactive status:", error);
+            console.error("❌ Error creating user with onboarding pending:", error);
             console.error("❌ SQL Error details:", {
                 message: error.message,
                 sqlMessage: error.sqlMessage,
@@ -2684,6 +2684,757 @@ const HRModel = {
             WHERE id = ?
         `;
         await db.execute(query, [reason, developerId]);
+    },
+
+  
+
+    // Initialize pre-onboarding documents for a new employee
+    initializePreOnboardingDocuments: async (employeeId, userId, roleId) => {
+        try {
+            // Get required document types for this role
+            const [documentTypes] = await db.query(`
+                SELECT document_type 
+                FROM document_types 
+                WHERE (required_for_role_id = ? OR required_for_role_id IS NULL)
+                AND is_required = TRUE
+                ORDER BY document_type
+            `, [roleId]);
+
+            if (documentTypes.length === 0) {
+                console.log(`No required documents found for role ${roleId}`);
+                return true;
+            }
+
+            // Insert required documents for this employee
+            const insertPromises = documentTypes.map(docType => {
+                return db.query(`
+                    INSERT INTO pre_onboarding_documents 
+                    (user_id, employee_id, document_type, status) 
+                    VALUES (?, ?, ?, 'pending')
+                    ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
+                `, [userId, employeeId, docType.document_type]);
+            });
+
+            await Promise.all(insertPromises);
+            console.log(`✅ Initialized ${documentTypes.length} pre-onboarding documents for employee ${employeeId}`);
+            return true;
+        } catch (error) {
+            console.error("❌ Error initializing pre-onboarding documents:", error);
+            throw error;
+        }
+    },
+
+    // Get pre-onboarding documents for an employee
+    getPreOnboardingDocuments: async (employeeId) => {
+        try {
+            const query = `
+                SELECT 
+                    pod.*,
+                    u.full_name as reviewed_by_name
+                FROM pre_onboarding_documents pod
+                LEFT JOIN employees u ON pod.reviewed_by = u.user_id
+                WHERE pod.employee_id = ?
+                ORDER BY pod.document_type
+            `;
+            
+            const [documents] = await db.query(query, [employeeId]);
+            return documents;
+        } catch (error) {
+            console.error("❌ Error fetching pre-onboarding documents:", error);
+            throw error;
+        }
+    },
+
+    // Upload a pre-onboarding document
+    uploadPreOnboardingDocument: async (employeeId, documentType, filePath) => {
+        try {
+            const query = `
+                UPDATE pre_onboarding_documents 
+                SET file_path = ?,
+                    status = 'uploaded',
+                    uploaded_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE employee_id = ? AND document_type = ?
+            `;
+            
+            const [result] = await db.query(query, [filePath, employeeId, documentType]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('Document type not found for this employee');
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Error uploading pre-onboarding document:", error);
+            throw error;
+        }
+    },
+
+    // Review a pre-onboarding document
+    reviewPreOnboardingDocument: async (employeeId, documentType, status, remarks, reviewedBy) => {
+        try {
+            const query = `
+                UPDATE pre_onboarding_documents 
+                SET status = ?,
+                    remarks = ?,
+                    reviewed_by = ?,
+                    reviewed_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE employee_id = ? AND document_type = ?
+            `;
+            
+            const [result] = await db.query(query, [status, remarks, reviewedBy, employeeId, documentType]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('Document not found');
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Error reviewing pre-onboarding document:", error);
+            throw error;
+        }
+    },
+
+    // Check if all required documents are completed
+    checkOnboardingCompletion: async (employeeId) => {
+        try {
+            const query = `
+                SELECT 
+                    COUNT(*) as total_documents,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_documents,
+                    SUM(CASE WHEN status IN ('pending', 'uploaded', 'reviewed', 'rejected') THEN 1 ELSE 0 END) as pending_documents
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+            `;
+            
+            const [result] = await db.query(query, [employeeId]);
+            const { total_documents, approved_documents, pending_documents } = result[0];
+            
+            return {
+                total: total_documents,
+                approved: approved_documents,
+                pending: pending_documents,
+                isComplete: total_documents > 0 && total_documents === approved_documents
+            };
+        } catch (error) {
+            console.error("❌ Error checking onboarding completion:", error);
+            throw error;
+        }
+    },
+
+    // Complete onboarding for an employee (HR confirms all documents)
+    completeOnboarding: async (employeeId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            
+            // Check if all documents are completed
+            const completionStatus = await HRModel.checkOnboardingCompletion(employeeId);
+            
+            if (!completionStatus.isComplete) {
+                throw new Error("Cannot complete onboarding: Not all pre-onboarding documents are approved");
+            }
+            
+            // Get user_id from employee
+            const [employeeResult] = await connection.query(
+                "SELECT user_id FROM employees WHERE employee_id = ?",
+                [employeeId]
+            );
+            
+            if (employeeResult.length === 0) {
+                throw new Error("Employee not found");
+            }
+            
+            const userId = employeeResult[0].user_id;
+            
+            // Mark onboarding as completed
+            await connection.query(
+                "UPDATE users SET onboarding_completed = 1 WHERE id = ?",
+                [userId]
+            );
+            
+            await connection.commit();
+            console.log(`✅ Onboarding completed for user ${userId} (employee ${employeeId})`);
+            return true;
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error completing onboarding:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get onboarding status for an employee
+    getOnboardingStatus: async (employeeId) => {
+        try {
+            const documents = await HRModel.getPreOnboardingDocuments(employeeId);
+            const completion = await HRModel.checkOnboardingCompletion(employeeId);
+            
+            // Get employee and user info
+            const [employeeResult] = await db.query(`
+                SELECT e.*, u.is_active, u.onboarding_completed
+                FROM employees e 
+                JOIN users u ON e.user_id = u.id 
+                WHERE e.employee_id = ?
+            `, [employeeId]);
+            
+            const employee = employeeResult[0];
+            
+            return {
+                employee,
+                documents,
+                completion,
+                canComplete: completion.isComplete && !employee.onboarding_completed
+            };
+        } catch (error) {
+            console.error("❌ Error getting onboarding status:", error);
+            throw error;
+        }
+    },
+
+    // Check if user has completed onboarding
+    checkUserOnboardingStatus: async (userId) => {
+        try {
+            console.log('🔍 HR Model: checkUserOnboardingStatus called for user ID:', userId);
+            
+            const [result] = await db.query(`
+                SELECT onboarding_completed 
+                FROM users 
+                WHERE id = ?
+            `, [userId]);
+            
+            console.log('🔍 HR Model: Query result:', result);
+            
+            const onboardingCompleted = result.length > 0 ? result[0].onboarding_completed : true;
+            console.log('🔍 HR Model: Onboarding completed value:', onboardingCompleted);
+            
+            return onboardingCompleted;
+        } catch (error) {
+            console.error("🔍 HR Model: Error checking user onboarding status:", error);
+            throw error;
+        }
+    },
+
+    // Add document type
+    addDocumentType: async (documentType, requiredForRoleId = null, requiredForDepartmentId = null, isRequired = true) => {
+        try {
+            const [result] = await db.query(`
+                INSERT INTO document_types 
+                (document_type, required_for_role_id, required_for_department_id, is_required)
+                VALUES (?, ?, ?, ?)
+            `, [documentType, requiredForRoleId, requiredForDepartmentId, isRequired]);
+            
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error adding document type:", error);
+            throw error;
+        }
+    },
+
+    // Get all document types
+    getAllDocumentTypes: async () => {
+        try {
+            const [types] = await db.query(`
+                SELECT 
+                    dt.*,
+                    r.name as role_name,
+                    d.name as department_name
+                FROM document_types dt
+                LEFT JOIN roles r ON dt.required_for_role_id = r.id
+                LEFT JOIN departments d ON dt.required_for_department_id = d.id
+                ORDER BY dt.document_type
+            `);
+            return types;
+        } catch (error) {
+            console.error("❌ Error fetching document types:", error);
+            throw error;
+        }
+    },
+
+    // Update document type
+    updateDocumentType: async (id, documentType, requiredForRoleId, requiredForDepartmentId, isRequired) => {
+        try {
+            const [result] = await db.query(`
+                UPDATE document_types 
+                SET document_type = ?,
+                    required_for_role_id = ?,
+                    required_for_department_id = ?,
+                    is_required = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `, [documentType, requiredForRoleId, requiredForDepartmentId, isRequired, id]);
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error updating document type:", error);
+            throw error;
+        }
+    },
+
+    // Delete document type
+    deleteDocumentType: async (id) => {
+        try {
+            const [result] = await db.query(`
+                DELETE FROM document_types WHERE id = ?
+            `, [id]);
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error deleting document type:", error);
+            throw error;
+        }
+    },
+
+    // Check if user needs pre-onboarding
+    checkIfUserNeedsPreOnboarding: async (userId) => {
+        try {
+            console.log('🔍 Checking if user needs pre-onboarding for user ID:', userId);
+            
+            // First check if user exists and get onboarding status with role info
+            const [userResult] = await db.query(`
+                SELECT u.id, u.onboarding_completed, u.role_id, r.name as role_name, e.employee_id
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                LEFT JOIN employees e ON u.id = e.user_id
+                WHERE u.id = ?
+            `, [userId]);
+            
+            if (userResult.length === 0) {
+                console.log('❌ User not found');
+                return { needsOnboarding: false, reason: 'User not found' };
+            }
+            
+            const user = userResult[0];
+            console.log('🔍 User details:', {
+                onboarding_completed: user.onboarding_completed,
+                role_id: user.role_id,
+                role_name: user.role_name,
+                employee_id: user.employee_id
+            });
+            
+            // If onboarding is already completed, no need for pre-onboarding
+            if (user.onboarding_completed === 1) {
+                console.log('✅ User has completed onboarding');
+                return { needsOnboarding: false, reason: 'Onboarding already completed' };
+            }
+            
+            // Handle external users (developers, suppliers, etc.) based on role
+            // These roles typically don't need pre-onboarding
+            const externalRoles = ['developer', 'supplier', 'client', 'vendor'];
+            if (externalRoles.includes(user.role_name?.toLowerCase())) {
+                console.log('✅ User is external (role: ' + user.role_name + '), no pre-onboarding required');
+                return { needsOnboarding: false, reason: 'External user - no pre-onboarding required' };
+            }
+            
+            // If user has no employee_id, they might be an external user or invalid
+            if (!user.employee_id) {
+                console.log('⚠️ User has no employee_id but is not marked as external');
+                // Mark them as completed to avoid blocking
+                await db.query(`
+                    UPDATE users SET onboarding_completed = 1 WHERE id = ?
+                `, [userId]);
+                return { needsOnboarding: false, reason: 'User without employee_id - marked as completed' };
+            }
+            
+            // Check if there are any pre-onboarding documents for this employee
+            const [documentsResult] = await db.query(`
+                SELECT COUNT(*) as document_count
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+            `, [user.employee_id]);
+            
+            const hasDocuments = documentsResult[0].document_count > 0;
+            console.log('🔍 Has pre-onboarding documents:', hasDocuments);
+            
+            // If no documents exist, this might be a new employee who needs documents initialized
+            if (!hasDocuments) {
+                console.log('⚠️ No pre-onboarding documents found - checking if this is a new employee');
+                
+                // Check if this is a new employee (onboarding_completed = 0)
+                if (user.onboarding_completed === 0) {
+                    console.log('✅ New employee detected - needs pre-onboarding');
+                    return { 
+                        needsOnboarding: true, 
+                        reason: 'New employee - pre-onboarding required',
+                        employeeId: user.employee_id,
+                        totalDocuments: 0,
+                        approvedDocuments: 0
+                    };
+                } else {
+                    // This is a legacy employee (onboarding_completed = 1 but no documents)
+                    console.log('⚠️ Legacy employee detected - marking as completed');
+                    await db.query(`
+                        UPDATE users SET onboarding_completed = 1 WHERE id = ?
+                    `, [userId]);
+                    return { needsOnboarding: false, reason: 'Legacy employee - marked as completed' };
+                }
+            }
+            
+            // Check completion status of existing documents
+            const [completionResult] = await db.query(`
+                SELECT 
+                    COUNT(*) as total_documents,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_documents
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+            `, [user.employee_id]);
+            
+            const { total_documents, approved_documents } = completionResult[0];
+            const isComplete = total_documents > 0 && total_documents === approved_documents;
+            
+            console.log('🔍 Document completion status:', { total_documents, approved_documents, isComplete });
+            
+            if (isComplete) {
+                // All documents are approved, mark onboarding as completed
+                await db.query(`
+                    UPDATE users SET onboarding_completed = 1 WHERE id = ?
+                `, [userId]);
+                return { needsOnboarding: false, reason: 'All documents approved - onboarding completed' };
+            }
+            
+            // User needs pre-onboarding
+            console.log('✅ User needs pre-onboarding');
+            return { 
+                needsOnboarding: true, 
+                reason: 'Pre-onboarding required',
+                employeeId: user.employee_id,
+                totalDocuments: total_documents,
+                approvedDocuments: approved_documents
+            };
+            
+        } catch (error) {
+            console.error("❌ Error checking if user needs pre-onboarding:", error);
+            throw error;
+        }
+    },
+
+    // Initialize pre-onboarding for legacy employees (optional)
+    initializePreOnboardingForLegacyEmployee: async (employeeId) => {
+        try {
+            console.log('🔍 Initializing pre-onboarding for legacy employee:', employeeId);
+            
+            // Get employee details
+            const [employeeResult] = await db.query(`
+                SELECT e.user_id, e.role_id
+                FROM employees e
+                WHERE e.employee_id = ?
+            `, [employeeId]);
+            
+            if (employeeResult.length === 0) {
+                throw new Error('Employee not found');
+            }
+            
+            const { user_id, role_id } = employeeResult[0];
+            
+            // Get required document types for this role
+            const [documentTypes] = await db.query(`
+                SELECT document_type
+                FROM document_types
+                WHERE required_for_role_id = ? AND is_required = TRUE
+                ORDER BY document_type
+            `, [role_id]);
+            
+            if (documentTypes.length === 0) {
+                console.log('No required documents for this role');
+                return true;
+            }
+            
+            // Insert required documents for this employee
+            const insertPromises = documentTypes.map(docType => {
+                return db.query(`
+                    INSERT INTO pre_onboarding_documents 
+                    (user_id, employee_id, document_type, status) 
+                    VALUES (?, ?, ?, 'pending')
+                    ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
+                `, [user_id, employeeId, docType.document_type]);
+            });
+            
+            await Promise.all(insertPromises);
+            console.log(`✅ Initialized ${documentTypes.length} pre-onboarding documents for legacy employee ${employeeId}`);
+            return true;
+        } catch (error) {
+            console.error("❌ Error initializing pre-onboarding for legacy employee:", error);
+            throw error;
+        }
+    },
+
+    // Get the appropriate verifier role for different user types
+    getVerifierRoleForUser: async (userId) => {
+        try {
+            const [userResult] = await db.query(`
+                SELECT u.role_id, r.name as role_name
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.id = ?
+            `, [userId]);
+            
+            if (userResult.length === 0) {
+                return null;
+            }
+            
+            const roleName = userResult[0].role_name?.toLowerCase();
+            
+            // Define verification boundaries
+            const verificationMap = {
+                // Internal employees - verified by HR
+                'admin_staff': 'office_administrator',
+                'office_administrator': 'office_administrator', // HR can verify other HR
+                'finance_accounting': 'office_administrator',
+                'general_foreman': 'office_administrator',
+                'foreman_1': 'office_administrator',
+                'foreman_2': 'office_administrator',
+                'foreman_3': 'office_administrator',
+                'sales_marketing_head': 'office_administrator',
+                'agents': 'office_administrator',
+                
+                // Developers - verified by CRM or Manufacturing
+                'developer': 'sales_marketing_head', // CRM Admin
+                
+                // Suppliers - verified by Supply Chain
+                'supplier': 'logistics', // Supply Chain Manager
+                
+                // Default to HR for unknown roles
+                'default': 'office_administrator'
+            };
+            
+            const verifierRole = verificationMap[roleName] || verificationMap['default'];
+            console.log(`🔍 User role: ${roleName}, Verifier role: ${verifierRole}`);
+            
+            return verifierRole;
+        } catch (error) {
+            console.error("❌ Error getting verifier role:", error);
+            throw error;
+        }
+    },
+
+    // Check if current user can verify onboarding for target user
+    canVerifyOnboarding: async (currentUserId, targetUserId) => {
+        try {
+            // Get current user's role
+            const [currentUserResult] = await db.query(`
+                SELECT u.role_id, r.name as role_name
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.id = ?
+            `, [currentUserId]);
+            
+            if (currentUserResult.length === 0) {
+                return false;
+            }
+            
+            const currentUserRole = currentUserResult[0].role_name?.toLowerCase();
+            
+            // Get target user's verifier role
+            const verifierRole = await HRModel.getVerifierRoleForUser(targetUserId);
+            
+            if (!verifierRole) {
+                return false;
+            }
+            
+            // Check if current user has the required verifier role
+            const canVerify = currentUserRole === verifierRole.toLowerCase();
+            console.log(`🔍 Current user role: ${currentUserRole}, Required verifier: ${verifierRole}, Can verify: ${canVerify}`);
+            
+            return canVerify;
+        } catch (error) {
+            console.error("❌ Error checking verification permissions:", error);
+            throw error;
+        }
+    },
+
+    // Get required documents based on user role
+    getRequiredDocumentsForRole: async (roleId) => {
+        try {
+            const [documents] = await db.query(`
+                SELECT dt.*, r.name as role_name
+                FROM document_types dt
+                LEFT JOIN roles r ON dt.required_for_role_id = r.id
+                WHERE dt.required_for_role_id = ? AND dt.is_required = TRUE
+                ORDER BY dt.document_type
+            `, [roleId]);
+            
+            return documents;
+        } catch (error) {
+            console.error("❌ Error fetching required documents for role:", error);
+            throw error;
+        }
+    },
+
+    // Get required documents for a specific role
+    getRequiredDocumentsForRole: async (roleId) => {
+        try {
+            console.log('🔍 HR Model: getRequiredDocumentsForRole called for role ID:', roleId);
+            
+            const [documentsResult] = await db.query(`
+                SELECT document_type, description, is_required
+                FROM document_types
+                WHERE required_for_role_id = ? AND is_required = TRUE
+                ORDER BY document_type
+            `, [roleId]);
+            
+            console.log('🔍 HR Model: Found', documentsResult.length, 'required documents for role');
+            return documentsResult;
+        } catch (error) {
+            console.error("❌ Error getting required documents for role:", error);
+            throw error;
+        }
+    },
+
+    // Get user data (employee ID)
+    getUserData: async (userId) => {
+        try {
+            console.log('🔍 HR Model: getUserData called for user ID:', userId);
+            
+            const [userResult] = await db.query(`
+                SELECT u.id, e.employee_id
+                FROM users u
+                LEFT JOIN employees e ON u.id = e.user_id
+                WHERE u.id = ?
+            `, [userId]);
+
+            if (userResult.length === 0) {
+                return null;
+            }
+
+            return userResult[0];
+        } catch (error) {
+            console.error("❌ Error getting user data:", error);
+            throw error;
+        }
+    },
+
+    // Get onboarding documents for employee
+    getOnboardingDocuments: async (employeeId) => {
+        try {
+            console.log('🔍 HR Model: getOnboardingDocuments called for employee ID:', employeeId);
+            
+            const [documentsResult] = await db.query(`
+                SELECT id, document_type, status, file_path, uploaded_at, remarks
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+                ORDER BY document_type
+            `, [employeeId]);
+
+            return documentsResult;
+        } catch (error) {
+            console.error("❌ Error getting onboarding documents:", error);
+            throw error;
+        }
+    },
+
+    // Update document status after upload
+    updateDocumentStatus: async (employeeId, documentType, filename) => {
+        try {
+            console.log('🔍 HR Model: updateDocumentStatus called');
+            
+            await db.query(`
+                UPDATE pre_onboarding_documents 
+                SET status = 'uploaded', file_path = ?, uploaded_at = NOW()
+                WHERE employee_id = ? AND document_type = ?
+            `, [filename, employeeId, documentType]);
+
+            return true;
+        } catch (error) {
+            console.error("❌ Error updating document status:", error);
+            throw error;
+        }
+    },
+
+    // Get user details with role and employee info
+    getUserDetailsWithRole: async (userId) => {
+        try {
+            console.log('🔍 HR Model: getUserDetailsWithRole called for user ID:', userId);
+            
+            const [userResult] = await db.query(`
+                SELECT u.id, u.role_id, r.name as role_name, e.employee_id
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                LEFT JOIN employees e ON u.id = e.user_id
+                WHERE u.id = ?
+            `, [userId]);
+
+            if (userResult.length === 0) {
+                return null;
+            }
+
+            return userResult[0];
+        } catch (error) {
+            console.error("❌ Error getting user details with role:", error);
+            throw error;
+        }
+    },
+
+    // Check if documents exist for employee
+    checkDocumentsExist: async (employeeId) => {
+        try {
+            console.log('🔍 HR Model: checkDocumentsExist called for employee ID:', employeeId);
+            
+            const [result] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+            `, [employeeId]);
+
+            return result[0].count > 0;
+        } catch (error) {
+            console.error("❌ Error checking documents exist:", error);
+            throw error;
+        }
+    },
+
+    // Get default documents
+    getDefaultDocuments: async () => {
+        try {
+            console.log('🔍 HR Model: getDefaultDocuments called');
+            
+            const [defaultDocs] = await db.query(`
+                SELECT document_type
+                FROM document_types
+                WHERE required_for_role_id IS NULL AND is_required = TRUE
+                ORDER BY document_type
+            `);
+
+            return defaultDocs;
+        } catch (error) {
+            console.error("❌ Error getting default documents:", error);
+            throw error;
+        }
+    },
+
+    // Initialize documents for user
+    initializeDocumentsForUser: async (userId, employeeId, documents) => {
+        try {
+            console.log('🔍 HR Model: initializeDocumentsForUser called');
+            
+            const insertPromises = documents.map(doc => {
+                return db.query(`
+                    INSERT INTO pre_onboarding_documents 
+                    (user_id, employee_id, document_type, status) 
+                    VALUES (?, ?, ?, 'pending')
+                `, [userId, employeeId, doc.document_type]);
+            });
+
+            await Promise.all(insertPromises);
+            return true;
+        } catch (error) {
+            console.error("❌ Error initializing documents for user:", error);
+            throw error;
+        }
+    },
+
+    // Get all permissions
+    getAllPermissions: async () => {
+        try {
+            console.log('🔍 HR Model: getAllPermissions called');
+            
+            const [permissions] = await db.query("SELECT * FROM permissions");
+            return permissions;
+        } catch (error) {
+            console.error("❌ Error getting all permissions:", error);
+            throw error;
+        }
     }
 };
 

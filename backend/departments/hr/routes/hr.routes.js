@@ -7,6 +7,39 @@
     const db = require('../../../db');
     const path = require('path');
     const fs = require('fs');
+    const multer = require('multer');
+
+    // Configure multer for onboarding document uploads
+    const onboardingStorage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'onboarding');
+            // Create directory if it doesn't exist
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            cb(null, uploadDir);
+        },
+        filename: function (req, file, cb) {
+            // Generate unique filename: employeeId_documentType_timestamp.extension
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            const documentType = req.params.documentType.replace(/[^a-zA-Z0-9]/g, '_');
+            cb(null, `onboarding_${req.params.employeeId}_${documentType}_${uniqueSuffix}${path.extname(file.originalname)}`);
+        }
+    });
+
+    const onboardingUpload = multer({
+        storage: onboardingStorage,
+        limits: {
+            fileSize: 5 * 1024 * 1024 // 5MB limit
+        },
+        fileFilter: function (req, file, cb) {
+            // Accept only PDF and image files
+            if (!file.originalname.match(/\.(pdf|jpg|jpeg|png)$/)) {
+                return cb(new Error('Only PDF, JPG, JPEG, and PNG files are allowed!'), false);
+            }
+            cb(null, true);
+        }
+    }).single('file');
 
     // 🔹 Employee Management
     router.get('/employees', authMiddleware.verifySession, HRController.getAllEmployees);         // Get all employees
@@ -181,5 +214,45 @@
     router.get('/developers/:id', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getDeveloperById);
     router.post('/developers/:id/approve', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.approveDeveloper);
     router.post('/developers/:id/reject', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.rejectDeveloper);
+
+    // Pre-onboarding Documents Routes
+    router.get('/onboarding/documents/:employeeId', authMiddleware.verifySession, HRController.getPreOnboardingDocuments);
+    router.post('/onboarding/upload/:employeeId/:documentType', authMiddleware.verifySession, onboardingUpload, HRController.uploadPreOnboardingDocument);
+    router.post('/onboarding/review/:employeeId/:documentType', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.reviewPreOnboardingDocument);
+    router.get('/onboarding/status/:employeeId', authMiddleware.verifySession, HRController.getOnboardingStatus);
+    router.post('/onboarding/complete/:employeeId', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.completeOnboarding);
+    router.get('/onboarding/user-status', authMiddleware.verifySession, HRController.checkUserOnboardingStatus);
+    
+    // New pre-onboarding detection routes
+    router.get('/onboarding/check-needs', authMiddleware.verifySession, HRController.checkIfUserNeedsPreOnboarding);
+    router.post('/onboarding/initialize-legacy/:employeeId', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.initializePreOnboardingForLegacyEmployee);
+    
+    // Role-based verification routes
+    router.get('/onboarding/verify-permissions/:targetUserId', authMiddleware.verifySession, HRController.checkVerificationPermissions);
+    router.get('/onboarding/required-documents/:roleId', authMiddleware.verifySession, HRController.getRequiredDocumentsForRole);
+    router.post('/onboarding/initialize-user/:userId', authMiddleware.verifySession, HRController.initializePreOnboardingForUser);
+    
+    // Initialize pre-onboarding for new employee (automatic)
+    router.post('/onboarding/initialize-new-employee', authMiddleware.verifySession, HRController.initializePreOnboardingForNewEmployee);
+    
+    // Get user data (employee ID)
+    router.get('/user-data', authMiddleware.verifySession, HRController.getUserData);
+    
+    // Get onboarding documents for employee
+    router.get('/onboarding/documents/:employeeId', authMiddleware.verifySession, HRController.getOnboardingDocuments);
+    
+    // Upload onboarding document
+    router.post('/onboarding/upload/:employeeId/:documentType', authMiddleware.verifySession, onboardingUpload, HRController.uploadOnboardingDocument);
+
+    // Document Types Management Routes
+    router.get('/document-types', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getAllDocumentTypes);
+    router.post('/document-types', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.addDocumentType);
+    router.put('/document-types/:id', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.updateDocumentType);
+    router.delete('/document-types/:id', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.deleteDocumentType);
+
+    // Serve onboarding form
+    router.get('/onboarding-form', (req, res) => {
+        res.sendFile(path.join(__dirname, '../../../../views/pre_onboarding_form.html'));
+    });
 
     module.exports = router;
