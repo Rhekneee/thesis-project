@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Onboarding Documents</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .onboarding-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .document-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .document-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.1);
+        }
+
+        .document-card.uploaded {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        .document-card.approved {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+
+        .document-card.rejected {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-uploaded {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+
+        .btn-close-onboarding {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6c757d;
+            cursor: pointer;
+        }
+
+        .btn-close-onboarding:hover {
+            color: #dc3545;
+        }
+
+        .completion-message {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pre-Onboarding Overlay -->
+    <div id="onboardingOverlay" class="onboarding-overlay" style="display: none;">
+        <div class="onboarding-modal">
+            <button type="button" class="btn-close-onboarding" onclick="closeOnboardingForm()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-file-upload me-2"></i>
+                    Pre-Onboarding Documents
+                </h2>
+                <p class="text-muted">Please upload the required documents to complete your onboarding process.</p>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">Completion Progress</span>
+                    <span id="progressText" class="text-muted">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Documents Container -->
+            <div id="documentsContainer">
+                <!-- Documents will be dynamically loaded here -->
+            </div>
+
+            <!-- Completion Message -->
+            <div id="completionMessage" class="completion-message" style="display: none;">
+                <i class="fas fa-check-circle fa-2x mb-3"></i>
+                <h4>All Documents Uploaded!</h4>
+                <p>Your documents have been submitted for review. You will be notified once HR completes the review process.</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center" style="display: none;">
+                <div class="loading-spinner mb-3"></div>
+                <p>Loading documents...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="text-center text-danger" style="display: none;">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                <p id="errorMessage">An error occurred while loading documents.</p>
+                <button class="btn btn-outline-danger" onclick="loadOnboardingDocuments()">
+                    <i class="fas fa-redo me-2"></i>Retry
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentEmployeeId = null;
+        let documents = [];
+
+        // Check onboarding status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkOnboardingStatus();
+        });
+
+        // Check if user needs to complete onboarding
+        async function checkOnboardingStatus() {
+            try {
+                const response = await fetch('/hr/onboarding/user-status', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.showOnboardingForm) {
+                        // Get employee ID from session or user data
+                        await getEmployeeId();
+                        showOnboardingForm();
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking onboarding status:', error);
+            }
+        }
+
+        // Get employee ID for current user
+        async function getEmployeeId() {
+            try {
+                const response = await fetch('/hr/user-data', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentEmployeeId = data.employeeId;
+                }
+            } catch (error) {
+                console.error('Error getting employee ID:', error);
+            }
+        }
+
+        // Show onboarding form
+        function showOnboardingForm() {
+            document.getElementById('onboardingOverlay').style.display = 'flex';
+            loadOnboardingDocuments();
+        }
+
+        // Close onboarding form
+        function closeOnboardingForm() {
+            document.getElementById('onboardingOverlay').style.display = 'none';
+        }
+
+        // Load onboarding documents
+        async function loadOnboardingDocuments() {
+            if (!currentEmployeeId) {
+                showError('Employee ID not found');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(`/hr/onboarding/documents/${currentEmployeeId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    documents = data.documents || [];
+                    renderDocuments();
+                    updateProgress();
+                } else {
+                    throw new Error('Failed to load documents');
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                showError('Failed to load documents. Please try again.');
+            }
+        }
+
+        // Render documents
+        function renderDocuments() {
+            const container = document.getElementById('documentsContainer');
+            
+            if (documents.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No documents required for your role.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = documents.map(doc => `
+                <div class="document-card ${doc.status}" id="doc-${doc.id}">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="fas fa-file-alt me-2"></i>
+                                ${doc.document_type}
+                            </h5>
+                            <div class="mb-2">
+                                <span class="status-badge status-${doc.status}">
+                                    ${doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                                </span>
+                                ${doc.uploaded_at ? `<small class="text-muted ms-2">Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}</small>` : ''}
+                            </div>
+                            ${doc.remarks ? `<p class="text-muted small mb-0"><strong>Remarks:</strong> ${doc.remarks}</p>` : ''}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            ${renderDocumentActions(doc)}
+                        </div>
+                    </div>
+                    ${doc.status === 'pending' ? renderUploadArea(doc) : ''}
+                </div>
+            `).join('');
+        }
+
+        // Render document actions
+        function renderDocumentActions(doc) {
+            switch (doc.status) {
+                case 'pending':
+                    return `
+                        <button class="btn btn-outline-primary btn-sm" onclick="uploadDocument('${doc.document_type}')">
+                            <i class="fas fa-upload me-1"></i>Upload
+                        </button>
+                    `;
+                case 'uploaded':
+                    return `
+                        <button class="btn btn-outline-info btn-sm" onclick="viewDocument('${doc.file_path}')">
+                            <i class="fas fa-eye me-1"></i>View
+                        </button>
+                    `;
+                case 'approved':
+                    return `
+                        <span class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>Approved
+                        </span>
+                    `;
+                case 'rejected':
+                    return `
+                        <button class="btn btn-outline-warning btn-sm" onclick="uploadDocument('${doc.document_type}')">
+                            <i class="fas fa-redo me-1"></i>Re-upload
+                        </button>
+                    `;
+                default:
+                    return '';
+            }
+        }
+
+        // Render upload area
+        function renderUploadArea(doc) {
+            return `
+                <div class="upload-area mt-3" onclick="triggerFileUpload('${doc.document_type}')" 
+                     ondrop="handleFileDrop(event, '${doc.document_type}')" 
+                     ondragover="handleDragOver(event)" 
+                     ondragleave="handleDragLeave(event)">
+                    <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                    <p class="mb-1">Click to upload or drag and drop</p>
+                    <p class="text-muted small">PDF, JPG, PNG files up to 5MB</p>
+                    <input type="file" id="file-${doc.document_type}" 
+                           accept=".pdf,.jpg,.jpeg,.png" 
+                           style="display: none;" 
+                           onchange="handleFileSelect(event, '${doc.document_type}')">
+                </div>
+            `;
+        }
+
+        // Update progress
+        function updateProgress() {
+            const total = documents.length;
+            const completed = documents.filter(doc => doc.status === 'approved').length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = percentage + '%';
+
+            // Show completion message if all documents are approved
+            if (completed === total && total > 0) {
+                document.getElementById('completionMessage').style.display = 'block';
+            }
+        }
+
+        // Trigger file upload
+        function triggerFileUpload(documentType) {
+            document.getElementById(`file-${documentType}`).click();
+        }
+
+        // Handle file selection
+        async function handleFileSelect(event, documentType) {
+            const file = event.target.files[0];
+            if (file) {
+                await uploadFile(file, documentType);
+            }
+        }
+
+        // Handle drag and drop
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleFileDrop(event, documentType) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0], documentType);
+            }
+        }
+
+        // Upload file
+        async function uploadFile(file, documentType) {
+            // Validate file
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload PDF, JPG, or PNG files only');
+                return;
+            }
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`/hr/onboarding/upload/${currentEmployeeId}/${documentType}`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    // Reload documents to show updated status
+                    await loadOnboardingDocuments();
+                    showSuccess('Document uploaded successfully!');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                showError('Failed to upload document. Please try again.');
+            }
+        }
+
+        // View document
+        function viewDocument(filePath) {
+            if (filePath) {
+                window.open(`/uploads/onboarding/${filePath}`, '_blank');
+            }
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('documentsContainer').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // Show error state
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('documentsContainer').style.display = 'none';
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            // Create a temporary success alert
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 3000);
+        }
+
+        // Global function to show onboarding form (can be called from other pages)
+        window.showOnboardingForm = showOnboardingForm;
+        window.closeOnboardingForm = closeOnboardingForm;
+    </script>
+</body>
+</html> 
