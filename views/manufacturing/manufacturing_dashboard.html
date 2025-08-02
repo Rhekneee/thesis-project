@@ -339,6 +339,17 @@
             <!-- Recent Projects -->
             <div class="recent-projects">
                 <h4 class="mb-4">Active Manufacturing Projects</h4>
+                
+                <!-- Temporary Debug Button -->
+                <div class="mb-3">
+                    <button class="btn btn-warning" onclick="testOnboardingCheck()">
+                        🔍 Test Onboarding Check
+                    </button>
+                    <button class="btn btn-info ms-2" onclick="forceOnboardingCheck()">
+                        🚀 Force Onboarding Check
+                    </button>
+                </div>
+                
                 <div id="recentProjectsList">
                     <!-- Project items will be dynamically added here -->
                 </div>
@@ -575,6 +586,83 @@
                 projectsList.appendChild(projectItem);
             });
         }
+    </script>
+    
+    <!-- Debug function for testing onboarding -->
+    <script>
+        async function testOnboardingCheck() {
+            console.log('🔍 Manual test: Starting onboarding check...');
+            try {
+                const response = await fetch('/hr/onboarding/check-needs', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('🔍 Manual test: Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Manual test: Error response:', errorText);
+                    alert('Error: ' + response.status + ' - ' + errorText);
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('🔍 Manual test: Response data:', data);
+                
+                if (data.needsOnboarding) {
+                    alert('User needs pre-onboarding! Showing form...');
+                    // Manually trigger the form
+                    if (window.OnboardingChecker) {
+                        const checker = new OnboardingChecker();
+                    }
+                } else {
+                    alert('User does not need pre-onboarding. Reason: ' + data.reason);
+                }
+            } catch (error) {
+                console.error('❌ Manual test: Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function forceOnboardingCheck() {
+            console.log('🚀 Force onboarding check triggered...');
+            
+            // Create a new OnboardingChecker instance
+            if (window.OnboardingChecker) {
+                console.log('🚀 Creating new OnboardingChecker instance...');
+                const checker = new OnboardingChecker();
+                window.OnboardingCheckerInstance = checker;
+            } else {
+                console.error('❌ OnboardingChecker not available');
+                alert('OnboardingChecker not available');
+            }
+        }
+    </script>
+    
+    <script src="/js/onboarding-checker.js"></script>
+    
+    <!-- Debug script to check if onboarding checker is working -->
+    <script>
+        console.log('🔍 Manufacturing Dashboard: Page loaded');
+        console.log('🔍 Manufacturing Dashboard: Checking if OnboardingChecker is available:', typeof window.OnboardingChecker);
+        console.log('🔍 Manufacturing Dashboard: Checking if OnboardingCheckerInstance is available:', typeof window.OnboardingCheckerInstance);
+        
+        // Check if session exists
+        console.log('🔍 Manufacturing Dashboard: Session cookie exists:', document.cookie.includes('sessionId'));
+        
+        // Force check after a delay
+        setTimeout(() => {
+            console.log('🔍 Manufacturing Dashboard: Delayed check - OnboardingCheckerInstance:', window.OnboardingCheckerInstance);
+            if (window.OnboardingCheckerInstance) {
+                console.log('🔍 Manufacturing Dashboard: OnboardingCheckerInstance found, checking status...');
+            } else {
+                console.log('🔍 Manufacturing Dashboard: No OnboardingCheckerInstance found');
+            }
+        }, 2000);
     </script>
 </body>
 </html>
