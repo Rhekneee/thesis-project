@@ -176,6 +176,7 @@ app.get('/dashboard', (req, res) => {
         'foreman_3': '/manufacturing/manufacturing_dashboard',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
+        'documentation_officer': '/crm admin/crm_admin.html',
         'logistics': '/scm admin/scm-dashboard.html',
         'agents': '/agents/agent_dashboard.html',
         // External user dashboards (using username)
