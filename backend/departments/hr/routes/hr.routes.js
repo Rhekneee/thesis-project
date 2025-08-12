@@ -20,10 +20,10 @@
             cb(null, uploadDir);
         },
         filename: function (req, file, cb) {
-            // Generate unique filename: employeeId_documentType_timestamp.extension
+            // Generate unique filename: timestamp_documentType_originalname.extension
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const documentType = req.params.documentType.replace(/[^a-zA-Z0-9]/g, '_');
-            cb(null, `onboarding_${req.params.employeeId}_${documentType}_${uniqueSuffix}${path.extname(file.originalname)}`);
+            const documentType = req.body.documentType ? req.body.documentType.replace(/[^a-zA-Z0-9]/g, '_') : 'document';
+            cb(null, `onboarding_${documentType}_${uniqueSuffix}${path.extname(file.originalname)}`);
         }
     });
 
@@ -243,6 +243,25 @@
     
     // Upload onboarding document
     router.post('/onboarding/upload/:employeeId/:documentType', authMiddleware.verifySession, onboardingUpload, HRController.uploadOnboardingDocument);
+
+    // 🔹 Onboarding Document Routes
+    // Upload document
+    router.post('/onboarding/upload-document', authMiddleware.verifySession, onboardingUpload, HRController.uploadDocument);
+    
+    // Get documents for employee
+    router.get('/onboarding/documents/:employeeId', authMiddleware.verifySession, HRController.getDocuments);
+    
+    // Update document status
+    router.put('/onboarding/documents/:documentId/status', authMiddleware.verifySession, HRController.updateDocumentStatus);
+    
+    // Delete document
+    router.delete('/onboarding/documents/:documentId', authMiddleware.verifySession, HRController.deleteDocument);
+    
+    // Get required documents for employee
+    router.get('/onboarding/required-documents', authMiddleware.verifySession, HRController.getRequiredDocuments);
+
+    // Check onboarding status
+    router.get('/onboarding/check-status', authMiddleware.verifySession, HRController.checkOnboardingStatus);
 
     // Document Types Management Routes
     router.get('/document-types', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getAllDocumentTypes);

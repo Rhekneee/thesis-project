@@ -2351,6 +2351,196 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             console.error('🔍 HR Controller: Error uploading document:', error);
             res.status(500).json({ error: 'Failed to upload document' });
         }
+    },
+
+    // 🔹 Onboarding Document Controllers
+    // Upload document
+    uploadDocument: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: uploadDocument called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            const { documentType, remarks } = req.body;
+            
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            const file = req.file;
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.mimetype)) {
+                return res.status(400).json({ error: 'Invalid file type. Only PDF, JPG, and PNG files are allowed.' });
+            }
+
+            // Validate file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                return res.status(400).json({ error: 'File size must be less than 5MB' });
+            }
+
+            // Get employee ID from user data
+            const userData = await HRModel.getUserData(userId);
+            if (!userData || !userData.employee_id) {
+                return res.status(400).json({ error: 'Employee ID not found' });
+            }
+
+            // Create document data
+            const documentData = {
+                user_id: userId,
+                employee_id: userData.employee_id,
+                document_type: documentType,
+                file_path: file.filename,
+                remarks: remarks || null
+            };
+
+            // Create document using model
+            const result = await HRModel.createOnboardingDocument(documentData);
+
+            res.json({
+                success: true,
+                message: 'Document uploaded successfully',
+                documentId: result.documentId,
+                filename: file.filename
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error uploading document:', error);
+            res.status(500).json({ error: 'Failed to upload document' });
+        }
+    },
+
+    // Get documents for employee
+    getDocuments: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getDocuments called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { employeeId } = req.params;
+            
+            // Get documents using model
+            const result = await HRModel.getOnboardingDocumentsByEmployee(employeeId);
+
+            res.json({
+                success: true,
+                documents: result.documents
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error getting documents:', error);
+            res.status(500).json({ error: 'Failed to get documents' });
+        }
+    },
+
+    // Update document status
+    updateDocumentStatus: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: updateDocumentStatus called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { documentId } = req.params;
+            const { status, remarks } = req.body;
+            const reviewedBy = req.session.user.id;
+
+            // Update document status using model
+            await HRModel.updateOnboardingDocumentStatus(documentId, status, reviewedBy, remarks);
+
+            res.json({
+                success: true,
+                message: 'Document status updated successfully'
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error updating document status:', error);
+            res.status(500).json({ error: 'Failed to update document status' });
+        }
+    },
+
+    // Delete document
+    deleteDocument: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: deleteDocument called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const { documentId } = req.params;
+
+            // Delete document using model
+            await HRModel.deleteOnboardingDocument(documentId);
+
+            res.json({
+                success: true,
+                message: 'Document deleted successfully'
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error deleting document:', error);
+            res.status(500).json({ error: 'Failed to delete document' });
+        }
+    },
+
+    // Get required documents for employee
+    getRequiredDocuments: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getRequiredDocuments called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            
+            // Get required documents using model
+            const result = await HRModel.getRequiredDocumentsForEmployee(userId);
+
+            res.json({
+                success: true,
+                documents: result.documents
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error getting required documents:', error);
+            res.status(500).json({ error: 'Failed to get required documents' });
+        }
+    },
+
+    // Check onboarding status
+    checkOnboardingStatus: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: checkOnboardingStatus called');
+            
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.session.user.id;
+            
+            // Get user data to get employee ID
+            const userData = await HRModel.getUserData(userId);
+            if (!userData || !userData.employee_id) {
+                return res.status(400).json({ error: 'Employee ID not found' });
+            }
+
+            // Check onboarding status using model
+            const status = await HRModel.checkOnboardingStatus(userData.employee_id);
+
+            res.json({
+                success: true,
+                needsOnboarding: status.needsOnboarding,
+                totalDocuments: status.totalDocuments,
+                approvedDocuments: status.approvedDocuments
+            });
+        } catch (error) {
+            console.error('❌ HR Controller: Error checking onboarding status:', error);
+            res.status(500).json({ error: 'Failed to check onboarding status' });
+        }
     }
 };
 
