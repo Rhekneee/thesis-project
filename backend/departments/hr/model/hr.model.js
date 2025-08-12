@@ -3268,7 +3268,7 @@ const HRModel = {
             console.log('🔍 HR Model: getRequiredDocumentsForRole called for role ID:', roleId);
             
             const [documentsResult] = await db.query(`
-                SELECT document_type, description, is_required
+                SELECT document_type, is_required
                 FROM document_types
                 WHERE required_for_role_id = ? AND is_required = TRUE
                 ORDER BY document_type
@@ -3434,6 +3434,249 @@ const HRModel = {
         } catch (error) {
             console.error("❌ Error getting all permissions:", error);
             throw error;
+        }
+    },
+
+    // 🔹 Onboarding Document Queries
+    // Create onboarding document
+    createOnboardingDocument: async (documentData) => {
+        try {
+            console.log('🔍 HR Model: createOnboardingDocument called');
+            const { user_id, employee_id, document_type, file_path, status = 'pending', remarks = null } = documentData;
+            
+            const query = `
+                INSERT INTO pre_onboarding_documents 
+                (user_id, employee_id, document_type, file_path, status, remarks, uploaded_at) 
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
+            `;
+            
+            const [result] = await db.query(query, [user_id, employee_id, document_type, file_path, status, remarks]);
+            
+            return {
+                success: true,
+                documentId: result.insertId,
+                message: 'Document uploaded successfully'
+            };
+        } catch (error) {
+            console.error('❌ Error creating onboarding document:', error);
+            throw new Error('Failed to create onboarding document');
+        }
+    },
+
+    // Get documents by employee ID
+    getOnboardingDocumentsByEmployee: async (employeeId) => {
+        try {
+            console.log('🔍 HR Model: getOnboardingDocumentsByEmployee called for employee ID:', employeeId);
+            
+            const query = `
+                SELECT 
+                    id, user_id, employee_id, document_type, file_path, 
+                    status, remarks, uploaded_at, reviewed_at, reviewed_by
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+                ORDER BY uploaded_at DESC
+            `;
+            
+            const [documents] = await db.query(query, [employeeId]);
+            
+            return {
+                success: true,
+                documents: documents
+            };
+        } catch (error) {
+            console.error('❌ Error getting onboarding documents:', error);
+            throw new Error('Failed to get onboarding documents');
+        }
+    },
+
+    // Update document status
+    updateOnboardingDocumentStatus: async (documentId, status, reviewedBy = null, remarks = null) => {
+        try {
+            console.log('🔍 HR Model: updateOnboardingDocumentStatus called');
+            
+            const query = `
+                UPDATE pre_onboarding_documents 
+                SET status = ?, reviewed_by = ?, reviewed_at = NOW(), remarks = ?
+                WHERE id = ?
+            `;
+            
+            await db.query(query, [status, reviewedBy, remarks, documentId]);
+            
+            return {
+                success: true,
+                message: 'Document status updated successfully'
+            };
+        } catch (error) {
+            console.error('❌ Error updating document status:', error);
+            throw new Error('Failed to update document status');
+        }
+    },
+
+    // Get document by ID
+    getOnboardingDocumentById: async (documentId) => {
+        try {
+            console.log('🔍 HR Model: getOnboardingDocumentById called for document ID:', documentId);
+            
+            const query = `
+                SELECT 
+                    id, user_id, employee_id, document_type, file_path, 
+                    status, remarks, uploaded_at, reviewed_at, reviewed_by
+                FROM pre_onboarding_documents 
+                WHERE id = ?
+            `;
+            
+            const [documents] = await db.query(query, [documentId]);
+            
+            return documents[0] || null;
+        } catch (error) {
+            console.error('❌ Error getting document by ID:', error);
+            throw new Error('Failed to get document');
+        }
+    },
+
+    // Delete document
+    deleteOnboardingDocument: async (documentId) => {
+        try {
+            console.log('🔍 HR Model: deleteOnboardingDocument called for document ID:', documentId);
+            
+            const query = 'DELETE FROM pre_onboarding_documents WHERE id = ?';
+            await db.query(query, [documentId]);
+            
+            return {
+                success: true,
+                message: 'Document deleted successfully'
+            };
+        } catch (error) {
+            console.error('❌ Error deleting document:', error);
+            throw new Error('Failed to delete document');
+        }
+    },
+
+    // Get documents count by status
+    getOnboardingDocumentsCountByStatus: async (employeeId) => {
+        try {
+            console.log('🔍 HR Model: getOnboardingDocumentsCountByStatus called for employee ID:', employeeId);
+            
+            const query = `
+                SELECT 
+                    status, COUNT(*) as count
+                FROM pre_onboarding_documents 
+                WHERE employee_id = ?
+                GROUP BY status
+            `;
+            
+            const [results] = await db.query(query, [employeeId]);
+            
+            const counts = {
+                pending: 0,
+                uploaded: 0,
+                approved: 0,
+                rejected: 0
+            };
+            
+            results.forEach(result => {
+                counts[result.status] = result.count;
+            });
+            
+            return counts;
+        } catch (error) {
+            console.error('❌ Error getting documents count:', error);
+            throw new Error('Failed to get documents count');
+        }
+    },
+
+    // Get required documents for employee based on role and department
+    getRequiredDocumentsForEmployee: async (userId) => {
+        try {
+            console.log('🔍 HR Model: getRequiredDocumentsForEmployee called for user ID:', userId);
+            
+            const query = `
+                SELECT DISTINCT rd.document_type, rd.is_required, rd.importance_level
+                FROM required_documents rd
+                LEFT JOIN users u ON u.id = ?
+                LEFT JOIN employees e ON e.user_id = u.id
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE (rd.required_for_role_id = u.role_id OR rd.required_for_role_id IS NULL)
+                AND (rd.required_for_department_id = r.department_id OR rd.required_for_department_id IS NULL)
+                AND rd.is_required = TRUE
+                ORDER BY 
+                    CASE rd.importance_level 
+                        WHEN 'essential' THEN 1 
+                        WHEN 'important' THEN 2 
+                        WHEN 'optional' THEN 3 
+                        ELSE 4 
+                    END,
+                    rd.document_type
+            `;
+            
+            const [documents] = await db.query(query, [userId]);
+            
+            return {
+                success: true,
+                documents: documents
+            };
+        } catch (error) {
+            console.error('❌ Error getting required documents for employee:', error);
+            throw new Error('Failed to get required documents');
+        }
+    },
+
+    // Check if employee needs onboarding with detailed status
+    checkOnboardingStatus: async (employeeId) => {
+        try {
+            console.log('🔍 HR Model: checkOnboardingStatus called for employee ID:', employeeId);
+            
+            // Get document counts by importance level
+            const query = `
+                SELECT 
+                    COUNT(*) as total_documents,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_documents,
+                    SUM(CASE WHEN status = 'uploaded' THEN 1 ELSE 0 END) as uploaded_documents,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_documents,
+                    SUM(CASE WHEN pod.importance_level = 'essential' AND pod.status = 'approved' THEN 1 ELSE 0 END) as essential_approved,
+                    SUM(CASE WHEN pod.importance_level = 'essential' THEN 1 ELSE 0 END) as total_essential
+                FROM pre_onboarding_documents pod
+                WHERE pod.employee_id = ?
+            `;
+            
+            const [results] = await db.query(query, [employeeId]);
+            const result = results[0];
+            
+            // Determine onboarding status
+            let onboardingStatus = 'pending';
+            let statusMessage = '';
+            
+            if (result.total_documents === 0) {
+                onboardingStatus = 'not_started';
+                statusMessage = 'Please upload required documents to begin onboarding';
+            } else if (result.uploaded_documents > 0 && result.approved_documents === 0) {
+                onboardingStatus = 'documents_submitted';
+                statusMessage = 'Documents submitted. Please report to HR for finalization and account activation.';
+            } else if (result.essential_approved === result.total_essential && result.total_essential > 0) {
+                onboardingStatus = 'essential_complete';
+                statusMessage = 'Essential documents approved. Account can be activated. Remaining documents can be completed later.';
+            } else if (result.approved_documents > 0 && result.approved_documents < result.total_documents) {
+                onboardingStatus = 'partially_complete';
+                statusMessage = 'Some documents approved. Please complete remaining documents.';
+            } else if (result.approved_documents === result.total_documents) {
+                onboardingStatus = 'complete';
+                statusMessage = 'All documents approved. Onboarding complete!';
+            }
+            
+            return {
+                needsOnboarding: onboardingStatus !== 'complete' && onboardingStatus !== 'essential_complete',
+                onboardingStatus: onboardingStatus,
+                statusMessage: statusMessage,
+                totalDocuments: result.total_documents,
+                approvedDocuments: result.approved_documents,
+                uploadedDocuments: result.uploaded_documents,
+                pendingDocuments: result.pending_documents,
+                essentialApproved: result.essential_approved,
+                totalEssential: result.total_essential
+            };
+        } catch (error) {
+            console.error('❌ Error checking onboarding status:', error);
+            throw new Error('Failed to check onboarding status');
         }
     }
 };

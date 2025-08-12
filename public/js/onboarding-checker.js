@@ -75,7 +75,14 @@ class OnboardingChecker {
                     await this.initializeDocuments();
                 }
                 
-                this.showOnboardingForm();
+                // Show appropriate status message
+                if (data.onboardingStatus === 'documents_submitted') {
+                    this.showHRNotification(data.statusMessage);
+                } else if (data.onboardingStatus === 'essential_complete') {
+                    this.showEssentialCompleteNotification(data.statusMessage);
+                } else {
+                    this.showOnboardingForm();
+                }
             } else {
                 console.log('✅ OnboardingChecker: User does not need pre-onboarding');
                 this.hideOnboardingForm();
@@ -305,7 +312,7 @@ class OnboardingChecker {
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="policyAgreement" onchange="toggleNextButton()">
                             <label class="form-check-label" for="policyAgreement">
-                                <strong>I have read, understood, and agree to the terms and conditions, company policies, and the confidentiality agreement.</strong>
+                                <strong>I hereby consent and agree to the terms and conditions, company policies, and the confidentiality agreement.</strong>
                             </label>
                         </div>
                     </div>
@@ -318,6 +325,66 @@ class OnboardingChecker {
                         <button type="button" class="btn btn-primary" id="nextToDocuments" onclick="window.OnboardingCheckerInstance.showDocumentsStep()" disabled>
                             <i class="fas fa-arrow-right me-2"></i>Next: Upload Documents
                         </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Document Upload -->
+                <div id="documentUploadSection" class="document-upload-step" style="display: none;">
+                    <div class="text-center mb-4">
+                        <h2 class="text-primary">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Required Documents
+                        </h2>
+                        <p class="text-muted">Please upload the required documents to complete your onboarding process.</p>
+                    </div>
+
+                    <div class="document-upload-section mb-4">
+                        <h6 class="mb-3">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Required Documents
+                        </h6>
+                        <form id="documentUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="documentType" class="form-label">Document Type *</label>
+                                        <select class="form-select" id="documentType" name="documentType" required>
+                                            <option value="">Select document type...</option>
+                                            <!-- Document types will be loaded dynamically -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="documentFile" class="form-label">File *</label>
+                                        <input type="file" class="form-control" id="documentFile" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <div class="form-text">PDF, JPG, JPEG, PNG files up to 5MB</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="documentRemarks" class="form-label">Remarks (Optional)</label>
+                                <textarea class="form-control" id="documentRemarks" name="remarks" rows="2" placeholder="Any additional notes about this document..."></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="window.OnboardingCheckerInstance.resetUploadForm()">
+                                    <i class="fas fa-redo me-2"></i>Reset Form
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i>Upload Document
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-secondary" onclick="window.OnboardingCheckerInstance.showPolicyStep()">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Policies
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="window.OnboardingCheckerInstance.showDocumentsReviewStep()">
+                                <i class="fas fa-eye me-2"></i>Review Uploaded Documents
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -371,8 +438,8 @@ class OnboardingChecker {
 
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between mt-4">
-                        <button type="button" class="btn btn-secondary" onclick="window.OnboardingCheckerInstance.showPolicyStep()">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Policies
+                        <button type="button" class="btn btn-secondary" onclick="window.OnboardingCheckerInstance.showDocumentsStep()">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Upload
                         </button>
                         <button type="button" class="btn btn-success" onclick="window.OnboardingCheckerInstance.completeOnboarding()" id="completeOnboardingBtn" style="display: none;">
                             <i class="fas fa-check me-2"></i>Complete Onboarding
@@ -526,6 +593,23 @@ class OnboardingChecker {
                 color: #212529;
             }
 
+            .document-upload-section {
+                border: 1px solid #dee2e6;
+                border-radius: 10px;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+
+            .document-upload-section h6 {
+                color: #495057;
+                border-bottom: 2px solid #007bff;
+                padding-bottom: 8px;
+            }
+
+            .document-upload-step {
+                /* Additional styling for the upload step */
+            }
+
             .document-card {
                 border: 2px solid #e9ecef;
                 border-radius: 10px;
@@ -664,6 +748,12 @@ class OnboardingChecker {
         // Add event listeners for closing
         this.addCloseEventListeners();
         
+        // Add form event listener
+        const uploadForm = document.getElementById('documentUploadForm');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', this.handleDocumentUpload.bind(this));
+        }
+        
         console.log('🔍 OnboardingChecker: Onboarding form overlay created and displayed');
     }
 
@@ -709,14 +799,109 @@ class OnboardingChecker {
 
     showPolicyStep() {
         document.getElementById('policyStep').style.display = 'block';
+        document.getElementById('documentUploadSection').style.display = 'none';
         document.getElementById('documentsStep').style.display = 'none';
+        console.log('🔍 OnboardingChecker: Showing policy step');
     }
 
-    showDocumentsStep() {
+    async showDocumentsStep() {
         document.getElementById('policyStep').style.display = 'none';
+        document.getElementById('documentsStep').style.display = 'none';
+        document.getElementById('documentUploadSection').style.display = 'block';
+        
+        // Load required documents for the dropdown
+        await this.loadRequiredDocuments();
+        
+        console.log('🔍 OnboardingChecker: Showing document upload step');
+    }
+
+    async loadRequiredDocuments() {
+        try {
+            console.log('🔍 OnboardingChecker: Loading required documents...');
+            
+            const response = await fetch('/hr/onboarding/required-documents', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.populateDocumentTypes(data.documents);
+                console.log('✅ OnboardingChecker: Required documents loaded:', data.documents);
+            } else {
+                console.error('❌ OnboardingChecker: Failed to load required documents:', response.status);
+                // Fallback to default document types
+                this.populateDocumentTypes([
+                    { document_type: 'Resume/CV' },
+                    { document_type: 'Government ID (Passport/Driver License)' },
+                    { document_type: 'Educational Certificate' },
+                    { document_type: 'Professional License' },
+                    { document_type: 'Medical Certificate' },
+                    { document_type: 'Background Check' },
+                    { document_type: 'Emergency Contact Form' },
+                    { document_type: 'Bank Account Details' },
+                    { document_type: 'Tax Information' },
+                    { document_type: 'Other' }
+                ]);
+            }
+        } catch (error) {
+            console.error('❌ OnboardingChecker: Error loading required documents:', error);
+            // Fallback to default document types
+            this.populateDocumentTypes([
+                { document_type: 'Resume/CV' },
+                { document_type: 'Government ID (Passport/Driver License)' },
+                { document_type: 'Educational Certificate' },
+                { document_type: 'Professional License' },
+                { document_type: 'Medical Certificate' },
+                { document_type: 'Background Check' },
+                { document_type: 'Emergency Contact Form' },
+                { document_type: 'Bank Account Details' },
+                { document_type: 'Tax Information' },
+                { document_type: 'Other' }
+            ]);
+        }
+    }
+
+    populateDocumentTypes(documents) {
+        const selectElement = document.getElementById('documentType');
+        if (!selectElement) {
+            console.error('❌ OnboardingChecker: Document type select element not found');
+            return;
+        }
+        
+        // Clear existing options except the first one
+        selectElement.innerHTML = '<option value="">Select document type...</option>';
+        
+        // Add document types from backend with importance indicators
+        documents.forEach(doc => {
+            const option = document.createElement('option');
+            option.value = doc.document_type;
+            
+            // Add importance indicator to the text
+            let importanceIndicator = '';
+            if (doc.importance_level === 'essential') {
+                importanceIndicator = ' 🔴 ESSENTIAL';
+            } else if (doc.importance_level === 'important') {
+                importanceIndicator = ' 🟡 IMPORTANT';
+            }
+            
+            option.textContent = doc.document_type + importanceIndicator;
+            selectElement.appendChild(option);
+        });
+        
+        console.log('✅ OnboardingChecker: Document types populated:', documents.length, 'documents');
+    }
+
+    showDocumentsReviewStep() {
+        document.getElementById('policyStep').style.display = 'none';
+        document.getElementById('documentUploadSection').style.display = 'none';
         document.getElementById('documentsStep').style.display = 'block';
         // Load documents when showing this step
         this.loadOnboardingDocuments();
+        console.log('🔍 OnboardingChecker: Showing documents review step');
     }
 
     async completeOnboarding() {
@@ -745,6 +930,79 @@ class OnboardingChecker {
         } catch (error) {
             console.error('❌ OnboardingChecker: Error completing onboarding:', error);
             this.showError('Failed to complete onboarding. Please try again.');
+        }
+    }
+
+    // Document upload form methods
+    resetUploadForm() {
+        document.getElementById('documentUploadForm').reset();
+        console.log('🔍 OnboardingChecker: Upload form reset');
+    }
+
+    async handleDocumentUpload(event) {
+        event.preventDefault();
+        
+        const formData = new FormData();
+        const documentType = document.getElementById('documentType').value;
+        const file = document.getElementById('documentFile').files[0];
+        const remarks = document.getElementById('documentRemarks').value;
+        
+        if (!documentType || !file) {
+            this.showError('Please select both document type and file.');
+            return;
+        }
+
+        // Validate file size
+        if (file.size > 5 * 1024 * 1024) {
+            this.showError('File size must be less than 5MB.');
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            this.showError('Please upload PDF, JPG, or PNG files only.');
+            return;
+        }
+
+        formData.append('file', file);
+        formData.append('documentType', documentType);
+        if (remarks) {
+            formData.append('remarks', remarks);
+        }
+
+        try {
+            // Get employee ID first
+            const employeeResponse = await fetch('/hr/user-data', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            if (!employeeResponse.ok) {
+                throw new Error('Failed to get employee data');
+            }
+            
+            const employeeData = await employeeResponse.json();
+            const employeeId = employeeData.employeeId;
+
+            const response = await fetch(`/hr/onboarding/upload-document`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.showSuccess('Document uploaded successfully!');
+                this.resetUploadForm();
+                // Reload documents to show updated status
+                await this.loadOnboardingDocuments();
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            this.showError('Failed to upload document. Please try again.');
         }
     }
 
@@ -1043,6 +1301,80 @@ class OnboardingChecker {
         if (filePath) {
             window.open(`/uploads/onboarding/${filePath}`, '_blank');
         }
+    }
+
+    showHRNotification(message) {
+        console.log('🔍 OnboardingChecker: Showing HR notification:', message);
+        
+        // Create notification overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'onboarding-overlay';
+        overlay.id = 'hrNotificationOverlay';
+        
+        overlay.innerHTML = `
+            <div class="onboarding-modal">
+                <div class="text-center mb-4">
+                    <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                    <h3 class="text-primary">Documents Submitted</h3>
+                    <p class="text-muted">${message}</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-clock me-2"></i>Next Steps:</h6>
+                    <ul class="mb-0">
+                        <li>HR will review your submitted documents</li>
+                        <li>You will receive notification once approved</li>
+                        <li>Your account will be activated after HR finalization</li>
+                    </ul>
+                </div>
+                
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-primary" onclick="this.parentElement.parentElement.parentElement.remove(); document.body.style.overflow = '';">
+                        <i class="fas fa-check me-2"></i>Understood
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+    }
+
+    showEssentialCompleteNotification(message) {
+        console.log('🔍 OnboardingChecker: Showing essential complete notification:', message);
+        
+        // Create notification overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'onboarding-overlay';
+        overlay.id = 'essentialCompleteOverlay';
+        
+        overlay.innerHTML = `
+            <div class="onboarding-modal">
+                <div class="text-center mb-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h3 class="text-success">Essential Documents Complete!</h3>
+                    <p class="text-muted">${message}</p>
+                </div>
+                
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-star me-2"></i>Account Activation Ready:</h6>
+                    <ul class="mb-0">
+                        <li>All essential documents have been approved</li>
+                        <li>Your account can now be activated</li>
+                        <li>Remaining documents can be completed later</li>
+                    </ul>
+                </div>
+                
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-success" onclick="this.parentElement.parentElement.parentElement.remove(); document.body.style.overflow = '';">
+                        <i class="fas fa-check me-2"></i>Great!
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
     }
 
     showSuccess(message) {
