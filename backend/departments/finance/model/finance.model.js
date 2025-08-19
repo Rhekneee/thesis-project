@@ -477,6 +477,215 @@ class FinanceModel {
             connection.release();
         }
     }
+
+    // =============================================
+    // PAYSLIP MANAGEMENT
+    // These functions handle payslip creation and management
+    // =============================================
+
+    // Create payslip from approved payroll
+    static async createPayslipFromPayroll(payrollId, approvedBy) {
+        const connection = await db.getConnection();
+        try {
+            console.log('🔍 Starting payslip creation for payroll ID:', payrollId);
+            console.log('🔍 Approved by user ID:', approvedBy);
+            
+            await connection.beginTransaction();
+
+            // Get payroll data
+            const [payrollData] = await connection.query(`
+                SELECT 
+                    p.employee_id, p.start_date, p.end_date, p.days_present, p.days_absent,
+                    p.total_hours, p.overtime_hours, p.fixed_salary, p.salary_before_tax,
+                    p.total_deductions, p.absence_deduction, p.net_salary, p.payroll_period
+                FROM payroll p
+                WHERE p.id = ? AND p.status = 'pending'
+            `, [payrollId]);
+
+            console.log('🔍 Payroll data found:', payrollData.length, 'records');
+            if (payrollData.length > 0) {
+                console.log('🔍 First payroll record:', payrollData[0]);
+            }
+
+            if (payrollData.length === 0) {
+                await connection.rollback();
+                throw new Error('Payroll not found or already processed');
+            }
+
+            const payroll = payrollData[0];
+
+            // Generate payslip number manually with timestamp to ensure uniqueness
+            const year = new Date().getFullYear();
+            const month = String(new Date().getMonth() + 1).padStart(2, '0');
+            const timestamp = Date.now().toString().slice(-6);
+            
+            console.log('🔍 Generated year/month:', year, month);
+            console.log('🔍 Timestamp suffix:', timestamp);
+            
+            // Generate unique payslip number with timestamp
+            const payslipNumber = `PS${year}${month}${timestamp}`;
+            
+            console.log('🔍 Generated payslip number:', payslipNumber);
+            
+            // Create payslip
+            console.log('🔍 Inserting payslip with data:', {
+                payslipNumber,
+                payrollId,
+                employee_id: payroll.employee_id,
+                payroll_period: payroll.payroll_period,
+                fixed_salary: payroll.fixed_salary,
+                salary_before_tax: payroll.salary_before_tax,
+                total_deductions: payroll.total_deductions,
+                absence_deduction: payroll.absence_deduction,
+                net_salary: payroll.net_salary,
+                start_date: payroll.start_date,
+                end_date: payroll.end_date,
+                days_present: payroll.days_present,
+                days_absent: payroll.days_absent,
+                total_hours: payroll.total_hours,
+                overtime_hours: payroll.overtime_hours,
+                approvedBy
+            });
+            
+            const [payslipResult] = await connection.query(`
+                INSERT INTO payslip (
+                    payslip_number, payroll_id, employee_id, payslip_date, payslip_period,
+                    basic_salary, salary_before_tax, total_deductions, absence_deduction, net_salary,
+                    start_date, end_date, days_present, days_absent, total_hours, overtime_hours,
+                    approved_by, approved_date, status
+                ) VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'Generated')
+            `, [
+                payslipNumber, payrollId, payroll.employee_id, payroll.payroll_period,
+                payroll.fixed_salary, payroll.salary_before_tax, payroll.total_deductions, 
+                payroll.absence_deduction, payroll.net_salary, payroll.start_date, 
+                payroll.end_date, payroll.days_present, payroll.days_absent, 
+                payroll.total_hours, payroll.overtime_hours, approvedBy
+            ]);
+
+            const payslipId = payslipResult.insertId;
+            console.log('🔍 Payslip created with ID:', payslipId);
+
+            // Note: Only creating payslip record - no deductions or allowances tables exist
+            console.log('🔍 Skipping deductions/allowances - tables not created');
+
+            // Update payroll status to approved
+            console.log('🔍 Updating payroll status to approved');
+            await connection.query(`
+                UPDATE payroll SET status = 'approved' WHERE id = ?
+            `, [payrollId]);
+
+            await connection.commit();
+            console.log('🔍 Transaction committed successfully');
+
+            return {
+                success: true,
+                message: 'Payslip created successfully',
+                payslip_id: payslipId,
+                payroll_id: payrollId
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('❌ Error in createPayslipFromPayroll:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sqlState: error.sqlState,
+                sql: error.sql
+            });
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Get all payslips
+    static async getAllPayslips() {
+        const SQL_COMMAND = `
+            SELECT 
+                p.id,
+                p.payslip_number,
+                p.payslip_date,
+                p.payslip_period,
+                p.employee_id,
+                e.full_name,
+                r.name as position,
+                e.profile_picture,
+                p.basic_salary,
+                p.salary_before_tax,
+                p.total_deductions,
+                p.absence_deduction,
+                p.net_salary,
+                p.start_date,
+                p.end_date,
+                p.days_present,
+                p.days_absent,
+                p.total_hours,
+                p.overtime_hours,
+                p.payment_method,
+                p.status,
+                p.approved_date,
+                u.full_name as approved_by_name
+            FROM payslip p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.id
+            LEFT JOIN users u ON p.approved_by = u.id
+            ORDER BY p.payslip_date DESC, p.payslip_number DESC
+        `;
+
+        try {
+            const [payslips] = await db.query(SQL_COMMAND);
+            return payslips;
+        } catch (error) {
+            console.error('Error in getAllPayslips:', error);
+            throw new Error('Failed to fetch payslips');
+        }
+    }
+
+    // Get payslip by ID
+    static async getPayslipById(payslipId) {
+        const SQL_COMMAND = `
+            SELECT 
+                p.*,
+                e.full_name,
+                r.name as position,
+                e.profile_picture,
+                u.full_name as approved_by_name
+            FROM payslip p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.id
+            LEFT JOIN users u ON p.approved_by = u.id
+            WHERE p.id = ?
+        `;
+
+        try {
+            const [payslips] = await db.query(SQL_COMMAND, [payslipId]);
+            return payslips[0] || null;
+        } catch (error) {
+            console.error('Error in getPayslipById:', error);
+            throw new Error('Failed to fetch payslip');
+        }
+    }
+
+
+
+    // Update payslip status
+    static async updatePayslipStatus(payslipId, status) {
+        const SQL_COMMAND = `
+            UPDATE payslip 
+            SET status = ?, updated_at = NOW()
+            WHERE id = ?
+        `;
+
+        try {
+            const [result] = await db.query(SQL_COMMAND, [status, payslipId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error in updatePayslipStatus:', error);
+            throw new Error('Failed to update payslip status');
+        }
+    }
 }
 
 module.exports = FinanceModel;

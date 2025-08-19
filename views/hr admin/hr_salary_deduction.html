@@ -439,10 +439,9 @@
                             <thead>
                                 <tr>
                                     <th>Deduction Type</th>
-                                    <th>Salary Range</th>
-                                    <th>Employee Percentage</th>
-                                    <th>Employer Percentage</th>
-                                    <th>Total Rate</th>
+                                    <th>Fixed Amount</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -459,10 +458,9 @@
                             <thead>
                                 <tr>
                                     <th>Deduction Type</th>
-                                    <th>Salary Range</th>
-                                    <th>Employee Percentage</th>
-                                    <th>Employer Percentage</th>
-                                    <th>Total Rate</th>
+                                    <th>Fixed Amount</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -483,26 +481,20 @@
                             <input type="hidden" id="edit_deduction_id">
                             
                             <label for="edit_deduction_type">Deduction Type:</label>
-                            <select id="edit_deduction_type" required>
-                                <option value="SSS">SSS</option>
-                                <option value="Pag-IBIG">Pag-IBIG</option>
-                                <option value="PhilHealth">PhilHealth</option>
+                            <input type="text" id="edit_deduction_type" required>
+
+                            <label for="edit_fixed_amount">Fixed Amount (₱):</label>
+                            <input type="number" id="edit_fixed_amount" step="0.01" required>
+
+                            <label for="edit_category">Category:</label>
+                            <select id="edit_category" required>
+                                <option value="government">Government</option>
+                                <option value="company">Company</option>
+                                <option value="other">Other</option>
                             </select>
 
-                            <label for="edit_salary_min">Minimum Salary:</label>
-                            <input type="number" id="edit_salary_min" required>
-
-                            <label for="edit_salary_max">Maximum Salary:</label>
-                            <input type="number" id="edit_salary_max" required>
-
-                            <label for="edit_employee_percentage">Employee Percentage (%):</label>
-                            <input type="number" id="edit_employee_percentage" step="0.01" required>
-
-                            <label for="edit_employer_percentage">Employer Percentage (%):</label>
-                            <input type="number" id="edit_employer_percentage" step="0.01" required>
-
-                            <label for="edit_total_rate">Total Rate (%):</label>
-                            <input type="number" id="edit_total_rate" step="0.01" required readonly>
+                            <label for="edit_description">Description:</label>
+                            <textarea id="edit_description" rows="3"></textarea>
 
                             <button type="submit">Update Deduction</button>
                         </form>
@@ -516,26 +508,20 @@
                         <h3>Add New Deduction</h3>
                         <form id="addDeductionForm">
                             <label for="add_deduction_type">Deduction Type:</label>
-                            <select id="add_deduction_type" required>
-                                <option value="SSS">SSS</option>
-                                <option value="Pag-IBIG">Pag-IBIG</option>
-                                <option value="PhilHealth">PhilHealth</option>
+                            <input type="text" id="add_deduction_type" required>
+
+                            <label for="add_fixed_amount">Fixed Amount (₱):</label>
+                            <input type="number" id="add_fixed_amount" step="0.01" required>
+
+                            <label for="add_category">Category:</label>
+                            <select id="add_category" required>
+                                <option value="government">Government</option>
+                                <option value="company">Company</option>
+                                <option value="other">Other</option>
                             </select>
 
-                            <label for="add_salary_min">Minimum Salary:</label>
-                            <input type="number" id="add_salary_min" required>
-
-                            <label for="add_salary_max">Maximum Salary:</label>
-                            <input type="number" id="add_salary_max" required>
-
-                            <label for="add_employee_percentage">Employee Percentage (%):</label>
-                            <input type="number" id="add_employee_percentage" step="0.01" required>
-
-                            <label for="add_employer_percentage">Employer Percentage (%):</label>
-                            <input type="number" id="add_employer_percentage" step="0.01" required>
-
-                            <label for="add_total_rate">Total Rate (%):</label>
-                            <input type="number" id="add_total_rate" step="0.01" required readonly>
+                            <label for="add_description">Description:</label>
+                            <textarea id="add_description" rows="3"></textarea>
 
                             <button type="submit">Add Deduction</button>
                         </form>
@@ -592,7 +578,7 @@
     // Fetch deductions from the backend and populate the table
     async function fetchDeductions() {
         try {
-            const response = await fetch(`${BASE_URL}/deductions`);
+            const response = await fetch(`${BASE_URL}/payroll-deductions`);
             if (!response.ok) {
                 throw new Error('Failed to fetch deductions');
             }
@@ -620,10 +606,9 @@
                 
                 row.innerHTML = `
                     <td>${deduction.deduction_type}</td>
-                    <td>₱${deduction.salary_min.toLocaleString()} - ₱${deduction.salary_max.toLocaleString()}</td>
-                    <td>${deduction.employee_percentage}%</td>
-                    <td>${deduction.employer_percentage}%</td>
-                    <td>${deduction.total_rate}%</td>
+                    <td>₱${parseFloat(deduction.fixed_amount || 0).toLocaleString()}</td>
+                    <td>${deduction.category || 'N/A'}</td>
+                    <td>${deduction.description || 'N/A'}</td>
                     <td>${statusBadge}</td>
                     <td>${actionButtons}</td>
                 `;
@@ -645,7 +630,7 @@
     // Function to open the modal with the selected deduction details
     async function handleEditClick(id) {
         try {
-            const response = await fetch(`${BASE_URL}/deductions/${id}`);
+            const response = await fetch(`${BASE_URL}/payroll-deductions/${id}`);
             if (!response.ok) {
                 throw new Error('Failed to load deduction details');
             }
@@ -654,11 +639,9 @@
             // Populate the edit form
             document.getElementById('edit_deduction_id').value = deduction.id;
             document.getElementById('edit_deduction_type').value = deduction.deduction_type;
-            document.getElementById('edit_salary_min').value = deduction.salary_min;
-            document.getElementById('edit_salary_max').value = deduction.salary_max;
-            document.getElementById('edit_employee_percentage').value = deduction.employee_percentage;
-            document.getElementById('edit_employer_percentage').value = deduction.employer_percentage;
-            document.getElementById('edit_total_rate').value = deduction.total_rate;
+            document.getElementById('edit_fixed_amount').value = deduction.fixed_amount;
+            document.getElementById('edit_category').value = deduction.category;
+            document.getElementById('edit_description').value = deduction.description;
 
             // Show the edit modal
             document.getElementById('editDeductionModal').style.display = 'block';
@@ -706,35 +689,20 @@
         
         const id = document.getElementById('edit_deduction_id').value;
         const deduction_type = document.getElementById('edit_deduction_type').value;
-        const salary_min = document.getElementById('edit_salary_min').value;
-        const salary_max = document.getElementById('edit_salary_max').value;
-        const employee_percentage = document.getElementById('edit_employee_percentage').value;
-        const employer_percentage = document.getElementById('edit_employer_percentage').value;
-        const total_rate = document.getElementById('edit_total_rate').value;
-
-        // Validate percentages
-        if (parseFloat(employee_percentage) < 0 || parseFloat(employer_percentage) < 0) {
-            showAlert('danger', 'Percentages cannot be negative');
-            return;
-        }
-
-        if (parseFloat(salary_min) >= parseFloat(salary_max)) {
-            showAlert('danger', 'Minimum salary must be less than maximum salary');
-            return;
-        }
+        const fixed_amount = document.getElementById('edit_fixed_amount').value;
+        const category = document.getElementById('edit_category').value;
+        const description = document.getElementById('edit_description').value;
 
         try {
-            const response = await fetch(`${BASE_URL}/deductions/update`, {
-                method: 'POST',
+            const response = await fetch(`${BASE_URL}/payroll-deductions/update/${id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id,
                     deduction_type,
-                    salary_min,
-                    salary_max,
-                    employee_percentage,
-                    employer_percentage,
-                    total_rate
+                    fixed_amount,
+                    category,
+                    description
                 })
             });
 
@@ -783,7 +751,7 @@
         if (!currentDeductionId) return;
         
         try {
-            const response = await fetch(`${BASE_URL}/deductions/archive/${currentDeductionId}`, {
+            const response = await fetch(`${BASE_URL}/payroll-deductions/archive/${currentDeductionId}`, {
                 method: 'PUT'
             });
 
@@ -806,7 +774,7 @@
         if (!currentDeductionId) return;
         
         try {
-            const response = await fetch(`${BASE_URL}/deductions/restore/${currentDeductionId}`, {
+            const response = await fetch(`${BASE_URL}/payroll-deductions/restore/${currentDeductionId}`, {
                 method: 'PUT'
             });
 
@@ -886,23 +854,19 @@
         e.preventDefault();
 
         const deduction_type = document.getElementById('add_deduction_type').value;
-        const salary_min = document.getElementById('add_salary_min').value;
-        const salary_max = document.getElementById('add_salary_max').value;
-        const employee_percentage = document.getElementById('add_employee_percentage').value;
-        const employer_percentage = document.getElementById('add_employer_percentage').value;
-        const total_rate = document.getElementById('add_total_rate').value;
+        const fixed_amount = document.getElementById('add_fixed_amount').value;
+        const category = document.getElementById('add_category').value;
+        const description = document.getElementById('add_description').value;
 
         try {
-            const response = await fetch(`${BASE_URL}/deductions/add`, {
+            const response = await fetch(`${BASE_URL}/payroll-deductions/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     deduction_type,
-                    salary_min,
-                    salary_max,
-                    employee_percentage,
-                    employer_percentage,
-                    total_rate
+                    fixed_amount,
+                    category,
+                    description
                 })
             });
 
