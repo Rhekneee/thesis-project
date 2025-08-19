@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslip Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
+    <style>
+        #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
+        .table { width: 100%; margin-top: 30px; }
+        .payslip-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
+        .status-generated { background-color: #17a2b8; color: #fff; }
+        .status-sent { background-color: #ffc107; color: #000; }
+        .status-viewed { background-color: #28a745; color: #fff; }
+        .status-downloaded { background-color: #6f42c1; color: #fff; }
+        .status-archived { background-color: #6c757d; color: #fff; }
+        .action-buttons { display: flex; gap: 5px; }
+        .action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
+        .view-btn { background-color: #0d6efd; }
+        .view-btn:hover { background-color: #0b5ed7; }
+        .download-btn { background-color: #198754; }
+        .download-btn:hover { background-color: #157347; }
+        .send-btn { background-color: #fd7e14; }
+        .send-btn:hover { background-color: #e8690b; }
+        
+        /* Search and filter styling */
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .search-container .form-control {
+            min-width: 260px;
+            max-width: 320px;
+            height: 40px;
+        }
+        .search-container .form-select {
+            width: 160px;
+            height: 40px;
+        }
+        .entries-per-page {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .entries-per-page label {
+            margin-bottom: 0;
+            font-weight: 500;
+            font-size: 15px;
+        }
+        .entries-per-page .form-select {
+            width: 80px;
+            height: 36px;
+        }
+        @media (max-width: 900px) {
+            .search-container { flex-direction: column; align-items: stretch; gap: 8px; }
+            .entries-per-page { margin-left: 0; justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="notification-icon" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge"></span>
+            </div>
+            <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                <div class="profile-info">
+                    <div class="profile-name"></div>
+                    <div class="profile-position"></div>
+                </div>
+                <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                    <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+            <span class="company-title">MDB Construction</span>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="/hr/hr_admin"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="/hr/hr_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
+                    <li class="nav-item"><a href="/hr/hr_leave_request"><i class="fas fa-file-invoice"></i> <span>Request Leave</span></a></li>
+                    <li class="nav-item"><a href="/hr/hr_halfday_request"><i class="fas fa-clock"></i> <span>Request Halfday</span></a></li>
+                    <li class="nav-item"><a href="/hr/hr_overtime_request"><i class="fas fa-business-time"></i> <span>Request Overtime</span></a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="/hr/payslip" class="active"><i class="fas fa-file-invoice-dollar"></i> Payslips</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                    <i class="fas fa-users"></i> Employee Management
+                </a>
+                <ul class="collapse" id="Employee">
+                    <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> <span>Employee List</span></a></li>
+                    <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-user-plus"></i> <span>Applicants</span></a></li>
+                    <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-comments"></i> <span>Interviews</span></a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <div id="content">
+        <h2><i class="fas fa-file-invoice-dollar"></i> Payslip Management</h2>
+        
+        <div class="search-container mb-2">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by name, payslip number, or employee ID...">
+            <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
+                <option value="all">All Status</option>
+                <option value="Generated">Generated</option>
+                <option value="Sent">Sent</option>
+                <option value="Viewed">Viewed</option>
+                <option value="Downloaded">Downloaded</option>
+                <option value="Archived">Archived</option>
+            </select>
+            <div class="entries-per-page ms-auto d-flex align-items-center">
+                <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
+                <select id="entriesPerPageSelect" class="form-select">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped" id="payslipTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortPayslips('payslip_number')">Payslip # <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('name')">Employee Name <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('position')">Position <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('payslip_period')">Period <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('net_salary')">Net Salary <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('payslip_date')">Generated Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPayslips('status')">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="payslipList"></tbody>
+            </table>
+        </div>
+
+        <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
+            <span id="showingEntries"></span>
+            <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+        </div>
+    </div>
+
+    <!-- View Payslip Modal -->
+    <div class="modal fade" id="viewPayslipModal" tabindex="-1" aria-labelledby="viewPayslipModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="viewPayslipModalLabel"><i class="fas fa-file-invoice-dollar"></i> Payslip Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="payslipDetailsContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="downloadPayslipBtn" class="btn btn-success"><i class="fas fa-download"></i> Download PDF</button>
+                    <button type="button" id="printPayslipBtn" class="btn btn-primary"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables for payslip table state
+        let payslips = [];
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let searchValue = '';
+        let statusFilter = 'all';
+
+        // Initialize payslip table functionality
+        function initializePayslipTable() {
+            // Set up event listeners
+            document.getElementById('searchBar').addEventListener('input', function(e) {
+                searchValue = e.target.value;
+                currentPage = 1;
+                renderPayslips();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', function(e) {
+                statusFilter = e.target.value;
+                currentPage = 1;
+                renderPayslips();
+            });
+
+            document.getElementById('entriesPerPageSelect').addEventListener('change', function(e) {
+                itemsPerPage = parseInt(e.target.value);
+                currentPage = 1;
+                renderPayslips();
+            });
+
+            // Fetch initial data
+            fetchPayslips();
+        }
+
+        // Fetch payslips from the server
+        async function fetchPayslips() {
+            try {
+                const response = await fetch('/hr/payslips');
+                const result = await response.json();
+                
+                if (result.success) {
+                    payslips = result.data;
+                    renderPayslips();
+                } else {
+                    console.error('Failed to fetch payslips:', result.message);
+                    document.getElementById('payslipList').innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center text-danger">
+                                Failed to load payslip data. Please try again later.
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching payslips:', error);
+                document.getElementById('payslipList').innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-danger">
+                            Error connecting to server. Please check your connection and try again.
+                            <br><small>Make sure you're logged in as HR admin</small>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Filter and sort payslips
+        function filterAndSortPayslips() {
+            let filtered = [...payslips];
+
+            // Apply search filter
+            if (searchValue) {
+                const searchLower = searchValue.toLowerCase();
+                filtered = filtered.filter(payslip => 
+                    payslip.name.toLowerCase().includes(searchLower) ||
+                    payslip.payslip_number.toLowerCase().includes(searchLower) ||
+                    payslip.employee_id.toString().includes(searchLower)
+                );
+            }
+
+            // Apply status filter
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(payslip => payslip.status === statusFilter);
+            }
+
+            // Apply sorting
+            if (sortColumn) {
+                filtered.sort((a, b) => {
+                    let aVal = a[sortColumn];
+                    let bVal = b[sortColumn];
+
+                    // Handle numeric values
+                    if (['net_salary', 'basic_salary', 'total_deductions', 'absence_deduction'].includes(sortColumn)) {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
+                    }
+
+                    // Handle date values
+                    if (['payslip_date', 'approved_date'].includes(sortColumn)) {
+                        aVal = new Date(aVal);
+                        bVal = new Date(bVal);
+                    }
+
+                    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            return filtered;
+        }
+
+        // Render payslips in the table
+        function renderPayslips() {
+            const filtered = filterAndSortPayslips();
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedPayslips = filtered.slice(start, end);
+
+            const tbody = document.getElementById('payslipList');
+            tbody.innerHTML = '';
+
+            if (paginatedPayslips.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            No payslip records found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            paginatedPayslips.forEach((payslip) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${payslip.payslip_number}</strong></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="${payslip.profile_picture || '/hr/default-profile-picture'}" 
+                                 alt="Profile" class="rounded-circle me-2" 
+                                 style="width: 32px; height: 32px; object-fit: cover;">
+                            <div>
+                                <div class="fw-bold">${payslip.name}</div>
+                                <small class="text-muted">ID: ${payslip.employee_id}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${payslip.position}</td>
+                    <td>${payslip.payslip_period}</td>
+                    <td><strong class="text-success">${formatCurrency(payslip.net_salary)}</strong></td>
+                    <td>${formatDate(payslip.payslip_date)}</td>
+                    <td><span class="payslip-status status-${payslip.status.toLowerCase()}">${payslip.status}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn btn btn-sm view-btn" onclick="viewPayslip(${payslip.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn btn btn-sm download-btn" onclick="downloadPayslip(${payslip.id})">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            ${payslip.status === 'Generated' ? `
+                                <button class="action-btn btn btn-sm send-btn" onclick="sendPayslip(${payslip.id})">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateEntriesMessage(filtered.length);
+            updatePagination(filtered.length);
+        }
+
+        // Helper functions
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            }).format(amount);
+        }
+
+        // Update entries message
+        function updateEntriesMessage(total) {
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(start + itemsPerPage - 1, total);
+            document.getElementById('showingEntries').textContent = 
+                `Showing ${start} to ${end} of ${total} entries`;
+        }
+
+        // Update pagination controls
+        function updatePagination(total) {
+            const totalPages = Math.ceil(total / itemsPerPage);
+            const pagination = document.getElementById('paginationControls');
+            pagination.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            `;
+            pagination.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                `;
+                pagination.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            `;
+            pagination.appendChild(nextLi);
+        }
+
+        // Change page
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(payslips.length / itemsPerPage)) return;
+            currentPage = page;
+            renderPayslips();
+        }
+
+        // Sort payslips
+        function sortPayslips(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            renderPayslips();
+        }
+
+        // View payslip details
+        async function viewPayslip(payslipId) {
+            try {
+                const response = await fetch(`/hr/payslips/${payslipId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const payslip = result.data;
+                    displayPayslipDetails(payslip);
+                    
+                    // Show modal
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewPayslipModal'));
+                    viewModal.show();
+                } else {
+                    showAlert(`Error fetching payslip: ${result.message}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Error fetching payslip details:', error);
+                showAlert('Error fetching payslip details. Please try again.', 'danger');
+            }
+        }
+
+        // Display payslip details in modal
+        function displayPayslipDetails(payslip) {
+            const content = document.getElementById('payslipDetailsContent');
+            
+            content.innerHTML = `
+                <div class="container-fluid">
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <h4 class="text-primary mb-2">MDB Construction</h4>
+                            <h5 class="text-muted">Payslip</h5>
+                            <div class="badge bg-secondary fs-6">${payslip.payslip_number}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Employee Information</h6>
+                            <p><strong>Name:</strong> ${payslip.name}</p>
+                            <p><strong>Position:</strong> ${payslip.position}</p>
+                            <p><strong>Employee ID:</strong> ${payslip.employee_id}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Pay Period</h6>
+                            <p><strong>Period:</strong> ${payslip.payslip_period}</p>
+                            <p><strong>Start Date:</strong> ${formatDate(payslip.start_date)}</p>
+                            <p><strong>End Date:</strong> ${formatDate(payslip.end_date)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Work Summary</h6>
+                            <p><strong>Days Present:</strong> ${payslip.days_present}</p>
+                            <p><strong>Days Absent:</strong> ${payslip.days_absent}</p>
+                            <p><strong>Total Hours:</strong> ${payslip.total_hours}</p>
+                            <p><strong>Overtime Hours:</strong> ${payslip.overtime_hours}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Salary Details</h6>
+                            <p><strong>Basic Salary:</strong> ${formatCurrency(payslip.basic_salary)}</p>
+                            <p><strong>Salary Before Tax:</strong> ${formatCurrency(payslip.salary_before_tax)}</p>
+                            <p><strong>Total Deductions:</strong> ${formatCurrency(payslip.total_deductions)}</p>
+                            <p><strong>Net Salary:</strong> <span class="text-success fw-bold">${formatCurrency(payslip.net_salary)}</span></p>
+                        </div>
+                    </div>
+                    
+                    ${payslip.deductions && payslip.deductions.length > 0 ? `
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="fw-bold">Deductions Breakdown</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${payslip.deductions.map(d => `
+                                                <tr>
+                                                    <td>${d.type}</td>
+                                                    <td>${d.description}</td>
+                                                    <td class="text-danger">-${formatCurrency(d.amount)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${payslip.allowances && payslip.allowances.length > 0 ? `
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="fw-bold">Allowances & Bonuses</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${payslip.allowances.map(a => `
+                                                <tr>
+                                                    <td>${a.type}</td>
+                                                    <td>${a.description}</td>
+                                                    <td class="text-success">+${formatCurrency(a.amount)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <small class="text-muted">
+                                Generated on ${formatDate(payslip.payslip_date)} by ${payslip.approved_by_name || 'System'}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Download payslip
+        function downloadPayslip(payslipId) {
+            // Update status to Downloaded
+            updatePayslipStatus(payslipId, 'Downloaded');
+            
+            // For now, just show a message
+            showAlert('Payslip download functionality will be implemented here.', 'info');
+        }
+
+        // Send payslip
+        function sendPayslip(payslipId) {
+            // Update status to Sent
+            updatePayslipStatus(payslipId, 'Sent');
+            
+            // For now, just show a message
+            showAlert('Payslip sent successfully!', 'success');
+        }
+
+        // Update payslip status
+        async function updatePayslipStatus(payslipId, status) {
+            try {
+                const response = await fetch(`/finance/payslips/${payslipId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update local data
+                    const payslip = payslips.find(p => p.id === payslipId);
+                    if (payslip) {
+                        payslip.status = status;
+                        renderPayslips();
+                    }
+                } else {
+                    showAlert(`Error updating status: ${result.message}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Error updating payslip status:', error);
+                showAlert('Error updating payslip status. Please try again.', 'danger');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle functionality
+            const sidebarToggle = document.querySelector('.menu-toggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    const sidebar = document.getElementById('sidebar');
+                    const content = document.getElementById('content');
+                    if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                        sidebar.style.display = 'block';
+                        content.style.marginLeft = '300px';
+                    } else {
+                        sidebar.style.display = 'none';
+                        content.style.marginLeft = '0';
+                    }
+                });
+            }
+
+            // Initialize payslip table
+            initializePayslipTable();
+        });
+    </script>
+</body>
+</html>

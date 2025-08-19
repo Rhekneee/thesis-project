@@ -256,6 +256,10 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
   });
 
+  app.get('/hr/payslip', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'payslip.html')); // Adjusted path
+  });
+
 
   
 // ====================

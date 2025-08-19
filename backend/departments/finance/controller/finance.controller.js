@@ -507,3 +507,213 @@ exports.updatePurchaseOrderPayment = async (req, res) => {
         });
     }
 };
+
+// =============================================
+// PAYSLIP MANAGEMENT
+// These endpoints handle payslip operations
+// =============================================
+
+// Create payslip from approved payroll
+exports.createPayslipFromPayroll = async (req, res) => {
+    try {
+        const { payrollId } = req.params;
+        const approvedBy = req.session?.user?.id;
+
+        if (!approvedBy) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+        }
+
+        if (!payrollId) {
+            return res.status(400).json({
+                success: false,
+                message: "Payroll ID is required"
+            });
+        }
+
+        // Create payslip from payroll
+        const result = await FinanceModel.createPayslipFromPayroll(payrollId, approvedBy);
+
+        return res.status(200).json({
+            success: true,
+            message: result.message,
+            data: {
+                payslip_id: result.payslip_id,
+                payroll_id: result.payroll_id
+            }
+        });
+
+    } catch (error) {
+        console.error("Error creating payslip:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Internal server error while creating payslip"
+        });
+    }
+};
+
+// Get all payslips
+exports.getAllPayslips = async (req, res) => {
+    try {
+        const payslips = await FinanceModel.getAllPayslips();
+
+        // Format the data for frontend
+        const formattedPayslips = payslips.map(payslip => ({
+            id: payslip.id,
+            payslip_number: payslip.payslip_number,
+            payslip_date: payslip.payslip_date,
+            payslip_period: payslip.payslip_period,
+            employee_id: payslip.employee_id,
+            name: payslip.full_name,
+            position: payslip.position,
+            profile_picture: payslip.profile_picture || '',
+            basic_salary: parseFloat(payslip.basic_salary),
+            salary_before_tax: parseFloat(payslip.salary_before_tax),
+            total_deductions: parseFloat(payslip.total_deductions),
+            absence_deduction: parseFloat(payslip.absence_deduction),
+            net_salary: parseFloat(payslip.net_salary),
+            start_date: payslip.start_date,
+            end_date: payslip.end_date,
+            days_present: payslip.days_present,
+            days_absent: payslip.days_absent,
+            total_hours: parseFloat(payslip.total_hours),
+            overtime_hours: parseFloat(payslip.overtime_hours),
+            payment_method: payslip.payment_method,
+            status: payslip.status,
+            approved_date: payslip.approved_date,
+            approved_by_name: payslip.approved_by_name
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: formattedPayslips
+        });
+
+    } catch (error) {
+        console.error("Error fetching payslips:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching payslips"
+        });
+    }
+};
+
+// Get payslip by ID with details
+exports.getPayslipById = async (req, res) => {
+    try {
+        const { payslipId } = req.params;
+
+        if (!payslipId) {
+            return res.status(400).json({
+                success: false,
+                message: "Payslip ID is required"
+            });
+        }
+
+        // Get payslip details
+        const payslip = await FinanceModel.getPayslipById(payslipId);
+        
+        if (!payslip) {
+            return res.status(404).json({
+                success: false,
+                message: "Payslip not found"
+            });
+        }
+
+        // Format the data (no deductions/allowances tables exist)
+        const formattedPayslip = {
+            id: payslip.id,
+            payslip_number: payslip.payslip_number,
+            payslip_date: payslip.payslip_date,
+            payslip_period: payslip.payslip_period,
+            employee_id: payslip.employee_id,
+            name: payslip.full_name,
+            position: payslip.position,
+            profile_picture: payslip.profile_picture || '',
+            basic_salary: parseFloat(payslip.basic_salary),
+            salary_before_tax: parseFloat(payslip.salary_before_tax),
+            total_deductions: parseFloat(payslip.total_deductions),
+            absence_deduction: parseFloat(payslip.absence_deduction),
+            net_salary: parseFloat(payslip.net_salary),
+            start_date: payslip.start_date,
+            end_date: payslip.end_date,
+            days_present: payslip.days_present,
+            days_absent: payslip.days_absent,
+            total_hours: parseFloat(payslip.total_hours),
+            overtime_hours: parseFloat(payslip.overtime_hours),
+            payment_method: payslip.payment_method,
+            status: payslip.status,
+            approved_date: payslip.approved_date,
+            approved_by_name: payslip.approved_by_name,
+            deductions: [], // No deductions table
+            allowances: []  // No allowances table
+        };
+
+        return res.status(200).json({
+            success: true,
+            data: formattedPayslip
+        });
+
+    } catch (error) {
+        console.error("Error fetching payslip details:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching payslip details"
+        });
+    }
+};
+
+// Update payslip status
+exports.updatePayslipStatus = async (req, res) => {
+    try {
+        const { payslipId } = req.params;
+        const { status } = req.body;
+
+        if (!payslipId) {
+            return res.status(400).json({
+                success: false,
+                message: "Payslip ID is required"
+            });
+        }
+
+        if (!status) {
+            return res.status(400).json({
+                success: false,
+                message: "Status is required"
+            });
+        }
+
+        // Validate status
+        const validStatuses = ['Generated', 'Sent', 'Viewed', 'Downloaded', 'Archived'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status provided"
+            });
+        }
+
+        // Update payslip status
+        const success = await FinanceModel.updatePayslipStatus(payslipId, status);
+
+        if (!success) {
+            return res.status(404).json({
+                success: false,
+                message: "Payslip not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Payslip status updated to ${status} successfully`
+        });
+
+    } catch (error) {
+        console.error("Error updating payslip status:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while updating payslip status"
+        });
+    }
+};
