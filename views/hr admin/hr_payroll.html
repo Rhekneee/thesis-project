@@ -18,7 +18,7 @@
             margin-left: 0;
             transition: margin-left 0.3s;
             padding: 20px;
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
             margin-top: 50px;
         }
@@ -98,105 +98,6 @@
 
         /* Message for showing entries */
         #entriesMessage {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        input, button {
-            padding: 8px;
-            margin: 5px;
-        }
-        .payroll-controls {
-            margin: 20px 0;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .payroll-controls select {
-            width: 150px;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            background-color: white;
-        }
-
-        .payroll-controls button {
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .payroll-controls button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        #generatePayroll {
-            background-color: #0d6efd;
-            color: white;
-        }
-
-        #generatePayroll:hover {
-            background-color: #0b5ed7;
-        }
-
-        /* Table styling */
-        #payrollTable {
-            margin-top: 20px;
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        #payrollTable th {
-            background-color: #f8f9fa;
-            padding: 12px;
-            text-align: center;
-            font-weight: 600;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        #payrollTable td {
-            padding: 12px;
-            text-align: center;
-            vertical-align: middle;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        #payrollTable tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        /* Page title styling */
-        h1 {
             margin-bottom: 30px;
             color: #343a40;
             font-weight: 600;
@@ -204,7 +105,232 @@
             border-bottom: 2px solid #007bff;
         }
 
+        /* Payroll table specific styles */
+        #payrollTable {
+            width: 100%;
+            font-size: 12px;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+        #payrollTable th,
+        #payrollTable td {
+            padding: 8px 4px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #payrollTable th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        #payrollTable tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Column widths for better layout */
+        #payrollTable th:nth-child(1), #payrollTable td:nth-child(1) { width: 80px; }  /* Employee ID */
+        #payrollTable th:nth-child(2), #payrollTable td:nth-child(2) { width: 120px; } /* Employee Name */
+        #payrollTable th:nth-child(3), #payrollTable td:nth-child(3) { width: 100px; } /* Position */
+        #payrollTable th:nth-child(4), #payrollTable td:nth-child(4) { width: 70px; }  /* Days Present */
+        #payrollTable th:nth-child(5), #payrollTable td:nth-child(5) { width: 70px; }  /* Days Absent */
+        #payrollTable th:nth-child(6), #payrollTable td:nth-child(6) { width: 70px; }  /* Half Days */
+        #payrollTable th:nth-child(7), #payrollTable td:nth-child(7) { width: 70px; }  /* Early Out */
+        #payrollTable th:nth-child(8), #payrollTable td:nth-child(8) { width: 70px; }  /* Total Hours */
+        #payrollTable th:nth-child(9), #payrollTable td:nth-child(9) { width: 80px; }  /* Overtime Hours */
+        #payrollTable th:nth-child(10), #payrollTable td:nth-child(10) { width: 90px; } /* Monthly Salary */
+        #payrollTable th:nth-child(11), #payrollTable td:nth-child(11) { width: 90px; } /* Semi-Monthly */
+        #payrollTable th:nth-child(12), #payrollTable td:nth-child(12) { width: 80px; } /* Daily Rate */
+        #payrollTable th:nth-child(13), #payrollTable td:nth-child(13) { width: 90px; } /* Absence Deduction */
+        #payrollTable th:nth-child(14), #payrollTable td:nth-child(14) { width: 80px; } /* Gross Pay */
+        #payrollTable th:nth-child(15), #payrollTable td:nth-child(15) { width: 90px; } /* Total Deductions */
+        #payrollTable th:nth-child(16), #payrollTable td:nth-child(16) { width: 80px; } /* Net Pay */
+        #payrollTable th:nth-child(17), #payrollTable td:nth-child(17) { width: 100px; } /* Actions */
+
+        /* Table container with horizontal scroll */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        /* Payroll controls styling */
+        .payroll-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .payroll-controls select {
+            min-width: 120px;
+        }
+
+        .payroll-controls button {
+            white-space: nowrap;
+        }
+
+        /* Enhanced table styling */
+        #payrollTable {
+            margin-bottom: 0;
+        }
+
+        #payrollTable thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border: none;
+        }
+
+        #payrollTable tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        #payrollTable tbody tr:nth-child(odd) {
+            background-color: white;
+        }
+
+        #payrollTable tbody tr:hover {
+            background-color: #e3f2fd !important;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+        /* Summary row styling */
+        .summary-row {
+            background-color: #e8f5e8 !important;
+            font-weight: 600;
+            border-top: 2px solid #28a745;
+        }
+
+        .summary-row td {
+            color: #155724;
+        }
+
+        /* Action buttons styling */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons button {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        /* Editable input styling */
+        .editable-input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .editable-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        /* Status indicators */
+        .status-pending {
+            color: #856404;
+            background-color: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-approved {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Scrollbar styling */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Summary cards styling */
+        #payrollSummary .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #payrollSummary .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        #payrollSummary .card-body {
+            padding: 1rem;
+        }
+
+        #payrollSummary .card-title {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #payrollSummary h4 {
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
         /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            #payrollTable {
+                font-size: 11px;
+            }
+            
+            #payrollTable th,
+            #payrollTable td {
+                padding: 6px 3px;
+            }
+        }
+
         @media (max-width: 768px) {
             .payroll-controls {
                 flex-direction: column;
@@ -216,9 +342,9 @@
                 width: 100%;
             }
             
-            #payrollTable {
-                display: block;
-                overflow-x: auto;
+            .table-container {
+                margin: 0 -15px;
+                border-radius: 0;
             }
         }
 
@@ -374,6 +500,35 @@
                 width: 35px;
                 height: 35px;
             }
+        }
+
+        .deduction-item {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6 !important;
+            transition: all 0.2s ease;
+        }
+
+        .deduction-item:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd !important;
+        }
+
+        .deduction-item .form-control-sm {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .deduction-item .text-muted {
+            font-size: 0.75rem;
+        }
+
+        .deduction-override {
+            background-color: #fff3cd;
+            border-color: #ffc107 !important;
+        }
+
+        .deduction-override .form-control {
+            border-color: #ffc107;
         }
     </style>
 </head>
@@ -568,6 +723,9 @@
                     <button id="generatePayroll" class="btn btn-primary">
                         <i class="fas fa-file-invoice"></i> Generate Payroll
                     </button>
+                    <button id="submitPayroll" class="btn btn-success" style="display: none;">
+                        <i class="fas fa-save"></i> Submit Payroll
+                    </button>
                     <button id="cancelPayroll" class="btn btn-danger">
                         <i class="fas fa-times-circle"></i> Cancel Payroll
                     </button>
@@ -582,29 +740,78 @@
                     </div>
                 </div>
 
+                <!-- Payroll Summary Section -->
+                <div id="payrollSummary" class="row mb-3" style="display: none;">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Employees</h6>
+                                <h4 id="totalEmployees" class="text-primary">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Monthly Salary</h6>
+                                <h4 id="totalMonthlySalary" class="text-success">₱0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Semi-Monthly Payout</h6>
+                                <h4 id="totalSemiMonthly" class="text-success">₱0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Deductions</h6>
+                                <h4 id="totalDeductions" class="text-danger">₱0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Net Payroll</h6>
+                                <h4 id="totalNetPayroll" class="text-info">₱0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
                 <table id="payrollTable" class="table table-striped">
                     <thead>
                         <tr>
                             <th>Employee ID</th>
                             <th>Employee Name</th>
                             <th>Position</th>
-                            <th>Start Payroll Period</th>
-                            <th>End Payroll Period</th>
                             <th>Days Present</th>
                             <th>Days Absent</th>
+                            <th>Half Days</th>
+                            <th>Early Out</th>
                             <th>Total Hours</th>
                             <th>Overtime Hours</th>
-                            <th>Fixed Salary</th>
+                            <th>Monthly Salary</th>
+                            <th>Semi-Monthly</th>
+                            <th>Daily Rate</th>
                             <th>Absence Deduction</th>
-                            <th>Deductions</th>
-                            <th>Net Salary</th>
-                            <th>Status</th>
+                            <th>Gross Pay</th>
+                            <th>Total Deductions</th>
+                            <th>Net Pay</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Filled dynamically -->
                     </tbody>
                 </table>
+                </div>
                 
                 <!-- Add this modal HTML before the closing body tag -->
                 <div class="modal fade" id="cancelPayrollModal" tabindex="-1" aria-labelledby="cancelPayrollModalLabel" aria-hidden="true">
@@ -790,7 +997,10 @@
 
         // Handle Generate Payroll button click
         document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
+        document.getElementById('submitPayroll').addEventListener('click', handleSubmitPayroll); // New submit button
         document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
+        
+
     });
 
     // Separate the action handlers into functions
@@ -805,10 +1015,13 @@
         const currentYear = currentDate.getFullYear().toString();
 
         // Check if selected month/year is current month/year
+        // Temporarily commented out for testing
+        /*
         if (month !== currentMonth || year !== currentYear) {
             showAlert('warning', `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`);
             return;
         }
+        */
 
         try {
             // Show loading state
@@ -824,16 +1037,31 @@
             });
 
             const data = await response.json();
+            console.log('=== API Response ===');
+            console.log('Response status:', response.status);
+            console.log('Response data:', data);
+            console.log('Data type:', typeof data);
+            console.log('Data keys:', Object.keys(data));
+            console.log('Has payrollData:', !!data.payrollData);
+            console.log('PayrollData length:', data.payrollData ? data.payrollData.length : 'undefined');
 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to generate payroll');
             }
 
-            if (Array.isArray(data.payroll)) {
-                populateTable(data.payroll);
-                showAlert('success', 'Payroll generated successfully!');
+            if (data.success && data.payrollData && data.payrollData.length > 0) {
+                populateTable(data);
+                showAlert('success', data.message || 'Payroll generated successfully!');
+            } else if (data.success && (!data.payrollData || data.payrollData.length === 0)) {
+                showAlert('info', 'No employees found for the selected period.');
+                // Clear the table
+                document.querySelector('#payrollTable tbody').innerHTML = `
+                    <tr>
+                        <td colspan="17" class="text-center">No payroll data available</td>
+                    </tr>
+                `;
             } else {
-                showAlert('warning', 'No payroll data returned.');
+                showAlert('warning', data.error || 'No payroll data returned.');
             }
         } catch (error) {
             console.error('Error generating payroll:', error);
@@ -843,6 +1071,124 @@
             const generateButton = document.getElementById('generatePayroll');
             generateButton.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
             generateButton.disabled = false;
+        }
+    }
+
+    async function handleSubmitPayroll() {
+        if (!window.temporaryPayrollData || window.temporaryPayrollData.length === 0) {
+            showAlert('warning', 'No payroll data to submit. Please generate payroll first.');
+            return;
+        }
+
+        const month = document.getElementById('month').value;
+        const year = document.getElementById('year').value;
+        const period = document.getElementById('period').value;
+
+        // Get current date
+        const currentDate = new Date();
+        const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const currentYear = currentDate.getFullYear().toString();
+
+        // Check if selected month/year is current month/year
+        if (month !== currentMonth || year !== currentYear) {
+            showAlert('warning', `Payroll can only be submitted for the current month (${currentMonth}/${currentYear}). Please select the current month.`);
+            return;
+        }
+
+        try {
+            // Show loading state
+            const submitButton = document.getElementById('submitPayroll');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitButton.disabled = true;
+
+            // Prepare the data for submission
+            const submissionData = {
+                month,
+                year,
+                period,
+                payrollData: window.temporaryPayrollData.map(entry => ({
+                    employee_id: entry.employee_id,
+                    start_date: entry.start_date,
+                    end_date: entry.end_date,
+                    days_present: entry.days_present,
+                    days_absent: entry.days_absent,
+                    days_half_day: entry.days_half_day,
+                    days_early_out: entry.days_early_out,
+                    total_hours: entry.total_hours,
+                    overtime_hours: entry.overtime_hours,
+                    monthly_salary: entry.monthly_salary,
+                    semi_monthly_payout: entry.semi_monthly_payout,
+                    daily_rate: entry.daily_rate,
+                    absence_deduction: entry.absence_deduction,
+                    gross_pay: entry.gross_pay,
+                    total_deductions: entry.total_deductions,
+                    net_pay: entry.net_pay,
+                    payroll_period: entry.payroll_period,
+                    period_type: entry.period_type,
+                    status: 'pending',
+                    deduction_overrides: entry.deduction_overrides || []
+                }))
+            };
+
+            const response = await fetch(`${BASE_URL}/payroll/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submissionData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to submit payroll');
+            }
+
+            // Save deduction overrides for each entry that has them
+            const overridePromises = window.temporaryPayrollData
+                .filter(entry => entry.deduction_overrides && entry.deduction_overrides.length > 0)
+                .map(async (entry) => {
+                    try {
+                        // We need to get the payroll ID from the submitted data
+                        // For now, we'll use a placeholder - in a real system, you'd get this from the submit response
+                        const payrollId = entry.payroll_id || Date.now(); // Placeholder
+                        
+                        await fetch(`${BASE_URL}/payroll/${payrollId}/employee/${entry.employee_id}/deduction-overrides`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                overrides: entry.deduction_overrides
+                            })
+                        });
+                    } catch (error) {
+                        console.error(`Failed to save overrides for ${entry.full_name}:`, error);
+                    }
+                });
+
+            // Wait for all overrides to be saved
+            if (overridePromises.length > 0) {
+                await Promise.all(overridePromises);
+            }
+            
+            showAlert('success', 'Payroll submitted successfully!');
+            
+            // Hide submit button and show generate button
+            document.getElementById('submitPayroll').style.display = 'none';
+            document.getElementById('generatePayroll').style.display = 'inline-block';
+            
+            // Clear the table and temporary data
+            document.querySelector('#payrollTable tbody').innerHTML = '';
+            window.temporaryPayrollData = null;
+            
+        } catch (error) {
+            console.error('Error submitting payroll:', error);
+            showAlert('danger', error.message || 'Failed to submit payroll. Please try again.');
+        } finally {
+            // Reset button state
+            const submitButton = document.getElementById('submitPayroll');
+            submitButton.innerHTML = '<i class="fas fa-save"></i> Submit Payroll';
+            submitButton.disabled = false;
         }
     }
 
@@ -881,52 +1227,70 @@
         }
     }
 
-    function populateTable(payrollData) {
-        const tbody = document.querySelector('#payrollTable tbody');
-        tbody.innerHTML = ''; // clear previous data
-
-        if (!payrollData || payrollData.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="15" class="text-center py-4">
-                    <div class="d-flex flex-column align-items-center">
-                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No Pending Payroll Records Found</h5>
-                        <p class="text-muted">Generate payroll to see records here.</p>
-                    </div>
-                </td>
+    // Function to populate the payroll table
+    function populateTable(data) {
+        console.log('=== populateTable called ===');
+        console.log('Data received:', data);
+        console.log('Data type:', typeof data);
+        console.log('Data keys:', Object.keys(data));
+        
+        if (!data || !data.payrollData || data.payrollData.length === 0) {
+            console.log('No payroll data found');
+            document.querySelector('#payrollTable tbody').innerHTML = `
+                <tr>
+                    <td colspan="17" class="text-center">No payroll data available</td>
+                </tr>
             `;
-            tbody.appendChild(row);
             return;
         }
 
-        payrollData.forEach(item => {
+        console.log('Payroll data found:', data.payrollData.length, 'entries');
+        console.log('First entry:', data.payrollData[0]);
+
+        // Store the data globally for later use
+        window.temporaryPayrollData = data.payrollData;
+
+        const tbody = document.querySelector('#payrollTable tbody');
+        tbody.innerHTML = '';
+
+        data.payrollData.forEach((entry, index) => {
             const row = document.createElement('tr');
-
-            // Convert ISO string date to a readable format (e.g., MM/DD/YYYY)
-            const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
-
-            // Handle number formatting
-            const formatNumber = (num) => (num ? Number(num).toFixed(2) : '0.00');
-
+            row.setAttribute('data-index', index);
+            
             row.innerHTML = `
-                <td>${item.employee_id}</td>
-                <td>${item.full_name || 'N/A'}</td>
-                <td>${item.position || 'N/A'}</td>
-                <td>${formatDate(item.start_date)}</td>
-                <td>${formatDate(item.end_date)}</td>
-                <td>${item.days_present || 0}</td>
-                <td>${item.days_absent || 0}</td>
-                <td>${formatNumber(item.total_hours)}</td>
-                <td>${formatNumber(item.overtime_hours)}</td>
-                <td>${formatNumber(item.fixed_salary)}</td>
-                <td>${formatNumber(item.absence_deduction)}</td>
-                <td>${formatNumber(item.total_deductions)}</td>
-                <td>${formatNumber(item.net_salary)}</td>
-                <td><span class="badge bg-warning">Pending</span></td>
+                <td>${entry.employee_id}</td>
+                <td>${entry.full_name}</td>
+                <td>${entry.position}</td>
+                <td>${entry.days_present}</td>
+                <td>${entry.days_absent}</td>
+                <td>${entry.days_half_day}</td>
+                <td>${entry.days_early_out}</td>
+                <td>${entry.total_hours.toFixed(2)}</td>
+                <td>${entry.overtime_hours.toFixed(2)}</td>
+                <td class="monthly-salary">₱${parseFloat(entry.monthly_salary || 0).toLocaleString()}</td>
+                <td class="semi-monthly-payout">₱${parseFloat(entry.semi_monthly_payout || 0).toLocaleString()}</td>
+                <td class="daily-rate">₱${parseFloat(entry.daily_rate || 0).toFixed(2)}</td>
+                <td class="absence-deduction">₱${parseFloat(entry.absence_deduction || 0).toFixed(2)}</td>
+                <td class="gross-pay">₱${parseFloat(entry.gross_pay || 0).toFixed(2)}</td>
+                <td class="deduction-amount">₱${parseFloat(entry.total_deductions || 0).toFixed(2)}</td>
+                <td class="net-salary">₱${parseFloat(entry.net_pay || 0).toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editPayrollEntry(${index})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
             `;
+            
             tbody.appendChild(row);
         });
+
+        // Show submit and cancel buttons, hide generate button
+        document.getElementById('submitPayroll').style.display = 'inline-block';
+        document.getElementById('cancelPayroll').style.display = 'inline-block';
+        document.getElementById('generatePayroll').style.display = 'none';
+
+        // Update payroll summary
+        updatePayrollSummary();
     }
 
     function populateTableforapproved(payrollData) {
@@ -936,7 +1300,7 @@
         if (!payrollData || payrollData.length === 0) {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td colspan="15" class="text-center py-4">
+                <td colspan="14" class="text-center py-4">
                     <div class="d-flex flex-column align-items-center">
                         <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No Approved Payroll Records Found</h5>
@@ -1004,46 +1368,820 @@
         }, 5000);
     }
 
-    async function handleCancelPayroll() {
-        // Show the modal instead of using confirm()
+    // Function to update deduction amount when percentage changes
+    function updateDeductionAmount(index) {
+        if (!window.temporaryPayrollData || !window.temporaryPayrollData[index]) {
+            return;
+        }
+
+        const entry = window.temporaryPayrollData[index];
+        const percentageInput = document.querySelector(`tr[data-index="${index}"] .deduction-percentage`);
+        const deductionAmountSpan = document.querySelector(`tr[data-index="${index}"] .deduction-amount`);
+        const netSalarySpan = document.querySelector(`tr[data-index="${index}"] .net-salary`);
+
+        if (percentageInput && deductionAmountSpan && netSalarySpan) {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            const fixedSalary = parseFloat(entry.fixed_salary) || 0;
+            const absenceDeduction = parseFloat(entry.absence_deduction) || 0;
+            const overtimePay = parseFloat(entry.overtime_pay) || 0;
+            const halfDayPay = parseFloat(entry.half_day_pay) || 0;
+            const earlyOutDeduction = parseFloat(entry.early_out_deduction) || 0;
+
+            // Calculate deduction amount
+            const deductionAmount = (fixedSalary * percentage / 100);
+            
+            // Calculate gross salary (before deductions)
+            const grossSalary = fixedSalary + overtimePay + halfDayPay - earlyOutDeduction - absenceDeduction;
+            
+            // Calculate net salary
+            const netSalary = grossSalary - deductionAmount;
+
+            // Update the data
+            entry.deduction_percentage = percentage;
+            entry.deduction_amount = deductionAmount;
+            entry.net_salary = netSalary;
+
+            // Update the display
+            deductionAmountSpan.textContent = deductionAmount.toFixed(2);
+            netSalarySpan.textContent = netSalary.toFixed(2);
+        }
+    }
+
+    // Function to edit payroll entry
+    function editPayrollEntry(index) {
+        if (!window.temporaryPayrollData || !window.temporaryPayrollData[index]) {
+            return;
+        }
+
+        const entry = window.temporaryPayrollData[index];
+        
+        // Store the entry for potential reset
+        window.currentEditEntry = entry;
+
+        // Create a modal for editing
+        const modalHtml = `
+            <div class="modal fade" id="editPayrollModal" tabindex="-1" aria-labelledby="editPayrollModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editPayrollModalLabel">Edit Payroll Entry - ${entry.full_name}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Employee Information</h6>
+                                    <p><strong>ID:</strong> ${entry.employee_id}</p>
+                                    <p><strong>Name:</strong> ${entry.full_name}</p>
+                                    <p><strong>Position:</strong> ${entry.position}</p>
+                                    <p><strong>Monthly Salary:</strong> ₱${parseFloat(entry.monthly_salary || 0).toLocaleString()}</p>
+                                    <p><strong>Semi-Monthly Payout:</strong> ₱${parseFloat(entry.semi_monthly_payout || 0).toLocaleString()}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Attendance Summary</h6>
+                                    <p><strong>Days Present:</strong> ${entry.days_present || 0}</p>
+                                    <p><strong>Days Absent:</strong> ${entry.days_absent || 0}</p>
+                                    <p><strong>Half Days:</strong> ${entry.days_half_day || 0}</p>
+                                    <p><strong>Early Out:</strong> ${entry.days_early_out || 0}</p>
+                                    <p><strong>Daily Rate:</strong> ₱${parseFloat(entry.daily_rate || 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Deductions Breakdown</h6>
+                                    <div id="deductionsBreakdown">
+                                        <div class="deduction-item mb-2 p-2 border rounded">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4">
+                                                    <strong>SSS Premium</strong>
+                                                    <small class="text-muted d-block">Government</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small">Amount (₱)</label>
+                                                    <input type="number" 
+                                                           class="form-control form-control-sm deduction-amount" 
+                                                           data-deduction-type="SSS Premium"
+                                                           data-original-amount="1350.00"
+                                                           value="1350.00" 
+                                                           min="0" 
+                                                           step="0.01"
+                                                           onchange="updateDeductionTotal()">
+                                                    <small class="text-info">Default: ₱1,350.00</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Social Security System</small>
+                                                    <div class="mt-1">
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-secondary" 
+                                                                onclick="resetDeduction('SSS Premium')">
+                                                            Reset
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="deduction-item mb-2 p-2 border rounded">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4">
+                                                    <strong>PhilHealth</strong>
+                                                    <small class="text-muted d-block">Government</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small">Amount (₱)</label>
+                                                    <input type="number" 
+                                                           class="form-control form-control-sm deduction-amount" 
+                                                           data-deduction-type="PhilHealth"
+                                                           data-original-amount="400.00"
+                                                           value="400.00" 
+                                                           min="0" 
+                                                           step="0.01"
+                                                           onchange="updateDeductionTotal()">
+                                                    <small class="text-info">Default: ₱400.00</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Health Insurance</small>
+                                                    <div class="mt-1">
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-secondary" 
+                                                                onclick="resetDeduction('PhilHealth')">
+                                                            Reset
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="deduction-item mb-2 p-2 border rounded">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4">
+                                                    <strong>Pag-IBIG</strong>
+                                                    <small class="text-muted d-block">Government</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small">Amount (₱)</label>
+                                                    <input type="number" 
+                                                           class="form-control form-control-sm deduction-amount" 
+                                                           data-deduction-type="Pag-IBIG"
+                                                           data-original-amount="100.00"
+                                                           value="100.00" 
+                                                           min="0" 
+                                                           step="0.01"
+                                                           onchange="updateDeductionTotal()">
+                                                    <small class="text-info">Default: ₱100.00</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <small class="text-muted">Fund Contribution</small>
+                                                    <div class="mt-1">
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-secondary" 
+                                                                onclick="resetDeduction('Pag-IBIG')">
+                                                            Reset
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <strong>Total Deductions: ₱<span id="editTotalDeductions">${parseFloat(entry.total_deductions || 0).toFixed(2)}</span></strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Calculated Values</h6>
+                                    <p><strong>Gross Pay:</strong> ₱<span id="editGrossPay">${parseFloat(entry.gross_pay || 0).toFixed(2)}</span></p>
+                                    <p><strong>Net Pay:</strong> ₱<span id="editNetPay">${parseFloat(entry.net_pay || 0).toFixed(2)}</span></p>
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="resetDeductions(${index})">
+                                            Reset to Default
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="savePayrollEntry(${index})">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('editPayrollModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editPayrollModal'));
+        modal.show();
+
+        // Initialize deduction fields and add event listeners
+        setTimeout(() => {
+            // Update deduction values based on current entry
+            updateDeductionValues(entry);
+            
+            // Add event listeners to all deduction amount inputs
+            document.querySelectorAll('.deduction-amount').forEach(input => {
+                input.addEventListener('input', updateDeductionTotal);
+                console.log('Added event listener to input:', input.dataset.deductionType);
+            });
+
+            // Initial calculation
+            updateDeductionTotal();
+        }, 100);
+    }
+
+    // Function to update deduction values based on current entry
+    function updateDeductionValues(entry) {
+        // Get the current total deductions from the entry
+        const currentTotalDeductions = parseFloat(entry.total_deductions) || 0;
+        
+        // Default distribution if no specific breakdown
+        const defaultDistribution = {
+            'SSS Premium': 1350.00,
+            'PhilHealth': 400.00,
+            'Pag-IBIG': 100.00
+        };
+        
+        // Calculate proportional amounts based on current total
+        const totalDefault = Object.values(defaultDistribution).reduce((sum, val) => sum + val, 0);
+        const multiplier = currentTotalDeductions > 0 ? currentTotalDeductions / totalDefault : 1;
+        
+        // Update each deduction input
+        Object.keys(defaultDistribution).forEach(deductionType => {
+            const input = document.querySelector(`input[data-deduction-type="${deductionType}"]`);
+            if (input) {
+                const calculatedAmount = (defaultDistribution[deductionType] * multiplier).toFixed(2);
+                input.value = calculatedAmount;
+                input.setAttribute('data-original-amount', calculatedAmount);
+                
+                // Update the default text
+                const defaultText = input.parentNode.querySelector('.text-info');
+                if (defaultText) {
+                    defaultText.textContent = `Default: ₱${calculatedAmount}`;
+                }
+            }
+        });
+    }
+
+    // Function to populate deductions breakdown
+    async function populateDeductionsBreakdown(employeeId, salary) {
+        try {
+            console.log('Fetching deductions breakdown for employee:', employeeId, 'salary:', salary);
+            
+            const response = await fetch(`${BASE_URL}/employee/${employeeId}/deductions-breakdown?salary=${salary}`);
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Deductions data received:', data);
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to get deductions');
+            }
+
+            const breakdownDiv = document.getElementById('deductionsBreakdown');
+            let html = '';
+
+            if (data.breakdown && data.breakdown.deductions && data.breakdown.deductions.length > 0) {
+                data.breakdown.deductions.forEach(deduction => {
+                    html += `
+                        <div class="deduction-item mb-2 p-2 border rounded" id="deduction-${deduction.deduction_type.replace(/\s+/g, '-')}">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <strong>${deduction.deduction_type}</strong>
+                                    <small class="text-muted d-block">${deduction.category}</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Amount (₱)</label>
+                                    <input type="number" 
+                                           class="form-control form-control-sm deduction-amount" 
+                                           data-deduction-type="${deduction.deduction_type}"
+                                           data-original-amount="${deduction.fixed_amount}"
+                                           value="${deduction.fixed_amount}" 
+                                           min="0" 
+                                           step="0.01"
+                                           onchange="updateDeductionTotal()">
+                                    <small class="text-info">Default: ₱${parseFloat(deduction.fixed_amount).toFixed(2)}</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">
+                                        ${deduction.description || 'No description'}
+                                    </small>
+                                    <div class="mt-1">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-secondary" 
+                                                onclick="resetDeduction('${deduction.deduction_type}')">
+                                            Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                // Fallback: Show default deduction fields if no data received
+                html = `
+                    <div class="alert alert-info">
+                        <strong>Default Deductions</strong><br>
+                        <small>Using standard deduction rates. You can modify these amounts below.</small>
+                    </div>
+                    <div class="deduction-item mb-2 p-2 border rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>SSS Premium</strong>
+                                <small class="text-muted d-block">Government</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Amount (₱)</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm deduction-amount" 
+                                       data-deduction-type="SSS Premium"
+                                       data-original-amount="1350.00"
+                                       value="1350.00" 
+                                       min="0" 
+                                       step="0.01"
+                                       onchange="updateDeductionTotal()">
+                                <small class="text-info">Default: ₱1,350.00</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Social Security System Premium</small>
+                                <div class="mt-1">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-secondary" 
+                                            onclick="resetDeduction('SSS Premium')">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="deduction-item mb-2 p-2 border rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>PhilHealth</strong>
+                                <small class="text-muted d-block">Government</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Amount (₱)</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm deduction-amount" 
+                                       data-deduction-type="PhilHealth"
+                                       data-original-amount="400.00"
+                                       value="400.00" 
+                                       min="0" 
+                                       step="0.01"
+                                       onchange="updateDeductionTotal()">
+                                <small class="text-info">Default: ₱400.00</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Philippine Health Insurance</small>
+                                <div class="mt-1">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-secondary" 
+                                            onclick="resetDeduction('PhilHealth')">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="deduction-item mb-2 p-2 border rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>Pag-IBIG</strong>
+                                <small class="text-muted d-block">Government</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Amount (₱)</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm deduction-amount" 
+                                       data-deduction-type="Pag-IBIG"
+                                       data-original-amount="100.00"
+                                       value="100.00" 
+                                       min="0" 
+                                       step="0.01"
+                                       onchange="updateDeductionTotal()">
+                                <small class="text-info">Default: ₱100.00</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Pag-IBIG Fund Contribution</small>
+                                <div class="mt-1">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-secondary" 
+                                            onclick="resetDeduction('Pag-IBIG')">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            breakdownDiv.innerHTML = html;
+            
+            // Add event listeners to all deduction amount inputs
+            document.querySelectorAll('.deduction-amount').forEach(input => {
+                input.addEventListener('input', updateDeductionTotal);
+                console.log('Added event listener to input:', input.dataset.deductionType);
+            });
+
+            // Initial calculation
+            updateDeductionTotal();
+            console.log('Deductions breakdown populated successfully');
+            
+        } catch (error) {
+            console.error('Error fetching deductions breakdown:', error);
+            
+            // Show fallback interface even if API fails
+            const breakdownDiv = document.getElementById('deductionsBreakdown');
+            breakdownDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Could not load deductions from server.<br>
+                    <small>Error: ${error.message}</small><br>
+                    <small>Showing default deduction fields below.</small>
+                </div>
+                <div class="deduction-item mb-2 p-2 border rounded">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <strong>SSS Premium</strong>
+                            <small class="text-muted d-block">Government</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Amount (₱)</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm deduction-amount" 
+                                   data-deduction-type="SSS Premium"
+                                   data-original-amount="1350.00"
+                                   value="1350.00" 
+                                   min="0" 
+                                   step="0.01"
+                                   onchange="updateDeductionTotal()">
+                            <small class="text-info">Default: ₱1,350.00</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Social Security System Premium</small>
+                            <div class="mt-1">
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-secondary" 
+                                        onclick="resetDeduction('SSS Premium')">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deduction-item mb-2 p-2 border rounded">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <strong>PhilHealth</strong>
+                            <small class="text-muted d-block">Government</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Amount (₱)</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm deduction-amount" 
+                                   data-deduction-type="PhilHealth"
+                                   data-original-amount="400.00"
+                                   value="400.00" 
+                                   min="0" 
+                                   step="0.01"
+                                   onchange="updateDeductionTotal()">
+                            <small class="text-info">Default: ₱400.00</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Philippine Health Insurance</small>
+                            <div class="mt-1">
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-secondary" 
+                                        onclick="resetDeduction('PhilHealth')">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deduction-item mb-2 p-2 border rounded">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <strong>Pag-IBIG</strong>
+                            <small class="text-muted d-block">Government</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Amount (₱)</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm deduction-amount" 
+                                   data-deduction-type="Pag-IBIG"
+                                   data-original-amount="100.00"
+                                   value="100.00" 
+                                   min="0" 
+                                   step="0.01"
+                                   onchange="updateDeductionTotal()">
+                            <small class="text-info">Default: ₱100.00</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Pag-IBIG Fund Contribution</small>
+                            <div class="mt-1">
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-secondary" 
+                                        onclick="resetDeduction('Pag-IBIG')">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners to fallback inputs
+            document.querySelectorAll('.deduction-amount').forEach(input => {
+                input.addEventListener('input', updateDeductionTotal);
+            });
+            
+            // Initial calculation
+            updateDeductionTotal();
+        }
+    }
+
+    // Function to update deduction total and net salary
+    function updateDeductionTotal() {
+        console.log('updateDeductionTotal called');
+        
+        const deductionInputs = document.querySelectorAll('.deduction-amount');
+        console.log('Found deduction inputs:', deductionInputs.length);
+        
+        if (deductionInputs.length === 0) {
+            console.error('No deduction inputs found!');
+            return;
+        }
+        
+        let totalDeductions = 0;
+
+        deductionInputs.forEach((input, index) => {
+            const amount = parseFloat(input.value) || 0;
+            const originalAmount = parseFloat(input.getAttribute('data-original-amount')) || 0;
+            const deductionType = input.getAttribute('data-deduction-type');
+            
+            console.log(`Deduction ${index + 1}: ${deductionType} = ₱${amount} (original: ₱${originalAmount})`);
+            
+            totalDeductions += amount;
+
+            // Add visual indicator if deduction is overridden
+            const deductionItem = input.closest('.deduction-item');
+            if (deductionItem) {
+                if (Math.abs(amount - originalAmount) > 0.01) {
+                    deductionItem.classList.add('deduction-override');
+                    console.log(`${deductionType} is overridden`);
+                } else {
+                    deductionItem.classList.remove('deduction-override');
+                }
+            }
+        });
+
+        console.log('Total deductions:', totalDeductions);
+
+        // Update total deductions display
+        const totalDeductionsElement = document.getElementById('editTotalDeductions');
+        if (totalDeductionsElement) {
+            totalDeductionsElement.textContent = totalDeductions.toFixed(2);
+            console.log('Updated total deductions display');
+        } else {
+            console.error('Could not find editTotalDeductions element');
+        }
+
+        // Calculate net pay using the new semi-monthly logic
+        const monthlySalary = parseFloat(window.currentEditEntry?.monthly_salary) || 0;
+        const semiMonthlyPayout = monthlySalary / 2;
+        const dailyRate = monthlySalary / 26;
+        const daysAbsent = parseInt(window.currentEditEntry?.days_absent) || 0;
+        const absenceDeduction = dailyRate * daysAbsent;
+        
+        // Gross pay = semi-monthly payout - absence deduction
+        const grossPay = semiMonthlyPayout - absenceDeduction;
+        
+        // Net pay = gross pay - total deductions
+        const netPay = grossPay - totalDeductions;
+
+        console.log('Semi-monthly calculation:', {
+            monthlySalary,
+            semiMonthlyPayout,
+            dailyRate,
+            daysAbsent,
+            absenceDeduction,
+            grossPay,
+            totalDeductions,
+            netPay
+        });
+
+        // Update displays
+        const grossPayElement = document.getElementById('editGrossPay');
+        const netPayElement = document.getElementById('editNetPay');
+        
+        if (grossPayElement) {
+            grossPayElement.textContent = grossPay.toFixed(2);
+            console.log('Updated gross pay display');
+        }
+        
+        if (netPayElement) {
+            netPayElement.textContent = netPay.toFixed(2);
+            console.log('Updated net pay display');
+        }
+    }
+
+    // Function to reset deductions to default values
+    function resetDeductions(index) {
+        if (!window.temporaryPayrollData || !window.temporaryPayrollData[index]) {
+            return;
+        }
+
+        const entry = window.temporaryPayrollData[index];
+        
+        // Reset all deduction inputs to original values
+        document.querySelectorAll('.deduction-amount').forEach(input => {
+            const originalAmount = parseFloat(input.getAttribute('data-original-amount')) || 0;
+            input.value = originalAmount.toFixed(2);
+        });
+
+        // Update totals
+        updateDeductionTotal();
+    }
+
+    // Function to reset a specific deduction to default
+    function resetDeduction(deductionType) {
+        const input = document.querySelector(`input[data-deduction-type="${deductionType}"]`);
+        if (input) {
+            const originalAmount = parseFloat(input.getAttribute('data-original-amount')) || 0;
+            input.value = originalAmount.toFixed(2);
+            
+            // Update the deduction item styling
+            const deductionItem = input.closest('.deduction-item');
+            if (deductionItem) {
+                deductionItem.classList.remove('deduction-override');
+            }
+            
+            // Update totals
+            updateDeductionTotal();
+        }
+    }
+
+    // Function to save payroll entry changes
+    function savePayrollEntry(index) {
+        if (!window.temporaryPayrollData || !window.temporaryPayrollData[index]) {
+            return;
+        }
+
+        const entry = window.temporaryPayrollData[index];
+        
+        // Collect deduction overrides
+        const deductionOverrides = [];
+        document.querySelectorAll('.deduction-amount').forEach(input => {
+            const deductionType = input.getAttribute('data-deduction-type');
+            const originalAmount = parseFloat(input.getAttribute('data-original-amount')) || 0;
+            const overrideAmount = parseFloat(input.value) || 0;
+            
+            // Only add if there's a change
+            if (Math.abs(overrideAmount - originalAmount) > 0.01) {
+                deductionOverrides.push({
+                    deduction_type: deductionType,
+                    original_amount: originalAmount,
+                    override_amount: overrideAmount,
+                    override_reason: `Modified for ${entry.full_name} - Payroll Period ${entry.payroll_period || 'Current'}`
+                });
+            }
+        });
+
+        // Get the new total deductions
+        const newTotalDeductions = parseFloat(document.getElementById('editTotalDeductions').textContent) || 0;
+        const newNetPay = parseFloat(document.getElementById('editNetPay').textContent) || 0;
+
+        // Update the entry in temporary data
+        entry.total_deductions = newTotalDeductions;
+        entry.net_pay = newNetPay;
+        entry.deduction_overrides = deductionOverrides;
+
+        // Update the table row
+        const tableRow = document.querySelector(`#payrollTable tbody tr[data-index="${index}"]`);
+        if (tableRow) {
+            const deductionCell = tableRow.querySelector('.deduction-amount');
+            const netPayCell = tableRow.querySelector('.net-salary');
+            
+            if (deductionCell) {
+                deductionCell.textContent = `₱${newTotalDeductions.toFixed(2)}`;
+            }
+            if (netPayCell) {
+                netPayCell.textContent = `₱${newNetPay.toFixed(2)}`;
+            }
+        }
+
+        // Update summary
+        updatePayrollSummary();
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editPayrollModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Show success message
+        showAlert('success', `Payroll entry for ${entry.full_name} updated successfully!`);
+    }
+
+    // Function to update payroll summary
+    function updatePayrollSummary() {
+        if (!window.temporaryPayrollData || window.temporaryPayrollData.length === 0) {
+            document.getElementById('payrollSummary').style.display = 'none';
+            return;
+        }
+
+        const totalEmployees = window.temporaryPayrollData.length;
+        const totalMonthlySalary = window.temporaryPayrollData.reduce((sum, entry) => 
+            sum + parseFloat(entry.monthly_salary || 0), 0);
+        const totalSemiMonthly = window.temporaryPayrollData.reduce((sum, entry) => 
+            sum + parseFloat(entry.semi_monthly_payout || 0), 0);
+        const totalDeductions = window.temporaryPayrollData.reduce((sum, entry) => 
+            sum + parseFloat(entry.total_deductions || 0), 0);
+        const totalNetPay = window.temporaryPayrollData.reduce((sum, entry) => 
+            sum + parseFloat(entry.net_pay || 0), 0);
+
+        // Update summary cards
+        document.getElementById('totalEmployees').textContent = totalEmployees;
+        document.getElementById('totalMonthlySalary').textContent = `₱${totalMonthlySalary.toLocaleString()}`;
+        document.getElementById('totalSemiMonthly').textContent = `₱${totalSemiMonthly.toLocaleString()}`;
+        document.getElementById('totalDeductions').textContent = `₱${totalDeductions.toLocaleString()}`;
+        document.getElementById('totalNetPayroll').textContent = `₱${totalNetPay.toLocaleString()}`;
+
+        // Show the summary section
+        document.getElementById('payrollSummary').style.display = 'flex';
+    }
+
+    // Function to handle payroll cancellation
+    function handleCancelPayroll() {
+        if (!window.temporaryPayrollData || window.temporaryPayrollData.length === 0) {
+            showAlert('warning', 'No payroll data to cancel.');
+            return;
+        }
+
+        // Show confirmation modal
         const modal = new bootstrap.Modal(document.getElementById('cancelPayrollModal'));
         modal.show();
     }
 
-    // Add event listener for the confirm button in the modal
-    document.getElementById('confirmCancelPayroll').addEventListener('click', async function() {
+    // Function to confirm payroll cancellation
+    async function confirmCancelPayroll() {
         try {
-            const generateButton = document.getElementById('cancelPayroll');
-            const originalText = generateButton.innerHTML;
-            generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
-            generateButton.disabled = true;
-
             const response = await fetch(`${BASE_URL}/payroll/cancel`, {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
             });
 
             const data = await response.json();
 
-            if (!response.ok) {
+            if (response.ok) {
+                showAlert('success', 'Payroll cancelled successfully.');
+                
+                // Clear the table
+                document.querySelector('#payrollTable tbody').innerHTML = `
+                    <tr>
+                        <td colspan="17" class="text-center">No payroll data available</td>
+                    </tr>
+                `;
+                
+                // Hide summary section
+                document.getElementById('payrollSummary').style.display = 'none';
+                
+                // Show generate button, hide submit and cancel buttons
+                document.getElementById('generatePayroll').style.display = 'inline-block';
+                document.getElementById('submitPayroll').style.display = 'none';
+                document.getElementById('cancelPayroll').style.display = 'none';
+                
+                // Clear temporary data
+                window.temporaryPayrollData = null;
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
+                modal.hide();
+            } else {
                 throw new Error(data.message || 'Failed to cancel payroll');
             }
-
-            // Hide the modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
-            modal.hide();
-
-            showAlert('success', 'Payroll records cancelled successfully!');
-            // Clear the table
-            document.querySelector('#payrollTable tbody').innerHTML = '';
         } catch (error) {
             console.error('Error cancelling payroll:', error);
             showAlert('danger', error.message || 'Failed to cancel payroll. Please try again.');
-        } finally {
-            // Reset button state
-            const generateButton = document.getElementById('cancelPayroll');
-            generateButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Payroll';
-            generateButton.disabled = false;
         }
+    }
+
+    // Add event listener for the confirm button in the modal
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('confirmCancelPayroll').addEventListener('click', confirmCancelPayroll);
     });
     </script>
     <!-- Add side_top.js -->

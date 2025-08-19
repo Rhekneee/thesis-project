@@ -52,6 +52,23 @@ router.get('/purchase-orders/pending-payment', financeController.getPurchaseOrde
 // Update purchase order payment status
 router.post('/purchase-orders/:poId/payment', financeController.updatePurchaseOrderPayment);
 
+// =============================================
+// PAYSLIP MANAGEMENT ROUTES
+// These routes handle payslip operations
+// =============================================
+
+// Create payslip from approved payroll
+router.post('/payrolls/:payrollId/create-payslip', financeController.createPayslipFromPayroll);
+
+// Get all payslips
+router.get('/payslips', financeController.getAllPayslips);
+
+// Get payslip by ID with details
+router.get('/payslips/:payslipId', financeController.getPayslipById);
+
+// Update payslip status
+router.put('/payslips/:payslipId/status', financeController.updatePayslipStatus);
+
 // Add more routes here as needed
 // Example:
 // router.post('/approve-payroll/:id', financeController.approvePayroll);

@@ -1023,7 +1023,7 @@ const HRModel = {
                     e.full_name, 
                     e.role_id,
                     r.name as position,
-                    COALESCE(p.salary, 0) AS fixed_salary,
+                    COALESCE(p.salary, 0) AS monthly_salary,
                     COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.total_hours ELSE 0 END), 0) AS total_hours, 
                     COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.overtime_hours ELSE 0 END), 0) AS overtime_hours,
                     COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Present', 'Late', 'Overtime') THEN DATE(a.date) END), 0) AS days_present,
@@ -1075,22 +1075,25 @@ const HRModel = {
     
     getDeductionsBySalary: async (salary) => {
         try {
+            // Use the new payroll_deductions table
             const [rows] = await db.query(`
                 SELECT 
                     id,
                     deduction_type,
-                    salary_min,
-                    salary_max,
-                    employee_percentage,
-                    employer_percentage,
-                    total_rate
-                FROM deductions 
-                WHERE ? BETWEEN salary_min AND salary_max
-                ORDER BY deduction_type
-            `, [salary]);
+                    fixed_amount,
+                    description,
+                    category,
+                    is_active,
+                    effective_date,
+                    created_at,
+                    updated_at
+                FROM payroll_deductions 
+                WHERE is_active = TRUE
+                ORDER BY category, deduction_type
+            `);
             return rows;
         } catch (error) {
-            console.error("❌ Error fetching deductions by salary:", error);
+            console.error("❌ Error fetching deductions:", error);
             throw error;
         }
     },
@@ -1100,18 +1103,18 @@ const HRModel = {
             r.employee_id,
             r.start_date,
             r.end_date,
-            r.payroll_date,
+            new Date().toISOString().split('T')[0], // payroll_date (current date)
             r.days_present,
             r.days_absent,
             r.total_hours || 0,
-            r.overtime_hours,
-            r.fixed_salary || 0,
+            r.overtime_hours || 0,
+            r.monthly_salary || 0,        // Changed from fixed_salary
             r.total_deductions || 0,
             r.absence_deduction || 0,
-            r.net_salary || 0,
+            r.net_pay || 0,               // Changed from net_salary
             r.payroll_period || '',
-            r.status || 'pending',    // default to 'pending'
-            r.fixed_salary || 0       // salary_before_tax is same as fixed_salary
+            r.status || 'pending',        // default to 'pending'
+            r.monthly_salary || 0         // salary_before_tax is same as monthly_salary
         ]);
     
         try {
@@ -1119,17 +1122,25 @@ const HRModel = {
                 firstRecord: {
                     start: records[0]?.start_date,
                     end: records[0]?.end_date,
-                    payroll_date: records[0]?.payroll_date
+                    payroll_date: new Date().toISOString().split('T')[0]
                 }
             });
 
-            await db.query(
+            const [result] = await db.query(
                 `INSERT INTO payroll 
                  (employee_id, start_date, end_date, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
                   absence_deduction, net_salary, payroll_period, status, salary_before_tax)
                  VALUES ?`, [values]
             );
+
+            // Return the inserted IDs
+            const insertedIds = [];
+            for (let i = 0; i < records.length; i++) {
+                insertedIds.push(result.insertId + i);
+            }
+            
+            return insertedIds;
         } catch (error) {
             console.error('Error inserting payroll records:', error);
             throw error;
@@ -1214,14 +1225,15 @@ const HRModel = {
                 SELECT 
                     id,
                     deduction_type,
-                    salary_min,
-                    salary_max,
-                    employee_percentage,
-                    employer_percentage,
-                    (employee_percentage + employer_percentage) as total_rate,
-                    is_active
-                FROM deductions
-                ORDER BY deduction_type, salary_min
+                    fixed_amount,
+                    description,
+                    category,
+                    is_active,
+                    effective_date,
+                    created_at,
+                    updated_at
+                FROM payroll_deductions
+                ORDER BY category, deduction_type
             `);
             return rows;
         } catch (error) {
@@ -1234,8 +1246,8 @@ const HRModel = {
     archiveDeduction: async (id) => {
         try {
             const [result] = await db.query(
-                `UPDATE deductions 
-                 SET is_active = 0
+                `UPDATE payroll_deductions 
+                 SET is_active = 0, updated_at = CURRENT_TIMESTAMP
                  WHERE id = ?`,
                 [id]
             );
@@ -1250,8 +1262,8 @@ const HRModel = {
     restoreDeduction: async (id) => {
         try {
             const [result] = await db.query(
-                `UPDATE deductions 
-                 SET is_active = 1
+                `UPDATE payroll_deductions 
+                 SET is_active = 1, updated_at = CURRENT_TIMESTAMP
                  WHERE id = ?`,
                 [id]
             );
@@ -1266,21 +1278,20 @@ const HRModel = {
     updateDeduction: async (deduction) => {
         try {
             const [result] = await db.query(`
-                UPDATE deductions 
+                UPDATE payroll_deductions 
                 SET deduction_type = ?,
-                    salary_min = ?,
-                    salary_max = ?,
-                    employee_percentage = ?,
-                    employer_percentage = ?,
-                    total_rate = ?
+                    fixed_amount = ?,
+                    description = ?,
+                    category = ?,
+                    is_active = ?,
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
             `, [
                 deduction.deduction_type,
-                deduction.salary_min,
-                deduction.salary_max,
-                deduction.employee_percentage,
-                deduction.employer_percentage,
-                deduction.total_rate,
+                deduction.fixed_amount,
+                deduction.description,
+                deduction.category,
+                deduction.is_active,
                 deduction.id
             ]);
             return result.affectedRows > 0;
@@ -1294,16 +1305,15 @@ const HRModel = {
     addDeduction: async (deduction) => {
         try {
             const [result] = await db.query(`
-                INSERT INTO deductions 
-                (deduction_type, salary_min, salary_max, employee_percentage, employer_percentage, total_rate)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO payroll_deductions 
+                (deduction_type, fixed_amount, description, category, is_active)
+                VALUES (?, ?, ?, ?, ?)
             `, [
                 deduction.deduction_type,
-                deduction.salary_min,
-                deduction.salary_max,
-                deduction.employee_percentage,
-                deduction.employer_percentage,
-                deduction.total_rate
+                deduction.fixed_amount,
+                deduction.description || null,
+                deduction.category || 'government',
+                deduction.is_active !== undefined ? deduction.is_active : true
             ]);
             return result.insertId;
         } catch (error) {
@@ -1345,16 +1355,18 @@ const HRModel = {
     // Get a single deduction by ID
     getDeductionById: async (id) => {
         try {
-            const [rows] = await db.query(
-                `SELECT 
+            const [rows] = await db.query(`
+                SELECT 
                     id,
                     deduction_type,
-                    salary_min,
-                    salary_max,
-                    employee_percentage,
-                    employer_percentage,
-                    (employee_percentage + employer_percentage) as total_rate
-                FROM deductions 
+                    fixed_amount,
+                    description,
+                    category,
+                    is_active,
+                    effective_date,
+                    created_at,
+                    updated_at
+                FROM payroll_deductions 
                 WHERE id = ?`,
                 [id]
             );
@@ -1368,22 +1380,21 @@ const HRModel = {
     createDeductionsTable: async () => {
         try {
             await db.query(`
-                CREATE TABLE IF NOT EXISTS deductions (
+                CREATE TABLE IF NOT EXISTS payroll_deductions (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    deduction_type VARCHAR(50) NOT NULL,
-                    salary_min DECIMAL(10, 2) NOT NULL,
-                    salary_max DECIMAL(10, 2) NOT NULL,
-                    employee_percentage DECIMAL(5, 2) NOT NULL,
-                    employer_percentage DECIMAL(5, 2) NOT NULL,
-                    total_rate DECIMAL(5, 2) NOT NULL,
+                    deduction_type VARCHAR(100) NOT NULL,
+                    fixed_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    description TEXT,
+                    category ENUM('government', 'company', 'other') DEFAULT 'government',
                     is_active BOOLEAN DEFAULT TRUE,
+                    effective_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )
             `);
-            console.log("✅ Deductions table created or already exists");
+            console.log("✅ Payroll deductions table created or already exists");
         } catch (error) {
-            console.error("❌ Error creating deductions table:", error);
+            console.error("❌ Error creating payroll deductions table:", error);
             throw error;
         }
     },
@@ -3677,6 +3688,295 @@ const HRModel = {
         } catch (error) {
             console.error('❌ Error checking onboarding status:', error);
             throw new Error('Failed to check onboarding status');
+        }
+    },
+
+    // Delete deduction
+    deleteDeduction: async (id) => {
+        try {
+            const [result] = await db.query(
+                `DELETE FROM payroll_deductions WHERE id = ?`,
+                [id]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error deleting deduction:", error);
+            throw error;
+        }
+    },
+
+    // 🔹 Individual Deduction Overrides for Payroll Entries
+    // Create table for individual deduction overrides
+    createDeductionOverridesTable: async () => {
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS payroll_deduction_overrides (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    payroll_id INT,
+                    employee_id VARCHAR(20),
+                    deduction_type VARCHAR(100) NOT NULL,
+                    original_amount DECIMAL(10,2) NOT NULL,
+                    override_amount DECIMAL(10,2) NOT NULL,
+                    override_reason TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (payroll_id) REFERENCES payroll(id) ON DELETE CASCADE,
+                    FOREIGN KEY (employee_id) REFERENCES employees(employee_id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_override (payroll_id, employee_id, deduction_type)
+                )
+            `);
+            console.log("✅ Payroll deduction overrides table created or already exists");
+        } catch (error) {
+            console.error("❌ Error creating deduction overrides table:", error);
+            throw error;
+        }
+    },
+
+    // Get deduction overrides for a specific payroll entry
+    getDeductionOverrides: async (payrollId, employeeId) => {
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    id,
+                    deduction_type,
+                    original_amount,
+                    override_amount,
+                    override_reason
+                FROM payroll_deduction_overrides 
+                WHERE payroll_id = ? AND employee_id = ?
+                ORDER BY deduction_type
+            `, [payrollId, employeeId]);
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching deduction overrides:", error);
+            throw error;
+        }
+    },
+
+    // Save or update deduction overrides
+    saveDeductionOverrides: async (payrollId, employeeId, overrides) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Delete existing overrides for this employee in this payroll
+            await connection.query(
+                'DELETE FROM payroll_deduction_overrides WHERE payroll_id = ? AND employee_id = ?',
+                [payrollId, employeeId]
+            );
+
+            // Insert new overrides
+            if (overrides && overrides.length > 0) {
+                const values = overrides.map(override => [
+                    payrollId,
+                    employeeId,
+                    override.deduction_type,
+                    override.original_amount,
+                    override.override_amount,
+                    override.override_reason || null
+                ]);
+
+                await connection.query(`
+                    INSERT INTO payroll_deduction_overrides 
+                    (payroll_id, employee_id, deduction_type, original_amount, override_amount, override_reason)
+                    VALUES ?
+                `, [values]);
+            }
+
+            await connection.commit();
+            return true;
+        } catch (error) {
+            await connection.rollback();
+            console.error("❌ Error saving deduction overrides:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get detailed deductions breakdown for an employee
+    getEmployeeDeductionsBreakdown: async (employeeId, salary) => {
+        try {
+            // Get base deductions from payroll_deductions table
+            const [baseDeductions] = await db.query(`
+                SELECT 
+                    deduction_type,
+                    fixed_amount,
+                    description,
+                    category
+                FROM payroll_deductions 
+                WHERE is_active = TRUE
+                ORDER BY category, deduction_type
+            `);
+
+            // Calculate total deductions
+            const totalDeductions = baseDeductions.reduce((sum, deduction) => {
+                return sum + parseFloat(deduction.fixed_amount || 0);
+            }, 0);
+
+            return {
+                deductions: baseDeductions,
+                total: totalDeductions
+            };
+        } catch (error) {
+            console.error("❌ Error getting employee deductions breakdown:", error);
+            throw error;
+        }
+    },
+
+    // Get payroll entry with deduction breakdown
+    getPayrollEntryWithDeductions: async (payrollId, employeeId) => {
+        try {
+            // Get payroll entry
+            const [payrollEntry] = await db.query(`
+                SELECT * FROM payroll WHERE id = ? AND employee_id = ?
+            `, [payrollId, employeeId]);
+
+            if (payrollEntry.length === 0) {
+                return null;
+            }
+
+            const entry = payrollEntry[0];
+
+            // Get base deductions
+            const deductionsBreakdown = await HRModel.getEmployeeDeductionsBreakdown(employeeId, entry.fixed_salary);
+
+            // Get any overrides for this payroll entry
+            const overrides = await HRModel.getDeductionOverrides(payrollId, employeeId);
+
+            // Apply overrides to deductions
+            const finalDeductions = deductionsBreakdown.deductions.map(deduction => {
+                const override = overrides.find(o => o.deduction_type === deduction.deduction_type);
+                return {
+                    ...deduction,
+                    original_amount: parseFloat(deduction.fixed_amount),
+                    override_amount: override ? parseFloat(override.override_amount) : parseFloat(deduction.fixed_amount),
+                    is_overridden: !!override,
+                    override_reason: override ? override.override_reason : null
+                };
+            });
+
+            // Calculate final total
+            const finalTotal = finalDeductions.reduce((sum, deduction) => {
+                return sum + deduction.override_amount;
+            }, 0);
+
+            return {
+                payrollEntry: entry,
+                deductions: finalDeductions,
+                totalDeductions: finalTotal,
+                overrides: overrides
+            };
+        } catch (error) {
+            console.error("❌ Error getting payroll entry with deductions:", error);
+            throw error;
+        }
+    },
+
+    // Payslip Management Functions (for HR to view payslips)
+    getAllPayslips: async function() {
+        try {
+            console.log('🔍 HR Model: Starting getAllPayslips...');
+            
+            // First, let's test if we can connect to the database
+            console.log('🔍 HR Model: Testing database connection...');
+            const [testResult] = await db.query('SELECT 1 as test');
+            console.log('🔍 HR Model: Database connection test result:', testResult);
+            
+            // Check if payslip table exists
+            console.log('🔍 HR Model: Checking if payslip table exists...');
+            const [tableCheck] = await db.query(`
+                SELECT COUNT(*) as count 
+                FROM information_schema.tables 
+                WHERE table_schema = DATABASE() 
+                AND table_name = 'payslip'
+            `);
+            console.log('🔍 HR Model: Payslip table exists:', tableCheck[0].count > 0);
+            
+            // Check if we have any payslips
+            console.log('🔍 HR Model: Checking payslip count...');
+            const [countResult] = await db.query('SELECT COUNT(*) as count FROM payslip');
+            console.log('🔍 HR Model: Total payslips in database:', countResult[0].count);
+            
+            // Now try the main query
+            const SQL_COMMAND = `
+                SELECT 
+                    p.id,
+                    p.payslip_number,
+                    p.payslip_date,
+                    p.payslip_period,
+                    p.employee_id,
+                    e.full_name,
+                    r.name as position,
+                    e.profile_picture,
+                    p.basic_salary,
+                    p.salary_before_tax,
+                    p.total_deductions,
+                    p.absence_deduction,
+                    p.net_salary,
+                    p.start_date,
+                    p.end_date,
+                    p.days_present,
+                    p.days_absent,
+                    p.total_hours,
+                    p.overtime_hours,
+                    p.payment_method,
+                    p.status,
+                    p.approved_date,
+                    u.username as approved_by_name
+                FROM payslip p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                LEFT JOIN users u ON p.approved_by = u.id
+                ORDER BY p.payslip_date DESC, p.payslip_number DESC
+            `;
+
+            console.log('🔍 HR Model: Executing main query...');
+            console.log('🔍 HR Model: SQL Command:', SQL_COMMAND);
+            
+            const [payslips] = await db.query(SQL_COMMAND);
+            
+            console.log('🔍 HR Model: Query executed successfully');
+            console.log('🔍 HR Model: Number of payslips found:', payslips.length);
+            if (payslips.length > 0) {
+                console.log('🔍 HR Model: Sample payslip:', payslips[0]);
+            }
+            
+            return payslips;
+        } catch (error) {
+            console.error('❌ HR Model: Error in getAllPayslips:', error);
+            console.error('❌ HR Model: Error details:', {
+                message: error.message,
+                code: error.code,
+                sqlMessage: error.sqlMessage,
+                sqlState: error.sqlState,
+                sql: error.sql
+            });
+            throw new Error('Failed to fetch payslips');
+        }
+    },
+
+    getPayslipById: async function(payslipId) {
+        const SQL_COMMAND = `
+            SELECT 
+                p.*,
+                e.full_name,
+                r.name as position,
+                e.profile_picture,
+                u.username as approved_by_name
+            FROM payslip p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.id
+            LEFT JOIN users u ON p.approved_by = u.id
+            WHERE p.id = ?
+        `;
+
+        try {
+            const [payslips] = await db.query(SQL_COMMAND, [payslipId]);
+            return payslips[0] || null;
+        } catch (error) {
+            console.error('Error in getPayslipById:', error);
+            throw new Error('Failed to fetch payslip');
         }
     }
 };

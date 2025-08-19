@@ -74,6 +74,7 @@
     router.get('/requests/:employeeId', HRController.getPendingRequestsByUserId);
     router.post('/approve', HRController.handleRequestApproval);
     router.post('/payroll/generate', HRController.generatePayroll);
+    router.post('/payroll/submit', HRController.submitPayroll);
     router.post('/payroll/cancel', HRController.cancelPayroll);
     router.get('/payroll/pending', HRController.getPendingPayroll);
     router.post('/payroll/approve-reject', HRController.approveOrRejectPayroll);
@@ -85,6 +86,23 @@
     router.put('/deductions/restore/:id', HRController.restoreDeduction);
     router.delete('/deductions/delete/:id', HRController.deleteDeduction);
     router.get('/deductions/:id', HRController.getDeductionById);
+
+    // New payroll deductions routes
+    router.get('/payroll-deductions', HRController.getAllDeductions);
+    router.post('/payroll-deductions/add', HRController.addDeduction);
+    router.put('/payroll-deductions/update/:id', HRController.updateDeduction);
+    router.put('/payroll-deductions/archive/:id', HRController.archiveDeduction);
+    router.put('/payroll-deductions/restore/:id', HRController.restoreDeduction);
+    router.delete('/payroll-deductions/delete/:id', HRController.deleteDeduction);
+    router.get('/payroll-deductions/:id', HRController.getDeductionById);
+
+    // Initialize payroll deductions table
+    router.post('/payroll-deductions/initialize', HRController.initializePayrollDeductions);
+
+    // New routes for deduction overrides and breakdowns
+    router.get('/employee/:employeeId/deductions-breakdown', HRController.getEmployeeDeductionsBreakdown);
+    router.get('/payroll/:payrollId/employee/:employeeId/deductions', HRController.getPayrollEntryWithDeductions);
+    router.post('/payroll/:payrollId/employee/:employeeId/deduction-overrides', HRController.saveDeductionOverrides);
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
@@ -262,6 +280,10 @@
 
     // Check onboarding status
     router.get('/onboarding/check-status', authMiddleware.verifySession, HRController.checkOnboardingStatus);
+
+    // Payslip Management Routes (for HR to view payslips)
+    router.get('/payslips', authMiddleware.verifySession, HRController.getAllPayslips);
+    router.get('/payslips/:payslipId', authMiddleware.verifySession, HRController.getPayslipById);
 
     // Document Types Management Routes
     router.get('/document-types', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getAllDocumentTypes);
