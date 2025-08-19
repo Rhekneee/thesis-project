@@ -4,13 +4,14 @@ const path = require("path");
 const fs = require("fs");
 const bcrypt = require('bcrypt');
 const db = require('../../../db');  // Fix the database import path
+const pathConfig = require('../../../utils/pathConfig'); // Import path configuration
 
 // ✅ CommonJS-compatible PDF.js import
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/build/pdf.worker.js';
 
-// 📁 Define the upload directory
-const uploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/resume");
+// 📁 Define the upload directory using path configuration
+const uploadDir = pathConfig.getUploadPath('resume');
 
 // 📦 Multer storage setup
 const storage = multer.diskStorage({
@@ -35,7 +36,7 @@ const upload = multer({
 });
 
 // Add developer profile picture upload configuration
-const developerUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/developer_profiles");
+const developerUploadDir = pathConfig.getUploadPath('developer_profiles');
 
 // Ensure the upload directory exists
 if (!fs.existsSync(developerUploadDir)) {
@@ -68,7 +69,7 @@ const developerUpload = multer({
 });
 
 // Add property image upload configuration
-const propertyUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/properties");
+const propertyUploadDir = pathConfig.getUploadPath('properties');
 
 // Ensure the upload directory exists
 if (!fs.existsSync(propertyUploadDir)) {
@@ -159,9 +160,9 @@ const checkIfResume = async (filePath) => {
     }
 };
 
-// Define upload directories
-const resumeUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/resume");
-const profilePictureUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/profile_pictures");
+// Define upload directories using path configuration
+const resumeUploadDir = pathConfig.getUploadPath('resume');
+const profilePictureUploadDir = pathConfig.getUploadPath('profile_pictures');
 
 // Ensure upload directories exist
 [resumeUploadDir, profilePictureUploadDir].forEach(dir => {

@@ -2,9 +2,10 @@ const ManufacturingModel = require("../model/manu.model");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const pathConfig = require('../../../utils/pathConfig'); // Import path configuration
 
 // Configure multer for project image uploads
-const projectUploadDir = path.resolve("C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/projects");
+const projectUploadDir = pathConfig.getUploadPath('projects');
 
 // Ensure the upload directory exists
 if (!fs.existsSync(projectUploadDir)) {
