@@ -664,175 +664,151 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },    
 
+    // Generate payroll for the selected period
     generatePayroll: async (req, res) => {
         try {
             const { month, year, period } = req.body;
             console.log('\n=== PAYROLL GENERATION STARTED ===');
             console.log('1. Input Parameters:', { month, year, period });
 
-            // Convert month and year to numbers
-            const monthNum = parseInt(month);
-            const yearNum = parseInt(year);
-
-            // Get current date
-            const currentDate = new Date();
-            const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
-            const currentYear = currentDate.getFullYear();
-
-            // Validate if the selected month is the current month
-            if (monthNum !== currentMonth || yearNum !== currentYear) {
-                return res.status(400).json({ 
-                    message: `Payroll can only be generated for the current month (${currentMonth}/${currentYear}). Please select the current month.`
+            // Validate input parameters
+            if (!month || !year || !period) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Month, year, and period are required'
                 });
             }
 
-            // Validate month and year
-            if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
-                return res.status(400).json({ message: 'Invalid month' });
-            }
-            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-                return res.status(400).json({ message: 'Invalid year' });
+            // Validate period
+            if (!['first', 'second'].includes(period)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Period must be either "first" or "second"'
+                });
             }
 
+            // Calculate date range based on period
             let startDate, endDate;
-
-            // Helper function to get the last day of the month
-            const getLastDayOfMonth = (year, month) => {
-                return new Date(year, month, 0).getDate();
-            };
-
-            // Helper function to format date with ordinal
-            const formatDateWithOrdinal = (date) => {
-                const day = date.getDate();
-                const suffix = ['th', 'st', 'nd', 'rd'][(day % 10 > 3 || day > 20) ? 0 : day % 10];
-                return `${day}${suffix}`;
-            };
-
             if (period === 'first') {
-                // First period: 1st to 15th
-                startDate = new Date(yearNum, monthNum - 1, 1);
-                endDate = new Date(yearNum, monthNum - 1, 15);
+                startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+                endDate = `${year}-${month.toString().padStart(2, '0')}-15`;
             } else {
-                // Second period: 16th to last day of month
-                startDate = new Date(yearNum, monthNum - 1, 16);
-                const lastDay = getLastDayOfMonth(yearNum, monthNum);
-                endDate = new Date(yearNum, monthNum - 1, lastDay);
+                startDate = `${year}-${month.toString().padStart(2, '0')}-16`;
+                // Get last day of month
+                const lastDay = new Date(year, month, 0).getDate();
+                endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
             }
 
-            // Format dates to YYYY-MM-DD
-            const formatDate = (date) => {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
+            console.log('2. Date Range:', { startDate, endDate });
 
-            const formattedStartDate = formatDate(startDate);
-            const formattedEndDate = formatDate(endDate);
+            // Get employees with attendance data
+            const employees = await HRModel.getEmployeesWithAttendance(startDate, endDate);
+            console.log('3. Employees found:', employees.length);
 
-            // Get all active employees
-            const employees = await HRModel.getEmployeesWithAttendance(
-                formattedStartDate,
-                formattedEndDate
-            );
-
-            if (!employees || employees.length === 0) {
-                return res.status(404).json({ 
-                    message: 'No active employees found in the system.'
+            if (employees.length === 0) {
+                return res.json({
+                    success: true,
+                    message: 'No employees found for the selected period',
+                    payrollData: []
                 });
             }
 
-            const records = [];
-            for (let e of employees) {
-                try {
-                    // Get position details
-                    const positionInfo = await HRModel.getPositionSalary(e.role_id);
-                    if (!positionInfo) {
-                        console.log(`No position found for role_id: ${e.role_id}`);
-                        continue;
+            // Get deductions for calculation
+            const deductions = await HRModel.getDeductionsBySalary();
+            console.log('4. Deductions loaded:', deductions.length);
+
+            // Calculate payroll for each employee
+            const payrollData = employees.map(employee => {
+                console.log(`\n--- Calculating payroll for ${employee.full_name} ---`);
+                
+                // 1. Monthly salary (from positions table)
+                const monthlySalary = parseFloat(employee.monthly_salary) || 0;
+                console.log('Monthly salary:', monthlySalary);
+                
+                // 2. Semi-monthly payout (monthly salary / 2)
+                const semiMonthlyPayout = monthlySalary / 2;
+                console.log('Semi-monthly payout:', semiMonthlyPayout);
+                
+                // 3. Daily rate using 26-day factor
+                const dailyRate = monthlySalary / 26;
+                console.log('Daily rate (26-day factor):', dailyRate);
+                
+                // 4. Absence deduction for the period
+                const daysAbsent = parseInt(employee.days_absent) || 0;
+                const absenceDeduction = dailyRate * daysAbsent;
+                console.log('Days absent:', daysAbsent, 'Absence deduction:', absenceDeduction);
+                
+                // 5. Gross pay for the period
+                const grossPay = semiMonthlyPayout - absenceDeduction;
+                console.log('Gross pay (after absence deduction):', grossPay);
+                
+                // 6. Calculate total deductions
+                let totalDeductions = 0;
+                const deductionBreakdown = {};
+                
+                deductions.forEach(deduction => {
+                    if (deduction.is_active) {
+                        const amount = parseFloat(deduction.fixed_amount) || 0;
+                        totalDeductions += amount;
+                        deductionBreakdown[deduction.deduction_type] = amount;
+                        console.log(`${deduction.deduction_type}:`, amount);
                     }
-
-                    // Base salary calculations
-                    const baseSalary = positionInfo.salary || 0;
-                    const dailyRate = baseSalary / 22; // Assuming 22 working days per month
-                    const hourlyRate = dailyRate / 8; // Assuming 8 hours per day
-
-                    // Calculate regular pay
-                    const regularPay = dailyRate * e.days_present;
-
-                    // Calculate half-day pay
-                    const halfDayPay = (dailyRate / 2) * e.days_half_day;
-
-                    // Calculate early out deductions
-                    const earlyOutDeduction = hourlyRate * e.days_early_out;
-
-                    // Calculate overtime pay (1.25x rate for overtime)
-                    const overtimePay = hourlyRate * 1.25 * e.overtime_hours;
-
-                    // Calculate absence deduction
-                    const absenceDeduction = dailyRate * e.days_absent;
-
-                    // Calculate total deductions
-                    const deductions = await HRModel.getDeductionsBySalary(baseSalary);
-                    const totalDeductions = deductions.reduce((sum, deduction) => {
-                        const amount = (baseSalary * deduction.employee_percentage) / 100;
-                        return sum + amount;
-                    }, 0);
-
-                    // Calculate net salary
-                    const grossSalary = regularPay + halfDayPay + overtimePay - earlyOutDeduction - absenceDeduction;
-                    const netSalary = grossSalary - totalDeductions;
-
-                    records.push({
-                        employee_id: e.employee_id,
-                        full_name: e.full_name,
-                        position: e.position,
-                        start_date: formattedStartDate,
-                        end_date: formattedEndDate,
-                        days_present: e.days_present,
-                        days_half_day: e.days_half_day,
-                        days_early_out: e.days_early_out,
-                        days_absent: e.days_absent,
-                        days_holiday_rest: e.days_holiday_rest,
-                        days_on_leave: e.days_on_leave,
-                        total_hours: e.total_hours,
-                        overtime_hours: e.overtime_hours,
-                        fixed_salary: baseSalary,
-                        regular_pay: regularPay,
-                        half_day_pay: halfDayPay,
-                        overtime_pay: overtimePay,
-                        early_out_deduction: earlyOutDeduction,
-                        absence_deduction: absenceDeduction,
-                        total_deductions: totalDeductions,
-                        gross_salary: grossSalary,
-                        net_salary: netSalary,
-                        payroll_date: new Date().toISOString().split('T')[0],
-                        payroll_period: `${formatDateWithOrdinal(startDate)} to ${formatDateWithOrdinal(endDate)} of ${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })}`,
-                        status: 'pending'
-                    });
-                } catch (error) {
-                    console.error(`Error processing employee ${e.employee_id}:`, error);
-                    continue;
-                }
-            }
-
-            if (records.length === 0) {
-                return res.status(404).json({ 
-                    message: 'No payroll records could be generated. Please check if all employees have valid position information.'
                 });
-            }
-
-            await HRModel.insertPayrollRecords(records);
-            
-            res.json({ 
-                message: `Payroll generated successfully for ${period === 'first' ? '1st to 15th' : '16th to 30th/31st'} of ${new Date(yearNum, monthNum - 1).toLocaleString('default', { month: 'long' })}`,
-                payroll: records 
+                
+                // 7. Net pay after all deductions
+                const netPay = grossPay - totalDeductions;
+                console.log('Total deductions:', totalDeductions);
+                console.log('Net pay:', netPay);
+                
+                // Determine payroll period description
+                const payrollPeriod = period === 'first' ? '1st to 15th' : '16th to 30th/31st';
+                
+                return {
+                    employee_id: employee.employee_id,
+                    full_name: employee.full_name,
+                    position: employee.position,
+                    monthly_salary: monthlySalary,
+                    semi_monthly_payout: semiMonthlyPayout,
+                    daily_rate: dailyRate,
+                    days_present: parseInt(employee.days_present) || 0,
+                    days_absent: daysAbsent,
+                    days_half_day: parseInt(employee.days_half_day) || 0,
+                    days_early_out: parseInt(employee.days_early_out) || 0,
+                    days_holiday_rest: parseInt(employee.days_holiday_rest) || 0,
+                    days_on_leave: parseInt(employee.days_on_leave) || 0,
+                    total_hours: parseFloat(employee.total_hours) || 0,
+                    overtime_hours: parseFloat(employee.overtime_hours) || 0,
+                    absence_deduction: absenceDeduction,
+                    gross_pay: grossPay,
+                    total_deductions: totalDeductions,
+                    deduction_breakdown: deductionBreakdown,
+                    net_pay: netPay,
+                    start_date: startDate,
+                    end_date: endDate,
+                    payroll_period: payrollPeriod,
+                    period_type: period
+                };
             });
-        } catch (err) {
-            console.error('Error in generatePayroll:', err);
-            res.status(500).json({ 
-                message: 'Failed to generate payroll. Please try again later.',
-                error: process.env.NODE_ENV === 'development' ? err.message : undefined
+
+            console.log('\n=== PAYROLL CALCULATION COMPLETED ===');
+            console.log('Total employees processed:', payrollData.length);
+            
+            res.json({
+                success: true,
+                message: `Payroll generated successfully for ${period === 'first' ? '1st to 15th' : '16th to 30th/31st'} of ${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`,
+                payrollData: payrollData,
+                period: period,
+                month: month,
+                year: year,
+                startDate: startDate,
+                endDate: endDate
+            });
+
+        } catch (error) {
+            console.error('Error in generatePayroll:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to generate payroll: ' + error.message
             });
         }
     },
@@ -891,33 +867,28 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // HR Controller: Update Deduction
     updateDeduction: async (req, res) => {
         try {
-            const { id, deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
+            const { id, deduction_type, fixed_amount, description, category, is_active } = req.body;
 
             // Validate required fields
-            if (!id || !deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
-                return res.status(400).json({ error: 'All fields are required' });
+            if (!id || !deduction_type || fixed_amount === undefined || fixed_amount === null) {
+                return res.status(400).json({ error: 'ID, deduction type, and fixed amount are required' });
             }
 
-            // Validate percentages are not negative
-            if (employee_percentage < 0 || employer_percentage < 0) {
-                return res.status(400).json({ error: 'Percentages cannot be negative' });
+            // Validate fixed amount is not negative
+            if (parseFloat(fixed_amount) < 0) {
+                return res.status(400).json({ error: 'Fixed amount cannot be negative' });
             }
 
-            // Validate salary range
-            if (parseFloat(salary_min) >= parseFloat(salary_max)) {
-                return res.status(400).json({ error: 'Minimum salary must be less than maximum salary' });
-            }
-
-            const result = await HRModel.updateDeduction(
-                id,
+            const result = await HRModel.updateDeduction({
+                id: parseInt(id),
                 deduction_type,
-                salary_min,
-                salary_max,
-                employee_percentage,
-                employer_percentage
-            );
+                fixed_amount: parseFloat(fixed_amount),
+                description,
+                category: category || 'government',
+                is_active: is_active !== undefined ? is_active : true
+            });
 
-            if (result.affectedRows === 0) {
+            if (!result) {
                 return res.status(404).json({ error: 'Deduction not found' });
             }
 
@@ -930,34 +901,29 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Add new deduction
     addDeduction: async (req, res) => {
         try {
-            const { deduction_type, salary_min, salary_max, employee_percentage, employer_percentage } = req.body;
+            const { deduction_type, fixed_amount, description, category, is_active } = req.body;
 
             // Validate required fields
-            if (!deduction_type || !salary_min || !salary_max || !employee_percentage || !employer_percentage) {
-                return res.status(400).json({ error: 'All fields are required' });
+            if (!deduction_type || fixed_amount === undefined || fixed_amount === null) {
+                return res.status(400).json({ error: 'Deduction type and fixed amount are required' });
             }
 
-            // Validate percentages are not negative
-            if (employee_percentage < 0 || employer_percentage < 0) {
-                return res.status(400).json({ error: 'Percentages cannot be negative' });
+            // Validate fixed amount is not negative
+            if (parseFloat(fixed_amount) < 0) {
+                return res.status(400).json({ error: 'Fixed amount cannot be negative' });
             }
 
-            // Validate salary range
-            if (parseFloat(salary_min) >= parseFloat(salary_max)) {
-                return res.status(400).json({ error: 'Minimum salary must be less than maximum salary' });
-            }
-
-            const result = await HRModel.addDeduction(
+            const result = await HRModel.addDeduction({
                 deduction_type,
-                salary_min,
-                salary_max,
-                employee_percentage,
-                employer_percentage
-            );
+                fixed_amount: parseFloat(fixed_amount),
+                description,
+                category: category || 'government',
+                is_active: is_active !== undefined ? is_active : true
+            });
 
             res.status(201).json({
                 message: 'Deduction added successfully',
-                id: result.insertId
+                id: result
             });
         } catch (error) {
             console.error('Error adding deduction:', error);
@@ -998,6 +964,93 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ 
                 message: 'Failed to cancel payroll records',
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    },
+
+    // Submit temporary payroll data to database
+    submitPayroll: async (req, res) => {
+        try {
+            const { month, year, period, payrollData } = req.body;
+            console.log('\n=== PAYROLL SUBMISSION STARTED ===');
+            console.log('1. Input Parameters:', { month, year, period });
+            console.log('2. Payroll Records Count:', payrollData ? payrollData.length : 0);
+
+            // Validate required fields
+            if (!month || !year || !period || !payrollData || !Array.isArray(payrollData)) {
+                return res.status(400).json({ 
+                    message: 'Missing required fields: month, year, period, and payrollData array are required' 
+                });
+            }
+
+            // Validate payroll data structure
+            const requiredFields = ['employee_id', 'start_date', 'end_date', 'days_present', 'days_absent', 
+                                  'total_hours', 'overtime_hours', 'monthly_salary', 'total_deductions', 
+                                  'absence_deduction', 'net_pay'];
+            
+            for (const record of payrollData) {
+                for (const field of requiredFields) {
+                    if (record[field] === undefined || record[field] === null) {
+                        return res.status(400).json({ 
+                            message: `Missing required field: ${field} in payroll record for employee ${record.employee_id}` 
+                        });
+                    }
+                }
+                
+                // Log the record for debugging
+                console.log(`Record for employee ${record.employee_id}:`, {
+                    employee_id: record.employee_id,
+                    start_date: record.start_date,
+                    end_date: record.end_date,
+                    days_present: record.days_present,
+                    days_absent: record.days_absent,
+                    days_half_day: record.days_half_day,
+                    days_early_out: record.days_early_out,
+                    total_hours: record.total_hours,
+                    overtime_hours: record.overtime_hours,
+                    monthly_salary: record.monthly_salary,
+                    total_deductions: record.total_deductions,
+                    absence_deduction: record.absence_deduction,
+                    net_pay: record.net_pay
+                });
+            }
+
+            // Insert payroll records into database
+            const insertedIds = await HRModel.insertPayrollRecords(payrollData);
+            
+            // Save deduction overrides for entries that have them
+            const overridePromises = payrollData
+                .filter(record => record.deduction_overrides && record.deduction_overrides.length > 0)
+                .map(async (record, index) => {
+                    try {
+                        // Get the payroll ID from the inserted record
+                        const payrollId = insertedIds[index];
+                        
+                        if (payrollId) {
+                            await HRModel.saveDeductionOverrides(payrollId, record.employee_id, record.deduction_overrides);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to save overrides for employee ${record.employee_id}:`, error);
+                        // Don't fail the entire submission for override errors
+                    }
+                });
+
+            // Wait for all overrides to be saved
+            if (overridePromises.length > 0) {
+                await Promise.all(overridePromises);
+                console.log('✅ Deduction overrides saved successfully');
+            }
+            
+            console.log('✅ Payroll records submitted successfully');
+            res.json({ 
+                message: `Payroll submitted successfully for ${period === 'first' ? '1st to 15th' : '16th to 30th/31st'} of ${new Date(year, month - 1).toLocaleString('default', { month: 'long' })}`,
+                submittedCount: payrollData.length
+            });
+        } catch (err) {
+            console.error('Error in submitPayroll:', err);
+            res.status(500).json({ 
+                message: 'Failed to submit payroll. Please try again later.',
+                error: process.env.NODE_ENV === 'development' ? err.message : undefined
             });
         }
     },
@@ -2540,6 +2593,244 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         } catch (error) {
             console.error('❌ HR Controller: Error checking onboarding status:', error);
             res.status(500).json({ error: 'Failed to check onboarding status' });
+        }
+    },
+
+    // Initialize payroll deductions table with sample data
+    initializePayrollDeductions: async (req, res) => {
+        try {
+            // Create the table first
+            await HRModel.createDeductionsTable();
+            
+            // Create the overrides table
+            await HRModel.createDeductionOverridesTable();
+            
+            // Check if table already has data
+            const [existingDeductions] = await db.query('SELECT COUNT(*) as count FROM payroll_deductions');
+            
+            if (existingDeductions[0].count === 0) {
+                // Insert sample government deductions
+                const sampleDeductions = [
+                    { deduction_type: 'SSS Premium', fixed_amount: 1350.00, description: 'Social Security System Premium', category: 'government' },
+                    { deduction_type: 'PhilHealth', fixed_amount: 400.00, description: 'Philippine Health Insurance Corporation', category: 'government' },
+                    { deduction_type: 'Pag-IBIG', fixed_amount: 100.00, description: 'Pag-IBIG Fund Contribution', category: 'government' },
+                    { deduction_type: 'Tax', fixed_amount: 0.00, description: 'Income Tax (calculated separately)', category: 'government' }
+                ];
+
+                for (const deduction of sampleDeductions) {
+                    await HRModel.addDeduction(deduction);
+                }
+                
+                res.json({ 
+                    success: true, 
+                    message: 'Payroll deductions table initialized with sample data',
+                    deductions: sampleDeductions
+                });
+            } else {
+                res.json({ 
+                    success: true, 
+                    message: 'Payroll deductions table already exists with data',
+                    count: existingDeductions[0].count
+                });
+            }
+        } catch (error) {
+            console.error('❌ Error initializing payroll deductions:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to initialize payroll deductions' 
+            });
+        }
+    },
+
+    // Get detailed deduction breakdown for an employee
+    getEmployeeDeductionsBreakdown: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            const { salary } = req.query;
+            
+            const breakdown = await HRModel.getEmployeeDeductionsBreakdown(employeeId, salary);
+            
+            res.json({
+                success: true,
+                breakdown: breakdown
+            });
+        } catch (error) {
+            console.error('❌ Error getting employee deductions breakdown:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get deductions breakdown'
+            });
+        }
+    },
+
+    // Get payroll entry with detailed deductions
+    getPayrollEntryWithDeductions: async (req, res) => {
+        try {
+            const { payrollId, employeeId } = req.params;
+            
+            const result = await HRModel.getPayrollEntryWithDeductions(payrollId, employeeId);
+            
+            if (!result) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Payroll entry not found'
+                });
+            }
+            
+            res.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            console.error('❌ Error getting payroll entry with deductions:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get payroll entry details'
+            });
+        }
+    },
+
+    // Save deduction overrides for a payroll entry
+    saveDeductionOverrides: async (req, res) => {
+        try {
+            const { payrollId, employeeId } = req.params;
+            const { overrides } = req.body;
+            
+            if (!overrides || !Array.isArray(overrides)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid overrides data'
+                });
+            }
+            
+            await HRModel.saveDeductionOverrides(payrollId, employeeId, overrides);
+            
+            res.json({
+                success: true,
+                message: 'Deduction overrides saved successfully'
+            });
+        } catch (error) {
+            console.error('❌ Error saving deduction overrides:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to save deduction overrides'
+            });
+        }
+    },
+
+    // Payslip Management Controllers (for HR to view payslips)
+    getAllPayslips: async (req, res) => {
+        try {
+            console.log('🔍 HR Controller: getAllPayslips called');
+            
+            const payslips = await HRModel.getAllPayslips();
+            console.log('🔍 HR Controller: Model returned payslips:', payslips.length);
+
+            // Format the data for frontend
+            const formattedPayslips = payslips.map(payslip => ({
+                id: payslip.id,
+                payslip_number: payslip.payslip_number,
+                payslip_date: payslip.payslip_date,
+                payslip_period: payslip.payslip_period,
+                employee_id: payslip.employee_id,
+                name: payslip.full_name,
+                position: payslip.position,
+                profile_picture: payslip.profile_picture || '',
+                basic_salary: parseFloat(payslip.basic_salary),
+                salary_before_tax: parseFloat(payslip.salary_before_tax),
+                total_deductions: parseFloat(payslip.total_deductions),
+                absence_deduction: parseFloat(payslip.absence_deduction),
+                net_salary: parseFloat(payslip.net_salary),
+                start_date: payslip.start_date,
+                end_date: payslip.end_date,
+                days_present: payslip.days_present,
+                days_absent: payslip.days_absent,
+                total_hours: parseFloat(payslip.total_hours),
+                overtime_hours: parseFloat(payslip.overtime_hours),
+                payment_method: payslip.payment_method,
+                status: payslip.status,
+                approved_date: payslip.approved_date,
+                approved_by_name: payslip.approved_by_name
+            }));
+
+            console.log('🔍 HR Controller: Sending response with', formattedPayslips.length, 'payslips');
+            return res.status(200).json({
+                success: true,
+                data: formattedPayslips
+            });
+
+        } catch (error) {
+            console.error("❌ HR Controller: Error fetching payslips:", error);
+            console.error("❌ HR Controller: Error details:", {
+                message: error.message,
+                stack: error.stack
+            });
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error while fetching payslips"
+            });
+        }
+    },
+
+    getPayslipById: async (req, res) => {
+        try {
+            const { payslipId } = req.params;
+
+            if (!payslipId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Payslip ID is required"
+                });
+            }
+
+            // Get payslip details
+            const payslip = await HRModel.getPayslipById(payslipId);
+            
+            if (!payslip) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Payslip not found"
+                });
+            }
+
+            // Format the data
+            const formattedPayslip = {
+                id: payslip.id,
+                payslip_number: payslip.payslip_number,
+                payslip_date: payslip.payslip_date,
+                payslip_period: payslip.payslip_period,
+                employee_id: payslip.employee_id,
+                name: payslip.full_name,
+                position: payslip.position,
+                profile_picture: payslip.profile_picture || '',
+                basic_salary: parseFloat(payslip.basic_salary),
+                salary_before_tax: parseFloat(payslip.salary_before_tax),
+                total_deductions: parseFloat(payslip.total_deductions),
+                absence_deduction: parseFloat(payslip.absence_deduction),
+                net_salary: parseFloat(payslip.net_salary),
+                start_date: payslip.start_date,
+                end_date: payslip.end_date,
+                days_present: payslip.days_present,
+                days_absent: payslip.days_absent,
+                total_hours: parseFloat(payslip.total_hours),
+                overtime_hours: parseFloat(payslip.overtime_hours),
+                payment_method: payslip.payment_method,
+                status: payslip.status,
+                approved_date: payslip.approved_date,
+                approved_by_name: payslip.approved_by_name
+            };
+
+            return res.status(200).json({
+                success: true,
+                data: formattedPayslip
+            });
+
+        } catch (error) {
+            console.error("Error fetching payslip details:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error while fetching payslip details"
+            });
         }
     }
 };
