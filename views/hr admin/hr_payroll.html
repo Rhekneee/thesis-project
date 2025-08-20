@@ -8,7 +8,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <!-- Add side_top.css -->
     <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
@@ -191,13 +191,12 @@
         }
 
         #payrollTable thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #f8f9fb;
+            color: #212529;
             font-weight: 600;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-            border: none;
+            font-size: 12px;
+            border-top: 0;
+            vertical-align: middle;
         }
 
         #payrollTable tbody tr:nth-child(even) {
@@ -209,9 +208,7 @@
         }
 
         #payrollTable tbody tr:hover {
-            background-color: #e3f2fd !important;
-            transform: scale(1.01);
-            transition: all 0.2s ease;
+            background-color: #f8f9fa !important;
         }
 
         /* Summary row styling */
@@ -346,6 +343,30 @@
                 margin: 0 -15px;
                 border-radius: 0;
             }
+        }
+
+        /* Readable info panel on the left */
+        .readable-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .info-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #212529;
+            text-align: right;
         }
 
         /* Add these styles to your existing CSS */
@@ -530,6 +551,188 @@
         .deduction-override .form-control {
             border-color: #ffc107;
         }
+
+        /* ===== Construction Payroll Tab Styles ===== */
+        :root {
+            --brand-start: #0d6efd;
+            --brand-end: #6610f2;
+            --muted: #6c757d;
+        }
+
+        body {
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
+        .page-hero {
+            background: linear-gradient(120deg, var(--brand-start), var(--brand-end));
+            color: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.25);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+
+        .toolbar .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-table {
+            border-radius: 12px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable .sort-icon {
+            opacity: 0.5;
+            margin-left: 6px;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .sortable.active .sort-icon {
+            opacity: 1;
+            color: var(--brand-start);
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .summary-card {
+            border-left: 4px solid var(--brand-start);
+        }
+
+        /* ===== Calendar (Improved UI) ===== */
+        .calendar-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px;
+            min-width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .calendar-header .btn {
+            padding: 4px 10px;
+        }
+        .calendar-month-label {
+            font-weight: 600;
+        }
+        .calendar-weekdays, .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+        .calendar-weekdays {
+            color: var(--muted);
+            font-size: 12px;
+            margin: 6px 0 4px 0;
+        }
+        .calendar-day {
+            position: relative;
+            padding: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            user-select: none;
+        }
+        .calendar-day:hover { border-color: #dee2e6; }
+        .calendar-day .date { font-weight: 600; font-size: 13px; }
+        .calendar-day.outside-month { color: #adb5bd; }
+        .calendar-day.today {
+            outline: 2px solid rgba(13,110,253,.35);
+            outline-offset: 1px;
+        }
+        .calendar-day.rest-day { background: #f8f9fa; color: #94a3b8; cursor: pointer; }
+        .calendar-day.selected { background: rgba(13,110,253,.1); border-color: rgba(13,110,253,.25); }
+        .calendar-day.selected .date { color: #0d6efd; }
+        .calendar-day.selected-start,
+        .calendar-day.selected-end {
+            background: #0d6efd !important;
+            color: #fff !important;
+            border-color: #0d6efd !important;
+        }
+        .calendar-day.selected-start .date,
+        .calendar-day.selected-end .date {
+            color: #fff !important;
+        }
+
+        /* Tab specific styling */
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border-color: transparent;
+            color: #495057;
+            background-color: #f8f9fa;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            background-color: transparent;
+            border-bottom-color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            padding-top: 20px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .tab-pane.fade {
+            transition: opacity 0.15s linear;
+        }
+
+        .tab-pane.fade:not(.show) {
+            opacity: 0;
+        }
+
+        .tab-pane.fade.show {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -653,6 +856,7 @@
                     <ul class="collapse" id="Payroll">
                         <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
                         <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                        <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -697,120 +901,416 @@
                 <!-- Button to toggle sidebar with icon -->
             
     
-                <h1>Payroll Management</h1>
-                <div class="payroll-controls">
-                    <select id="month" class="form-select">
-                        <option value="01">January</option>
-                        <option value="02">February</option>
-                        <option value="03">March</option>
-                        <option value="04">April</option>
-                        <option value="05">May</option>
-                        <option value="06">June</option>
-                        <option value="07">July</option>
-                        <option value="08">August</option>
-                        <option value="09">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="year" class="form-select">
-                        <!-- Will be populated dynamically -->
-                    </select>
-                    <select id="period" class="form-select">
-                        <option value="first">1st to 15th</option>
-                        <option value="second">16th to 30th/31st</option>
-                    </select>
-                    <button id="generatePayroll" class="btn btn-primary">
-                        <i class="fas fa-file-invoice"></i> Generate Payroll
-                    </button>
-                    <button id="submitPayroll" class="btn btn-success" style="display: none;">
-                        <i class="fas fa-save"></i> Submit Payroll
-                    </button>
-                    <button id="cancelPayroll" class="btn btn-danger">
-                        <i class="fas fa-times-circle"></i> Cancel Payroll
-                    </button>
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="payrollActions" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-clock"></i> <span id="selectedAction">Load Pending Payroll</span>
+                
+                
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs mb-4" id="payrollTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="regular-payroll-tab" data-bs-toggle="tab" data-bs-target="#regular-payroll" type="button" role="tab" aria-controls="regular-payroll" aria-selected="true">
+                            <i class="fas fa-money-bill-wave me-2"></i>Regular Payroll
                         </button>
-                        <ul class="dropdown-menu" aria-labelledby="payrollActions">
-                            <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
-                            <li><a class="dropdown-item" href="#" data-action="approved" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
-                        </ul>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="construction-payroll-tab" data-bs-toggle="tab" data-bs-target="#construction-payroll" type="button" role="tab" aria-controls="construction-payroll" aria-selected="false">
+                            <i class="fa-solid fa-helmet-safety me-2"></i>Construction Payroll
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="payrollTabsContent">
+                    <!-- Regular Payroll Tab -->
+                    <div class="tab-pane fade show active" id="regular-payroll" role="tabpanel" aria-labelledby="regular-payroll-tab">
+                        <div class="page-hero mb-4 d-flex align-items-center justify-content-between gap-3">
+                            <div>
+                                <h2 class="mb-1"><i class="fa-solid fa-money-bill-wave me-2"></i>Employee Payroll</h2>
+                            </div>
+                        </div>
+
+                        <!-- Header: Left card (Month/Year/Half), Right card (Summary info) -->
+                        <div class="d-flex align-items-stretch justify-content-between flex-wrap gap-3 mb-3">
+                            <div class="glass-card p-3" style="min-width: 280px;">
+                                <div class="text-start">
+                                    <div class="text-muted small">Current Date</div>
+                                    <div id="currentDateText" class="fw-semibold">—</div>
+                                    <div class="mt-2 readable-info">
+                                        <div class="info-row">
+                                            <div class="info-label">Total Employees</div>
+                                            <div class="info-value" id="infoTotalEmployees">0</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="info-label">Last Generated Payroll</div>
+                                            <div class="info-value" id="infoLastGenerated">—</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="info-label">Days Before Cutoff</div>
+                                            <div class="info-value" id="infoDaysBeforeCutoff">—</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="info-label">Cutoff Date</div>
+                                            <div class="info-value" id="infoCutoffDate">—</div>
+                                        </div>
+                                        <div class="info-row">
+                                            <div class="info-label">Payroll Period</div>
+                                            <div class="info-value" id="infoPayrollPeriod">—</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass-card p-3 flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <label class="text-muted small mb-0">Month</label>
+                                    <select id="month" class="form-select">
+                                        <option value="01">January</option>
+                                        <option value="02">February</option>
+                                        <option value="03">March</option>
+                                        <option value="04">April</option>
+                                        <option value="05">May</option>
+                                        <option value="06">June</option>
+                                        <option value="07">July</option>
+                                        <option value="08">August</option>
+                                        <option value="09">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <label class="text-muted small mb-0">Year</label>
+                                    <select id="year" class="form-select">
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                    <label class="text-muted small mb-0">Half</label>
+                                    <select id="period" class="form-select">
+                                        <option value="first">First Half</option>
+                                        <option value="second">Second Half</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payroll-controls">
+                            <button id="generatePayroll" class="btn btn-primary">
+                                <i class="fas fa-file-invoice"></i> Generate Payroll
+                            </button>
+                            <button id="submitPayroll" class="btn btn-success" style="display: none;">
+                                <i class="fas fa-save"></i> Submit Payroll
+                            </button>
+                            <button id="cancelPayroll" class="btn btn-danger">
+                                <i class="fas fa-times-circle"></i> Cancel Payroll
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="payrollActions" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-clock"></i> <span id="selectedAction">Load Pending Payroll</span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="payrollActions">
+                                    <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
+                                    <li><a class="dropdown-item" href="#" data-action="approved" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Payroll Summary Section -->
+                        <div id="payrollSummary" class="row mb-3" style="display: none;">
+                            <div class="col-md-3">
+                                <div class="card text-center summary-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-muted">Total Monthly Salary</h6>
+                                        <h4 id="totalMonthlySalary" class="text-success">₱0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center summary-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-muted">Total Semi-Monthly Payout</h6>
+                                        <h4 id="totalSemiMonthly" class="text-success">₱0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center summary-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-muted">Total Deductions</h6>
+                                        <h4 id="totalDeductions" class="text-danger">₱0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center summary-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-muted">Net Payroll</h6>
+                                        <h4 id="totalNetPayroll" class="text-info">₱0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-table table-responsive">
+                        <table id="payrollTable" class="table mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Employee Name</th>
+                                    <th>Position</th>
+                                    <th>Days Present</th>
+                                    <th>Days Absent</th>
+                                    <th>Half Days</th>
+                                    <th>Early Out</th>
+                                    <th>Total Hours</th>
+                                    <th>Overtime Hours</th>
+                                    <th>Monthly Salary</th>
+                                    <th>Semi-Monthly</th>
+                                    <th>Daily Rate</th>
+                                    <th>Absence Deduction</th>
+                                    <th>Gross Pay</th>
+                                    <th>Total Deductions</th>
+                                    <th>Net Pay</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Filled dynamically -->
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- Construction Payroll Tab -->
+                    <div class="tab-pane fade" id="construction-payroll" role="tabpanel" aria-labelledby="construction-payroll-tab">
+                        <div class="page-hero mb-4 d-flex align-items-center justify-content-between gap-3">
+                            <div>
+                                <h2 class="mb-1"><i class="fa-solid fa-helmet-safety me-2"></i>Construction Payroll</h2>
+                            </div>
+                            <div class="d-flex gap-2 no-print">
+                                <button id="btnDownload" class="btn btn-light btn-sm"><i class="fa-solid fa-file-arrow-down"></i> Download CSV</button>
+                                <button id="btnPrint" class="btn btn-light btn-sm"><i class="fa-solid fa-print"></i> Print</button>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Controls (Weekly selection via calendar; Sun = Rest Day) -->
+                        <div class="payroll-controls no-print">
+                            <div class="d-flex align-items-start gap-3 flex-wrap w-100">
+                                <div class="calendar-card">
+                                    <div class="calendar-header">
+                                        <button class="btn btn-outline-secondary btn-sm" id="prevMonth"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <div class="calendar-month-label" id="calendarMonthLabel">—</div>
+                                        <button class="btn btn-outline-secondary btn-sm" id="nextMonth"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <div>Mon</div>
+                                        <div>Tue</div>
+                                        <div>Wed</div>
+                                        <div>Thu</div>
+                                        <div>Fri</div>
+                                        <div>Sat</div>
+                                        <div>Sun</div>
+                                    </div>
+                                    <div class="calendar-grid" id="calendarGrid"></div>
+                                    <div class="text-muted small mt-2">Click to select a custom payroll period: first click sets start, second sets end. Sundays are rest days.</div>
+                                </div>
+                                <div class="flex-grow-1 d-flex align-items-center gap-3">
+                                    <div class="ms-1">
+                                        <div class="text-muted small">Selected Period:</div>
+                                        <div class="fw-semibold" id="periodLabel">—</div>
+                                    </div>
+                                    <div class="ms-auto d-flex align-items-center gap-2">
+                                        <button id="generateConstructionPayroll" class="btn btn-primary">
+                                            <i class="fas fa-file-invoice"></i> Generate Payroll
+                                        </button>
+                                        <button id="submitConstructionPayroll" class="btn btn-success" style="display: none;">
+                                            <i class="fas fa-save"></i> Submit Payroll
+                                        </button>
+                                        <button id="cancelConstructionPayroll" class="btn btn-danger" style="display: none;">
+                                            <i class="fas fa-times-circle"></i> Cancel Payroll
+                                        </button>
+                                        <div class="dropdown">
+                                            <button class="btn btn-secondary dropdown-toggle" type="button" id="constructionPayrollActions" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-clock"></i> <span id="constructionSelectedAction">Load Pending Payroll</span>
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="constructionPayrollActions">
+                                                <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
+                                                <li><a class="dropdown-item" href="#" data-action="approved" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3 no-print">
+                            <div class="col-12 col-md-8">
+                                <div class="glass-card p-3 h-100">
+                                    <div class="toolbar d-flex flex-wrap align-items-center gap-2">
+                                        <div class="input-group" style="max-width: 420px;">
+                                            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                            <input type="text" id="searchInput" class="form-control" placeholder="Search by name, position, or status...">
+                                        </div>
+                                        <select id="statusFilter" class="form-select" style="max-width: 200px;">
+                                            <option value="">All Statuses</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="On Hold">On Hold</option>
+                                        </select>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <label for="entriesSelect" class="text-muted small mb-0">Show</label>
+                                            <select id="entriesSelect" class="form-select form-select-sm" style="width: auto;">
+                                                <option value="5">5</option>
+                                                <option value="10" selected>10</option>
+                                                <option value="25">25</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                                <option value="all">All</option>
+                                            </select>
+                                            <span class="text-muted small">entries</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="glass-card p-3 summary-card h-100 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-muted small">Total Workers</div>
+                                        <div class="fs-5 fw-bold" id="summaryWorkers">0</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-muted small">Total Payroll</div>
+                                        <div class="fs-5 fw-bold" id="summaryPayroll">₱0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-table table-responsive">
+                            <table class="table mb-0 align-middle" id="constructionPayrollTable">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-key="lastName">Last Name <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+                                        <th class="sortable" data-key="firstName">First Name <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+                                        <th class="sortable" data-key="position">Position <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+                                        <th class="sortable text-center" data-key="days">No. of Days <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+                                        <th class="sortable text-center" data-key="workedHours">Worked Hours <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+                                        <th class="sortable text-center" data-key="baseSalary">Base Salary <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+                                        <th class="sortable text-center" data-key="totalSalary">Total Salary <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+                                        <th class="sortable" data-key="status">Status <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="entriesMessage" class="text-muted small"></div>
+                            <nav aria-label="Table pagination">
+                                <ul class="pagination mb-0" id="pagination"></ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cancel Payroll Modal (Construction) -->
+                <div class="modal fade" id="cancelConstructionPayrollModal" tabindex="-1" aria-labelledby="cancelConstructionPayrollModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cancelConstructionPayrollModalLabel">Confirm Payroll Cancellation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to cancel all pending construction payroll records? This action cannot be undone.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Records</button>
+                                <button type="button" class="btn btn-danger" id="confirmCancelConstructionPayroll">Yes, Cancel Payroll</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Payroll Summary Section -->
-                <div id="payrollSummary" class="row mb-3" style="display: none;">
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Total Employees</h6>
-                                <h4 id="totalEmployees" class="text-primary">0</h4>
+                <!-- Add/Edit Modal -->
+                <div class="modal fade" id="recordModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fa-solid fa-user-helmet-safety me-2"></i><span id="modalTitle">Add Worker</span></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Total Monthly Salary</h6>
-                                <h4 id="totalMonthlySalary" class="text-success">₱0.00</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Total Semi-Monthly Payout</h6>
-                                <h4 id="totalSemiMonthly" class="text-success">₱0.00</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Total Deductions</h6>
-                                <h4 id="totalDeductions" class="text-danger">₱0.00</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h6 class="card-title text-muted">Net Payroll</h6>
-                                <h4 id="totalNetPayroll" class="text-info">₱0.00</h4>
-                            </div>
+                            <form id="recordForm" class="needs-validation" novalidate>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Last Name</label>
+                                            <input type="text" class="form-control" id="formLastName" required>
+                                            <div class="invalid-feedback">Required.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">First Name</label>
+                                            <input type="text" class="form-control" id="formFirstName" required>
+                                            <div class="invalid-feedback">Required.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Position</label>
+                                            <input type="text" class="form-control" id="formPosition" placeholder="e.g., Mason" required>
+                                            <div class="invalid-feedback">Required.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-select" id="formStatus" required>
+                                                <option value="Approved">Approved</option>
+                                                <option value="Pending">Pending</option>
+                                                <option value="On Hold">On Hold</option>
+                                            </select>
+                                            <div class="invalid-feedback">Required.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Worked Hours</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-regular fa-clock"></i></span>
+                                                <input type="number" min="0" step="0.01" class="form-control" id="formWorkedHours" required>
+                                                <div class="invalid-feedback">Enter a valid number.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Base Salary (₱/hr)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">₱</span>
+                                                <input type="number" min="0" step="0.01" class="form-control" id="formBaseSalary" required>
+                                                <div class="invalid-feedback">Enter a valid number.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
 
-                <div class="table-container">
-                <table id="payrollTable" class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Employee Name</th>
-                            <th>Position</th>
-                            <th>Days Present</th>
-                            <th>Days Absent</th>
-                            <th>Half Days</th>
-                            <th>Early Out</th>
-                            <th>Total Hours</th>
-                            <th>Overtime Hours</th>
-                            <th>Monthly Salary</th>
-                            <th>Semi-Monthly</th>
-                            <th>Daily Rate</th>
-                            <th>Absence Deduction</th>
-                            <th>Gross Pay</th>
-                            <th>Total Deductions</th>
-                            <th>Net Pay</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Filled dynamically -->
-                    </tbody>
-                </table>
+                <!-- View Modal -->
+                <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fa-regular fa-id-card me-2"></i>Worker Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>Name:</strong> <span id="viewName"></span></div>
+                                    <div class="col-6"><strong>Position:</strong> <span id="viewPosition"></span></div>
+                                    <div class="col-6"><strong>Status:</strong> <span id="viewStatus"></span></div>
+                                    <div class="col-6"><strong>Worked Hours:</strong> <span id="viewHours"></span></div>
+                                    <div class="col-6"><strong>Base Salary:</strong> <span id="viewBase"></span></div>
+                                    <div class="col-6"><strong>Total Salary:</strong> <span id="viewTotal"></span></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Add this modal HTML before the closing body tag -->
@@ -834,10 +1334,7 @@
             
             </div>
         </div>
-    
-
-
-
+    </div>
 
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -848,6 +1345,91 @@
     const BASE_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:4000/hr' 
         : `${window.location.origin}/hr`;
+
+    // ===== Employee Payroll Info Panel helpers =====
+    function formatDateDisplay(date) {
+        if (!date) return '—';
+        const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+        return new Date(date).toLocaleDateString(undefined, opts);
+    }
+
+    function getSelectedPeriodDates() {
+        const month = document.getElementById('month')?.value || String(new Date().getMonth() + 1).padStart(2, '0');
+        const year = document.getElementById('year')?.value || String(new Date().getFullYear());
+        const period = document.getElementById('period')?.value || (new Date().getDate() <= 15 ? 'first' : 'second');
+        const y = parseInt(year, 10);
+        const mIndex = parseInt(month, 10) - 1; // 0-based
+        // Allow flexible payroll dates: start at 2 and 17 if needed in the future via overrides
+        const firstHalfStart = 1; // can be adjusted later
+        const firstHalfEnd = 15;  // can be adjusted later
+        const secondHalfStart = 16; // can be adjusted later
+        const lastDay = new Date(y, mIndex + 1, 0).getDate();
+        const startDate = new Date(y, mIndex, period === 'first' ? firstHalfStart : secondHalfStart);
+        const endDate = new Date(y, mIndex, period === 'first' ? firstHalfEnd : lastDay);
+        startDate.setHours(0,0,0,0);
+        endDate.setHours(23,59,59,999);
+        return { startDate, endDate };
+    }
+
+    function computeDaysBeforeCutoff(endDate) {
+        const now = new Date();
+        const end = new Date(endDate);
+        // Zero time for day-precision
+        now.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const diff = Math.ceil((end.getTime() - now.getTime()) / msPerDay);
+        return diff;
+    }
+
+    function updateInfoPanel() {
+        try {
+            const now = new Date();
+            const currentDateEl = document.getElementById('currentDateText');
+            if (currentDateEl) currentDateEl.textContent = formatDateDisplay(now);
+
+            const { startDate, endDate } = getSelectedPeriodDates();
+            const periodEl = document.getElementById('infoPayrollPeriod');
+            if (periodEl) {
+                const monthSel = document.getElementById('month');
+                const yearSel = document.getElementById('year');
+                const periodSel = document.getElementById('period');
+                const monthIndex = parseInt(monthSel?.value || String(now.getMonth()+1).padStart(2,'0')) - 1;
+                const monthName = new Date(2000, monthIndex, 1).toLocaleString(undefined, { month: 'long' });
+                const year = yearSel?.value || String(now.getFullYear());
+                const halfLabel = (periodSel?.value === 'first') ? 'First Half' : 'Second Half';
+                periodEl.textContent = `${halfLabel} of ${monthName} ${year}`;
+            }
+
+            const daysBeforeEl = document.getElementById('infoDaysBeforeCutoff');
+            if (daysBeforeEl) {
+                const days = computeDaysBeforeCutoff(endDate);
+                daysBeforeEl.textContent = days >= 0 ? `${days} day${days === 1 ? '' : 's'}` : `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} past`;
+            }
+
+            const cutoffDateEl = document.getElementById('infoCutoffDate');
+            if (cutoffDateEl) cutoffDateEl.textContent = formatDateDisplay(endDate);
+
+            const totalEmpEl = document.getElementById('infoTotalEmployees');
+            if (totalEmpEl) {
+                const tbody = document.querySelector('#payrollTable tbody');
+                // Count rows that have cells (exclude empty state)
+                const rows = tbody ? Array.from(tbody.querySelectorAll('tr')).filter(tr => tr.children.length > 1) : [];
+                totalEmpEl.textContent = rows.length;
+            }
+
+            const lastGenEl = document.getElementById('infoLastGenerated');
+            if (lastGenEl) {
+                if (window.lastGeneratedPayrollAt) {
+                    lastGenEl.textContent = new Date(window.lastGeneratedPayrollAt).toLocaleString();
+                } else {
+                    lastGenEl.textContent = '—';
+                }
+            }
+        } catch (err) {
+            console.error('updateInfoPanel error:', err);
+        }
+    }
 
     // Add getUserInfo function
     async function getUserInfo() {
@@ -1001,6 +1583,15 @@
         document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
         
 
+        // Keep info panel in sync when user changes period selectors
+        ['month','year','period'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', updateInfoPanel);
+        });
+
+        // Initial info panel
+        updateInfoPanel();
+
     });
 
     // Separate the action handlers into functions
@@ -1052,6 +1643,8 @@
             if (data.success && data.payrollData && data.payrollData.length > 0) {
                 populateTable(data);
                 showAlert('success', data.message || 'Payroll generated successfully!');
+                window.lastGeneratedPayrollAt = new Date();
+                updateInfoPanel();
             } else if (data.success && (!data.payrollData || data.payrollData.length === 0)) {
                 showAlert('info', 'No employees found for the selected period.');
                 // Clear the table
@@ -1060,6 +1653,7 @@
                         <td colspan="17" class="text-center">No payroll data available</td>
                     </tr>
                 `;
+                updateInfoPanel();
             } else {
                 showAlert('warning', data.error || 'No payroll data returned.');
             }
@@ -2114,7 +2708,6 @@
             sum + parseFloat(entry.net_pay || 0), 0);
 
         // Update summary cards
-        document.getElementById('totalEmployees').textContent = totalEmployees;
         document.getElementById('totalMonthlySalary').textContent = `₱${totalMonthlySalary.toLocaleString()}`;
         document.getElementById('totalSemiMonthly').textContent = `₱${totalSemiMonthly.toLocaleString()}`;
         document.getElementById('totalDeductions').textContent = `₱${totalDeductions.toLocaleString()}`;
@@ -2182,6 +2775,796 @@
     // Add event listener for the confirm button in the modal
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('confirmCancelPayroll').addEventListener('click', confirmCancelPayroll);
+    });
+
+    // ===== Construction Payroll JavaScript =====
+    
+    // Simple alert helper for construction payroll
+    function showConstructionAlert(type, message) {
+        const existing = document.querySelector('.alert');
+        if (existing) existing.remove();
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        const table = document.getElementById('constructionPayrollTable');
+        if (table && table.parentNode) {
+            table.parentNode.insertBefore(alertDiv, table);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    }
+
+    // ===== Weekly period helpers (Mon–Sat, Sunday OFF) =====
+    function startOfWeekMonday(date) {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        const day = d.getDay(); // 0=Sun,1=Mon,...
+        const diff = (day === 0 ? -6 : 1 - day); // if Sunday, go back 6; else back to Monday
+        d.setDate(d.getDate() + diff);
+        return d;
+    }
+
+    function endOfWeekSaturday(monday) {
+        const d = new Date(monday);
+        d.setDate(d.getDate() + 5); // Monday + 5 = Saturday
+        d.setHours(23, 59, 59, 999);
+        return d;
+    }
+
+    function formatShortDate(d) {
+        const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+        return d.toLocaleDateString(undefined, opts);
+    }
+
+    function updatePeriodLabel() {
+        if (!constructionState.periodStart || !constructionState.periodEnd) {
+            const periodLabel = document.getElementById('periodLabel');
+            if (periodLabel) periodLabel.textContent = '—';
+            return;
+        }
+        const periodLabel = document.getElementById('periodLabel');
+        if (periodLabel) {
+            periodLabel.textContent = `${formatShortDate(constructionState.periodStart)} – ${formatShortDate(constructionState.periodEnd)}`;
+        }
+    }
+
+    // ===== Calendar rendering =====
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const viewYear = constructionState.calendarYear;
+        const viewMonth = constructionState.calendarMonth; // 0-11
+        const firstOfMonth = new Date(viewYear, viewMonth, 1);
+        const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
+
+        // Show label
+        const monthName = firstOfMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+        const monthLabel = document.getElementById('calendarMonthLabel');
+        if (monthLabel) monthLabel.textContent = monthName;
+
+        // We display Mon..Sun columns. Compute the Monday of the first grid cell
+        const firstGridMonday = startOfWeekMonday(firstOfMonth);
+        // We will render 6 rows (42 cells) to cover complete month
+        const totalCells = 42;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        for (let i = 0; i < totalCells; i++) {
+            const cellDate = new Date(firstGridMonday);
+            cellDate.setDate(firstGridMonday.getDate() + i);
+
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day';
+
+            const inMonth = (cellDate.getMonth() === viewMonth);
+            if (!inMonth) cell.classList.add('outside-month');
+
+            const isToday = (cellDate.getTime() === today.getTime());
+            if (isToday) cell.classList.add('today');
+
+            const isSunday = (cellDate.getDay() === 0);
+            if (isSunday) cell.classList.add('rest-day');
+
+            // Selected period highlight: any day between selected start..end
+            if (constructionState.periodStart && constructionState.periodEnd && cellDate >= constructionState.periodStart && cellDate <= constructionState.periodEnd) {
+                cell.classList.add('selected');
+                const isStart = (cellDate.getTime() === constructionState.periodStart.getTime());
+                const isEnd = (cellDate.getTime() === constructionState.periodEnd.getTime());
+                if (isStart) cell.classList.add('selected-start');
+                if (isEnd) cell.classList.add('selected-end');
+            } else if (constructionState.periodStart && !constructionState.periodEnd && cellDate.getTime() === constructionState.periodStart.getTime()) {
+                cell.classList.add('selected', 'selected-start');
+            }
+
+            const inner = document.createElement('div');
+            inner.className = 'date';
+            inner.textContent = String(cellDate.getDate());
+            cell.appendChild(inner);
+
+            // Click -> range selection (first click = start, second = end)
+            cell.addEventListener('click', () => {
+                const dateOnly = new Date(cellDate);
+                dateOnly.setHours(0,0,0,0);
+                if (!constructionState.periodStart || (constructionState.periodStart && constructionState.periodEnd)) {
+                    constructionState.periodStart = dateOnly;
+                    constructionState.periodEnd = null;
+                } else if (constructionState.periodStart && !constructionState.periodEnd) {
+                    if (dateOnly < constructionState.periodStart) {
+                        constructionState.periodEnd = constructionState.periodStart;
+                        constructionState.periodStart = dateOnly;
+                    } else {
+                        constructionState.periodEnd = dateOnly;
+                    }
+                }
+                updatePeriodLabel();
+                renderCalendar();
+            });
+
+            grid.appendChild(cell);
+        }
+    }
+
+    // Handlers for construction payroll controls (UI only)
+    function handleGenerateConstructionPayroll() {
+        const btn = document.getElementById('generateConstructionPayroll');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        btn.disabled = true;
+        setTimeout(() => {
+            // Toggle buttons similar to HR page behavior
+            document.getElementById('submitConstructionPayroll').style.display = 'inline-block';
+            document.getElementById('cancelConstructionPayroll').style.display = 'inline-block';
+            document.getElementById('generateConstructionPayroll').style.display = 'none';
+            const label = document.getElementById('periodLabel')?.textContent || '';
+            showConstructionAlert('success', `Construction payroll preview generated for <strong>${label}</strong> (temporary UI).`);
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }, 600);
+    }
+
+    function handleSubmitConstructionPayroll() {
+        const btn = document.getElementById('submitConstructionPayroll');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        btn.disabled = true;
+        setTimeout(() => {
+            showConstructionAlert('success', 'Construction payroll submitted (temporary UI).');
+            document.getElementById('submitConstructionPayroll').style.display = 'none';
+            document.getElementById('cancelConstructionPayroll').style.display = 'none';
+            document.getElementById('generateConstructionPayroll').style.display = 'inline-block';
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }, 600);
+    }
+
+    function handleCancelConstructionPayroll() {
+        new bootstrap.Modal(document.getElementById('cancelConstructionPayrollModal')).show();
+    }
+
+    function confirmCancelConstructionPayroll() {
+        showConstructionAlert('success', 'Construction payroll cancelled.');
+        document.getElementById('submitConstructionPayroll').style.display = 'none';
+        document.getElementById('cancelConstructionPayroll').style.display = 'none';
+        document.getElementById('generateConstructionPayroll').style.display = 'inline-block';
+        const modal = bootstrap.Modal.getInstance(document.getElementById('cancelConstructionPayrollModal'));
+        if (modal) modal.hide();
+    }
+
+    // ===== Weekly period helpers (Mon–Sat, Sunday OFF) =====
+    function startOfWeekMonday(date) {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        const day = d.getDay(); // 0=Sun,1=Mon,...
+        const diff = (day === 0 ? -6 : 1 - day); // if Sunday, go back 6; else back to Monday
+        d.setDate(d.getDate() + diff);
+        return d;
+    }
+
+    function endOfWeekSaturday(monday) {
+        const d = new Date(monday);
+        d.setDate(d.getDate() + 5); // Monday + 5 = Saturday
+        d.setHours(23, 59, 59, 999);
+        return d;
+    }
+
+    function formatShortDate(d) {
+        const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+        return d.toLocaleDateString(undefined, opts);
+    }
+
+    function updatePeriodLabel() {
+        if (!constructionState.periodStart || !constructionState.periodEnd) {
+            const periodLabel = document.getElementById('periodLabel');
+            if (periodLabel) periodLabel.textContent = '—';
+            return;
+        }
+        const periodLabel = document.getElementById('periodLabel');
+        if (periodLabel) {
+            periodLabel.textContent = `${formatShortDate(constructionState.periodStart)} – ${formatShortDate(constructionState.periodEnd)}`;
+        }
+    }
+
+    // ===== Calendar rendering =====
+    function renderCalendar() {
+        console.log('renderCalendar called');
+        const grid = document.getElementById('calendarGrid');
+        if (!grid) {
+            console.error('Calendar grid not found!');
+            return;
+        }
+        console.log('Calendar grid found, rendering...');
+        grid.innerHTML = '';
+
+        const viewYear = constructionState.calendarYear;
+        const viewMonth = constructionState.calendarMonth; // 0-11
+        const firstOfMonth = new Date(viewYear, viewMonth, 1);
+        const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
+
+        // Show label
+        const monthName = firstOfMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+        const monthLabel = document.getElementById('calendarMonthLabel');
+        if (monthLabel) monthLabel.textContent = monthName;
+
+        // We display Mon..Sun columns. Compute the Monday of the first grid cell
+        const firstGridMonday = startOfWeekMonday(firstOfMonth);
+        // We will render 6 rows (42 cells) to cover complete month
+        const totalCells = 42;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        for (let i = 0; i < totalCells; i++) {
+            const cellDate = new Date(firstGridMonday);
+            cellDate.setDate(firstGridMonday.getDate() + i);
+
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day';
+
+            const inMonth = (cellDate.getMonth() === viewMonth);
+            if (!inMonth) cell.classList.add('outside-month');
+
+            const isToday = (cellDate.getTime() === today.getTime());
+            if (isToday) cell.classList.add('today');
+
+            const isSunday = (cellDate.getDay() === 0);
+            if (isSunday) cell.classList.add('rest-day');
+
+            // Selected period highlight: any day between selected start..end
+            if (constructionState.periodStart && constructionState.periodEnd && cellDate >= constructionState.periodStart && cellDate <= constructionState.periodEnd) {
+                cell.classList.add('selected');
+                const isStart = (cellDate.getTime() === constructionState.periodStart.getTime());
+                const isEnd = (cellDate.getTime() === constructionState.periodEnd.getTime());
+                if (isStart) cell.classList.add('selected-start');
+                if (isEnd) cell.classList.add('selected-end');
+            } else if (constructionState.periodStart && !constructionState.periodEnd && cellDate.getTime() === constructionState.periodStart.getTime()) {
+                cell.classList.add('selected', 'selected-start');
+            }
+
+            const inner = document.createElement('div');
+            inner.className = 'date';
+            inner.textContent = String(cellDate.getDate());
+            cell.appendChild(inner);
+
+            // Click -> range selection (first click = start, second = end)
+            cell.addEventListener('click', () => {
+                const dateOnly = new Date(cellDate);
+                dateOnly.setHours(0,0,0,0);
+                if (!constructionState.periodStart || (constructionState.periodStart && constructionState.periodEnd)) {
+                    constructionState.periodStart = dateOnly;
+                    constructionState.periodEnd = null;
+                } else if (constructionState.periodStart && !constructionState.periodEnd) {
+                    if (dateOnly < constructionState.periodStart) {
+                        constructionState.periodEnd = constructionState.periodStart;
+                        constructionState.periodStart = dateOnly;
+                    } else {
+                        constructionState.periodEnd = dateOnly;
+                    }
+                }
+                updatePeriodLabel();
+                renderCalendar();
+            });
+
+            grid.appendChild(cell);
+        }
+    }
+
+    // Construction payroll state
+    const constructionState = {
+        records: [],
+        filtered: [],
+        sort: { key: '', dir: 'asc' },
+        editingIndex: null,
+        pageSize: 10,
+        currentPage: 1,
+        // Calendar view month/year
+        calendarYear: null,
+        calendarMonth: null,
+        // Selected custom period (start..end)
+        periodStart: null,
+        periodEnd: null
+    };
+
+    // Sample data for construction payroll
+    const constructionSampleData = [
+        { lastName: 'Santos', firstName: 'Juan', position: 'Mason', workedHours: 88, baseSalary: 120, status: 'Approved' },
+        { lastName: 'Cruz', firstName: 'Maria', position: 'Electrician', workedHours: 92.5, baseSalary: 150, status: 'Pending' },
+        { lastName: 'Reyes', firstName: 'Pedro', position: 'Carpenter', workedHours: 76, baseSalary: 130, status: 'Approved' },
+        { lastName: 'Dela Rosa', firstName: 'Ana', position: 'Painter', workedHours: 64, baseSalary: 110, status: 'On Hold' },
+        { lastName: 'Garcia', firstName: 'Luis', position: 'Foreman', workedHours: 100, baseSalary: 200, status: 'Approved' },
+        { lastName: 'Lopez', firstName: 'Carmen', position: 'Welder', workedHours: 82, baseSalary: 140, status: 'Pending' },
+        { lastName: 'Mendoza', firstName: 'Rico', position: 'Laborer', workedHours: 70, baseSalary: 100, status: 'Approved' },
+        { lastName: 'Torres', firstName: 'Elena', position: 'Surveyor', workedHours: 96, baseSalary: 180, status: 'Approved' }
+    ].map(r => ({
+        ...r,
+        // Cap days to max 6 (Mon–Sat); Sunday is OFF
+        days: Math.min(6, Math.floor((Number(r.workedHours) || 0) / 8)),
+        totalSalary: r.workedHours * r.baseSalary
+    }));
+
+    function peso(amount) {
+        const n = isNaN(amount) || amount === '' || amount === null ? 0 : Number(amount);
+        return `₱${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function badge(status) {
+        const map = { 'Approved': 'success', 'Pending': 'warning', 'On Hold': 'secondary' };
+        const cls = map[status] || 'secondary';
+        return `<span class="badge bg-${cls} status-badge">${status}</span>`;
+    }
+
+    function renderConstructionTable(rows) {
+        const tbody = document.querySelector('#constructionPayrollTable tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+
+        if (!rows.length) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="9" class="text-center py-5 text-muted">
+                <i class="fa-regular fa-face-frown me-2"></i>No records found.
+            </td>`;
+            tbody.appendChild(tr);
+        }
+
+        rows.forEach((rec, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${rec.lastName}</td>
+                <td>${rec.firstName}</td>
+                <td>${rec.position}</td>
+                <td class="text-center">${Number.isFinite(rec.days) ? Math.floor(Number(rec.days)) : 0}</td>
+                <td class="text-center">${Number(rec.workedHours).toFixed(2)}</td>
+                <td class="text-center">${peso(rec.baseSalary)}</td>
+                <td class="text-center fw-semibold" data-field="totalSalary">${peso(rec.totalSalary)}</td>
+                <td>
+                    ${badge(rec.status)}
+                </td>
+                <td class="text-center">
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" data-action="view" data-index="${idx}"><i class="fa-regular fa-eye"></i></button>
+                        <button class="btn btn-sm btn-outline-secondary" data-action="edit" data-index="${idx}"><i class="fa-regular fa-pen-to-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" data-action="delete" data-index="${idx}"><i class="fa-regular fa-trash-can"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateConstructionSummary(rows) {
+        const workersElement = document.getElementById('summaryWorkers');
+        const payrollElement = document.getElementById('summaryPayroll');
+        
+        if (workersElement) workersElement.textContent = rows.length;
+        if (payrollElement) {
+            const total = rows.reduce((sum, r) => sum + (Number(r.totalSalary) || 0), 0);
+            payrollElement.textContent = peso(total);
+        }
+    }
+
+    function applyConstructionFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        
+        if (!searchInput || !statusFilter) return;
+        
+        const q = searchInput.value.trim().toLowerCase();
+        const status = statusFilter.value;
+        constructionState.currentPage = 1; // reset page on new filter/search
+        let rows = [...constructionState.records];
+        if (q) {
+            rows = rows.filter(r => (
+                `${r.lastName} ${r.firstName} ${r.position} ${r.status}`.toLowerCase().includes(q)
+            ));
+        }
+        if (status) {
+            rows = rows.filter(r => r.status === status);
+        }
+        constructionState.filtered = rows;
+        applyConstructionSort();
+    }
+
+    function applyConstructionSort() {
+        const { key, dir } = constructionState.sort;
+        let rows = [...(constructionState.filtered.length ? constructionState.filtered : constructionState.records)];
+        if (key) {
+            rows.sort((a, b) => {
+                const av = a[key];
+                const bv = b[key];
+                if (typeof av === 'number' || typeof bv === 'number') {
+                    return dir === 'asc' ? (av - bv) : (bv - av);
+                }
+                return dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+            });
+        }
+        highlightConstructionSortHeader();
+        // Update summary for the full filtered set
+        updateConstructionSummary(rows);
+        // Paginate
+        const total = rows.length;
+        const { pagedRows, start, end, pages } = paginateConstruction(rows, constructionState.pageSize, constructionState.currentPage);
+        renderConstructionTable(pagedRows);
+        renderConstructionPagination(constructionState.currentPage, pages);
+        updateConstructionEntriesMessage(start, end, total);
+    }
+
+    function paginateConstruction(rows, pageSize, currentPage) {
+        if (pageSize === 'all' || pageSize === 0 || pageSize === null) {
+            return { pagedRows: rows, start: rows.length ? 1 : 0, end: rows.length, pages: 1 };
+        }
+        const size = Number(pageSize) || 10;
+        const pages = Math.max(1, Math.ceil(rows.length / size));
+        const page = Math.min(Math.max(1, currentPage), pages);
+        const startIndex = (page - 1) * size;
+        const endIndex = Math.min(startIndex + size, rows.length);
+        const pagedRows = rows.slice(startIndex, endIndex);
+        return { pagedRows, start: rows.length ? startIndex + 1 : 0, end: endIndex, pages };
+    }
+
+    function renderConstructionPagination(currentPage, totalPages) {
+        const ul = document.getElementById('pagination');
+        if (!ul) return;
+        
+        ul.innerHTML = '';
+        if (totalPages <= 1) return;
+        const addItem = (label, page, disabled = false, active = false) => {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.dataset.page = page;
+            a.textContent = label;
+            li.appendChild(a);
+            ul.appendChild(li);
+        };
+        addItem('Prev', String(currentPage - 1), currentPage === 1, false);
+        // show up to 5 pages window
+        const windowSize = 5;
+        let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+        let end = Math.min(totalPages, start + windowSize - 1);
+        start = Math.max(1, Math.min(start, end - windowSize + 1));
+        for (let p = start; p <= end; p++) addItem(String(p), String(p), false, p === currentPage);
+        addItem('Next', String(currentPage + 1), currentPage === totalPages, false);
+    }
+
+    function updateConstructionEntriesMessage(start, end, total) {
+    const msg = document.getElementById('entriesMessage');
+    if (msg) {
+        msg.textContent = total 
+            ? `Showing ${start} to ${end} of ${total} entries` 
+            : 'No entries to show';
+    }
+}
+
+
+    function highlightConstructionSortHeader() {
+        document.querySelectorAll('#constructionPayrollTable th.sortable').forEach(th => th.classList.remove('active'));
+        if (!constructionState.sort.key) return;
+        const th = document.querySelector(`#constructionPayrollTable th.sortable[data-key="${constructionState.sort.key}"]`);
+        if (th) {
+            th.classList.add('active');
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                const isNum = ['days','workedHours','baseSalary','totalSalary'].includes(constructionState.sort.key);
+                const up = isNum ? 'fa-arrow-up-1-9' : 'fa-arrow-up-a-z';
+                const down = isNum ? 'fa-arrow-down-1-9' : 'fa-arrow-down-a-z';
+                icon.classList.remove('fa-arrow-up-a-z','fa-arrow-down-a-z','fa-arrow-up-1-9','fa-arrow-down-1-9');
+                icon.classList.add(constructionState.sort.dir === 'asc' ? up : down);
+            }
+        }
+    }
+
+    function handleConstructionHeaderClick(e) {
+        const th = e.target.closest('th.sortable');
+        if (!th) return;
+        const key = th.dataset.key;
+        if (constructionState.sort.key === key) {
+            constructionState.sort.dir = constructionState.sort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            constructionState.sort.key = key;
+            constructionState.sort.dir = 'asc';
+        }
+        applyConstructionSort();
+    }
+
+    function actionClicked(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.index);
+        const workingSet = constructionState.filtered.length ? constructionState.filtered : constructionState.records;
+        const rec = workingSet[idx];
+        const absoluteIndex = constructionState.records.indexOf(rec);
+        if (btn.dataset.action === 'view') {
+            showConstructionView(rec);
+        } else if (btn.dataset.action === 'edit') {
+            openConstructionModal('edit', rec, absoluteIndex);
+        } else if (btn.dataset.action === 'delete') {
+            if (confirm(`Delete ${rec.firstName} ${rec.lastName}?`)) {
+                constructionState.records.splice(absoluteIndex, 1);
+                applyConstructionFilters();
+            }
+        }
+    }
+
+    function openConstructionModal(mode, data = null, index = null) {
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.textContent = mode === 'add' ? 'Add Worker' : 'Edit Worker';
+        constructionState.editingIndex = mode === 'edit' ? index : null;
+        
+        const formLastName = document.getElementById('formLastName');
+        const formFirstName = document.getElementById('formFirstName');
+        const formPosition = document.getElementById('formPosition');
+        const formWorkedHours = document.getElementById('formWorkedHours');
+        const formBaseSalary = document.getElementById('formBaseSalary');
+        const formStatus = document.getElementById('formStatus');
+        
+        if (formLastName) formLastName.value = data?.lastName || '';
+        if (formFirstName) formFirstName.value = data?.firstName || '';
+        if (formPosition) formPosition.value = data?.position || '';
+        if (formWorkedHours) formWorkedHours.value = data?.workedHours ?? '';
+        if (formBaseSalary) formBaseSalary.value = data?.baseSalary ?? '';
+        if (formStatus) formStatus.value = data?.status || 'Approved';
+        
+        new bootstrap.Modal('#recordModal').show();
+    }
+
+    function showConstructionView(rec) {
+        const viewName = document.getElementById('viewName');
+        const viewPosition = document.getElementById('viewPosition');
+        const viewStatus = document.getElementById('viewStatus');
+        const viewHours = document.getElementById('viewHours');
+        const viewBase = document.getElementById('viewBase');
+        const viewTotal = document.getElementById('viewTotal');
+        
+        if (viewName) viewName.textContent = `${rec.firstName} ${rec.lastName}`;
+        if (viewPosition) viewPosition.textContent = rec.position;
+        if (viewStatus) viewStatus.innerHTML = badge(rec.status);
+        if (viewHours) viewHours.textContent = Number(rec.workedHours).toFixed(2);
+        if (viewBase) viewBase.textContent = peso(rec.baseSalary);
+        if (viewTotal) viewTotal.textContent = peso(rec.totalSalary);
+        
+        new bootstrap.Modal('#viewModal').show();
+    }
+
+    function downloadConstructionCSV() {
+        const rows = document.querySelectorAll('#constructionPayrollTable tr');
+        const data = [];
+        rows.forEach((row, i) => {
+            const cols = row.querySelectorAll('th, td');
+            if (!cols.length) return;
+            const rowData = [];
+            cols.forEach((col, j) => {
+                // Skip Action column on export
+                if (i === 0 && j === cols.length - 1) return;
+                if (i > 0 && j === cols.length - 1) return;
+                // Extract input values where applicable
+                const input = col.querySelector('input');
+                const text = input ? input.value : col.innerText.replace(/\n/g, ' ').trim();
+                rowData.push(`"${text.replace(/"/g, '""')}"`);
+            });
+            data.push(rowData.join(','));
+        });
+        const blob = new Blob([data.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const pad = (n) => String(n).padStart(2, '0');
+        const toISODate = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const start = constructionState.periodStart ? toISODate(constructionState.periodStart) : new Date().toISOString().slice(0,10);
+        const end = constructionState.periodEnd ? toISODate(constructionState.periodEnd) : start;
+        a.download = `construction-payroll-${start}_to_${end}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function attachConstructionEvents() {
+        const constructionTable = document.getElementById('constructionPayrollTable');
+        if (constructionTable) {
+            const thead = constructionTable.querySelector('thead');
+            if (thead) thead.addEventListener('click', handleConstructionHeaderClick);
+            constructionTable.addEventListener('click', actionClicked);
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const entriesSelect = document.getElementById('entriesSelect');
+        const pagination = document.getElementById('pagination');
+        const btnDownload = document.getElementById('btnDownload');
+        const btnPrint = document.getElementById('btnPrint');
+
+        if (searchInput) searchInput.addEventListener('input', applyConstructionFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyConstructionFilters);
+        if (entriesSelect) {
+            entriesSelect.addEventListener('change', (e) => {
+                const value = e.target.value;
+                constructionState.pageSize = value === 'all' ? 'all' : Number(value);
+                constructionState.currentPage = 1;
+                applyConstructionSort();
+            });
+        }
+        if (pagination) {
+            pagination.addEventListener('click', (e) => {
+                const a = e.target.closest('a.page-link');
+                if (!a) return;
+                e.preventDefault();
+                const target = Number(a.dataset.page);
+                if (isNaN(target)) return;
+                constructionState.currentPage = target;
+                applyConstructionSort();
+            });
+        }
+        if (btnPrint) btnPrint.addEventListener('click', () => window.print());
+        if (btnDownload) btnDownload.addEventListener('click', downloadConstructionCSV);
+
+        const recordForm = document.getElementById('recordForm');
+        if (recordForm) {
+            recordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                form.classList.add('was-validated');
+                if (!form.checkValidity()) return;
+                const rec = {
+                    lastName: document.getElementById('formLastName')?.value?.trim() || '',
+                    firstName: document.getElementById('formFirstName')?.value?.trim() || '',
+                    position: document.getElementById('formPosition')?.value?.trim() || '',
+                    workedHours: Number(document.getElementById('formWorkedHours')?.value) || 0,
+                    baseSalary: Number(document.getElementById('formBaseSalary')?.value) || 0,
+                    status: document.getElementById('formStatus')?.value || 'Approved'
+                };
+                rec.days = Math.min(6, Math.floor((Number(rec.workedHours) || 0) / 8));
+                rec.totalSalary = rec.workedHours * rec.baseSalary;
+                if (constructionState.editingIndex !== null) {
+                    constructionState.records[constructionState.editingIndex] = rec;
+                } else {
+                    constructionState.records.push(rec);
+                }
+                const modal = bootstrap.Modal.getInstance(document.getElementById('recordModal'));
+                if (modal) modal.hide();
+                form.reset();
+                form.classList.remove('was-validated');
+                applyConstructionFilters();
+            });
+        }
+    }
+
+    // Initialize construction payroll when tab is shown
+    function initializeConstructionPayroll() {
+        constructionState.records = [...constructionSampleData];
+        constructionState.filtered = [];
+        attachConstructionEvents();
+        applyConstructionFilters();
+
+        // Initialize calendar and weekly selection (Mon–Sat)
+        const today = new Date();
+        constructionState.calendarYear = today.getFullYear();
+        constructionState.calendarMonth = today.getMonth();
+        constructionState.periodStart = startOfWeekMonday(today);
+        constructionState.periodEnd = endOfWeekSaturday(constructionState.periodStart);
+        updatePeriodLabel();
+        renderCalendar();
+
+        // Dropdown actions
+        document.querySelectorAll('#constructionPayrollActions + .dropdown-menu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('#constructionPayrollActions + .dropdown-menu .dropdown-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                const icon = this.getAttribute('data-icon');
+                const text = this.textContent.trim();
+                const selectedAction = document.getElementById('constructionSelectedAction');
+                const actionsButton = document.getElementById('constructionPayrollActions');
+                if (selectedAction) selectedAction.textContent = text;
+                if (actionsButton) {
+                    const iconElement = actionsButton.querySelector('i');
+                    if (iconElement) iconElement.className = `fas ${icon}`;
+                }
+                showConstructionAlert('info', `${text} (temporary UI)`);
+            });
+        });
+
+        // Button events
+        const generateBtn = document.getElementById('generateConstructionPayroll');
+        const submitBtn = document.getElementById('submitConstructionPayroll');
+        const cancelBtn = document.getElementById('cancelConstructionPayroll');
+        const confirmCancelBtn = document.getElementById('confirmCancelConstructionPayroll');
+
+        if (generateBtn) generateBtn.addEventListener('click', handleGenerateConstructionPayroll);
+        if (submitBtn) submitBtn.addEventListener('click', handleSubmitConstructionPayroll);
+        if (cancelBtn) cancelBtn.addEventListener('click', handleCancelConstructionPayroll);
+        if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', confirmCancelConstructionPayroll);
+
+        // Month navigation
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
+
+        if (prevMonth) {
+            prevMonth.addEventListener('click', () => {
+                if (--constructionState.calendarMonth < 0) {
+                    constructionState.calendarMonth = 11;
+                    constructionState.calendarYear--;
+                }
+                renderCalendar();
+            });
+        }
+        if (nextMonth) {
+            nextMonth.addEventListener('click', () => {
+                if (++constructionState.calendarMonth > 11) {
+                    constructionState.calendarMonth = 0;
+                    constructionState.calendarYear++;
+                }
+                renderCalendar();
+            });
+        }
+    }
+
+    // Initialize construction payroll when the construction tab is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, setting up construction payroll tab');
+        
+        // Initialize immediately for testing
+        setTimeout(() => {
+            console.log('Attempting to initialize construction payroll...');
+            if (typeof initializeConstructionPayroll === 'function') {
+                console.log('Function exists, calling it...');
+                initializeConstructionPayroll();
+            } else {
+                console.error('initializeConstructionPayroll function not found!');
+            }
+        }, 500);
+        
+        const constructionTab = document.getElementById('construction-payroll-tab');
+        if (constructionTab) {
+            console.log('Construction tab found, adding event listener');
+            constructionTab.addEventListener('shown.bs.tab', function() {
+                console.log('Construction tab shown, initializing...');
+                // Initialize construction payroll when tab is shown
+                if (!constructionState.records.length) {
+                    console.log('Initializing construction payroll...');
+                    initializeConstructionPayroll();
+                } else {
+                    console.log('Construction payroll already initialized');
+                }
+            });
+            
+            // Also try to initialize immediately if tab is already active
+            if (constructionTab.classList.contains('active')) {
+                console.log('Construction tab is already active, initializing immediately');
+                setTimeout(() => {
+                    if (!constructionState.records.length) {
+                        initializeConstructionPayroll();
+                    }
+                }, 100);
+            }
+        } else {
+            console.error('Construction tab not found!');
+        }
     });
     </script>
     <!-- Add side_top.js -->

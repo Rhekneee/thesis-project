@@ -260,6 +260,9 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'payslip.html')); // Adjusted path
   });
 
+  app.get('/hr/hr_construction_payroll', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_construction_payroll.html')); // Adjusted path
+  }); 
 
   
 // ====================
