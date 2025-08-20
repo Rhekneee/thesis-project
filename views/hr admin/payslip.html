@@ -66,26 +66,46 @@
     </style>
 </head>
 <body>
-    <!-- Topbar -->
-    <div class="topbar">
-        <div class="topbar-left">
-            <div class="menu-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+   <!-- Topbar -->
+   <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
             </div>
         </div>
-        <div class="topbar-right">
-            <div class="notification-icon" onclick="toggleNotifications()">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge"></span>
-            </div>
-            <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
-                <div class="profile-info">
-                    <div class="profile-name"></div>
-                    <div class="profile-position"></div>
-                </div>
-                <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                    <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
-                </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
             </div>
         </div>
         
@@ -109,47 +129,101 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Sidebar -->
-    <div id="sidebar">
-        <div class="sidebar-header">
-            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
-            <span class="company-title">MDB Construction</span>
-        </div>
-        <ul class="list-unstyled">
-            <li class="nav-item">
-                <a class="nav-item" href="/hr/hr_admin"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-            </li>
-            <li class="nav-item">
-                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
-                    <i class="fas fa-calendar-check"></i> Attendance
-                </a>
-                <ul class="collapse" id="Attendance">
-                    <li class="nav-item"><a href="/hr/hr_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
-                    <li class="nav-item"><a href="/hr/hr_leave_request"><i class="fas fa-file-invoice"></i> <span>Request Leave</span></a></li>
-                    <li class="nav-item"><a href="/hr/hr_halfday_request"><i class="fas fa-clock"></i> <span>Request Halfday</span></a></li>
-                    <li class="nav-item"><a href="/hr/hr_overtime_request"><i class="fas fa-business-time"></i> <span>Request Overtime</span></a></li>
-                </ul>
-            </li>
-            <li class="nav-item">
-                <a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a>
-            </li>
-            <li class="nav-item">
-                <a href="/hr/payslip" class="active"><i class="fas fa-file-invoice-dollar"></i> Payslips</a>
-            </li>
-            <li class="nav-item">
-                <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
-                    <i class="fas fa-users"></i> Employee Management
-                </a>
-                <ul class="collapse" id="Employee">
-                    <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> <span>Employee List</span></a></li>
-                    <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-user-plus"></i> <span>Applicants</span></a></li>
-                    <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-comments"></i> <span>Interviews</span></a></li>
-                </ul>
-            </li>
-            <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
-        </ul>
+<!-- Sidebar -->
+<div id="sidebar">
+    <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
     </div>
+    <ul class="list-unstyled">
+        <li class="nav-item">
+            <a class="nav-item active" href="/hr/hr_admin">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance</span>
+            </a>
+            <ul class="collapse" id="Attendance">
+                <li class="nav-item">
+                    <a href="/hr/hr_daily_attendance">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Daily Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_history_attendance">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Attendance Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_leave_request">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Request Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_work_adjustment">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Work Adjustment</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Payroll Management</span>
+            </a>
+            <ul class="collapse" id="Payroll">
+                <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Employee Management</span>
+            </a>
+            <ul class="collapse" id="Employee">
+                <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Recruitment</span>
+            </a>
+            <ul class="collapse" id="Recruitment">
+                <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+            </ul>
+        </li>    
+        <li class="nav-item">
+            <a href="/hr/developers_approval">
+                <i class="fas fa-users"></i>
+                <span>Developers Approval</span>
+            </a>
+        </li>
+    </ul>
+    <!-- Move Logout outside the main ul -->
+    <div class="logout-container">
+        <a href="/logout" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+    </div>
+</div>
 
     <div id="content">
         <h2><i class="fas fa-file-invoice-dollar"></i> Payslip Management</h2>
