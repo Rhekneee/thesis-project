@@ -169,7 +169,7 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/finance_payroll.html',
+        'finance_accounting': '/finance admin/finance_dashboard.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard',
         'foreman_1': '/manufacturing/manufacturing_dashboard',
         'foreman_2': '/manufacturing/manufacturing_dashboard',

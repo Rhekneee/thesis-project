@@ -1,95 +1,328 @@
 const db = require("../../../db");
+const axios = require('axios');
 
 class FinanceModel {
-    // Get all payrolls
-    static async getAllPayrolls() {
-        const SQL_COMMAND = `
-            SELECT 
-                p.id,
-                p.employee_id,
-                p.start_date,
-                p.end_date,
-                p.days_present,
-                p.days_absent,
-                p.total_hours,
-                p.overtime_hours,
-                p.fixed_salary,
-                p.salary_before_tax,
-                p.total_deductions,
-                p.absence_deduction,
-                p.net_salary,
-                p.payroll_date,
-                p.payroll_period,
-                p.status,
-                p.remarks,
-                e.full_name,
-                r.name as position,
-                e.profile_picture
-            FROM payroll p
-            JOIN employees e ON p.employee_id = e.employee_id
-            JOIN roles r ON e.role_id = r.id
-            ORDER BY p.payroll_date DESC;
-        `;
-
+    // Updated Finance Model to work with Payroll Periods
+    // Get all payroll periods for Finance dashboard
+    static async getAllPayrollPeriods() {
         try {
-            console.log('Executing SQL query for all payrolls...');
-            const [payrolls] = await db.query(SQL_COMMAND);
-            console.log('Number of payroll records found:', payrolls.length);
-            if (payrolls.length > 0) {
-                console.log('Sample payroll record:', payrolls[0]);
-            } else {
-                console.log('No payroll records found in the database');
-            }
-            return payrolls;
+            const [periods] = await db.query(`
+            SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count,
+                    SUM(p.net_salary) as total_payroll_amount,
+                    SUM(p.total_hours) as total_hours,
+                    SUM(p.overtime_hours) as total_overtime_hours
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
         } catch (error) {
-            console.error('Database error in getAllPayrolls:', error);
+            console.error('Error fetching payroll periods:', error);
             throw error;
         }
     }
 
-    // Get pending payrolls
-    static async getPendingPayrolls() {
-        const SQL_COMMAND = `
+    // Get pending payroll periods
+    static async getPendingPayrollPeriods() {
+        try {
+            const [periods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count,
+                    SUM(p.net_salary) as total_payroll_amount
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.status = 'pending'
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
+        } catch (error) {
+            console.error('Error fetching pending payroll periods:', error);
+            throw error;
+        }
+    }
+
+    // Get approved payroll periods
+    static async getApprovedPayrollPeriods() {
+        try {
+            const [periods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count,
+                    SUM(p.net_salary) as total_payroll_amount
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.status = 'approved'
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
+        } catch (error) {
+            console.error('Error fetching approved payroll periods:', error);
+            throw error;
+        }
+    }
+
+    // Get payroll period by ID
+    static async getPayrollPeriodById(periodId) {
+        try {
+            const [periods] = await db.query(`
+                SELECT * FROM payroll_periods WHERE id = ?
+            `, [periodId]);
+            return periods[0] || null;
+        } catch (error) {
+            console.error('Error fetching payroll period:', error);
+            throw error;
+        }
+    }
+
+    // Get all payroll entries for a specific period
+    static async getPayrollEntriesByPeriod(periodId) {
+        try {
+            const [entries] = await db.query(`
+                SELECT 
+                    p.*,
+                e.full_name,
+                r.name as position,
+                    e.profile_picture,
+                    d.name as department_name
+            FROM payroll p
+            JOIN employees e ON p.employee_id = e.employee_id
+            JOIN roles r ON e.role_id = r.id
+                JOIN departments d ON r.department_id = d.id
+                WHERE p.payroll_period_id = ?
+                ORDER BY e.full_name
+            `, [periodId]);
+            return entries;
+        } catch (error) {
+            console.error('Error fetching payroll entries by period:', error);
+            throw error;
+        }
+    }
+
+    // Get payroll period summary
+    static async getPayrollPeriodSummary(periodId) {
+        try {
+            const [summary] = await db.query(`
+                SELECT 
+                    pp.period_name,
+                    pp.start_date,
+                    pp.end_date,
+                    pp.status,
+                    COUNT(p.id) as total_employees,
+                    SUM(p.net_salary) as total_payroll_amount,
+                    AVG(p.net_salary) as average_salary,
+                    SUM(p.total_hours) as total_hours,
+                    SUM(p.overtime_hours) as total_overtime_hours,
+                    SUM(p.total_deductions) as total_deductions,
+                    SUM(p.absence_deduction) as total_absence_deductions
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.id = ?
+                GROUP BY pp.id
+            `, [periodId]);
+            
+            return summary[0] || null;
+        } catch (error) {
+            console.error('Error fetching payroll period summary:', error);
+            throw error;
+        }
+    }
+
+    // Update payroll period status
+    static async updatePayrollPeriodStatus(periodId, status) {
+        try {
+            const [result] = await db.query(`
+                UPDATE payroll_periods 
+                SET status = ?, updated_at = NOW()
+                WHERE id = ?
+            `, [status, periodId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating payroll period status:', error);
+            throw error;
+        }
+    }
+
+    // Create payslips from payroll period
+    static async createPayslipsFromPeriod(periodId, approvedBy) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get all payroll entries for this period
+            const [payrollEntries] = await connection.query(`
+                SELECT * FROM payroll 
+                WHERE payroll_period_id = ? AND status = 'approved'
+            `, [periodId]);
+
+            if (payrollEntries.length === 0) {
+                throw new Error('No approved payroll entries found for this period');
+            }
+
+            // Get period details
+            const [period] = await connection.query(`
+                SELECT * FROM payroll_periods WHERE id = ?
+            `, [periodId]);
+
+            if (!period || period.length === 0) {
+                throw new Error('Payroll period not found');
+            }
+
+            const periodData = period[0];
+            const payslipIds = [];
+
+            // Create payslip for each payroll entry
+            for (const payrollEntry of payrollEntries) {
+                // Generate payslip number
+                const payslipNumber = `PS-${periodId}-${payrollEntry.employee_id}-${Date.now()}`;
+
+                // Insert payslip
+                const [payslipResult] = await connection.query(`
+                    INSERT INTO payslip (
+                        payslip_number, payslip_date, payslip_period, employee_id,
+                        basic_salary, salary_before_tax, total_deductions, absence_deduction,
+                        net_salary, start_date, end_date, days_present, days_absent,
+                        total_hours, overtime_hours, payment_method, status, approved_by,
+                        approved_date, payroll_period_id
+                    ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+                `, [
+                    payslipNumber,
+                    periodData.period_name,
+                    payrollEntry.employee_id,
+                    payrollEntry.fixed_salary,
+                    payrollEntry.salary_before_tax,
+                    payrollEntry.total_deductions,
+                    payrollEntry.absence_deduction,
+                    payrollEntry.net_salary,
+                    payrollEntry.start_date,
+                    payrollEntry.end_date,
+                    payrollEntry.days_present,
+                    payrollEntry.days_absent,
+                    payrollEntry.total_hours,
+                    payrollEntry.overtime_hours,
+                    'bank_transfer',
+                    'approved',
+                    approvedBy,
+                    periodId
+                ]);
+
+                payslipIds.push(payslipResult.insertId);
+
+                // Update payroll entry status to processed
+                await connection.query(`
+                    UPDATE payroll 
+                    SET status = 'processed' 
+                    WHERE id = ?
+                `, [payrollEntry.id]);
+            }
+
+            // Update period status to processed
+            await connection.query(`
+                UPDATE payroll_periods 
+                SET status = 'processed', updated_at = NOW()
+                WHERE id = ?
+            `, [periodId]);
+
+            await connection.commit();
+            return {
+                success: true,
+                payslipIds: payslipIds,
+                message: `Created ${payslipIds.length} payslips for period ${periodData.period_name}`
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error creating payslips from period:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Get all payslips (updated to work with periods)
+    static async getAllPayslips() {
+        try {
+            const [payslips] = await db.query(`
             SELECT 
                 p.id,
+                    p.payslip_number,
+                    p.payslip_date,
+                    p.payslip_period,
                 p.employee_id,
+                    e.full_name,
+                    r.name as position,
+                    e.profile_picture,
+                    p.basic_salary,
+                    p.salary_before_tax,
+                    p.total_deductions,
+                    p.absence_deduction,
+                    p.net_salary,
                 p.start_date,
                 p.end_date,
                 p.days_present,
                 p.days_absent,
                 p.total_hours,
                 p.overtime_hours,
-                p.fixed_salary,
-                p.salary_before_tax,
-                p.total_deductions,
-                p.absence_deduction,
-                p.net_salary,
-                p.payroll_date,
-                p.payroll_period,
+                    p.payment_method,
                 p.status,
-                p.remarks,
-                e.full_name,
-                r.role_name as position,
-                e.profile_picture
-            FROM payroll p
+                    p.approved_date,
+                    u.username as approved_by_name,
+                    pp.period_name as payroll_period_name
+                FROM payslip p
             JOIN employees e ON p.employee_id = e.employee_id
-            JOIN roles r ON e.role_id = r.role_id
-            WHERE p.status = 'pending'
-            ORDER BY p.payroll_date DESC;
-        `;
-
-        try {
-            console.log('Executing SQL query for pending payrolls...');
-            const [payrolls] = await db.query(SQL_COMMAND);
-            console.log('Number of pending payroll records found:', payrolls.length);
-            if (payrolls.length > 0) {
-                console.log('Sample pending payroll record:', payrolls[0]);
-            } else {
-                console.log('No pending payroll records found in the database');
-            }
-            return payrolls;
+                JOIN roles r ON e.role_id = r.id
+                LEFT JOIN users u ON p.approved_by = u.id
+                LEFT JOIN payroll_periods pp ON p.payroll_period_id = pp.id
+                ORDER BY p.payslip_date DESC, p.payslip_number DESC
+            `);
+            return payslips;
         } catch (error) {
-            console.error('Database error in getPendingPayrolls:', error);
+            console.error('Error fetching payslips:', error);
+            throw error;
+        }
+    }
+
+    // Get payslip by ID (updated to include period info)
+    static async getPayslipById(payslipId) {
+        try {
+            const [payslips] = await db.query(`
+                SELECT 
+                    p.*,
+                    e.full_name,
+                    r.name as position,
+                    e.profile_picture,
+                    u.username as approved_by_name,
+                    pp.period_name as payroll_period_name
+                FROM payslip p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                LEFT JOIN users u ON p.approved_by = u.id
+                LEFT JOIN payroll_periods pp ON p.payroll_period_id = pp.id
+                WHERE p.id = ?
+            `, [payslipId]);
+            return payslips[0] || null;
+        } catch (error) {
+            console.error('Error fetching payslip:', error);
+            throw error;
+        }
+    }
+
+    // Update payslip status
+    static async updatePayslipStatus(payslipId, status) {
+        try {
+            const [result] = await db.query(`
+                UPDATE payslip 
+                SET status = ?, updated_at = NOW()
+                WHERE id = ?
+            `, [status, payslipId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating payslip status:', error);
             throw error;
         }
     }
@@ -479,211 +712,290 @@ class FinanceModel {
     }
 
     // =============================================
-    // PAYSLIP MANAGEMENT
-    // These functions handle payslip creation and management
+    // BANK ACCOUNT MANAGEMENT
+    // These functions handle bank account operations
     // =============================================
 
-    // Create payslip from approved payroll
-    static async createPayslipFromPayroll(payrollId, approvedBy) {
-        const connection = await db.getConnection();
+    // Insert new bank account
+    static async insertBankAccount(bankAccountData) {
+        const SQL_COMMAND = `
+            INSERT INTO bank_accounts (
+                account_name, 
+                bank_name, 
+                account_number, 
+                opening_balance, 
+                currency, 
+                status, 
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `;
+
         try {
-            console.log('🔍 Starting payslip creation for payroll ID:', payrollId);
-            console.log('🔍 Approved by user ID:', approvedBy);
-            
-            await connection.beginTransaction();
-
-            // Get payroll data
-            const [payrollData] = await connection.query(`
-                SELECT 
-                    p.employee_id, p.start_date, p.end_date, p.days_present, p.days_absent,
-                    p.total_hours, p.overtime_hours, p.fixed_salary, p.salary_before_tax,
-                    p.total_deductions, p.absence_deduction, p.net_salary, p.payroll_period
-                FROM payroll p
-                WHERE p.id = ? AND p.status = 'pending'
-            `, [payrollId]);
-
-            console.log('🔍 Payroll data found:', payrollData.length, 'records');
-            if (payrollData.length > 0) {
-                console.log('🔍 First payroll record:', payrollData[0]);
-            }
-
-            if (payrollData.length === 0) {
-                await connection.rollback();
-                throw new Error('Payroll not found or already processed');
-            }
-
-            const payroll = payrollData[0];
-
-            // Generate payslip number manually with timestamp to ensure uniqueness
-            const year = new Date().getFullYear();
-            const month = String(new Date().getMonth() + 1).padStart(2, '0');
-            const timestamp = Date.now().toString().slice(-6);
-            
-            console.log('🔍 Generated year/month:', year, month);
-            console.log('🔍 Timestamp suffix:', timestamp);
-            
-            // Generate unique payslip number with timestamp
-            const payslipNumber = `PS${year}${month}${timestamp}`;
-            
-            console.log('🔍 Generated payslip number:', payslipNumber);
-            
-            // Create payslip
-            console.log('🔍 Inserting payslip with data:', {
-                payslipNumber,
-                payrollId,
-                employee_id: payroll.employee_id,
-                payroll_period: payroll.payroll_period,
-                fixed_salary: payroll.fixed_salary,
-                salary_before_tax: payroll.salary_before_tax,
-                total_deductions: payroll.total_deductions,
-                absence_deduction: payroll.absence_deduction,
-                net_salary: payroll.net_salary,
-                start_date: payroll.start_date,
-                end_date: payroll.end_date,
-                days_present: payroll.days_present,
-                days_absent: payroll.days_absent,
-                total_hours: payroll.total_hours,
-                overtime_hours: payroll.overtime_hours,
-                approvedBy
-            });
-            
-            const [payslipResult] = await connection.query(`
-                INSERT INTO payslip (
-                    payslip_number, payroll_id, employee_id, payslip_date, payslip_period,
-                    basic_salary, salary_before_tax, total_deductions, absence_deduction, net_salary,
-                    start_date, end_date, days_present, days_absent, total_hours, overtime_hours,
-                    approved_by, approved_date, status
-                ) VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'Generated')
-            `, [
-                payslipNumber, payrollId, payroll.employee_id, payroll.payroll_period,
-                payroll.fixed_salary, payroll.salary_before_tax, payroll.total_deductions, 
-                payroll.absence_deduction, payroll.net_salary, payroll.start_date, 
-                payroll.end_date, payroll.days_present, payroll.days_absent, 
-                payroll.total_hours, payroll.overtime_hours, approvedBy
+            const [result] = await db.query(SQL_COMMAND, [
+                bankAccountData.account_name,
+                bankAccountData.bank_name,
+                bankAccountData.account_number,
+                bankAccountData.opening_balance || 0,
+                bankAccountData.currency || 'PHP',
+                bankAccountData.status || 'active'
             ]);
-
-            const payslipId = payslipResult.insertId;
-            console.log('🔍 Payslip created with ID:', payslipId);
-
-            // Note: Only creating payslip record - no deductions or allowances tables exist
-            console.log('🔍 Skipping deductions/allowances - tables not created');
-
-            // Update payroll status to approved
-            console.log('🔍 Updating payroll status to approved');
-            await connection.query(`
-                UPDATE payroll SET status = 'approved' WHERE id = ?
-            `, [payrollId]);
-
-            await connection.commit();
-            console.log('🔍 Transaction committed successfully');
 
             return {
                 success: true,
-                message: 'Payslip created successfully',
-                payslip_id: payslipId,
-                payroll_id: payrollId
+                account_id: result.insertId,
+                message: 'Bank account created successfully'
             };
-
         } catch (error) {
-            await connection.rollback();
-            console.error('❌ Error in createPayslipFromPayroll:', error);
-            console.error('❌ Error details:', {
-                message: error.message,
-                code: error.code,
-                sqlMessage: error.sqlMessage,
-                sqlState: error.sqlState,
-                sql: error.sql
-            });
-            throw error;
-        } finally {
-            connection.release();
+            console.error('Error in insertBankAccount:', error);
+            
+            // Handle duplicate account number error
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('Account number already exists. Please use a different account number.');
+            }
+            
+            throw new Error('Failed to create bank account: ' + error.message);
         }
     }
 
-    // Get all payslips
-    static async getAllPayslips() {
+    // Get all bank accounts
+    static async getAllBankAccounts() {
         const SQL_COMMAND = `
             SELECT 
-                p.id,
-                p.payslip_number,
-                p.payslip_date,
-                p.payslip_period,
-                p.employee_id,
-                e.full_name,
-                r.name as position,
-                e.profile_picture,
-                p.basic_salary,
-                p.salary_before_tax,
-                p.total_deductions,
-                p.absence_deduction,
-                p.net_salary,
-                p.start_date,
-                p.end_date,
-                p.days_present,
-                p.days_absent,
-                p.total_hours,
-                p.overtime_hours,
-                p.payment_method,
-                p.status,
-                p.approved_date,
-                u.full_name as approved_by_name
-            FROM payslip p
-            JOIN employees e ON p.employee_id = e.employee_id
-            JOIN roles r ON e.role_id = r.id
-            LEFT JOIN users u ON p.approved_by = u.id
-            ORDER BY p.payslip_date DESC, p.payslip_number DESC
+                account_id,
+                account_name,
+                bank_name,
+                account_number,
+                opening_balance,
+                currency,
+                status,
+                DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+            FROM bank_accounts 
+            ORDER BY created_at DESC
         `;
 
         try {
-            const [payslips] = await db.query(SQL_COMMAND);
-            return payslips;
+            const [accounts] = await db.query(SQL_COMMAND);
+            return accounts;
         } catch (error) {
-            console.error('Error in getAllPayslips:', error);
-            throw new Error('Failed to fetch payslips');
+            console.error('Error in getAllBankAccounts:', error);
+            throw new Error('Failed to fetch bank accounts');
         }
     }
 
-    // Get payslip by ID
-    static async getPayslipById(payslipId) {
+    // Get bank account by ID
+    static async getBankAccountById(accountId) {
         const SQL_COMMAND = `
             SELECT 
-                p.*,
-                e.full_name,
-                r.name as position,
-                e.profile_picture,
-                u.full_name as approved_by_name
-            FROM payslip p
-            JOIN employees e ON p.employee_id = e.employee_id
-            JOIN roles r ON e.role_id = r.id
-            LEFT JOIN users u ON p.approved_by = u.id
-            WHERE p.id = ?
+                account_id,
+                account_name,
+                bank_name,
+                account_number,
+                opening_balance,
+                currency,
+                status,
+                DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+            FROM bank_accounts 
+            WHERE account_id = ?
         `;
 
         try {
-            const [payslips] = await db.query(SQL_COMMAND, [payslipId]);
-            return payslips[0] || null;
+            const [accounts] = await db.query(SQL_COMMAND, [accountId]);
+            return accounts[0] || null;
         } catch (error) {
-            console.error('Error in getPayslipById:', error);
-            throw new Error('Failed to fetch payslip');
+            console.error('Error in getBankAccountById:', error);
+            throw new Error('Failed to fetch bank account');
         }
     }
 
-
-
-    // Update payslip status
-    static async updatePayslipStatus(payslipId, status) {
+    // Update bank account
+    static async updateBankAccount(accountId, bankAccountData) {
         const SQL_COMMAND = `
-            UPDATE payslip 
-            SET status = ?, updated_at = NOW()
-            WHERE id = ?
+            UPDATE bank_accounts 
+            SET 
+                account_name = ?,
+                bank_name = ?,
+                account_number = ?,
+                opening_balance = ?,
+                currency = ?,
+                status = ?
+            WHERE account_id = ?
         `;
 
         try {
-            const [result] = await db.query(SQL_COMMAND, [status, payslipId]);
-            return result.affectedRows > 0;
+            const [result] = await db.query(SQL_COMMAND, [
+                bankAccountData.account_name,
+                bankAccountData.bank_name,
+                bankAccountData.account_number,
+                bankAccountData.opening_balance || 0,
+                bankAccountData.currency || 'PHP',
+                bankAccountData.status || 'active',
+                accountId
+            ]);
+
+            if (result.affectedRows === 0) {
+                throw new Error('Bank account not found');
+            }
+
+            return {
+                success: true,
+                message: 'Bank account updated successfully'
+            };
         } catch (error) {
-            console.error('Error in updatePayslipStatus:', error);
-            throw new Error('Failed to update payslip status');
+            console.error('Error in updateBankAccount:', error);
+            
+            // Handle duplicate account number error
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('Account number already exists. Please use a different account number.');
+            }
+            
+            throw new Error('Failed to update bank account: ' + error.message);
+        }
+    }
+
+    // Delete bank account
+    static async deleteBankAccount(accountId) {
+        const SQL_COMMAND = `
+            DELETE FROM bank_accounts 
+            WHERE account_id = ?
+        `;
+
+        try {
+            const [result] = await db.query(SQL_COMMAND, [accountId]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('Bank account not found');
+            }
+
+            return {
+                success: true,
+                message: 'Bank account deleted successfully'
+            };
+        } catch (error) {
+            console.error('Error in deleteBankAccount:', error);
+            throw new Error('Failed to delete bank account: ' + error.message);
+        }
+    }
+
+    // Check if account number exists
+    static async checkAccountNumberExists(accountNumber, excludeId = null) {
+        let SQL_COMMAND = `
+            SELECT COUNT(*) as count 
+            FROM bank_accounts 
+            WHERE account_number = ?
+        `;
+        
+        const params = [accountNumber];
+        
+        if (excludeId) {
+            SQL_COMMAND += ` AND account_id != ?`;
+            params.push(excludeId);
+        }
+
+        try {
+            const [result] = await db.query(SQL_COMMAND, params);
+            return result[0].count > 0;
+        } catch (error) {
+            console.error('Error in checkAccountNumberExists:', error);
+            throw new Error('Failed to check account number existence');
+        }
+    }
+
+    // =============================================
+    // CASH MONITORING (INFLOWS VIA PAYMONGO)
+    // =============================================
+
+    static async insertCashMonitoringInflow({
+        inflow_source,
+        amount,
+        payment_method = 'paymongo',
+        reference_number = null,
+        description = null,
+        recorded_by = 'system:paymongo',
+        transaction_date = null
+    }) {
+        const SQL = `
+            INSERT INTO cash_monitoring (
+                flow_type, inflow_source, outflow_category, amount,
+                payment_method, reference_number, description,
+                recorded_by, transaction_date
+            ) VALUES ('inflow', ?, NULL, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const txDate = transaction_date || new Date();
+        const params = [
+            inflow_source || 'developer_payment',
+            amount,
+            payment_method,
+            reference_number,
+            description,
+            recorded_by,
+            // Ensure YYYY-MM-DD for DATE column
+            typeof txDate === 'string' ? txDate : new Date(txDate).toISOString().slice(0, 10)
+        ];
+
+        try {
+            const [result] = await db.query(SQL, params);
+            return { success: true, id: result.insertId };
+        } catch (error) {
+            console.error('Error inserting cash inflow:', error);
+            throw new Error('Failed to insert cash inflow');
+        }
+    }
+
+    static async createPayMongoPaymentLink({ amount, description, reference_number, customer }) {
+        const secretKey = process.env.PAYMONGO_SECRET_KEY;
+        if (!secretKey) {
+            throw new Error('PAYMONGO_SECRET_KEY not configured');
+        }
+
+        // PayMongo amounts are in cents/centavos (integer)
+        const amountInCents = Math.round(parseFloat(amount) * 100);
+
+        const payload = {
+            data: {
+                attributes: {
+                    amount: amountInCents,
+                    description: description || 'Payment',
+                    remarks: reference_number || undefined,
+                    currency: 'PHP',
+                    // Optional customer details if provided
+                    customer: customer && (customer.name || customer.email || customer.phone)
+                        ? {
+                            name: customer.name,
+                            email: customer.email,
+                            phone: customer.phone
+                        }
+                        : undefined
+                }
+            }
+        };
+
+        try {
+            const auth = Buffer.from(`${secretKey}:`).toString('base64');
+            const resp = await axios.post(
+                'https://api.paymongo.com/v1/links',
+                payload,
+                {
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 15000
+                }
+            );
+
+            const link = resp?.data?.data;
+            return {
+                success: true,
+                id: link?.id,
+                amount: amount,
+                description,
+                reference_number,
+                checkout_url: link?.attributes?.checkout_url || link?.attributes?.short_url
+            };
+        } catch (error) {
+            console.error('Error creating PayMongo payment link:', error?.response?.data || error.message);
+            throw new Error('Failed to create PayMongo payment link');
         }
     }
 }

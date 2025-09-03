@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance - Payroll Periods</title>
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/finance_payroll.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .period-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .period-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .period-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .period-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .period-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-processed { background: #cce5ff; color: #004085; }
+        .period-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .period-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-view { background: #007bff; color: white; }
+        .btn-view:hover { background: #0056b3; }
+        .btn-approve { background: #28a745; color: white; }
+        .btn-approve:hover { background: #1e7e34; }
+        .btn-reject { background: #dc3545; color: white; }
+        .btn-reject:hover { background: #c82333; }
+        .btn-create-payslips { background: #17a2b8; color: white; }
+        .btn-create-payslips:hover { background: #138496; }
+        .month-section {
+            margin-bottom: 40px;
+        }
+        .month-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .period-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .no-periods {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .no-periods i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .employee-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            align-items: center;
+        }
+        .employee-row:last-child {
+            border-bottom: none;
+        }
+        .employee-header {
+            font-weight: 600;
+            background: #f8f9fa;
+            padding: 15px 12px;
+            border-radius: 6px 6px 0 0;
+        }
+        .employee-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .employee-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .summary-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar">
+                <div class="position-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/finance/finance_payroll_periods">
+                                <i class="fas fa-calendar-alt"></i> Payroll Periods
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/finance_payroll">
+                                <i class="fas fa-money-bill-wave"></i> Payroll Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/finance_payslips">
+                                <i class="fas fa-file-invoice-dollar"></i> Payslips
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/finance/finance_dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-calendar-alt"></i> Payroll Periods
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshPeriods()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading state -->
+                <div id="loading" class="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Loading payroll periods...</p>
+                </div>
+
+                <!-- No periods state -->
+                <div id="no-periods" class="no-periods" style="display: none;">
+                    <i class="fas fa-calendar-times"></i>
+                    <h3>No Payroll Periods Found</h3>
+                    <p>No payroll periods have been generated yet. HR needs to generate payroll first.</p>
+                </div>
+
+                <!-- Periods content -->
+                <div id="periods-content" style="display: none;">
+                    <!-- Periods will be loaded here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Period Details Modal -->
+    <div class="modal fade" id="periodModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-alt"></i> 
+                        <span id="modal-period-name">Period Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Summary Stats -->
+                    <div id="modal-summary" class="summary-stats">
+                        <!-- Summary stats will be loaded here -->
+                    </div>
+
+                    <!-- Employee List -->
+                    <h6>Employee Payroll Entries</h6>
+                    <div id="modal-employees">
+                        <!-- Employee list will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="btn-approve-period" style="display: none;">
+                        <i class="fas fa-check"></i> Approve Period
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btn-reject-period" style="display: none;">
+                        <i class="fas fa-times"></i> Reject Period
+                    </button>
+                    <button type="button" class="btn btn-info" id="btn-create-payslips" style="display: none;">
+                        <i class="fas fa-file-invoice-dollar"></i> Create Payslips
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPeriodId = null;
+        let periodsData = [];
+
+        // Load periods on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPayrollPeriods();
+        });
+
+        async function loadPayrollPeriods() {
+            try {
+                showLoading();
+                
+                const response = await fetch('/finance/payroll-periods');
+                const data = await response.json();
+                
+                if (data.success) {
+                    periodsData = data.periods;
+                    displayPeriods(periodsData);
+                } else {
+                    throw new Error(data.error || 'Failed to load periods');
+                }
+            } catch (error) {
+                console.error('Error loading periods:', error);
+                showError('Failed to load payroll periods: ' + error.message);
+            }
+        }
+
+        function displayPeriods(periods) {
+            if (periods.length === 0) {
+                showNoPeriods();
+                return;
+            }
+
+            // Group periods by month and year
+            const groupedPeriods = groupPeriodsByMonth(periods);
+            
+            const content = document.getElementById('periods-content');
+            content.innerHTML = '';
+
+            Object.keys(groupedPeriods).sort().reverse().forEach(monthKey => {
+                const monthPeriods = groupedPeriods[monthKey];
+                const monthSection = createMonthSection(monthKey, monthPeriods);
+                content.appendChild(monthSection);
+            });
+
+            hideLoading();
+            showContent();
+        }
+
+        function groupPeriodsByMonth(periods) {
+            const grouped = {};
+            
+            periods.forEach(period => {
+                const startDate = new Date(period.start_date);
+                const monthKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!grouped[monthKey]) {
+                    grouped[monthKey] = [];
+                }
+                grouped[monthKey].push(period);
+            });
+
+            return grouped;
+        }
+
+        function createMonthSection(monthKey, periods) {
+            const monthDate = new Date(monthKey + '-01');
+            const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            const section = document.createElement('div');
+            section.className = 'month-section';
+            
+            section.innerHTML = `
+                <h2 class="month-title">
+                    <i class="fas fa-calendar"></i> ${monthName}
+                </h2>
+                <div class="period-grid">
+                    ${periods.map(period => createPeriodCard(period)).join('')}
+                </div>
+            `;
+            
+            return section;
+        }
+
+        function createPeriodCard(period) {
+            const startDate = new Date(period.start_date);
+            const endDate = new Date(period.end_date);
+            const isFirstHalf = startDate.getDate() <= 15;
+            const periodType = isFirstHalf ? 'First Half' : 'Second Half';
+            
+            return `
+                <div class="period-card">
+                    <div class="period-header">
+                        <div class="period-name">
+                            <i class="fas fa-calendar-week"></i> ${periodType}
+                        </div>
+                        <span class="period-status status-${period.status}">
+                            ${period.status.charAt(0).toUpperCase() + period.status.slice(1)}
+                        </span>
+                    </div>
+                    
+                    <div class="period-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${period.employee_count || 0}</div>
+                            <div class="stat-label">Employees</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₱${formatCurrency(period.total_payroll_amount || 0)}</div>
+                            <div class="stat-label">Total Amount</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${formatDate(period.start_date)}</div>
+                            <div class="stat-label">Start Date</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${formatDate(period.end_date)}</div>
+                            <div class="stat-label">End Date</div>
+                        </div>
+                    </div>
+                    
+                    <div class="period-actions">
+                        <button class="btn-action btn-view" onclick="viewPeriodDetails(${period.id})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        ${period.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="approvePeriod(${period.id})">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn-action btn-reject" onclick="rejectPeriod(${period.id})">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        ` : ''}
+                        ${period.status === 'approved' ? `
+                            <button class="btn-action btn-create-payslips" onclick="createPayslips(${period.id})">
+                                <i class="fas fa-file-invoice-dollar"></i> Create Payslips
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function viewPeriodDetails(periodId) {
+            try {
+                currentPeriodId = periodId;
+                
+                // Load period details
+                const [periodResponse, entriesResponse, summaryResponse] = await Promise.all([
+                    fetch(`/finance/payroll-periods/${periodId}`),
+                    fetch(`/finance/payroll-periods/${periodId}/entries`),
+                    fetch(`/finance/payroll-periods/${periodId}/summary`)
+                ]);
+
+                const [periodData, entriesData, summaryData] = await Promise.all([
+                    periodResponse.json(),
+                    entriesResponse.json(),
+                    summaryResponse.json()
+                ]);
+
+                if (periodData.success && entriesData.success && summaryData.success) {
+                    displayPeriodModal(periodData.period, entriesData.entries, summaryData.summary);
+                } else {
+                    throw new Error('Failed to load period details');
+                }
+            } catch (error) {
+                console.error('Error loading period details:', error);
+                alert('Failed to load period details: ' + error.message);
+            }
+        }
+
+        function displayPeriodModal(period, entries, summary) {
+            // Update modal title
+            document.getElementById('modal-period-name').textContent = period.period_name;
+            
+            // Display summary stats
+            const summaryHtml = `
+                <div class="summary-card">
+                    <div class="summary-value">${summary.total_employees || 0}</div>
+                    <div class="summary-label">Total Employees</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">₱${formatCurrency(summary.total_payroll_amount || 0)}</div>
+                    <div class="summary-label">Total Payroll</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">₱${formatCurrency(summary.average_salary || 0)}</div>
+                    <div class="summary-label">Average Salary</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">${summary.total_hours || 0}</div>
+                    <div class="summary-label">Total Hours</div>
+                </div>
+            `;
+            document.getElementById('modal-summary').innerHTML = summaryHtml;
+
+            // Display employee list
+            const employeesHtml = `
+                <div class="employee-row employee-header">
+                    <div>Employee</div>
+                    <div>Position</div>
+                    <div>Net Salary</div>
+                    <div>Status</div>
+                </div>
+                ${entries.map(entry => `
+                    <div class="employee-row">
+                        <div class="employee-name">
+                            <img src="${entry.profile_picture ? '/uploads/profile_pictures/' + entry.profile_picture : '/images/default-avatar.png'}" 
+                                 alt="Avatar" class="employee-avatar" 
+                                 onerror="this.src='/images/default-avatar.png'">
+                            <span>${entry.full_name}</span>
+                        </div>
+                        <div>${entry.position}</div>
+                        <div>₱${formatCurrency(entry.net_salary || 0)}</div>
+                        <div>
+                            <span class="period-status status-${entry.status}">
+                                ${entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                            </span>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            document.getElementById('modal-employees').innerHTML = employeesHtml;
+
+            // Show/hide action buttons based on period status
+            const approveBtn = document.getElementById('btn-approve-period');
+            const rejectBtn = document.getElementById('btn-reject-period');
+            const createPayslipsBtn = document.getElementById('btn-create-payslips');
+
+            approveBtn.style.display = period.status === 'pending' ? 'inline-block' : 'none';
+            rejectBtn.style.display = period.status === 'pending' ? 'inline-block' : 'none';
+            createPayslipsBtn.style.display = period.status === 'approved' ? 'inline-block' : 'none';
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('periodModal'));
+            modal.show();
+        }
+
+        async function approvePeriod(periodId) {
+            if (!confirm('Are you sure you want to approve this payroll period?')) return;
+            
+            try {
+                const response = await fetch(`/finance/payroll-periods/${periodId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Period approved successfully!');
+                    loadPayrollPeriods(); // Refresh the list
+                } else {
+                    throw new Error(data.error || 'Failed to approve period');
+                }
+            } catch (error) {
+                console.error('Error approving period:', error);
+                alert('Failed to approve period: ' + error.message);
+            }
+        }
+
+        async function rejectPeriod(periodId) {
+            if (!confirm('Are you sure you want to reject this payroll period?')) return;
+            
+            try {
+                const response = await fetch(`/finance/payroll-periods/${periodId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'rejected' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Period rejected successfully!');
+                    loadPayrollPeriods(); // Refresh the list
+                } else {
+                    throw new Error(data.error || 'Failed to reject period');
+                }
+            } catch (error) {
+                console.error('Error rejecting period:', error);
+                alert('Failed to reject period: ' + error.message);
+            }
+        }
+
+        async function createPayslips(periodId) {
+            if (!confirm('Are you sure you want to create payslips for this period? This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch(`/finance/payroll-periods/${periodId}/create-payslips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert(`Payslips created successfully! ${data.message}`);
+                    loadPayrollPeriods(); // Refresh the list
+                } else {
+                    throw new Error(data.error || 'Failed to create payslips');
+                }
+            } catch (error) {
+                console.error('Error creating payslips:', error);
+                alert('Failed to create payslips: ' + error.message);
+            }
+        }
+
+        function refreshPeriods() {
+            loadPayrollPeriods();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('no-periods').style.display = 'none';
+            document.getElementById('periods-content').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showNoPeriods() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('no-periods').style.display = 'block';
+            document.getElementById('periods-content').style.display = 'none';
+        }
+
+        function showContent() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('no-periods').style.display = 'none';
+            document.getElementById('periods-content').style.display = 'block';
+        }
+
+        function showError(message) {
+            hideLoading();
+            alert('Error: ' + message);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Event listeners for modal buttons
+        document.getElementById('btn-approve-period').addEventListener('click', () => {
+            if (currentPeriodId) approvePeriod(currentPeriodId);
+        });
+
+        document.getElementById('btn-reject-period').addEventListener('click', () => {
+            if (currentPeriodId) rejectPeriod(currentPeriodId);
+        });
+
+        document.getElementById('btn-create-payslips').addEventListener('click', () => {
+            if (currentPeriodId) createPayslips(currentPeriodId);
+        });
+    </script>
+</body>
+</html>

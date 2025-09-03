@@ -3,12 +3,25 @@ const router = express.Router();
 const financeController = require('../controller/finance.controller');
 const { isFinanceAdmin } = require('../middleware/finance.middleware');
 
+// Public webhook (must not require session/middleware)
+router.post('/webhooks/paymongo', express.json({ type: '*/*' }), (req, res, next) => {
+  // Preserve raw body for signature verification
+  req.rawBody = JSON.stringify(req.body || {});
+  next();
+}, financeController.paymongoWebhook);
+
 // Apply finance admin middleware to all routes
 router.use(isFinanceAdmin);
 
-// Payroll routes
-router.get('/payrolls', financeController.getAllPayrolls);
-router.get('/pending-payrolls', financeController.getPendingPayrolls);
+// Payroll Periods Management Routes
+router.get('/payroll-periods', isFinanceAdmin, financeController.getAllPayrollPeriods);
+router.get('/payroll-periods/pending', isFinanceAdmin, financeController.getPendingPayrollPeriods);
+router.get('/payroll-periods/approved', isFinanceAdmin, financeController.getApprovedPayrollPeriods);
+router.get('/payroll-periods/:periodId', isFinanceAdmin, financeController.getPayrollPeriodById);
+router.get('/payroll-periods/:periodId/entries', isFinanceAdmin, financeController.getPayrollEntriesByPeriod);
+router.get('/payroll-periods/:periodId/summary', isFinanceAdmin, financeController.getPayrollPeriodSummary);
+router.put('/payroll-periods/:periodId/status', isFinanceAdmin, financeController.updatePayrollPeriodStatus);
+router.post('/payroll-periods/:periodId/create-payslips', isFinanceAdmin, financeController.createPayslipsFromPeriod);
 
 // =============================================
 // PURCHASE REQUESTS - Connected to Supply Department
@@ -38,9 +51,6 @@ router.get('/purchase-orders/estimations', financeController.getPurchaseOrdersWi
 // Update purchase order estimation status (approve/reject)
 router.post('/purchase-orders/:poId/estimation', financeController.updatePurchaseOrderEstimation);
 
-// Process payment for delivered order
-router.post('/purchase-orders/:poId/payment', financeController.processPurchaseOrderPayment);
-
 // =============================================
 // PURCHASE ORDER PAYMENTS
 // These routes handle payment processing for delivered orders
@@ -49,8 +59,11 @@ router.post('/purchase-orders/:poId/payment', financeController.processPurchaseO
 // Get all purchase orders pending payment
 router.get('/purchase-orders/pending-payment', financeController.getPurchaseOrdersPendingPayment);
 
+// Process payment for delivered order
+router.post('/purchase-orders/:poId/payment', financeController.processPurchaseOrderPayment);
+
 // Update purchase order payment status
-router.post('/purchase-orders/:poId/payment', financeController.updatePurchaseOrderPayment);
+router.put('/purchase-orders/:poId/payment-status', financeController.updatePurchaseOrderPayment);
 
 // =============================================
 // PAYSLIP MANAGEMENT ROUTES
@@ -67,7 +80,39 @@ router.get('/payslips', financeController.getAllPayslips);
 router.get('/payslips/:payslipId', financeController.getPayslipById);
 
 // Update payslip status
-router.put('/payslips/:payslipId/status', financeController.updatePayslipStatus);
+router.put('/payrolls/:payslipId/status', financeController.updatePayslipStatus);
+
+// =============================================
+// CASH MONITORING / PAYMONGO
+// =============================================
+
+// Create payment link
+router.post('/payments/create-link', financeController.createPaymentLink);
+
+// Manual insert inflow (admin tool)
+router.post('/cash-monitoring/inflow', financeController.insertCashInflow);
+
+// =============================================
+// BANK ACCOUNT MANAGEMENT ROUTES
+// These routes handle bank account operations
+// =============================================
+
+// Create new bank account
+router.post('/bank-accounts', financeController.createBankAccount);
+
+// Get all bank accounts
+router.get('/bank-accounts', financeController.getAllBankAccounts);
+
+// Get bank account by ID
+router.get('/bank-accounts/:accountId', financeController.getBankAccountById);
+
+// Update bank account
+router.put('/bank-accounts/:accountId', financeController.updateBankAccount);
+
+// Delete bank account
+router.delete('/bank-accounts/:accountId', financeController.deleteBankAccount);
+
+
 
 // Add more routes here as needed
 // Example:
