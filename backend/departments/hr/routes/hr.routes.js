@@ -3,6 +3,7 @@
     const HRController = require('../controller/hr.controller.js');
     const authMiddleware = require('../middleware/hrAuthMiddleware.js');
     const HRModel = require('../model/hr.model.js');
+    const Notifications = require('../../../models/notification.model');
     const bcrypt = require('bcrypt');
     const db = require('../../../db');
     const path = require('path');
@@ -103,6 +104,16 @@
     router.get('/employee/:employeeId/deductions-breakdown', HRController.getEmployeeDeductionsBreakdown);
     router.get('/payroll/:payrollId/employee/:employeeId/deductions', HRController.getPayrollEntryWithDeductions);
     router.post('/payroll/:payrollId/employee/:employeeId/deduction-overrides', HRController.saveDeductionOverrides);
+
+    // Payroll Periods Management Routes
+    router.get('/payroll-periods', authMiddleware.verifySession, HRController.getAllPayrollPeriods);
+    router.get('/payroll-periods/pending', authMiddleware.verifySession, HRController.getPendingPayrollPeriods);
+    router.get('/payroll-periods/approved', authMiddleware.verifySession, HRController.getApprovedPayrollPeriods);
+    router.get('/payroll-periods/:periodId', authMiddleware.verifySession, HRController.getPayrollPeriodById);
+    router.get('/payroll-periods/:periodId/entries', authMiddleware.verifySession, HRController.getPayrollEntriesByPeriod);
+    router.get('/payroll-periods/:periodId/summary', authMiddleware.verifySession, HRController.getPayrollPeriodSummary);
+    router.put('/payroll-periods/:periodId/status', authMiddleware.verifySession, HRController.updatePayrollPeriodStatus);
+    router.post('/payroll-periods/migrate', authMiddleware.verifySession, HRController.migratePayrollToPeriods);
 
     router.get('/check-session', (req, res) => {
         if (req.session && req.session.user) {
@@ -284,6 +295,41 @@
     // Payslip Management Routes (for HR to view payslips)
     router.get('/payslips', authMiddleware.verifySession, HRController.getAllPayslips);
     router.get('/payslips/:payslipId', authMiddleware.verifySession, HRController.getPayslipById);
+
+    
+
+    // Notifications endpoints
+    router.get('/notifications/unread', authMiddleware.verifySession, async (req, res) => {
+        try {
+            const userId = req.session.user?.id;
+            const departmentId = req.session.user?.department_id || null;
+            const rows = await Notifications.getUnreadFor({ userId, departmentId, limit: 20 });
+            res.json({ success: true, notifications: rows });
+        } catch (e) {
+            console.error('Failed to fetch notifications:', e);
+            res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
+        }
+    });
+    router.post('/notifications/:id/read', authMiddleware.verifySession, async (req, res) => {
+        try {
+            const ok = await Notifications.markAsRead(req.params.id, req.session.user?.id);
+            res.json({ success: ok });
+        } catch (e) {
+            console.error('Failed to mark notification read:', e);
+            res.status(500).json({ success: false, error: 'Failed to mark as read' });
+        }
+    });
+    router.post('/notifications/read-all', authMiddleware.verifySession, async (req, res) => {
+        try {
+            const userId = req.session.user?.id;
+            const departmentId = req.session.user?.department_id || null;
+            const count = await Notifications.markAllAsRead({ userId, departmentId });
+            res.json({ success: true, updated: count });
+        } catch (e) {
+            console.error('Failed to mark all notifications read:', e);
+            res.status(500).json({ success: false, error: 'Failed to mark all as read' });
+        }
+    });
 
     // Document Types Management Routes
     router.get('/document-types', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.getAllDocumentTypes);

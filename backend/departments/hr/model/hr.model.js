@@ -1101,34 +1101,26 @@ const HRModel = {
     insertPayrollRecords: async (records) => {
         const values = records.map(r => [
             r.employee_id,
-            r.start_date,
-            r.end_date,
             new Date().toISOString().split('T')[0], // payroll_date (current date)
             r.days_present,
             r.days_absent,
             r.total_hours || 0,
             r.overtime_hours || 0,
-            r.monthly_salary || 0,        // Changed from fixed_salary
+            r.monthly_salary || 0,        // fixed_salary
             r.total_deductions || 0,
             r.absence_deduction || 0,
-            r.net_pay || 0,               // Changed from net_salary
+            r.net_pay || 0,               // net_salary
             r.payroll_period || '',
             r.status || 'pending',        // default to 'pending'
-            r.monthly_salary || 0         // salary_before_tax is same as monthly_salary
+            r.monthly_salary || 0         // salary_before_tax
         ]);
     
         try {
-            console.log('Inserting payroll records with dates:', {
-                firstRecord: {
-                    start: records[0]?.start_date,
-                    end: records[0]?.end_date,
-                    payroll_date: new Date().toISOString().split('T')[0]
-                }
-            });
+            console.log('Inserting payroll records without start/end dates');
 
             const [result] = await db.query(
                 `INSERT INTO payroll 
-                 (employee_id, start_date, end_date, payroll_date, days_present, 
+                 (employee_id, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
                   absence_deduction, net_salary, payroll_period, status, salary_before_tax)
                  VALUES ?`, [values]
@@ -3978,7 +3970,329 @@ const HRModel = {
             console.error('Error in getPayslipById:', error);
             throw new Error('Failed to fetch payslip');
         }
-    }
+    },
+
+    // =========================
+    // Payroll Periods Management
+    // =========================
+
+    // Create a new payroll period
+    createPayrollPeriod: async (periodName, startDate, endDate) => {
+        try {
+            const [result] = await db.query(`
+                INSERT INTO payroll_periods (period_name, start_date, end_date, status, created_at)
+                VALUES (?, ?, ?, 'pending', NOW())
+            `, [periodName, startDate, endDate]);
+            
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error creating payroll period:", error);
+            throw error;
+        }
+    },
+
+    // Get all payroll periods
+    getAllPayrollPeriods: async () => {
+        try {
+            const [periods] = await db.query(`
+            SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count,
+                    SUM(p.net_salary) as total_payroll_amount
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
+        } catch (error) {
+            console.error("❌ Error fetching payroll periods:", error);
+            throw error;
+        }
+    },
+
+    // Get payroll period by ID
+    getPayrollPeriodById: async (periodId) => {
+        try {
+            const [periods] = await db.query(`
+                SELECT * FROM payroll_periods WHERE id = ?
+            `, [periodId]);
+            return periods[0] || null;
+        } catch (error) {
+            console.error("❌ Error fetching payroll period:", error);
+            throw error;
+        }
+    },
+
+    // Get all payroll entries for a specific period
+    getPayrollEntriesByPeriod: async (periodId) => {
+        try {
+            const [entries] = await db.query(`
+            SELECT 
+                    p.*,
+                e.full_name,
+                r.name as position,
+                    e.profile_picture
+                FROM payroll p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                WHERE p.payroll_period_id = ?
+                ORDER BY e.full_name
+            `, [periodId]);
+            return entries;
+        } catch (error) {
+            console.error("❌ Error fetching payroll entries by period:", error);
+            throw error;
+        }
+    },
+
+    // Update payroll period status
+    updatePayrollPeriodStatus: async (periodId, status) => {
+        try {
+            const [result] = await db.query(`
+                UPDATE payroll_periods 
+                SET status = ?, updated_at = NOW()
+                WHERE id = ?
+            `, [status, periodId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error updating payroll period status:", error);
+            throw error;
+        }
+    },
+
+    // Find or create payroll period for given dates
+    findOrCreatePayrollPeriod: async (startDate, endDate) => {
+        try {
+            // First, try to find existing period
+            const [existing] = await db.query(`
+                SELECT * FROM payroll_periods 
+                WHERE start_date = ? AND end_date = ?
+            `, [startDate, endDate]);
+            
+            if (existing.length > 0) {
+                return existing[0].id;
+            }
+            
+            // Create new period if not found
+            const periodName = `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            
+            const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
+            return periodId;
+        } catch (error) {
+            console.error("❌ Error finding or creating payroll period:", error);
+            throw error;
+        }
+    },
+
+    // Link payroll entries to period
+    linkPayrollToPeriod: async (payrollIds, periodId) => {
+        try {
+            const [result] = await db.query(`
+                UPDATE payroll 
+                SET payroll_period_id = ?
+                WHERE id IN (${payrollIds.map(() => '?').join(',')})
+            `, [periodId, ...payrollIds]);
+            
+            return result.affectedRows;
+        } catch (error) {
+            console.error("❌ Error linking payroll to period:", error);
+            throw error;
+        }
+    },
+
+    // Migration function to create periods from existing payroll data
+    migrateExistingPayrollToPeriods: async () => {
+        try {
+            console.log('🔄 Starting payroll periods migration...');
+            
+            // Get all unique date combinations from existing payroll
+            const [uniqueDates] = await db.query(`
+                SELECT DISTINCT start_date, end_date 
+                FROM payroll 
+                WHERE payroll_period_id IS NULL
+                ORDER BY start_date, end_date
+            `);
+            
+            console.log(`📊 Found ${uniqueDates.length} unique date combinations`);
+            
+            let totalLinked = 0;
+            
+            for (const datePair of uniqueDates) {
+                // Create period for this date combination
+                const periodName = `${new Date(datePair.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(datePair.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                
+                const periodId = await HRModel.createPayrollPeriod(periodName, datePair.start_date, datePair.end_date);
+                
+                // Link all payroll entries with these dates to this period
+                const [result] = await db.query(`
+                    UPDATE payroll 
+                    SET payroll_period_id = ?
+                    WHERE start_date = ? AND end_date = ? AND payroll_period_id IS NULL
+                `, [periodId, datePair.start_date, datePair.end_date]);
+                
+                totalLinked += result.affectedRows;
+                console.log(`✅ Created period "${periodName}" and linked ${result.affectedRows} payroll entries`);
+            }
+            
+            console.log(`🎉 Migration complete! Linked ${totalLinked} total payroll entries to periods`);
+            return { periodsCreated: uniqueDates.length, entriesLinked: totalLinked };
+        } catch (error) {
+            console.error("❌ Error during payroll periods migration:", error);
+            throw error;
+        }
+    },
+
+    // Get payroll summary for a period
+    getPayrollPeriodSummary: async (periodId) => {
+        try {
+            const [summary] = await db.query(`
+                SELECT 
+                    pp.period_name,
+                    pp.start_date,
+                    pp.end_date,
+                    pp.status,
+                    COUNT(p.id) as total_employees,
+                    SUM(p.net_salary) as total_payroll_amount,
+                    AVG(p.net_salary) as average_salary,
+                    SUM(p.total_hours) as total_hours,
+                    SUM(p.overtime_hours) as total_overtime_hours
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.id = ?
+                GROUP BY pp.id
+            `, [periodId]);
+            
+            return summary[0] || null;
+        } catch (error) {
+            console.error("❌ Error fetching payroll period summary:", error);
+            throw error;
+        }
+    },
+
+    // Check if payroll period exists for given dates
+    checkPayrollPeriodExists: async (startDate, endDate) => {
+        try {
+            const [periods] = await db.query(`
+                SELECT id FROM payroll_periods 
+                WHERE start_date = ? AND end_date = ?
+            `, [startDate, endDate]);
+            
+            return periods.length > 0 ? periods[0].id : null;
+        } catch (error) {
+            console.error("❌ Error checking payroll period existence:", error);
+            throw error;
+        }
+    },
+
+    // Delete payroll period (only if no linked payroll entries)
+    deletePayrollPeriod: async (periodId) => {
+        try {
+            // Check if period has linked payroll entries
+            const [linked] = await db.query(`
+                SELECT COUNT(*) as count FROM payroll WHERE payroll_period_id = ?
+            `, [periodId]);
+            
+            if (linked[0].count > 0) {
+                throw new Error(`Cannot delete period: ${linked[0].count} payroll entries are linked to this period`);
+            }
+            
+            const [result] = await db.query(`
+                DELETE FROM payroll_periods WHERE id = ?
+            `, [periodId]);
+            
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error("❌ Error deleting payroll period:", error);
+            throw error;
+        }
+    },
+
+    // Get pending payroll periods
+    getPendingPayrollPeriods: async () => {
+        try {
+            const [periods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.status = 'pending'
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
+        } catch (error) {
+            console.error("❌ Error fetching pending payroll periods:", error);
+            throw error;
+        }
+    },
+
+    // Get approved payroll periods
+    getApprovedPayrollPeriods: async () => {
+        try {
+            const [periods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as employee_count,
+                    SUM(p.net_salary) as total_amount
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.status = 'approved'
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+            `);
+            return periods;
+        } catch (error) {
+            console.error("❌ Error fetching approved payroll periods:", error);
+            throw error;
+        }
+    },
+
+    // Update existing payroll generation to use periods
+    insertPayrollRecordsWithPeriod: async (records, periodId) => {
+        const values = records.map(r => [
+            r.employee_id,
+            new Date().toISOString().split('T')[0], // payroll_date (current date)
+            r.days_present,
+            r.days_absent,
+            r.total_hours || 0,
+            r.overtime_hours || 0,
+            r.monthly_salary || 0,
+            r.total_deductions || 0,
+            r.absence_deduction || 0,
+            r.net_pay || 0,
+            r.payroll_period || '',
+            r.status || 'pending',
+            r.monthly_salary || 0,
+            periodId // payroll_period_id
+        ]);
+
+        try {
+            console.log('Inserting payroll records (no start/end dates) with period ID:', periodId);
+
+            const [result] = await db.query(
+                `INSERT INTO payroll 
+                 (employee_id, payroll_date, days_present, 
+                  days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
+                  absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id)
+                 VALUES ?`, [values]
+            );
+
+            // Return the inserted IDs
+            const insertedIds = [];
+            for (let i = 0; i < records.length; i++) {
+                insertedIds.push(result.insertId + i);
+            }
+            
+            return insertedIds;
+        } catch (error) {
+            console.error('Error inserting payroll records with period:', error);
+            throw error;
+        }
+    },
+
+    // ... existing code ...
 };
 
 module.exports = HRModel;
