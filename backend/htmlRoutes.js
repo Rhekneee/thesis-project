@@ -264,6 +264,7 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_construction_payroll.html')); // Adjusted path
   }); 
 
+  // Removed HR payroll forecasting route
   
 // ====================
   //   agents Routes
@@ -359,12 +360,20 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_payroll.html')); // Adjusted path
   }); 
 
+  // Removed finance_payroll_periods standalone route; content is now in finance_payroll
+
   app.get('/finance/finance_purchase_order', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_purchase_order.html')); // Adjusted path
   }); 
 
   app.get('/finance/finance_purchase_request', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_purchase_request.html')); // Adjusted path
+  }); 
+
+  // Removed Finance payroll forecasting summary route
+
+  app.get('/finance/cash_monitoring', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'cash_monitoring.html')); // Adjusted path
   }); 
 
 // ====================

@@ -664,152 +664,338 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },    
 
-    // Generate payroll for the selected period
+    // Updated payroll generation to use periods
     generatePayroll: async (req, res) => {
         try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
             const { month, year, period } = req.body;
-            console.log('\n=== PAYROLL GENERATION STARTED ===');
-            console.log('1. Input Parameters:', { month, year, period });
-
-            // Validate input parameters
             if (!month || !year || !period) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Month, year, and period are required'
-                });
+                return res.status(400).json({ error: 'month, year, and period are required' });
             }
 
-            // Validate period
-            if (!['first', 'second'].includes(period)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Period must be either "first" or "second"'
-                });
-            }
+            // Calculate start and end dates based on period
+            const startDate = period === 'first' 
+                ? `${year}-${month.padStart(2, '0')}-01`
+                : `${year}-${month.padStart(2, '0')}-16`;
+            
+            const endDate = period === 'first'
+                ? `${year}-${month.padStart(2, '0')}-15`
+                : new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
 
-            // Calculate date range based on period
-            let startDate, endDate;
-            if (period === 'first') {
-                startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-                endDate = `${year}-${month.toString().padStart(2, '0')}-15`;
+            // Check if payroll period already exists
+            let periodId = await HRModel.checkPayrollPeriodExists(startDate, endDate);
+            
+            if (!periodId) {
+                // Create new payroll period
+                const periodName = `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
+                console.log(`✅ Created new payroll period: ${periodName} (ID: ${periodId})`);
             } else {
-                startDate = `${year}-${month.toString().padStart(2, '0')}-16`;
-                // Get last day of month
-                const lastDay = new Date(year, month, 0).getDate();
-                endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+                console.log(`✅ Using existing payroll period ID: ${periodId}`);
             }
-
-            console.log('2. Date Range:', { startDate, endDate });
 
             // Get employees with attendance data
             const employees = await HRModel.getEmployeesWithAttendance(startDate, endDate);
-            console.log('3. Employees found:', employees.length);
 
-            if (employees.length === 0) {
+            if (!employees || employees.length === 0) {
                 return res.json({
                     success: true,
-                    message: 'No employees found for the selected period',
+                    message: 'No employees found for the selected period.',
                     payrollData: []
                 });
             }
 
-            // Get deductions for calculation
-            const deductions = await HRModel.getDeductionsBySalary();
-            console.log('4. Deductions loaded:', deductions.length);
+            // Process each employee's payroll
+            const payrollRecords = [];
+            for (const employee of employees) {
+                const deductions = await HRModel.getDeductionsBySalary(employee.monthly_salary);
+                const totalDeductions = deductions.reduce((sum, d) => sum + parseFloat(d.fixed_amount || 0), 0);
+                
+                // Calculate absence deduction
+                const absenceDeduction = employee.days_absent * (employee.monthly_salary / 26);
+                
+                // Calculate net pay
+                const netPay = employee.monthly_salary - totalDeductions - absenceDeduction;
 
-            // Calculate payroll for each employee
-            const payrollData = employees.map(employee => {
-                console.log(`\n--- Calculating payroll for ${employee.full_name} ---`);
-                
-                // 1. Monthly salary (from positions table)
-                const monthlySalary = parseFloat(employee.monthly_salary) || 0;
-                console.log('Monthly salary:', monthlySalary);
-                
-                // 2. Semi-monthly payout (monthly salary / 2)
-                const semiMonthlyPayout = monthlySalary / 2;
-                console.log('Semi-monthly payout:', semiMonthlyPayout);
-                
-                // 3. Daily rate using 26-day factor
-                const dailyRate = monthlySalary / 26;
-                console.log('Daily rate (26-day factor):', dailyRate);
-                
-                // 4. Absence deduction for the period
-                const daysAbsent = parseInt(employee.days_absent) || 0;
-                const absenceDeduction = dailyRate * daysAbsent;
-                console.log('Days absent:', daysAbsent, 'Absence deduction:', absenceDeduction);
-                
-                // 5. Gross pay for the period
-                const grossPay = semiMonthlyPayout - absenceDeduction;
-                console.log('Gross pay (after absence deduction):', grossPay);
-                
-                // 6. Calculate total deductions
-                let totalDeductions = 0;
-                const deductionBreakdown = {};
-                
-                deductions.forEach(deduction => {
-                    if (deduction.is_active) {
-                        const amount = parseFloat(deduction.fixed_amount) || 0;
-                        totalDeductions += amount;
-                        deductionBreakdown[deduction.deduction_type] = amount;
-                        console.log(`${deduction.deduction_type}:`, amount);
-                    }
-                });
-                
-                // 7. Net pay after all deductions
-                const netPay = grossPay - totalDeductions;
-                console.log('Total deductions:', totalDeductions);
-                console.log('Net pay:', netPay);
-                
-                // Determine payroll period description
-                const payrollPeriod = period === 'first' ? '1st to 15th' : '16th to 30th/31st';
-                
-                return {
+                payrollRecords.push({
                     employee_id: employee.employee_id,
-                    full_name: employee.full_name,
-                    position: employee.position,
-                    monthly_salary: monthlySalary,
-                    semi_monthly_payout: semiMonthlyPayout,
-                    daily_rate: dailyRate,
-                    days_present: parseInt(employee.days_present) || 0,
-                    days_absent: daysAbsent,
-                    days_half_day: parseInt(employee.days_half_day) || 0,
-                    days_early_out: parseInt(employee.days_early_out) || 0,
-                    days_holiday_rest: parseInt(employee.days_holiday_rest) || 0,
-                    days_on_leave: parseInt(employee.days_on_leave) || 0,
-                    total_hours: parseFloat(employee.total_hours) || 0,
-                    overtime_hours: parseFloat(employee.overtime_hours) || 0,
-                    absence_deduction: absenceDeduction,
-                    gross_pay: grossPay,
-                    total_deductions: totalDeductions,
-                    deduction_breakdown: deductionBreakdown,
-                    net_pay: netPay,
                     start_date: startDate,
                     end_date: endDate,
-                    payroll_period: payrollPeriod,
-                    period_type: period
-                };
-            });
+                    days_present: employee.days_present,
+                    days_absent: employee.days_absent,
+                    days_half_day: employee.days_half_day,
+                    days_early_out: employee.days_early_out,
+                    total_hours: employee.total_hours,
+                    overtime_hours: employee.overtime_hours,
+                    monthly_salary: employee.monthly_salary,
+                    semi_monthly_payout: employee.monthly_salary / 2,
+                    daily_rate: employee.monthly_salary / 26,
+                    total_deductions: totalDeductions,
+                    absence_deduction: absenceDeduction,
+                    net_pay: netPay,
+                    payroll_period: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                    status: 'pending'
+                });
+            }
 
-            console.log('\n=== PAYROLL CALCULATION COMPLETED ===');
-            console.log('Total employees processed:', payrollData.length);
-            
+            // Insert payroll records with period ID
+            const insertedIds = await HRModel.insertPayrollRecordsWithPeriod(payrollRecords, periodId);
+
+            console.log(`✅ Generated payroll for ${payrollRecords.length} employees with period ID: ${periodId}`);
+
             res.json({
                 success: true,
-                message: `Payroll generated successfully for ${period === 'first' ? '1st to 15th' : '16th to 30th/31st'} of ${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`,
-                payrollData: payrollData,
-                period: period,
-                month: month,
-                year: year,
-                startDate: startDate,
-                endDate: endDate
+                message: `Payroll generated successfully for ${payrollRecords.length} employees.`,
+                payrollData: payrollRecords,
+                periodId: periodId,
+                insertedIds: insertedIds
             });
 
         } catch (error) {
             console.error('Error in generatePayroll:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to generate payroll' 
+            });
+        }
+    },
+
+    // Get all payroll periods
+    getAllPayrollPeriods: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const periods = await HRModel.getAllPayrollPeriods();
+            res.json({
+                success: true,
+                periods: periods
+            });
+        } catch (error) {
+            console.error('Error in getAllPayrollPeriods:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to fetch payroll periods' 
+            });
+        }
+    },
+
+    // Get payroll period by ID
+    getPayrollPeriodById: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const { periodId } = req.params;
+            const period = await HRModel.getPayrollPeriodById(periodId);
+            
+            if (!period) {
+                return res.status(404).json({ 
+                    success: false, 
+                    error: 'Payroll period not found' 
+                });
+            }
+            
+            res.json({
+                success: true,
+                period: period
+            });
+        } catch (error) {
+            console.error('Error in getPayrollPeriodById:', error);
             res.status(500).json({
                 success: false,
-                error: 'Failed to generate payroll: ' + error.message
+                error: error.message || 'Failed to fetch payroll period' 
             });
+        }
+    },
+
+    // Get payroll entries for a specific period
+    getPayrollEntriesByPeriod: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const { periodId } = req.params;
+            const entries = await HRModel.getPayrollEntriesByPeriod(periodId);
+
+            res.json({ 
+                success: true, 
+                entries: entries
+            });
+        } catch (error) {
+            console.error('Error in getPayrollEntriesByPeriod:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to fetch payroll entries' 
+            });
+        }
+    },
+
+    // Update payroll period status
+    updatePayrollPeriodStatus: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const { periodId } = req.params;
+            const { status } = req.body;
+
+            if (!['pending', 'approved', 'rejected', 'processed'].includes(status)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Invalid status. Must be pending, approved, rejected, or processed.' 
+                });
+            }
+
+            const success = await HRModel.updatePayrollPeriodStatus(periodId, status);
+            
+            if (!success) {
+                return res.status(404).json({ 
+                    success: false, 
+                    error: 'Payroll period not found' 
+                });
+            }
+
+            res.json({
+                success: true,
+                message: `Payroll period status updated to ${status}`
+            });
+        } catch (error) {
+            console.error('Error in updatePayrollPeriodStatus:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to update payroll period status' 
+            });
+        }
+    },
+
+    // Get payroll period summary
+    getPayrollPeriodSummary: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const { periodId } = req.params;
+            const summary = await HRModel.getPayrollPeriodSummary(periodId);
+            
+            if (!summary) {
+                return res.status(404).json({ 
+                    success: false, 
+                    error: 'Payroll period not found' 
+                });
+            }
+
+            res.json({
+                success: true,
+                summary: summary
+            });
+        } catch (error) {
+            console.error('Error in getPayrollPeriodSummary:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to fetch payroll period summary' 
+            });
+        }
+    },
+
+    // Migration endpoint to create periods from existing payroll data
+    migratePayrollToPeriods: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            // Check if user has admin privileges
+            if (req.session.user.role_name !== 'office_administrator') {
+                return res.status(403).json({ error: 'Forbidden: Only administrators can perform migration' });
+            }
+
+            const result = await HRModel.migrateExistingPayrollToPeriods();
+            
+            res.json({
+                success: true,
+                message: 'Payroll periods migration completed successfully',
+                result: result
+            });
+        } catch (error) {
+            console.error('Error in migratePayrollToPeriods:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to migrate payroll to periods' 
+            });
+        }
+    },
+
+    // Get pending payroll periods
+    getPendingPayrollPeriods: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const periods = await HRModel.getPendingPayrollPeriods();
+            res.json({
+                success: true,
+                periods: periods
+            });
+        } catch (error) {
+            console.error('Error in getPendingPayrollPeriods:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to fetch pending payroll periods' 
+            });
+        }
+    },
+
+    // Get approved payroll periods
+    getApprovedPayrollPeriods: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const periods = await HRModel.getApprovedPayrollPeriods();
+            res.json({
+                success: true,
+                periods: periods
+            });
+        } catch (error) {
+            console.error('Error in getApprovedPayrollPeriods:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to fetch approved payroll periods' 
+            });
+        }
+    },
+
+    
+
+    // Get detailed salary breakdown for all employees
+    getSalaryBreakdown: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const detailedBreakdown = await HRModel.getDetailedSalaryBreakdown();
+            const summary = await HRModel.getTotalBaseCostByIndividualSalaries();
+
+            res.json({ 
+                success: true, 
+                detailedBreakdown: detailedBreakdown,
+                summary: summary
+            });
+        } catch (error) {
+            console.error('Error in getSalaryBreakdown:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch salary breakdown' });
         }
     },
 

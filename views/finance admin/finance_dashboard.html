@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard - PayTide Studio</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
+    <style>
+        #content { 
+            margin-left: 0; 
+            transition: margin-left 0.3s; 
+            padding: 20px; 
+            margin-top: 50px;
+        }
+
+        /* Dashboard Hero Section */
+        .dashboard-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        /* Key Metrics Cards */
+        .metrics-row {
+            margin-bottom: 30px;
+            margin-left: -5px;
+            margin-right: -5px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            height: 140px;
+            min-height: 140px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-left: 2.5px;
+            margin-right: 2.5px;
+            width: 100%;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .metric-icon.balance { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .metric-icon.expense { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .metric-icon.salary { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .metric-icon.date { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .metric-icon.pending { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 6px;
+            line-height: 1.2;
+            flex-grow: 1;
+        }
+
+        .metric-description {
+            color: #718096;
+            font-size: 0.8rem;
+            margin-bottom: 0;
+            line-height: 1.3;
+            flex-shrink: 0;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            margin-bottom: 30px;
+        }
+
+        /* Right-side stacked cards */
+        .right-stack .card-stack {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 16px 12px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+            min-height: 200px;
+        }
+        .right-stack .card-stack:last-child { margin-bottom: 0; }
+        .right-stack .stack-title { font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 12px; }
+        .bank-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .bank-item:last-child { border-bottom: none; }
+        .bank-name { font-weight: 600; color: #334155; }
+        .bank-account { color: #64748b; font-size: .9rem; }
+        .recent-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+        .recent-item:last-child { border-bottom: none; }
+        .recent-title { color: #334155; font-weight: 500; }
+        .recent-time { color: #94a3b8; font-size: .85rem; }
+
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            height: 100%;
+            min-height: 400px;
+        }
+
+        /* Queue table styles */
+        .queue-card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .queue-table thead th { color: #475569; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+        .queue-table tbody td { padding: 10px 8px; color: #334155; }
+        .badge-queue { background: #e2e8f0; color: #334155; }
+        
+        /* Right side table alignment and styling */
+        .right-stack .queue-table { 
+            margin-left: 0; 
+            width: 100%; 
+        }
+        .right-stack .table-responsive { 
+            padding-left: 0; 
+            text-align: left;
+        }
+        .right-stack .queue-table th,
+        .right-stack .queue-table td {
+            text-align: left;
+            padding: 6px 4px;
+            font-size: 0.85rem;
+        }
+        .right-stack .queue-table th {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        /* Chart container sizing */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        #payrollExpensesChart {
+            max-height: 300px !important;
+            width: 100% !important;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .chart-filter {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        /* Employment Status */
+        .employment-status {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            min-height: 400px;
+        }
+
+        .status-progress {
+            background: #f7fafc;
+            border-radius: 12px;
+            height: 12px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .status-segment {
+            height: 100%;
+            float: left;
+            transition: all 0.3s ease;
+        }
+
+        .status-segment.intern { background: #fa709a; }
+        .status-segment.permanent { background: #4facfe; }
+        .status-segment.probationary { background: #a855f7; }
+
+        .status-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-dot.intern { background: #fa709a; }
+        .status-dot.permanent { background: #4facfe; }
+        .status-dot.probationary { background: #a855f7; }
+
+        .status-text {
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .metric-value {
+                font-size: 1.5rem;
+            }
+            
+            .chart-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .metric-card {
+                height: 120px;
+                min-height: 120px;
+                padding: 16px;
+            }
+            
+            .metric-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                margin-bottom: 12px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .metric-card {
+                height: 110px;
+                min-height: 110px;
+                padding: 14px;
+            }
+            
+            .metric-value {
+                font-size: 1.4rem;
+            }
+            
+            .metric-description {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Animation for metric cards */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metric-card {
+            animation: slideInUp 0.6s ease forwards;
+        }
+
+        .metric-card:nth-child(1) { animation-delay: 0.1s; }
+        .metric-card:nth-child(2) { animation-delay: 0.2s; }
+        .metric-card:nth-child(3) { animation-delay: 0.3s; }
+        .metric-card:nth-child(4) { animation-delay: 0.4s; }
+        .metric-card:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+   <!-- Topbar -->
+   <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/finance/finance_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/finance/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Payroll Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Purchase Order Approved</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Salary Payment Processed</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+            <span class="company-title">MDB Construction</span>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item active" href="/finance/finance_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance
+                </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="/finance/finance_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_leave_request"><i class="fas fa-file-invoice"></i> <span>Request Leave</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_halfday"><i class="fas fa-clock"></i> <span>Request Halfday</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_overtime"><i class="fas fa-business-time"></i> <span>Request Overtime</span></a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="/finance/finance_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="/finance/finance_purchase_request"><i class="fas fa-file-invoice"></i> <span>Purchase Request</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i> <span>Purchase Order</span></a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <div id="content">
+        <!-- Dashboard Hero -->
+        <div class="dashboard-hero">
+            <h1>Financial Management Dashboard</h1> 
+            <div class="mt-3">
+                <button id="btnOpenPaymentModal" class="btn btn-light btn-sm">
+                    <i class="fa-solid fa-link"></i> Generate Payment Link
+                </button>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="row metrics-row">
+            <div class="col-md-6 col-lg mb-3 px-2">
+                <div class="metric-card">
+                    <div class="metric-icon balance">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="metric-value" id="companyBalance">₱123,350.54</div>
+                    <div class="metric-description">10% increase since last month</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg mb-3 px-2">
+                <div class="metric-card">
+                    <div class="metric-icon expense">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="metric-value" id="companyExpense">₱55,000.00</div>
+                    <div class="metric-description">10% increase since last month</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg mb-3 px-2">
+                <div class="metric-card">
+                    <div class="metric-icon salary">
+                        <i class="fas fa-user-dollar"></i>
+                    </div>
+                    <div class="metric-value" id="upcomingSalary">₱4,350.89</div>
+                    <div class="metric-description">3.01 employees</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg mb-3 px-2">
+                <div class="metric-card">
+                    <div class="metric-icon date">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="metric-value" id="upcomingDate">July 5th</div>
+                    <div class="metric-description">in 4 days time</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg mb-3 px-2">
+                <div class="metric-card">
+                    <div class="metric-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="metric-value" id="pendingPayrolls">5</div>
+                    <div class="metric-description">pending payrolls</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row charts-section">
+            <!-- Left Column: Chart + Queue in one tall card -->
+            <div class="col-lg-8 mb-4">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Payroll Expenses</h3>
+                        <select class="chart-filter" id="dateRangeFilter">
+                            <option value="01 Jan - 10 Dec">01 Jan - 10 Dec</option>
+                            <option value="01 Jan - 31 Mar">01 Jan - 31 Mar</option>
+                            <option value="01 Apr - 30 Jun">01 Apr - 30 Jun</option>
+                            <option value="01 Jul - 30 Sep">01 Jul - 30 Sep</option>
+                            <option value="01 Oct - 31 Dec">01 Oct - 31 Dec</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="payrollExpensesChart"></canvas>
+                    </div>
+                    
+                    <!-- Recent Financial Activities inside the same card -->
+                    <div class="mt-4 pt-4 border-top">
+                        <h4 class="chart-title mb-3">Recent Financial Activities</h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Activity</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivitiesTable">
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Two stacked cards -->
+            <div class="col-lg-4 mb-4 right-stack">
+                <!-- Employment Status -->
+                <div class="employment-status card-stack">
+                    <h3 class="chart-title">Employment Status</h3>
+                    <div class="status-progress">
+                        <div class="status-segment intern" style="width: 20%"></div>
+                        <div class="status-segment permanent" style="width: 60%"></div>
+                        <div class="status-segment probationary" style="width: 20%"></div>
+                    </div>
+                    <div class="text-center mb-3">
+                        <strong>Total: 25 employees</strong>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-item">
+                            <div class="status-dot intern"></div>
+                            <span class="status-text">Intern: 5 (20%)</span>
+                        </div>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-item">
+                            <div class="status-dot permanent"></div>
+                            <span class="status-text">Permanent: 15 (60%)</span>
+                        </div>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-item">
+                            <div class="status-dot probationary"></div>
+                            <span class="status-text">Probationary: 5 (20%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Partnership + Purchase Requests -->
+                <div class="card-stack">
+                    <div class="stack-title">Bank Partnership</div>
+                    <div class="bank-item">
+                        <span class="bank-name"><i class="fas fa-university me-2 text-primary"></i>Zenith Bank</span>
+                        <span class="bank-account">Acct: 1234-5678-90</span>
+                    </div>
+                    <div class="bank-item">
+                        <span class="bank-name"><i class="fas fa-university me-2 text-primary"></i>Metro Finance</span>
+                        <span class="bank-account">Acct: 0099-2244-77</span>
+                    </div>
+                    <div class="bank-item">
+                        <span class="bank-name"><i class="fas fa-university me-2 text-primary"></i>PayNet Corp</span>
+                        <span class="bank-account">Acct: 5566-7788-00</span>
+                    </div>
+                    
+                    <!-- Purchase Requests table inside bank partnership card -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="stack-title">Purchase Requests (5 entries)</div>
+                        <div class="table-responsive">
+                            <table class="table table-sm queue-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Date</th>
+                                        <th>Material</th>
+                                        <th>Justification</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prQueueBodyRight">
+                                    <!-- JS will populate 5 entries here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Financial Activities section removed - now moved to left side above -->
+    </div>
+
+    <!-- Move all scripts to the end of body -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Add SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Payment Link Modal -->
+    <div class="modal fade" id="paymentLinkModal" tabindex="-1" aria-labelledby="paymentLinkModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentLinkModalLabel">Create Payment Link</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentLinkForm">
+                        <div class="mb-3">
+                            <label class="form-label">Amount (PHP)</label>
+                            <input type="number" step="0.01" min="0" class="form-control" name="amount" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" name="description" placeholder="e.g., Invoice INV-123" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reference Number</label>
+                            <input type="text" class="form-control" name="reference_number" placeholder="e.g., INV-123" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer Name (optional)</label>
+                                <input type="text" class="form-control" name="customer_name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer Email (optional)</label>
+                                <input type="email" class="form-control" name="customer_email">
+                            </div>
+                        </div>
+                        <div class="alert alert-danger d-none" id="paymentLinkError"></div>
+                        <div class="alert alert-success d-none" id="paymentLinkSuccess">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <a id="checkoutUrl" href="#" target="_blank" rel="noopener"></a>
+                                <button id="btnCopyCheckoutUrl" type="button" class="btn btn-sm btn-outline-secondary">Copy</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btnCreatePaymentLink">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="paymentLinkSpinner"></span>
+                        Create Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            loadDashboardData();
+            wirePaymentLinkUi();
+        });
+
+        function initializeDashboard() {
+            // Initialize Payroll Expenses Chart
+            const ctx = document.getElementById('payrollExpensesChart').getContext('2d');
+            const payrollChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
+                    datasets: [{
+                        label: 'Payroll Expenses (₱)',
+                        data: [150000, 180000, 220000, 190000, 280000, 250000, 320000, 290000, 260000, 240000, 200000],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₱' + (value / 1000) + 'K';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    elements: {
+                        bar: {
+                            borderRadius: 4,
+                            maxBarThickness: 40,
+                            minBarLength: 10
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20
+                        }
+                    }
+                }
+            });
+
+            // Store chart reference for updates
+            window.payrollChart = payrollChart;
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Load pending payrolls count
+                const pendingResponse = await fetch('/finance/pending-payrolls');
+                if (pendingResponse.ok) {
+                    const pendingData = await pendingResponse.json();
+                    document.getElementById('pendingPayrolls').textContent = pendingData.data?.length || 0;
+                }
+
+                // Load company financial data (mock data for now)
+                updateFinancialMetrics();
+                
+                // Load recent activities
+                loadRecentActivities();
+
+                // Load PR queue and recent updates
+                await populatePRQueue();
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateFinancialMetrics() {
+            // Mock data - replace with actual API calls
+            const mockData = {
+                companyBalance: 123350.54,
+                companyExpense: 55000.00,
+                upcomingSalary: 4350.89,
+                upcomingDate: 'July 5th',
+                pendingPayrolls: 5
+            };
+
+            // Update the display with real-time data
+            document.getElementById('companyBalance').textContent = '₱' + mockData.companyBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('companyExpense').textContent = '₱' + mockData.companyExpense.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('upcomingSalary').textContent = '₱' + mockData.upcomingSalary.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+            document.getElementById('upcomingDate').textContent = mockData.upcomingDate;
+            document.getElementById('pendingPayrolls').textContent = mockData.pendingPayrolls;
+        }
+
+        function loadRecentActivities() {
+            // Mock recent activities - replace with actual API calls
+            const activities = [
+                { activity: 'Payroll Processed', amount: '₱45,000.00', date: '2024-07-01', status: 'Completed' },
+                { activity: 'Purchase Order Approved', amount: '₱12,500.00', date: '2024-06-30', status: 'Pending' },
+                { activity: 'Salary Payment', amount: '₱38,750.00', date: '2024-06-29', status: 'Completed' },
+                { activity: 'Expense Reimbursement', amount: '₱2,300.00', date: '2024-06-28', status: 'Processing' }
+            ];
+
+            const tableBody = document.getElementById('recentActivitiesTable');
+            tableBody.innerHTML = '';
+
+            activities.forEach(activity => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${activity.activity}</td>
+                    <td><strong>${activity.amount}</strong></td>
+                    <td>${new Date(activity.date).toLocaleDateString()}</td>
+                    <td><span class="badge bg-${getStatusColor(activity.status)}">${activity.status}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function getStatusColor(status) {
+            switch(status.toLowerCase()) {
+                case 'completed': return 'success';
+                case 'pending': return 'warning';
+                case 'processing': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        // Populate top 5 purchase requests queue
+        async function populatePRQueue() {
+            try {
+                const resp = await fetch('/finance/purchase-requests');
+                const data = await resp.json();
+                const requests = data.requests || [];
+                
+                // Populate right side table (compact view)
+                const rightRows = requests
+                    .slice(0, 5)
+                    .map((pr, idx) => `
+                        <tr>
+                            <td>${pr.request_id || '-'}</td>
+                            <td>${pr.request_date || '-'}</td>
+                            <td>${pr.material_type || '-'}</td>
+                            <td>${(pr.justification || '-').substring(0, 20)}${(pr.justification || '').length > 20 ? '...' : ''}</td>
+                            <td><span class="badge badge-queue">${pr.status || 'Pending'}</span></td>
+                        </tr>
+                    `).join('');
+                const rightTbody = document.getElementById('prQueueBodyRight');
+                if (rightTbody) rightTbody.innerHTML = rightRows || '<tr><td colspan="5" class="text-muted">No requests</td></tr>';
+                
+            } catch (e) {
+                const rightTbody = document.getElementById('prQueueBodyRight');
+                if (rightTbody) rightTbody.innerHTML = '<tr><td colspan="2" class="text-muted">Unable to load data</td></tr>';
+            }
+        }
+
+        // Date range filter functionality
+        document.getElementById('dateRangeFilter').addEventListener('change', function() {
+            // Update chart data based on selected date range
+            console.log('Date range changed to:', this.value);
+            // Implement chart data filtering logic here
+        });
+
+        // Auto-refresh dashboard data every 5 minutes
+        setInterval(loadDashboardData, 300000);
+
+        // ==============================
+        // Payment Link UI logic
+        // ==============================
+        function wirePaymentLinkUi() {
+            const openBtn = document.getElementById('btnOpenPaymentModal');
+            const modalEl = document.getElementById('paymentLinkModal');
+            const createBtn = document.getElementById('btnCreatePaymentLink');
+            const spinner = document.getElementById('paymentLinkSpinner');
+            const errorBox = document.getElementById('paymentLinkError');
+            const successBox = document.getElementById('paymentLinkSuccess');
+            const checkoutUrlEl = document.getElementById('checkoutUrl');
+            const copyBtn = document.getElementById('btnCopyCheckoutUrl');
+            const form = document.getElementById('paymentLinkForm');
+
+            if (!openBtn || !modalEl) return;
+            const modal = new bootstrap.Modal(modalEl);
+
+            openBtn.addEventListener('click', () => {
+                resetPaymentLinkState();
+                modal.show();
+            });
+
+            copyBtn.addEventListener('click', async () => {
+                const url = checkoutUrlEl?.textContent || '';
+                if (!url) return;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => copyBtn.textContent = 'Copy', 1200);
+                } catch(e) {}
+            });
+
+            createBtn.addEventListener('click', async () => {
+                errorBox.classList.add('d-none');
+                successBox.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                createBtn.setAttribute('disabled', 'disabled');
+
+                const formData = new FormData(form);
+                const body = {
+                    amount: Number(formData.get('amount')),
+                    description: String(formData.get('description') || ''),
+                    reference_number: String(formData.get('reference_number') || ''),
+                    customer: {
+                        name: String(formData.get('customer_name') || ''),
+                        email: String(formData.get('customer_email') || '')
+                    }
+                };
+
+                try {
+                    const resp = await fetch('/finance/payments/create-link', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    const json = await resp.json().catch(() => ({}));
+                    if (!resp.ok || !json?.success) {
+                        throw new Error(json?.message || 'Failed to create payment link');
+                    }
+
+                    const url = json?.data?.checkout_url;
+                    if (url) {
+                        checkoutUrlEl.href = url;
+                        checkoutUrlEl.textContent = url;
+                        successBox.classList.remove('d-none');
+                    } else {
+                        throw new Error('No checkout URL returned');
+                    }
+                } catch (e) {
+                    errorBox.textContent = e.message || 'Unexpected error';
+                    errorBox.classList.remove('d-none');
+                } finally {
+                    spinner.classList.add('d-none');
+                    createBtn.removeAttribute('disabled');
+                }
+            });
+
+            function resetPaymentLinkState() {
+                form.reset();
+                errorBox.classList.add('d-none');
+                successBox.classList.add('d-none');
+                checkoutUrlEl.removeAttribute('href');
+                checkoutUrlEl.textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>

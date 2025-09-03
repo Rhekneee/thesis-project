@@ -987,6 +987,12 @@
                             </div>
                         </div>
 
+                        <!-- Payroll Info -->
+                        <div class="alert alert-info mb-3" role="alert">
+                            <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Payroll</h6>
+                            <p class="mb-0">You can generate and submit payroll directly for the selected period.</p>
+                        </div>
+
                         <div class="payroll-controls">
                             <button id="generatePayroll" class="btn btn-primary">
                                 <i class="fas fa-file-invoice"></i> Generate Payroll
@@ -997,13 +1003,14 @@
                             <button id="cancelPayroll" class="btn btn-danger">
                                 <i class="fas fa-times-circle"></i> Cancel Payroll
                             </button>
+
                             <div class="dropdown">
                                 <button class="btn btn-secondary dropdown-toggle" type="button" id="payrollActions" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-clock"></i> <span id="selectedAction">Load Pending Payroll</span>
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="payrollActions">
                                     <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
-                                    <li><a class="dropdown-item" href="#" data-action="approved" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
+                                    <li><a class="dropdown-item" href="#" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -1071,6 +1078,25 @@
                                 <!-- Filled dynamically -->
                             </tbody>
                         </table>
+                        </div>
+
+                        <!-- Pagination Controls -->
+                        <div class="d-flex justify-content-between align-items-center mt-3" id="payrollPaginationContainer">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="payrollEntriesSelect" class="text-muted small mb-0">Show</label>
+                                <select id="payrollEntriesSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span class="text-muted small">entries</span>
+                            </div>
+                            <div id="payrollEntriesMessage" class="text-muted small"></div>
+                            <nav aria-label="Payroll table pagination">
+                                <ul class="pagination mb-0" id="payrollPagination"></ul>
+                            </nav>
                         </div>
                     </div>
 
@@ -1581,16 +1607,22 @@
         document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
         document.getElementById('submitPayroll').addEventListener('click', handleSubmitPayroll); // New submit button
         document.getElementById('cancelPayroll').addEventListener('click', handleCancelPayroll);
+
         
 
         // Keep info panel in sync when user changes period selectors
         ['month','year','period'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener('change', updateInfoPanel);
+            if (el) el.addEventListener('change', () => {
+                updateInfoPanel();
+                
+            });
         });
 
         // Initial info panel
         updateInfoPanel();
+        
+        
 
     });
 
@@ -1635,9 +1667,19 @@
             console.log('Data keys:', Object.keys(data));
             console.log('Has payrollData:', !!data.payrollData);
             console.log('PayrollData length:', data.payrollData ? data.payrollData.length : 'undefined');
+            
+            // Additional debugging for forecast issues
+            if (data.error) {
+                console.log('=== Error Details ===');
+                console.log('Error message:', data.error);
+                console.log('Error type:', typeof data.error);
+                if (data.error.includes('forecast')) {
+                    console.log('Forecast-related error detected');
+                }
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to generate payroll');
+                throw new Error(data.message || data.error || 'Failed to generate payroll');
             }
 
             if (data.success && data.payrollData && data.payrollData.length > 0) {
@@ -1667,6 +1709,10 @@
             generateButton.disabled = false;
         }
     }
+
+    
+
+
 
     async function handleSubmitPayroll() {
         if (!window.temporaryPayrollData || window.temporaryPayrollData.length === 0) {
@@ -1844,39 +1890,11 @@
         // Store the data globally for later use
         window.temporaryPayrollData = data.payrollData;
 
-        const tbody = document.querySelector('#payrollTable tbody');
-        tbody.innerHTML = '';
-
-        data.payrollData.forEach((entry, index) => {
-            const row = document.createElement('tr');
-            row.setAttribute('data-index', index);
-            
-            row.innerHTML = `
-                <td>${entry.employee_id}</td>
-                <td>${entry.full_name}</td>
-                <td>${entry.position}</td>
-                <td>${entry.days_present}</td>
-                <td>${entry.days_absent}</td>
-                <td>${entry.days_half_day}</td>
-                <td>${entry.days_early_out}</td>
-                <td>${entry.total_hours.toFixed(2)}</td>
-                <td>${entry.overtime_hours.toFixed(2)}</td>
-                <td class="monthly-salary">₱${parseFloat(entry.monthly_salary || 0).toLocaleString()}</td>
-                <td class="semi-monthly-payout">₱${parseFloat(entry.semi_monthly_payout || 0).toLocaleString()}</td>
-                <td class="daily-rate">₱${parseFloat(entry.daily_rate || 0).toFixed(2)}</td>
-                <td class="absence-deduction">₱${parseFloat(entry.absence_deduction || 0).toFixed(2)}</td>
-                <td class="gross-pay">₱${parseFloat(entry.gross_pay || 0).toFixed(2)}</td>
-                <td class="deduction-amount">₱${parseFloat(entry.total_deductions || 0).toFixed(2)}</td>
-                <td class="net-salary">₱${parseFloat(entry.net_pay || 0).toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editPayrollEntry(${index})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                </td>
-            `;
-            
-            tbody.appendChild(row);
-        });
+        // Initialize pagination
+        initializePayrollPagination();
+        
+        // Show first page
+        showPayrollPage(1);
 
         // Show submit and cancel buttons, hide generate button
         document.getElementById('submitPayroll').style.display = 'inline-block';
@@ -3566,9 +3584,205 @@
             console.error('Construction tab not found!');
         }
     });
+
+    // Pagination state for payroll table
+    const payrollPaginationState = {
+        currentPage: 1,
+        pageSize: 10,
+        totalRecords: 0
+    };
+
+    // Initialize pagination for payroll table
+    function initializePayrollPagination() {
+        if (!window.temporaryPayrollData) return;
+        
+        payrollPaginationState.totalRecords = window.temporaryPayrollData.length;
+        payrollPaginationState.currentPage = 1;
+        
+        // Get selected page size
+        const entriesSelect = document.getElementById('payrollEntriesSelect');
+        if (entriesSelect) {
+            payrollPaginationState.pageSize = parseInt(entriesSelect.value) || 10;
+        }
+        
+        // Show pagination container
+        const paginationContainer = document.getElementById('payrollPaginationContainer');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'flex !important';
+        }
+        
+        // Render pagination
+        renderPayrollPagination();
+        updatePayrollEntriesMessage();
+    }
+
+    // Show specific page of payroll data
+    function showPayrollPage(page) {
+        if (!window.temporaryPayrollData) return;
+        
+        const startIndex = (page - 1) * payrollPaginationState.pageSize;
+        const endIndex = Math.min(startIndex + payrollPaginationState.pageSize, window.temporaryPayrollData.length);
+        const pageData = window.temporaryPayrollData.slice(startIndex, endIndex);
+        
+        const tbody = document.querySelector('#payrollTable tbody');
+        tbody.innerHTML = '';
+
+        pageData.forEach((entry, index) => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-index', startIndex + index);
+            
+            row.innerHTML = `
+                <td>${entry.employee_id}</td>
+                <td>${entry.full_name}</td>
+                <td>${entry.position}</td>
+                <td>${entry.days_present}</td>
+                <td>${entry.days_absent}</td>
+                <td>${entry.days_half_day}</td>
+                <td>${entry.days_early_out}</td>
+                <td>${Number(entry.total_hours || 0).toFixed(2)}</td>
+                <td>${Number(entry.overtime_hours || 0).toFixed(2)}</td>
+                <td class="monthly-salary">₱${parseFloat(entry.monthly_salary || 0).toLocaleString()}</td>
+                <td class="semi-monthly-payout">₱${parseFloat(entry.semi_monthly_payout || 0).toLocaleString()}</td>
+                <td class="daily-rate">₱${parseFloat(entry.daily_rate || 0).toFixed(2)}</td>
+                <td class="absence-deduction">₱${parseFloat(entry.absence_deduction || 0).toFixed(2)}</td>
+                <td class="gross-pay">₱${parseFloat(entry.gross_pay || 0).toFixed(2)}</td>
+                <td class="deduction-amount">₱${parseFloat(entry.total_deductions || 0).toFixed(2)}</td>
+                <td class="net-salary">₱${parseFloat(entry.net_pay || 0).toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editPayrollEntry(${startIndex + index})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        payrollPaginationState.currentPage = page;
+        renderPayrollPagination();
+        updatePayrollEntriesMessage();
+    }
+
+    // Render pagination controls
+    function renderPayrollPagination() {
+        const pagination = document.getElementById('payrollPagination');
+        if (!pagination) return;
+        
+        const totalPages = Math.ceil(payrollPaginationState.totalRecords / payrollPaginationState.pageSize);
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        pagination.innerHTML = '';
+        
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${payrollPaginationState.currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" data-page="${payrollPaginationState.currentPage - 1}">Previous</a>`;
+        pagination.appendChild(prevLi);
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, payrollPaginationState.currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        // Add first page with ellipsis if needed
+        if (startPage > 1) {
+            const firstLi = document.createElement('li');
+            firstLi.className = 'page-item';
+            firstLi.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
+            pagination.appendChild(firstLi);
+            
+            if (startPage > 2) {
+                const ellipsisLi = document.createElement('li');
+                ellipsisLi.className = 'page-item disabled';
+                ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(ellipsisLi);
+            }
+        }
+        
+        // Add visible page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${i === payrollPaginationState.currentPage ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            pagination.appendChild(pageLi);
+        }
+        
+        // Add last page with ellipsis if needed
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsisLi = document.createElement('li');
+                ellipsisLi.className = 'page-item disabled';
+                ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(ellipsisLi);
+            }
+            
+            const lastLi = document.createElement('li');
+            lastLi.className = 'page-item';
+            lastLi.innerHTML = `<a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>`;
+            pagination.appendChild(lastLi);
+        }
+        
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${payrollPaginationState.currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" data-page="${payrollPaginationState.currentPage + 1}">Next</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    // Update entries message
+    function updatePayrollEntriesMessage() {
+        const messageEl = document.getElementById('payrollEntriesMessage');
+        if (!messageEl) return;
+        
+        const startIndex = (payrollPaginationState.currentPage - 1) * payrollPaginationState.pageSize + 1;
+        const endIndex = Math.min(payrollPaginationState.currentPage * payrollPaginationState.pageSize, payrollPaginationState.totalRecords);
+        
+        if (payrollPaginationState.totalRecords === 0) {
+            messageEl.textContent = 'No entries to show';
+        } else {
+            messageEl.textContent = `Showing ${startIndex} to ${endIndex} of ${payrollPaginationState.totalRecords} entries`;
+        }
+    }
+
+    // Handle pagination clicks
+    function handlePayrollPaginationClick(e) {
+        e.preventDefault();
+        const target = e.target.closest('.page-link');
+        if (!target) return;
+        
+        const page = parseInt(target.dataset.page);
+        if (isNaN(page) || page < 1 || page > Math.ceil(payrollPaginationState.totalRecords / payrollPaginationState.pageSize)) {
+            return;
+        }
+        
+        showPayrollPage(page);
+    }
+
+    // Handle entries per page change
+    function handlePayrollEntriesChange() {
+        const entriesSelect = document.getElementById('payrollEntriesSelect');
+        if (!entriesSelect) return;
+        
+        payrollPaginationState.pageSize = parseInt(entriesSelect.value) || 10;
+        payrollPaginationState.currentPage = 1;
+        
+        if (window.temporaryPayrollData) {
+            showPayrollPage(1);
+        }
+    }
     </script>
     <!-- Add side_top.js -->
     <script src="/public/js/side_top.js"></script>
+
+
+
 </body>
 
 </html>
