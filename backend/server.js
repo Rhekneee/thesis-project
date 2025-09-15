@@ -124,6 +124,7 @@ app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
 app.use('/scm', scmRoutes);
+app.use('/manufacturing', manuRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);

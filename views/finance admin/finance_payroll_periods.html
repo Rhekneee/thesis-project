@@ -522,19 +522,21 @@
             if (!confirm('Are you sure you want to approve this payroll period?')) return;
             
             try {
-                const response = await fetch(`/finance/payroll-periods/${periodId}/status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'approved' })
+                // Call guarded endpoint that validates all entries are approved first
+                const response = await fetch(`/finance/payroll-periods/${periodId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 const data = await response.json();
-                if (data.success) {
+                if (data.success && data.periodApproved) {
                     alert('Period approved successfully!');
-                    loadPayrollPeriods(); // Refresh the list
+                } else if (data.success && !data.periodApproved) {
+                    alert('Not all entries are approved yet. Period remains pending.');
                 } else {
-                    throw new Error(data.error || 'Failed to approve period');
+                    throw new Error(data.error || data.message || 'Failed to approve period');
                 }
+                loadPayrollPeriods(); // Refresh the list
             } catch (error) {
                 console.error('Error approving period:', error);
                 alert('Failed to approve period: ' + error.message);

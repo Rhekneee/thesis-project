@@ -22,6 +22,14 @@ router.get('/payroll-periods/:periodId/entries', isFinanceAdmin, financeControll
 router.get('/payroll-periods/:periodId/summary', isFinanceAdmin, financeController.getPayrollPeriodSummary);
 router.put('/payroll-periods/:periodId/status', isFinanceAdmin, financeController.updatePayrollPeriodStatus);
 router.post('/payroll-periods/:periodId/create-payslips', isFinanceAdmin, financeController.createPayslipsFromPeriod);
+// Attempt to approve period (will remain pending if not all entries approved)
+router.post('/payroll-periods/:periodId/approve', isFinanceAdmin, financeController.attemptApprovePayrollPeriod);
+
+// Approve a single payroll entry
+router.post('/payrolls/:payrollId/approve', isFinanceAdmin, financeController.approvePayrollEntry);
+
+// Submit remarks to a payroll entry (for pending entries)
+router.post('/payrolls/:payrollId/remarks', isFinanceAdmin, financeController.submitPayrollRemarks);
 
 // =============================================
 // PURCHASE REQUESTS - Connected to Supply Department
@@ -76,11 +84,18 @@ router.post('/payrolls/:payrollId/create-payslip', financeController.createPaysl
 // Get all payslips
 router.get('/payslips', financeController.getAllPayslips);
 
+// Get all payrolls
+router.get('/payrolls', financeController.getAllPayrolls);
+
 // Get payslip by ID with details
 router.get('/payslips/:payslipId', financeController.getPayslipById);
 
 // Update payslip status
 router.put('/payrolls/:payslipId/status', financeController.updatePayslipStatus);
+
+// Submit payroll to bank (individual entry)
+router.post('/payrolls/:payrollId/submit-to-bank', financeController.submitPayrollEntryToBank);
+
 
 // =============================================
 // CASH MONITORING / PAYMONGO
@@ -112,12 +127,40 @@ router.put('/bank-accounts/:accountId', financeController.updateBankAccount);
 // Delete bank account
 router.delete('/bank-accounts/:accountId', financeController.deleteBankAccount);
 
+// =============================================
+// NOTIFICATION MANAGEMENT ROUTES
+// =============================================
 
+// Get unread notifications for finance users
+router.get('/notifications/unread', financeController.getUnreadNotifications);
+
+// Mark notification as read
+router.post('/notifications/:id/read', financeController.markNotificationAsRead);
+
+// Mark all notifications as read
+router.post('/notifications/read-all', financeController.markAllNotificationsAsRead);
 
 // Add more routes here as needed
 // Example:
 // router.post('/approve-payroll/:id', financeController.approvePayroll);
 // router.post('/reject-payroll/:id', financeController.rejectPayroll);
 // router.get('/payroll-history', financeController.getPayrollHistory);
+
+// =============================================
+// BANK DOCUMENT SUBMISSION ROUTES
+// These routes handle bank document submission for payroll periods
+// =============================================
+
+// Submit bank documents for payroll period
+router.post('/payroll-periods/:payrollPeriodId/submit-bank-documents', isFinanceAdmin, financeController.submitBankDocuments);
+
+// Get bank submissions for a payroll period
+router.get('/payroll-periods/:payrollPeriodId/bank-submissions', isFinanceAdmin, financeController.getBankSubmissions);
+
+// Check if bank documents have been submitted
+router.get('/payroll-periods/:payrollPeriodId/check-bank-submission', isFinanceAdmin, financeController.checkBankSubmission);
+
+// Check if payroll period has approved payrolls
+router.get('/payroll-periods/:payrollPeriodId/check-approved-payrolls', isFinanceAdmin, financeController.checkApprovedPayrolls);
 
 module.exports = router;

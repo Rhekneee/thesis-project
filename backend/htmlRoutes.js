@@ -224,6 +224,9 @@ const htmlRoutes = (app) => {
   app.get('/hr/hr_payroll', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_payroll.html')); // Adjusted path
   });
+  app.get('/hr/hr_payroll_periods', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_payroll_periods.html')); // Adjusted path
+  });
   app.get('/hr/hr_salary_deduction', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_salary_deduction.html')); // Adjusted path
   });
@@ -249,7 +252,7 @@ const htmlRoutes = (app) => {
   });
 
   app.get('/hr/developers_approval', (req, res) => {  
-    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'developers_approval.html')); // Adjusted path
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'developeers_approval.html')); // Adjusted path
   });
 
   app.get('/hr/hr_salary_deduction', (req, res) => {  
