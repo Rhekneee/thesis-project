@@ -113,6 +113,9 @@
     router.get('/payroll-periods/:periodId/entries', authMiddleware.verifySession, HRController.getPayrollEntriesByPeriod);
     router.get('/payroll-periods/:periodId/summary', authMiddleware.verifySession, HRController.getPayrollPeriodSummary);
     router.put('/payroll-periods/:periodId/status', authMiddleware.verifySession, HRController.updatePayrollPeriodStatus);
+    // Notify finance managers for follow-up on a payroll period
+    router.post('/payroll-periods/:periodId/follow-up-notify', authMiddleware.verifySession, HRController.notifyFinanceFollowUp);
+    router.post('/payroll-periods/:periodId/approve', authMiddleware.verifySession, HRController.approvePayrollPeriod);
     router.post('/payroll-periods/migrate', authMiddleware.verifySession, HRController.migratePayrollToPeriods);
 
     router.get('/check-session', (req, res) => {

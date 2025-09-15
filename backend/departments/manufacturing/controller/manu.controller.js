@@ -225,16 +225,21 @@ const ManufacturingController = {
   getProjectsByDeveloper: async (req, res) => {
     try {
       const developerId = req.params.developerId;
+      console.log("🔍 DEBUG: Fetching projects for developer ID:", developerId);
+      
       const projects = await ManufacturingModel.getProjectsByDeveloper(developerId);
+      console.log("🔍 DEBUG: Found projects:", projects.length);
+      
       res.json({
         success: true,
         projects
       });
     } catch (error) {
-      console.error("Error fetching developer projects:", error);
+      console.error("❌ ERROR: Error fetching developer projects:", error);
       res.status(500).json({ 
         success: false,
-        error: "Failed to fetch developer projects" 
+        error: "Failed to fetch developer projects",
+        details: error.message
       });
     }
   },

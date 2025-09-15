@@ -4,11 +4,9 @@ const bcrypt = require('bcrypt');
 // Add a function to fix existing plain text passwords
 const fixPlainTextPasswords = async () => {
     try {
-        console.log('🔍 Checking for plain text passwords...');
         const [users] = await db.query('SELECT id, password FROM users WHERE password NOT LIKE "$2b$%"');
         
         if (users.length > 0) {
-            console.log(`Found ${users.length} users with plain text passwords`);
             
             for (const user of users) {
                 const saltRounds = 10;
@@ -18,10 +16,8 @@ const fixPlainTextPasswords = async () => {
                     'UPDATE users SET password = ? WHERE id = ?',
                     [hashedPassword, user.id]
                 );
-                console.log(`✅ Updated password for user ${user.id}`);
             }
         } else {
-            console.log('✅ All passwords are properly hashed');
         }
     } catch (error) {
         console.error('❌ Error fixing passwords:', error);
@@ -1298,11 +1294,15 @@ const HRModel = {
         try {
             const [result] = await db.query(`
                 INSERT INTO payroll_deductions 
-                (deduction_type, fixed_amount, description, category, is_active)
-                VALUES (?, ?, ?, ?, ?)
+                (deduction_type, fixed_amount, percentage, min_salary_range, max_salary_range, tax_status, description, category, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 deduction.deduction_type,
-                deduction.fixed_amount,
+                deduction.fixed_amount || 0.00,
+                deduction.percentage || 0.00,
+                deduction.min_salary_range || 0.00,
+                deduction.max_salary_range || 999999.99,
+                deduction.tax_status || 'non_taxable',
                 deduction.description || null,
                 deduction.category || 'government',
                 deduction.is_active !== undefined ? deduction.is_active : true
@@ -1326,6 +1326,114 @@ const HRModel = {
             return rows.length > 0 ? rows[0] : null;
         } catch (error) {
             console.error("❌ Error fetching position salary:", error);
+            throw error;
+        }
+    },
+
+    // Calculate income tax based on Philippine tax brackets
+    calculateIncomeTax: (grossSalary) => {
+        // Philippine Income Tax Brackets (2023)
+        const taxBrackets = [
+            { min: 0, max: 250000, rate: 0 },
+            { min: 250000, max: 400000, rate: 15 },
+            { min: 400000, max: 800000, rate: 20 },
+            { min: 800000, max: 2000000, rate: 25 },
+            { min: 2000000, max: 8000000, rate: 30 },
+            { min: 8000000, max: Infinity, rate: 35 }
+        ];
+
+        let tax = 0;
+        let remainingSalary = grossSalary;
+
+        for (const bracket of taxBrackets) {
+            if (remainingSalary <= 0) break;
+            
+            const taxableInBracket = Math.min(remainingSalary, bracket.max - bracket.min);
+            if (taxableInBracket > 0) {
+                tax += (taxableInBracket * bracket.rate) / 100;
+                remainingSalary -= taxableInBracket;
+            }
+        }
+
+        return Math.round(tax * 100) / 100; // Round to 2 decimal places
+    },
+
+    // Calculate deductions for an employee based on their salary and payroll period
+    calculateDeductions: async (employeeSalary, payrollPeriod = 'second') => {
+        try {
+            const [deductions] = await db.query(`
+                SELECT * FROM payroll_deductions 
+                WHERE is_active = 1 
+                AND ? BETWEEN min_salary_range AND max_salary_range
+                ORDER BY category, deduction_type
+            `, [employeeSalary]);
+
+            let totalDeductions = 0;
+            let taxableDeductions = 0;
+            let nonTaxableDeductions = 0;
+            const deductionDetails = [];
+            const nextPeriodDeductions = []; // Deductions that will apply to next period
+
+            for (const deduction of deductions) {
+                let deductionAmount = 0;
+                
+                // Calculate amount based on fixed amount or percentage
+                if (deduction.fixed_amount > 0) {
+                    deductionAmount = deduction.fixed_amount;
+                } else if (deduction.percentage > 0) {
+                    deductionAmount = (employeeSalary * deduction.percentage) / 100;
+                }
+
+                // Special handling for Income Tax (progressive tax brackets)
+                if (deduction.deduction_type === 'Income Tax') {
+                    deductionAmount = HRModel.calculateIncomeTax(employeeSalary);
+                }
+
+                if (deductionAmount > 0) {
+                    // Apply deduction logic based on period
+                    const shouldApplyDeduction = payrollPeriod === 'second' || deduction.deduction_type === 'Income Tax';
+                    
+                    if (shouldApplyDeduction) {
+                        // Apply deduction in current period
+                        totalDeductions += deductionAmount;
+                        
+                        if (deduction.tax_status === 'taxable') {
+                            taxableDeductions += deductionAmount;
+                        } else {
+                            nonTaxableDeductions += deductionAmount;
+                        }
+
+                        deductionDetails.push({
+                            deduction_type: deduction.deduction_type,
+                            amount: deductionAmount,
+                            tax_status: deduction.tax_status,
+                            category: deduction.category,
+                            description: deduction.description,
+                            applied_in_current_period: true
+                        });
+                    } else {
+                        // Show deduction for next period (first half only)
+                        nextPeriodDeductions.push({
+                            deduction_type: deduction.deduction_type,
+                            amount: deductionAmount,
+                            tax_status: deduction.tax_status,
+                            category: deduction.category,
+                            description: deduction.description,
+                            applied_in_current_period: false
+                        });
+                    }
+                }
+            }
+
+            return {
+                totalDeductions,
+                taxableDeductions,
+                nonTaxableDeductions,
+                deductionDetails,
+                nextPeriodDeductions
+            };
+        } catch (error) {
+            console.error("❌ Error calculating deductions:", error);
             throw error;
         }
     },
@@ -1376,6 +1484,10 @@ const HRModel = {
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     deduction_type VARCHAR(100) NOT NULL,
                     fixed_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    percentage DECIMAL(5,2) DEFAULT 0.00,
+                    min_salary_range DECIMAL(10,2) DEFAULT 0.00,
+                    max_salary_range DECIMAL(10,2) DEFAULT 999999.99,
+                    tax_status ENUM('taxable', 'non_taxable') DEFAULT 'non_taxable',
                     description TEXT,
                     category ENUM('government', 'company', 'other') DEFAULT 'government',
                     is_active BOOLEAN DEFAULT TRUE,
@@ -2583,62 +2695,57 @@ const HRModel = {
                 throw new Error('Developer not found');
             }
 
-            // 2. Generate employee ID (format: YYYY-XXXX)
-            const currentYear = new Date().getFullYear();
-            const [lastEmployee] = await connection.execute(
-                "SELECT employee_id FROM employees WHERE employee_id LIKE ? ORDER BY employee_id DESC LIMIT 1",
-                [`${currentYear}-%`]
+            // 2. Use the developer's original password from registration
+            const originalPassword = developer.password_hash; // This is already hashed from registration
+
+            // 3. Check if user account already exists, if not create one
+            const [existingUser] = await connection.execute(
+                'SELECT id FROM users WHERE id = ?', 
+                [developerId]
             );
-            
-            let sequence = 1;
-            if (lastEmployee.length > 0) {
-                const lastSequence = parseInt(lastEmployee[0].employee_id.split('-')[1]);
-                sequence = lastSequence + 1;
+
+            if (existingUser.length === 0) {
+                // Create new user account with original password using the developer's ID
+                const createUserQuery = `
+                    INSERT INTO users (id, email, username, password, role_id, is_active, created_at)
+                    VALUES (?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), 1, NOW())
+                `;
+                await connection.execute(createUserQuery, [
+                    developerId, // Use the developer's ID as the user ID
+                    developer.email,
+                    developer.username,
+                    originalPassword // Use the original hashed password
+                ]);
+            } else {
+                // Update existing user account with original password
+                const updateUserQuery = `
+                    UPDATE users 
+                    SET password = ?, 
+                        role_id = (SELECT id FROM roles WHERE name = 'developer'),
+                        is_active = 1
+                    WHERE id = ?
+                `;
+                await connection.execute(updateUserQuery, [
+                    originalPassword, // Use the original hashed password
+                    developerId
+                ]);
             }
-            const employeeId = `${currentYear}-${String(sequence).padStart(4, '0')}`;
 
-            // 3. Create user account
-            const createUserQuery = `
-                INSERT INTO users (email, username, password, role_id, is_active, created_at)
-                VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), 1, NOW())
-            `;
-            const [userResult] = await connection.execute(createUserQuery, [
-                developer.email,
-                developer.username,
-                developer.password_hash
-            ]);
-            const userId = userResult.insertId;
-
-            // 4. Create employee record
-            const createEmployeeQuery = `
-                INSERT INTO employees (
-                    employee_id, user_id, email, role_id, full_name, 
-                    employment_status, created_at
-                ) VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), ?, 'Active', NOW())
-            `;
-            await connection.execute(createEmployeeQuery, [
-                employeeId,
-                userId,
-                developer.email,
-                developer.username
-            ]);
-
-            // 5. Update developer status
+            // 4. Update developer status
             const updateDeveloperQuery = `
                 UPDATE developer_accounts 
                 SET status = 'active', 
-                    id = ?,
                     updated_at = NOW()
                 WHERE id = ?
             `;
-            await connection.execute(updateDeveloperQuery, [userId, developerId]);
+            await connection.execute(updateDeveloperQuery, [developerId]);
 
             await connection.commit();
             return { 
-                userId, 
+                userId: developerId, // The user ID is the same as developer ID
                 developerId,
-                employeeId,
-                message: "Developer approved successfully. They can now log in using their employee ID."
+                originalPassword: "Use your original registration password", // Note for email
+                message: "Developer approved successfully. They can now log in using their username and original password."
             };
 
         } catch (error) {
@@ -3915,7 +4022,8 @@ const HRModel = {
                     p.payment_method,
                     p.status,
                     p.approved_date,
-                    u.username as approved_by_name
+                    u.username as approved_by_name,
+                    p.next_period_deductions
                 FROM payslip p
                 JOIN employees e ON p.employee_id = e.employee_id
                 JOIN roles r ON e.role_id = r.id
@@ -3997,9 +4105,12 @@ const HRModel = {
             const [periods] = await db.query(`
             SELECT 
                     pp.*,
-                    COUNT(p.id) as employee_count,
-                    SUM(p.net_salary) as total_payroll_amount
+                    COUNT(DISTINCT e.employee_id) as total_employees,
+                    COUNT(DISTINCT CASE WHEN p.status = 'pending' THEN e.employee_id END) as pending_employees,
+                    COUNT(DISTINCT CASE WHEN p.status = 'approved' THEN e.employee_id END) as approved_employees,
+                    COALESCE(SUM(p.net_salary), 0) as total_amount
                 FROM payroll_periods pp
+                LEFT JOIN employees e ON e.is_deleted = 0
                 LEFT JOIN payroll p ON pp.id = p.payroll_period_id
                 GROUP BY pp.id
                 ORDER BY pp.created_at DESC
@@ -4062,21 +4173,31 @@ const HRModel = {
     },
 
     // Find or create payroll period for given dates
-    findOrCreatePayrollPeriod: async (startDate, endDate) => {
+    findOrCreatePayrollPeriod: async (startDate, endDate, periodName = null) => {
         try {
-            // First, try to find existing period
+            // First, try to find existing period by dates
             const [existing] = await db.query(`
                 SELECT * FROM payroll_periods 
                 WHERE start_date = ? AND end_date = ?
             `, [startDate, endDate]);
             
             if (existing.length > 0) {
+                console.log('Found existing payroll period:', existing[0].id);
                 return existing[0].id;
             }
             
             // Create new period if not found
-            const periodName = `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            if (!periodName) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const month = start.toLocaleDateString('en-US', { month: 'short' });
+                const year = end.getFullYear();
+                const isFirstHalf = start.getDate() <= 15;
+                const period = isFirstHalf ? 'first' : 'second';
+                periodName = `${month} ${year} - ${period}`;
+            }
             
+            console.log('Creating new payroll period:', periodName);
             const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
             return periodId;
         } catch (error) {

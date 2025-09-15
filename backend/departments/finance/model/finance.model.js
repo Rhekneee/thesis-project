@@ -9,15 +9,67 @@ class FinanceModel {
             const [periods] = await db.query(`
             SELECT 
                     pp.*,
-                    COUNT(p.id) as employee_count,
-                    SUM(p.net_salary) as total_payroll_amount,
-                    SUM(p.total_hours) as total_hours,
-                    SUM(p.overtime_hours) as total_overtime_hours
+                    COALESCE(payroll_stats.employee_count, 0) as employee_count,
+                    COALESCE(payroll_stats.total_payroll_amount, 0) as total_payroll_amount,
+                    COALESCE(payroll_stats.total_hours, 0) as total_hours,
+                    COALESCE(payroll_stats.total_overtime_hours, 0) as total_overtime_hours,
+                    COALESCE(payroll_stats.total_entries, 0) as total_entries,
+                    COALESCE(payroll_stats.pending_entries, 0) as pending_entries,
+                    COALESCE(payroll_stats.approved_entries, 0) as approved_entries,
+                    COALESCE(payroll_stats.released_entries, 0) as released_entries,
+                    COALESCE(payroll_stats.rejected_entries, 0) as rejected_entries
                 FROM payroll_periods pp
-                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
-                GROUP BY pp.id
+                LEFT JOIN (
+                    SELECT 
+                        payroll_period_id,
+                        COUNT(DISTINCT employee_id) as employee_count,
+                        SUM(net_salary) as total_payroll_amount,
+                        SUM(total_hours) as total_hours,
+                        SUM(overtime_hours) as total_overtime_hours,
+                        COUNT(*) as total_entries,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_entries,
+                        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_entries,
+                        SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_entries,
+                        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected_entries
+                    FROM payroll
+                    GROUP BY payroll_period_id
+                ) payroll_stats ON pp.id = payroll_stats.payroll_period_id
                 ORDER BY pp.created_at DESC
             `);
+            
+            // Debug: Log the first period's data to see what we're getting
+            if (periods.length > 0) {
+                console.log('🔍 Debug - First period data:', {
+                    id: periods[0].id,
+                    period_name: periods[0].period_name,
+                    total_entries: periods[0].total_entries,
+                    pending_entries: periods[0].pending_entries,
+                    approved_entries: periods[0].approved_entries,
+                    released_entries: periods[0].released_entries,
+                    rejected_entries: periods[0].rejected_entries
+                });
+                
+                // Debug: Check actual payroll entries for this period
+                const [debugEntries] = await db.query(`
+                    SELECT status, COUNT(*) as count 
+                    FROM payroll 
+                    WHERE payroll_period_id = ? 
+                    GROUP BY status
+                `, [periods[0].id]);
+                
+                console.log('🔍 Debug - Actual payroll entries for period', periods[0].id, ':', debugEntries);
+                
+                // Debug: Check all individual entries for this period
+                const [allEntries] = await db.query(`
+                    SELECT id, employee_id, status 
+                    FROM payroll 
+                    WHERE payroll_period_id = ? 
+                    ORDER BY id
+                `, [periods[0].id]);
+                
+                console.log('🔍 Debug - All individual entries for period', periods[0].id, ':', allEntries);
+            }
+            
             return periods;
         } catch (error) {
             console.error('Error fetching payroll periods:', error);
@@ -25,15 +77,204 @@ class FinanceModel {
         }
     }
 
+    // Approve a single payroll entry and check period status
+    static async approvePayrollEntry(payrollId, approverUserId, remarks = null) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Fetch the payroll entry
+            const [rows] = await connection.query(`
+                SELECT id, payroll_period_id, employee_id, status
+                FROM payroll
+                WHERE id = ?
+                FOR UPDATE
+            `, [payrollId]);
+
+            if (rows.length === 0) {
+                await connection.rollback();
+                return { success: false, message: 'Payroll entry not found' };
+            }
+
+            const payroll = rows[0];
+            const statusLower = (payroll.status || '').toLowerCase();
+
+            // Update entry to approved if still pending
+            let payslipCreated = false;
+            
+            if (statusLower === 'approved') {
+                // Check if payslip already exists for this payroll entry
+                const [existingPayslip] = await connection.query(`
+                    SELECT id FROM payslip WHERE payroll_period_id = ? AND employee_id = ?
+                `, [payroll.payroll_period_id, payroll.employee_id]);
+                
+                if (existingPayslip.length === 0) {
+                    try {
+                        console.log('🔄 Creating payslip for already approved payroll ID:', payrollId);
+                        const payslipResult = await this.createPayslipForEntry(connection, payrollId, approverUserId);
+                        payslipCreated = payslipResult.success;
+                        console.log('✅ Payslip creation result:', payslipResult);
+                    } catch (payslipError) {
+                        console.error('❌ Payslip creation failed:', payslipError);
+                        payslipCreated = false;
+                    }
+                } else {
+                    console.log('✅ Payslip already exists for payroll ID:', payrollId);
+                    payslipCreated = true; // Payslip already exists
+                }
+            } else if (statusLower === 'pending') {
+                await connection.query(`
+                    UPDATE payroll
+                    SET status = 'approved', updated_at = NOW(), approved_by = ?, remarks = ?
+                    WHERE id = ?
+                `, [approverUserId || null, remarks || null, payrollId]);
+
+                // Automatically create payslip for this approved entry
+                try {
+                    console.log('🔄 Attempting to create payslip for payroll ID:', payrollId);
+                    const payslipResult = await this.createPayslipForEntry(connection, payrollId, approverUserId);
+                    payslipCreated = payslipResult.success;
+                    console.log('📊 Payslip creation result:', payslipResult);
+                } catch (payslipError) {
+                    // Don't fail the approval if payslip creation fails
+                    console.error('❌ Payslip creation failed:', payslipError);
+                    payslipCreated = false;
+                }
+            } else {
+                // If entry is in another terminal state, do not proceed
+                await connection.rollback();
+                return { success: false, message: `Cannot approve payroll in status ${payroll.status}` };
+            }
+
+            // Check if all entries in the period are now approved
+            const [agg] = await connection.query(`
+                SELECT 
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_count,
+                    COUNT(*) AS total_count
+                FROM payroll
+                WHERE payroll_period_id = ?
+            `, [payroll.payroll_period_id]);
+
+            const approvedCount = Number(agg[0].approved_count || 0);
+            const totalCount = Number(agg[0].total_count || 0);
+
+            let periodStatusUpdated = false;
+            if (totalCount > 0 && approvedCount === totalCount) {
+                // All approved -> set period to approved if currently pending
+                const [periodRes] = await connection.query(`
+                    UPDATE payroll_periods
+                    SET status = 'approved', updated_at = NOW()
+                    WHERE id = ? AND status IN ('pending','review')
+                `, [payroll.payroll_period_id]);
+                periodStatusUpdated = periodRes.affectedRows > 0;
+            }
+
+            await connection.commit();
+            
+            let message = periodStatusUpdated
+                ? 'Payroll entry approved and period marked as approved'
+                : 'Payroll entry approved; period remains pending';
+            
+            if (payslipCreated) {
+                message += ' and payslip created automatically';
+            }
+            
+            return {
+                success: true,
+                message: message,
+                periodApproved: periodStatusUpdated,
+                payslipCreated: payslipCreated
+            };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error approving payroll entry:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Attempt to approve entire payroll period; stays pending if any entry not approved
+    static async attemptApprovePayrollPeriod(periodId) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Lock rows to prevent race conditions
+            const [counts] = await connection.query(`
+                SELECT 
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_count,
+                    COUNT(*) AS total_count
+                FROM payroll
+                WHERE payroll_period_id = ?
+                FOR UPDATE
+            `, [periodId]);
+
+            const approvedCount = Number(counts[0]?.approved_count || 0);
+            const totalCount = Number(counts[0]?.total_count || 0);
+
+            if (totalCount === 0) {
+                await connection.rollback();
+                return { success: false, message: 'No payroll entries for this period' };
+            }
+
+            if (approvedCount === totalCount) {
+                const [res] = await connection.query(`
+                    UPDATE payroll_periods
+                    SET status = 'approved', updated_at = NOW()
+                    WHERE id = ? AND status IN ('pending','review')
+                `, [periodId]);
+
+                await connection.commit();
+                return { success: true, message: 'Period approved', periodApproved: res.affectedRows > 0 };
+            } else {
+                // Ensure period remains pending
+                await connection.query(`
+                    UPDATE payroll_periods
+                    SET status = 'pending', updated_at = NOW()
+                    WHERE id = ? AND status != 'processed'
+                `, [periodId]);
+                await connection.commit();
+                return { success: true, message: 'Period remains pending; not all entries approved', periodApproved: false };
+            }
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error attempting approve payroll period:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Submit remarks to a payroll entry (for pending entries)
+    static async submitPayrollRemarks(payrollId, remarks) {
+        try {
+            const [result] = await db.query(`
+                UPDATE payroll 
+                SET remarks = ?, updated_at = NOW()
+                WHERE id = ? AND status = 'pending'
+            `, [remarks, payrollId]);
+
+            if (result.affectedRows === 0) {
+                return { success: false, message: 'Payroll entry not found or not in pending status' };
+            }
+
+            return { success: true, message: 'Remarks submitted successfully' };
+        } catch (error) {
+            console.error('Error submitting payroll remarks:', error);
+            throw error;
+        }
+    }
     // Get pending payroll periods
-    static async getPendingPayrollPeriods() {
+    static async getpendingPayrollPeriods() {
         try {
             const [periods] = await db.query(`
                 SELECT 
                     pp.*,
-                    COUNT(p.id) as employee_count,
-                    SUM(p.net_salary) as total_payroll_amount
+                    COUNT(DISTINCT e.employee_id) as employee_count,
+                    COALESCE(SUM(p.net_salary), 0) as total_payroll_amount
                 FROM payroll_periods pp
+                LEFT JOIN employees e ON e.is_deleted = 0
                 LEFT JOIN payroll p ON pp.id = p.payroll_period_id
                 WHERE pp.status = 'pending'
                 GROUP BY pp.id
@@ -52,9 +293,10 @@ class FinanceModel {
             const [periods] = await db.query(`
                 SELECT 
                     pp.*,
-                    COUNT(p.id) as employee_count,
-                    SUM(p.net_salary) as total_payroll_amount
+                    COUNT(DISTINCT e.employee_id) as employee_count,
+                    COALESCE(SUM(p.net_salary), 0) as total_payroll_amount
                 FROM payroll_periods pp
+                LEFT JOIN employees e ON e.is_deleted = 0
                 LEFT JOIN payroll p ON pp.id = p.payroll_period_id
                 WHERE pp.status = 'approved'
                 GROUP BY pp.id
@@ -80,24 +322,81 @@ class FinanceModel {
         }
     }
 
+    // Get all payroll entries (for finance payroll page)
+    static async getAllPayrolls() {
+        try {
+            const [payrolls] = await db.query(`
+                SELECT 
+                    p.*,
+                    e.full_name as name,
+                    e.employee_id,
+                    r.name as position,
+                    pp.period_name,
+                    pp.start_date as period_start,
+                    pp.end_date as period_end
+                FROM payroll p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                JOIN payroll_periods pp ON p.payroll_period_id = pp.id
+                ORDER BY p.created_at DESC
+            `);
+            
+            return payrolls;
+        } catch (error) {
+            console.error('Error in getAllPayrolls:', error);
+            throw error;
+        }
+    }
+
     // Get all payroll entries for a specific period
     static async getPayrollEntriesByPeriod(periodId) {
         try {
             const [entries] = await db.query(`
                 SELECT 
                     p.*,
-                e.full_name,
-                r.name as position,
+                    e.full_name,
+                    r.name as position,
                     e.profile_picture,
-                    d.name as department_name
-            FROM payroll p
-            JOIN employees e ON p.employee_id = e.employee_id
-            JOIN roles r ON e.role_id = r.id
+                    d.name as department_name,
+                    pp.period_name
+                FROM payroll p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
                 JOIN departments d ON r.department_id = d.id
+                JOIN payroll_periods pp ON p.payroll_period_id = pp.id
                 WHERE p.payroll_period_id = ?
                 ORDER BY e.full_name
             `, [periodId]);
-            return entries;
+            
+            // Add next period deductions information to each entry
+            const HRModel = require('../../hr/model/hr.model');
+            const enhancedEntries = await Promise.all(entries.map(async (entry) => {
+                try {
+                    // Determine if this is first half (next deductions apply) or second half (no next deductions)
+                    const periodName = entry.period_name || '';
+                    const isFirstHalf = periodName.toLowerCase().includes('first');
+                    
+                    let nextPeriodDeductions = [];
+                    if (isFirstHalf) {
+                        // For first half, calculate what deductions will apply in second half
+                        const deductionCalculation = await HRModel.calculateDeductions(entry.fixed_salary, 'second');
+                        nextPeriodDeductions = deductionCalculation.nextPeriodDeductions || [];
+                    }
+                    
+                    return {
+                        ...entry,
+                        next_period_deductions: nextPeriodDeductions
+                    };
+                } catch (error) {
+                    console.error('Error calculating next period deductions for entry:', entry.employee_id, error);
+                    return {
+                        ...entry,
+                        next_period_deductions: []
+                    };
+                }
+            }));
+            
+            return enhancedEntries;
         } catch (error) {
             console.error('Error fetching payroll entries by period:', error);
             throw error;
@@ -148,6 +447,243 @@ class FinanceModel {
         }
     }
 
+    // Create payslip table if it doesn't exist
+    static async createPayslipTable(connection) {
+        try {
+            const createTableSQL = `
+                CREATE TABLE IF NOT EXISTS payslip (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    payslip_number VARCHAR(100) NOT NULL UNIQUE,
+                    payslip_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    payslip_period VARCHAR(100),
+                    employee_id VARCHAR(20) NOT NULL,
+                    basic_salary DECIMAL(10,2) DEFAULT 0.00,
+                    salary_before_tax DECIMAL(10,2) DEFAULT 0.00,
+                    total_deductions DECIMAL(10,2) DEFAULT 0.00,
+                    absence_deduction DECIMAL(10,2) DEFAULT 0.00,
+                    net_salary DECIMAL(10,2) DEFAULT 0.00,
+                    start_date DATE,
+                    end_date DATE,
+                    days_present INT DEFAULT 0,
+                    days_absent INT DEFAULT 0,
+                    total_hours DECIMAL(5,2) DEFAULT 0.00,
+                    overtime_hours DECIMAL(5,2) DEFAULT 0.00,
+                    payment_method VARCHAR(50) DEFAULT 'bank_transfer',
+                    status ENUM('pending', 'approved', 'rejected', 'processed') DEFAULT 'pending',
+                    approved_by INT,
+                    approved_date TIMESTAMP NULL,
+                    payroll_period_id INT,
+                    next_period_deductions JSON DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+                    FOREIGN KEY (approved_by) REFERENCES users(id),
+                    FOREIGN KEY (payroll_period_id) REFERENCES payroll_periods(id)
+                )
+            `;
+            
+            await connection.query(createTableSQL);
+            console.log('✅ Payslip table created successfully');
+        } catch (error) {
+            console.error('❌ Error creating payslip table:', error);
+            throw error;
+        }
+    }
+
+    // Test function to verify database and table
+    static async testPayslipTable(connection) {
+        try {
+            console.log('🧪 TESTING: Checking payslip table structure...');
+            
+            // Check if table exists
+            const [tableCheck] = await connection.query(`
+                SELECT COUNT(*) as count
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                AND table_name = 'payslip'
+            `);
+            
+            console.log('🧪 TESTING: Table exists:', tableCheck[0].count > 0);
+            
+            if (tableCheck[0].count > 0) {
+                // Check table structure
+                const [columns] = await connection.query(`
+                    SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+                    FROM information_schema.columns
+                    WHERE table_schema = DATABASE()
+                    AND table_name = 'payslip'
+                    ORDER BY ORDINAL_POSITION
+                `);
+                
+                console.log('🧪 TESTING: Table columns:', columns);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('🧪 TESTING: Error checking table:', error);
+            return false;
+        }
+    }
+
+    // Create payslip for a single approved payroll entry
+            static async createPayslipForEntry(connection, payrollId, approvedBy) {
+            try {
+                // Check if payslip table exists, create if not
+                try {
+                    const [tableCheck] = await connection.query(`
+                        SELECT COUNT(*) as count
+                        FROM information_schema.tables
+                        WHERE table_schema = DATABASE()
+                        AND table_name = 'payslip'
+                    `);
+                    
+                    if (tableCheck[0].count === 0) {
+                        await this.createPayslipTable(connection);
+                    }
+                } catch (tableError) {
+                    // Continue anyway, maybe the table exists but query failed
+                }
+            
+            // Get payroll entry details with employee and period info
+            const [payrollRows] = await connection.query(`
+                SELECT 
+                    p.*,
+                    e.full_name,
+                    r.name as position,
+                    pp.period_name,
+                    pp.start_date as period_start,
+                    pp.end_date as period_end
+                FROM payroll p
+                JOIN employees e ON p.employee_id = e.employee_id
+                JOIN roles r ON e.role_id = r.id
+                JOIN payroll_periods pp ON p.payroll_period_id = pp.id
+                WHERE p.id = ?
+            `, [payrollId]);
+
+            if (payrollRows.length === 0) {
+                return { success: false, message: 'Payroll entry not found' };
+            }
+
+            const payrollEntry = payrollRows[0];
+
+            // Generate payslip number
+            const payslipNumber = `PS-${payrollEntry.payroll_period_id}-${payrollEntry.employee_id}-${Date.now()}`;
+
+            // Calculate net salary with fallback
+            const netSalary = payrollEntry.net_pay || payrollEntry.net_salary || 0;
+
+            // Calculate next period deductions based on the current period
+            let nextPeriodDeductions = [];
+            try {
+                // Import HRModel to calculate deductions
+                const HRModel = require('../../hr/model/hr.model');
+                
+                // Determine if this is first half (next deductions apply) or second half (no next deductions)
+                const periodName = payrollEntry.period_name || '';
+                const isFirstHalf = periodName.toLowerCase().includes('first');
+                
+                if (isFirstHalf) {
+                    // For first half, calculate what deductions will apply in second half
+                    const deductionCalculation = await HRModel.calculateDeductions(payrollEntry.fixed_salary, 'second');
+                    nextPeriodDeductions = deductionCalculation.nextPeriodDeductions || [];
+                }
+            } catch (error) {
+                console.error('Error calculating next period deductions:', error);
+                nextPeriodDeductions = [];
+            }
+
+            // Insert payslip
+
+            const [payslipResult] = await connection.query(`
+                INSERT INTO payslip (
+                    payslip_number, payslip_date, payslip_period, employee_id,
+                    basic_salary, salary_before_tax, total_deductions, absence_deduction,
+                    net_salary, start_date, end_date, days_present, days_absent,
+                    total_hours, overtime_hours, payment_method, status, approved_by,
+                    approved_date, payroll_period_id, payroll_id, next_period_deductions
+                ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)
+            `, [
+                payslipNumber,
+                payrollEntry.period_name,
+                payrollEntry.employee_id,
+                payrollEntry.fixed_salary,
+                payrollEntry.salary_before_tax,
+                payrollEntry.total_deductions,
+                payrollEntry.absence_deduction || 0,
+                netSalary,
+                payrollEntry.period_start,
+                payrollEntry.period_end,
+                payrollEntry.days_present,
+                payrollEntry.days_absent,
+                payrollEntry.total_hours,
+                payrollEntry.overtime_hours,
+                'Bank Transfer',
+                'Generated',
+                approvedBy,
+                payrollEntry.payroll_period_id,
+                payrollId,
+                JSON.stringify(nextPeriodDeductions)
+            ]);
+
+
+            return {
+                success: true,
+                payslipId: payslipResult.insertId,
+                payslipNumber: payslipNumber,
+                message: `Payslip ${payslipNumber} created for ${payrollEntry.full_name}`
+            };
+
+        } catch (error) {
+            return {
+                success: false,
+                message: `Failed to create payslip: ${error.message}`,
+                error: error
+            };
+        }
+    }
+
+    // Submit payroll entry to bank
+    static async submitPayrollToBank(payrollId, submittedBy, referenceText, documentPath, remarks) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Update payroll status to 'released'
+            await connection.query(`
+                UPDATE payroll 
+                SET status = 'released', 
+                    updated_at = NOW(),
+                    remarks = CONCAT(IFNULL(remarks, ''), ' | Bank submission: ', ?)
+                WHERE id = ?
+            `, [referenceText, payrollId]);
+
+            // Insert bank submission record
+            await connection.query(`
+                INSERT INTO bank_submissions (
+                    payroll_id, 
+                    submitted_by, 
+                    reference_text, 
+                    document_path, 
+                    remarks, 
+                    submission_date, 
+                    status
+                ) VALUES (?, ?, ?, ?, ?, NOW(), 'submitted')
+            `, [payrollId, submittedBy, referenceText, documentPath, remarks]);
+
+            await connection.commit();
+
+            return {
+                success: true,
+                message: 'Payroll successfully submitted to bank'
+            };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
     // Create payslips from payroll period
     static async createPayslipsFromPeriod(periodId, approvedBy) {
         const connection = await db.getConnection();
@@ -181,6 +717,26 @@ class FinanceModel {
                 // Generate payslip number
                 const payslipNumber = `PS-${periodId}-${payrollEntry.employee_id}-${Date.now()}`;
 
+                // Calculate next period deductions based on the current period
+                let nextPeriodDeductions = [];
+                try {
+                    // Import HRModel to calculate deductions
+                    const HRModel = require('../../hr/model/hr.model');
+                    
+                    // Determine if this is first half (next deductions apply) or second half (no next deductions)
+                    const periodName = periodData.period_name || '';
+                    const isFirstHalf = periodName.toLowerCase().includes('first');
+                    
+                    if (isFirstHalf) {
+                        // For first half, calculate what deductions will apply in second half
+                        const deductionCalculation = await HRModel.calculateDeductions(payrollEntry.fixed_salary, 'second');
+                        nextPeriodDeductions = deductionCalculation.nextPeriodDeductions || [];
+                    }
+                } catch (error) {
+                    console.error('Error calculating next period deductions:', error);
+                    nextPeriodDeductions = [];
+                }
+
                 // Insert payslip
                 const [payslipResult] = await connection.query(`
                     INSERT INTO payslip (
@@ -188,8 +744,8 @@ class FinanceModel {
                         basic_salary, salary_before_tax, total_deductions, absence_deduction,
                         net_salary, start_date, end_date, days_present, days_absent,
                         total_hours, overtime_hours, payment_method, status, approved_by,
-                        approved_date, payroll_period_id
-                    ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+                        approved_date, payroll_period_id, next_period_deductions
+                    ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
                 `, [
                     payslipNumber,
                     periodData.period_name,
@@ -208,7 +764,8 @@ class FinanceModel {
                     'bank_transfer',
                     'approved',
                     approvedBy,
-                    periodId
+                    periodId,
+                    JSON.stringify(nextPeriodDeductions)
                 ]);
 
                 payslipIds.push(payslipResult.insertId);
@@ -356,7 +913,7 @@ class FinanceModel {
             WHERE pr.status != 'Deleted'
             ORDER BY 
                 CASE 
-                    WHEN pr.status = 'Pending' THEN 1
+                    WHEN pr.status = 'pending' THEN 1
                     WHEN pr.status = 'Approved' THEN 2
                     WHEN pr.status = 'In Transit' THEN 3
                     WHEN pr.status = 'Delivered' THEN 4
@@ -420,7 +977,7 @@ class FinanceModel {
                 status = 'Approved',
                 approved_date = NOW(),
                 updated_at = NOW()
-            WHERE request_id = ? AND status = 'Pending'
+            WHERE request_id = ? AND status = 'pending'
         `;
 
         try {
@@ -498,7 +1055,7 @@ class FinanceModel {
             JOIN supplier_account s ON po.supplier_id = s.supplier_id
             JOIN purchase_requests pr ON po.pr_id = pr.request_id
             LEFT JOIN departments d ON pr.department = d.id
-            WHERE po.status = 'Pending Estimation'
+            WHERE po.status = 'pending Estimation'
             ORDER BY po.created_at DESC;
         `;
 
@@ -522,7 +1079,7 @@ class FinanceModel {
                 remarks = ?,
                 payment_type = ?,
                 updated_at = NOW()
-            WHERE po_id = ? AND status = 'Pending Estimation'
+            WHERE po_id = ? AND status = 'pending Estimation'
         `;
 
         try {
@@ -543,7 +1100,7 @@ class FinanceModel {
     }
 
     // Get purchase orders pending payment
-    static async getPurchaseOrdersPendingPayment() {
+    static async getPurchaseOrderspendingPayment() {
         const SQL_COMMAND = `
             SELECT 
                 po.po_id,
@@ -561,7 +1118,7 @@ class FinanceModel {
                 DATE_FORMAT(po.updated_at, '%Y-%m-%d %H:%i:%s') as updated_date
             FROM purchase_order po
             JOIN supplier_account s ON po.supplier_id = s.supplier_id
-            WHERE po.status = 'Pending Payment'
+            WHERE po.status = 'pending Payment'
             ORDER BY po.updated_at DESC;
         `;
 
@@ -571,7 +1128,7 @@ class FinanceModel {
             console.log('Number of pending payment orders found:', orders.length);
             return orders;
         } catch (error) {
-            console.error('Error in getPurchaseOrdersPendingPayment:', error);
+            console.error('Error in getPurchaseOrderspendingPayment:', error);
             throw new Error('Failed to fetch purchase orders pending payment');
         }
     }
@@ -588,7 +1145,7 @@ class FinanceModel {
                     ELSE payment_date
                 END,
                 updated_at = NOW()
-            WHERE po_id = ? AND status = 'Pending Payment'
+            WHERE po_id = ? AND status = 'pending Payment'
         `;
 
         try {
@@ -996,6 +1553,231 @@ class FinanceModel {
         } catch (error) {
             console.error('Error creating PayMongo payment link:', error?.response?.data || error.message);
             throw new Error('Failed to create PayMongo payment link');
+        }
+    }
+
+    // Submit bank documents for payroll period (bulk submission)
+    static async submitBankDocuments(payrollPeriodId, submittedBy, referenceText, documentPath, remarks = null, payrollIds = null) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Determine which approved payroll entries to submit
+            let payrollEntries = [];
+            if (Array.isArray(payrollIds) && payrollIds.length > 0) {
+                const [rows] = await connection.query(`
+                    SELECT id 
+                    FROM payroll 
+                    WHERE payroll_period_id = ? 
+                      AND status = 'approved'
+                      AND id IN (${payrollIds.map(() => '?').join(',')})
+                `, [payrollPeriodId, ...payrollIds]);
+                payrollEntries = rows;
+            } else {
+                const [rows] = await connection.query(`
+                    SELECT id FROM payroll 
+                    WHERE payroll_period_id = ? AND status = 'approved'
+                `, [payrollPeriodId]);
+                payrollEntries = rows;
+            }
+
+            if (payrollEntries.length === 0) {
+                await connection.rollback();
+                return { success: false, message: 'No approved payroll entries found for this period' };
+            }
+
+            // Insert bank submission record for each selected payroll entry
+            const submissionIds = [];
+            const updatedPayrollIds = [];
+            for (const entry of payrollEntries) {
+                const [result] = await connection.query(`
+                    INSERT INTO payroll_bank_submissions (
+                        payroll_id, payroll_period_id, submitted_by, reference_text, document_path, remarks, submitted_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                `, [entry.id, payrollPeriodId, submittedBy, referenceText, documentPath, remarks]);
+                
+                submissionIds.push(result.insertId);
+
+                // Update individual payroll status to 'released'
+                const [upd] = await connection.query(`
+                    UPDATE payroll 
+                    SET status = 'released', updated_at = NOW()
+                    WHERE id = ?
+                `, [entry.id]);
+                if (upd.affectedRows > 0) {
+                    updatedPayrollIds.push(entry.id);
+                }
+            }
+
+            // For bank submission, do not alter payroll_periods.status. It remains pending
+            // until all entries are approved via the approval flow.
+            const [statusCheck] = await connection.query(`
+                SELECT 
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_count
+                FROM payroll
+                WHERE payroll_period_id = ?
+            `, [payrollPeriodId]);
+            const totalCount = Number(statusCheck[0].total_count || 0);
+            const releasedCount = Number(statusCheck[0].released_count || 0);
+
+            await connection.commit();
+
+            const periodStatusMessage = 'Payroll period remains pending (bank submission does not change period status).';
+
+            return {
+                success: true,
+                submissionIds: submissionIds,
+                message: `Bank documents submitted successfully for ${payrollEntries.length} payroll entries. ${periodStatusMessage}`,
+                periodReleased: false,
+                submittedCount: releasedCount,
+                totalCount: totalCount,
+                updatedPayrollIds: updatedPayrollIds
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error submitting bank documents:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Submit individual payroll entry to bank
+    static async submitPayrollEntryToBank(payrollId, submittedBy, referenceText, documentPath, remarks = null) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Get payroll entry details to get payroll_period_id
+            const [payrollEntry] = await connection.query(`
+                SELECT payroll_period_id FROM payroll WHERE id = ? AND status = 'approved'
+            `, [payrollId]);
+
+            if (payrollEntry.length === 0) {
+                await connection.rollback();
+                return { success: false, message: 'Payroll entry not found or not approved' };
+            }
+
+            const payrollPeriodId = payrollEntry[0].payroll_period_id;
+
+            // Insert bank submission record
+            const [result] = await connection.query(`
+                INSERT INTO payroll_bank_submissions (
+                    payroll_id, payroll_period_id, submitted_by, reference_text, document_path, remarks, submitted_at
+                ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+            `, [payrollId, payrollPeriodId, submittedBy, referenceText, documentPath, remarks]);
+
+            // Update individual payroll status to 'released'
+            await connection.query(`
+                UPDATE payroll 
+                SET status = 'released', updated_at = NOW()
+                WHERE id = ?
+            `, [payrollId]);
+
+            // Check if all payroll entries in the period are now 'released'
+            const [statusCheck] = await connection.query(`
+                SELECT 
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_count
+                FROM payroll
+                WHERE payroll_period_id = ?
+            `, [payrollPeriodId]);
+
+            const totalCount = Number(statusCheck[0].total_count || 0);
+            const releasedCount = Number(statusCheck[0].released_count || 0);
+
+            // Only update period status to 'pending' if ALL entries are released
+            if (totalCount > 0 && releasedCount === totalCount) {
+                await connection.query(`
+                    UPDATE payroll_periods 
+                    SET status = 'pending', updated_at = NOW()
+                    WHERE id = ?
+                `, [payrollPeriodId]);
+                console.log(`✅ Period ${payrollPeriodId} marked as pending - all ${totalCount} entries submitted`);
+            } else {
+                console.log(`⏳ Period ${payrollPeriodId} remains pending - ${releasedCount}/${totalCount} entries submitted`);
+            }
+
+            await connection.commit();
+
+            const periodStatusMessage = (totalCount > 0 && releasedCount === totalCount) 
+                ? 'Payroll period marked as pending.' 
+                : 'Payroll period remains pending until all entries are submitted.';
+
+            return {
+                success: true,
+                submissionId: result.insertId,
+                message: `Payroll entry submitted to bank successfully. ${periodStatusMessage}`,
+                periodReleased: (totalCount > 0 && releasedCount === totalCount),
+                submittedCount: releasedCount,
+                totalCount: totalCount
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error submitting payroll entry to bank:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // Get bank submission history for a payroll period
+    static async getBankSubmissions(payrollPeriodId) {
+        try {
+            const [submissions] = await db.query(`
+                SELECT 
+                    pbs.*,
+                    u.username,
+                    u.email,
+                    e.full_name as employee_name,
+                    p.employee_id
+                FROM payroll_bank_submissions pbs
+                JOIN users u ON pbs.submitted_by = u.id
+                LEFT JOIN payroll p ON pbs.payroll_id = p.id
+                LEFT JOIN employees e ON p.employee_id = e.employee_id
+                WHERE pbs.payroll_period_id = ?
+                ORDER BY pbs.submitted_at DESC
+            `, [payrollPeriodId]);
+
+            return submissions;
+        } catch (error) {
+            console.error('Error fetching bank submissions:', error);
+            throw error;
+        }
+    }
+
+    // Check if bank documents have been submitted for a payroll period
+    static async hasBankSubmission(payrollPeriodId) {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM payroll_bank_submissions
+                WHERE payroll_period_id = ?
+            `, [payrollPeriodId]);
+
+            return result[0].count > 0;
+        } catch (error) {
+            console.error('Error checking bank submission:', error);
+            throw error;
+        }
+    }
+
+    // Check if payroll period has any approved payrolls
+    static async hasApprovedPayrolls(payrollPeriodId) {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM payroll
+                WHERE payroll_period_id = ? AND status = 'approved'
+            `, [payrollPeriodId]);
+
+            return result[0].count > 0;
+        } catch (error) {
+            console.error('Error checking approved payrolls:', error);
+            throw error;
         }
     }
 }

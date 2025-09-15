@@ -1,5 +1,6 @@
 const FinanceModel = require('../model/finance.model');
 const crypto = require('crypto');
+const Notifications = require('../../../models/notification.model');
 
 // Updated Finance Controller to work with Payroll Periods
 // Get all payroll periods for Finance dashboard
@@ -95,6 +96,24 @@ exports.getPayrollPeriodById = async (req, res) => {
     }
 };
 
+// Get all payroll entries (for finance payroll page)
+exports.getAllPayrolls = async (req, res) => {
+    try {
+        const payrolls = await FinanceModel.getAllPayrolls();
+        
+        res.json({
+            success: true,
+            data: payrolls
+        });
+    } catch (error) {
+        console.error('Error in getAllPayrolls:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to fetch payrolls'
+        });
+    }
+};
+
 // Get payroll entries for a specific period
 exports.getPayrollEntriesByPeriod = async (req, res) => {
     try {
@@ -163,6 +182,21 @@ exports.updatePayrollPeriodStatus = async (req, res) => {
                 success: false, 
                 error: 'Invalid status. Must be pending, approved, rejected, or processed.' 
             });
+        }
+
+        // Enforce approval business rule: a period can only be marked 'approved'
+        // when all underlying payroll entries are approved. Prevent blind updates.
+        if (status === 'approved') {
+            try {
+                const result = await FinanceModel.attemptApprovePayrollPeriod(periodId);
+                return res.status(200).json({
+                    success: result.success,
+                    message: result.message,
+                    periodApproved: result.periodApproved === true
+                });
+            } catch (err) {
+                return res.status(500).json({ success: false, error: err.message || 'Failed to approve payroll period' });
+            }
         }
 
         const success = await FinanceModel.updatePayrollPeriodStatus(periodId, status);
@@ -708,7 +742,8 @@ exports.getAllPayslips = async (req, res) => {
             payment_method: payslip.payment_method,
             status: payslip.status,
             approved_date: payslip.approved_date,
-            approved_by_name: payslip.approved_by_name
+            approved_by_name: payslip.approved_by_name,
+            next_period_deductions: payslip.next_period_deductions ? JSON.parse(payslip.next_period_deductions) : []
         }));
 
         return res.status(200).json({
@@ -772,6 +807,7 @@ exports.getPayslipById = async (req, res) => {
             status: payslip.status,
             approved_date: payslip.approved_date,
             approved_by_name: payslip.approved_by_name,
+            next_period_deductions: payslip.next_period_deductions ? JSON.parse(payslip.next_period_deductions) : [],
             deductions: [], // No deductions table
             allowances: []  // No allowances table
         };
@@ -840,6 +876,120 @@ exports.updatePayslipStatus = async (req, res) => {
             success: false,
             message: "Internal server error while updating payslip status"
         });
+    }
+};
+
+// Approve a single payroll entry and re-evaluate period status
+exports.approvePayrollEntry = async (req, res) => {
+    
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { payrollId } = req.params;
+        const { remarks } = req.body;
+        
+        
+        if (!payrollId) {
+            return res.status(400).json({ success: false, message: 'payrollId is required' });
+        }
+
+        const result = await FinanceModel.approvePayrollEntry(payrollId, req.session.user.id, remarks);
+        
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        
+        const response = { 
+            success: true, 
+            message: result.message, 
+            periodApproved: result.periodApproved,
+            payslipCreated: result.payslipCreated 
+        };
+        
+        return res.status(200).json(response);
+    } catch (error) {
+        console.error('❌ Error in approvePayrollEntry:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to approve payroll entry' });
+    }
+};
+
+
+// Submit payroll entry to bank
+exports.submitPayrollToBank = async (req, res) => {
+    try {
+        const { payrollId } = req.params;
+        const { referenceText, documentPath, remarks } = req.body;
+        const submittedBy = req.session?.user?.id;
+
+        if (!submittedBy) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        if (!referenceText) {
+            return res.status(400).json({ success: false, message: 'Reference text is required' });
+        }
+
+        const result = await FinanceModel.submitPayrollToBank(payrollId, submittedBy, referenceText, documentPath, remarks);
+        
+        res.json({
+            success: result.success,
+            message: result.message
+        });
+    } catch (error) {
+        console.error('Error in submitPayrollToBank:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to submit payroll to bank' });
+    }
+};
+
+// Attempt to approve an entire payroll period; remains pending if any not approved
+exports.attemptApprovePayrollPeriod = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { periodId } = req.params;
+        if (!periodId) {
+            return res.status(400).json({ success: false, message: 'periodId is required' });
+        }
+
+        const result = await FinanceModel.attemptApprovePayrollPeriod(periodId);
+        return res.status(200).json({ success: true, message: result.message, periodApproved: result.periodApproved });
+    } catch (error) {
+        console.error('Error in attemptApprovePayrollPeriod:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to approve payroll period' });
+    }
+};
+
+// Submit remarks to a payroll entry (for pending entries)
+exports.submitPayrollRemarks = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { payrollId } = req.params;
+        const { remarks } = req.body;
+        
+        if (!payrollId) {
+            return res.status(400).json({ success: false, message: 'payrollId is required' });
+        }
+
+        if (!remarks || remarks.trim() === '') {
+            return res.status(400).json({ success: false, message: 'Remarks are required' });
+        }
+
+        const result = await FinanceModel.submitPayrollRemarks(payrollId, remarks.trim());
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        
+        return res.status(200).json({ success: true, message: result.message });
+    } catch (error) {
+        console.error('Error in submitPayrollRemarks:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to submit remarks' });
     }
 };
 
@@ -1251,4 +1401,212 @@ exports.deleteBankAccount = async (req, res) => {
             message: error.message || "Internal server error while deleting bank account"
         });
     }
+};
+
+// =============================================
+// NOTIFICATION MANAGEMENT
+// =============================================
+
+// Get unread notifications for finance users
+exports.getUnreadNotifications = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+
+        const userId = req.session.user.id;
+        const departmentId = req.session.user.department_id || null;
+        
+        const notifications = await Notifications.getUnreadFor({ userId, departmentId, limit: 20 });
+        
+        res.json({ 
+            success: true, 
+            notifications: notifications 
+        });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Failed to fetch notifications' 
+        });
+    }
+};
+
+// Mark notification as read
+exports.markNotificationAsRead = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+        const success = await Notifications.markAsRead(id);
+        
+        res.json({ success });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Failed to mark notification as read' 
+        });
+    }
+};
+
+// Mark all notifications as read
+exports.markAllNotificationsAsRead = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+
+        const userId = req.session.user.id;
+        const departmentId = req.session.user.department_id || null;
+        
+        const affectedRows = await Notifications.markAllAsRead({ userId, departmentId });
+        
+        res.json({ 
+            success: true, 
+            message: `Marked ${affectedRows} notifications as read` 
+        });
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message || 'Failed to mark all notifications as read' 
+        });
+    }
+};
+
+// Submit bank documents for payroll period (bulk submission)
+exports.submitBankDocuments = async (req, res) => {
+        try {
+            const { payrollPeriodId } = req.params;
+            const { referenceText, documentPath, remarks, payrollIds } = req.body;
+            const submittedBy = req.session.user.id;
+
+            if (!payrollPeriodId) {
+                return res.status(400).json({ success: false, message: 'Payroll period ID is required' });
+            }
+
+            if (!referenceText) {
+                return res.status(400).json({ success: false, message: 'Reference text is required' });
+            }
+
+            if (!documentPath) {
+                return res.status(400).json({ success: false, message: 'Document path is required' });
+            }
+
+            const result = await FinanceModel.submitBankDocuments(payrollPeriodId, submittedBy, referenceText, documentPath, remarks, Array.isArray(payrollIds) ? payrollIds : null);
+            res.status(200).json(result);
+
+        } catch (error) {
+            console.error('Error submitting bank documents:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Failed to submit bank documents' 
+            });
+        }
+};
+
+// Submit individual payroll entry to bank
+exports.submitPayrollEntryToBank = async (req, res) => {
+        try {
+            const { payrollId } = req.params;
+            const { referenceText, documentPath, remarks } = req.body;
+            const submittedBy = req.session.user.id;
+
+            if (!payrollId) {
+                return res.status(400).json({ success: false, message: 'Payroll ID is required' });
+            }
+
+            if (!referenceText) {
+                return res.status(400).json({ success: false, message: 'Reference text is required' });
+            }
+
+            if (!documentPath) {
+                return res.status(400).json({ success: false, message: 'Document path is required' });
+            }
+
+            const result = await FinanceModel.submitPayrollEntryToBank(payrollId, submittedBy, referenceText, documentPath, remarks);
+            res.status(200).json(result);
+
+        } catch (error) {
+            console.error('Error submitting payroll entry to bank:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Failed to submit payroll entry to bank' 
+            });
+        }
+};
+
+// Get bank submissions for a payroll period
+exports.getBankSubmissions = async (req, res) => {
+        try {
+            const { payrollPeriodId } = req.params;
+
+            if (!payrollPeriodId) {
+                return res.status(400).json({ success: false, message: 'Payroll period ID is required' });
+            }
+
+            const submissions = await FinanceModel.getBankSubmissions(payrollPeriodId);
+            res.status(200).json({ 
+                success: true, 
+                data: submissions 
+            });
+
+        } catch (error) {
+            console.error('Error fetching bank submissions:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Failed to fetch bank submissions' 
+            });
+        }
+};
+
+// Check if bank documents have been submitted
+exports.checkBankSubmission = async (req, res) => {
+        try {
+            const { payrollPeriodId } = req.params;
+
+            if (!payrollPeriodId) {
+                return res.status(400).json({ success: false, message: 'Payroll period ID is required' });
+            }
+
+            const hasSubmission = await FinanceModel.hasBankSubmission(payrollPeriodId);
+            res.status(200).json({ 
+                success: true, 
+                hasSubmission 
+            });
+
+        } catch (error) {
+            console.error('Error checking bank submission:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Failed to check bank submission' 
+            });
+        }
+};
+
+// Check if payroll period has approved payrolls
+exports.checkApprovedPayrolls = async (req, res) => {
+        try {
+            const { payrollPeriodId } = req.params;
+
+            if (!payrollPeriodId) {
+                return res.status(400).json({ success: false, message: 'Payroll period ID is required' });
+            }
+
+            const hasApprovedPayrolls = await FinanceModel.hasApprovedPayrolls(payrollPeriodId);
+            res.status(200).json({ 
+                success: true, 
+                hasApprovedPayrolls 
+            });
+
+        } catch (error) {
+            console.error('Error checking approved payrolls:', error);
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'Failed to check approved payrolls' 
+            });
+        }
 };

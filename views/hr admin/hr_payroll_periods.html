@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Payroll Periods</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/public/css/hr_dashboard.css" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+        .main-content {
+            margin-left: 250px;
+            margin-right: 0;
+            margin-top: 60px;
+            padding: 0 0 40px 0; /* remove space above page header */
+            min-height: calc(100vh - 60px);
+            background-color: #f8f9fa;
+        }
+        /* Spread inner containers to the right edge */
+        .main-content > .container-fluid { padding-left: 0; padding-right: 0; }
+        .page-header { width: 100%; }
+        .page-header > .container-fluid { width: 100%; max-width: 100%; padding-left: 70px; padding-right: 0; padding-top: 0; }
+        
+        
+        .period-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .period-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .period-header {
+            display: flex;
+            justify-content: space-between; /* spread title and status */
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .period-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .period-range {
+            font-size: 0.95rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        .period-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-processed { background: #d1ecf1; color: #0c5460; }
+        .status-released { background: #e2e3ff; color: #383d7c; }
+        
+        .period-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .period-actions {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            justify-content: flex-end; /* push actions to the right side of tile */
+            align-items: center;
+        }
+        .btn-action {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+        .btn-view:hover {
+            background: #0056b3;
+            color: white;
+        }
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        .btn-approve:hover {
+            background: #1e7e34;
+            color: white;
+        }
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-reject:hover {
+            background: #c82333;
+            color: white;
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+        .modal-title {
+            font-weight: 600;
+            margin: 0;
+        }
+        .btn-close {
+            filter: invert(1);
+        }
+        
+        .employee-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .employee-table th,
+        .employee-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .employee-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .employee-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .employee-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .employee-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        /* Wrapper to allow full width with a controlled max width and centered horizontally */
+        .periods-wrapper {
+            width: 100vw;
+            max-width: 100vw; /* truly span to the right edge */
+            margin-left: 0;
+            margin-right: 0;
+        }
+        #periodsList { padding-left: 60px; padding-right: 260px; }
+        
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0; /* slightly tighter header height */
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+        }
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .page-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Employee Added</div>
+                    <div class="notification-time">2 hours ago</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item">
+                    <a class="nav-item active" href="/hr/hr_admin">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item">
+                            <a href="/hr/hr_daily_attendance">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Daily Attendance</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_history_attendance">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Attendance Logs</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_leave_request">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Request Leave</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/hr/hr_work_adjustment">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Work Adjustment</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Payroll Management</span>
+                    </a>
+                    <ul class="collapse" id="Payroll">
+                        <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                        <li class="nav-item"><a href="/hr/hr_payroll_periods"><i class="fas fa-calendar-alt"></i> Payroll Periods</a></li>
+                        <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                        <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Employee Management</span>
+                    </a>
+                    <ul class="collapse" id="Employee">
+                        <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                        <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Recruitment</span>
+                    </a>
+                    <ul class="collapse" id="Recruitment">
+                        <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                        <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+                    </ul>
+                </li>    
+                <li class="nav-item">
+                    <a href="/hr/developers_approval">
+                        <i class="fas fa-users"></i>
+                        <span>Developers Approval</span>
+                    </a>
+                </li>
+            </ul>
+            <!-- Move Logout outside the main ul -->
+            <div class="logout-container">
+                <a href="/logout" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="logout-text">Logout</span>
+                    </a>
+            </div>
+        </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="container-fluid">
+                <h1 class="page-title">Payroll Periods Follow-up</h1>
+                <p class="page-subtitle">Monitor and follow up on payroll periods and employee entries</p>
+            </div>
+        </div>
+
+        <div class="container-fluid periods-wrapper">
+            <!-- Periods List -->
+            <div id="periodsList" class="w-full">
+                <!-- Periods will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow Up Summary Modal -->
+    <div class="modal fade" id="followUpModal" tabindex="-1">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Follow-up Summary</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="followUpContent" class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="followUpConfirmBtn">
+                        <i class="fas fa-bell"></i> Notify Finance
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Details Modal -->
+    <div class="modal fade" id="periodModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="periodModalTitle">Period Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Period:</strong> <span id="modalPeriodName">-</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong> <span id="modalPeriodStatus">-</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Start Date:</strong> <span id="modalStartDate">-</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>End Date:</strong> <span id="modalEndDate">-</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Employee Entries Table -->
+                    <div class="table-responsive">
+                        <table class="employee-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Position</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Net Pay</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeEntriesTable">
+                                <!-- Employee entries will be loaded here -->
+                            </tbody>
+                        </table>
+                        <div id="entriesPagination" class="d-flex justify-content-between align-items-center mt-3"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPeriodId = null;
+        let modalEntries = [];
+        let modalPage = 1;
+        let modalPageSize = 10;
+
+        // Load payroll periods on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPayrollPeriods();
+        });
+
+        // Load payroll periods
+        async function loadPayrollPeriods() {
+            try {
+                const response = await fetch('/hr/payroll-periods');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const periods = Array.isArray(data.periods) ? data.periods : [];
+                    // Initial render with whatever counts are present
+                    displayPeriods(periods);
+
+                    // Enrich periods with dynamic counts similar to Finance cards
+                    try {
+                        const enrichedPeriods = await Promise.all(periods.map(async (period) => {
+                            try {
+                                const entriesRes = await fetch(`/hr/payroll-periods/${period.id}/entries`);
+                                const entriesData = await entriesRes.json();
+                                if (!entriesData?.success) return period;
+
+                                const entries = Array.isArray(entriesData.entries) ? entriesData.entries : [];
+                                const normalized = entries.map(e => ({ ...e, status: (e.status || 'pending').toLowerCase() }));
+                                const pendingCount = normalized.filter(e => e.status === 'pending').length;
+                                const approvedCount = normalized.filter(e => e.status === 'approved').length;
+                                const releasedCount = normalized.filter(e => e.status === 'released').length;
+                                const totalEmployees = entries.length;
+                                const totalAmount = entries.reduce((sum, e) => {
+                                    const value = parseFloat(e.net_salary ?? e.net_pay ?? 0);
+                                    return sum + (isNaN(value) ? 0 : value);
+                                }, 0);
+
+                                return {
+                                    ...period,
+                                    pending_employees: pendingCount,
+                                    approved_employees: approvedCount,
+                                    released_employees: releasedCount,
+                                    total_employees: totalEmployees,
+                                    total_amount: totalAmount,
+                                };
+                            } catch (err) {
+                                console.warn('Failed to enrich period entries for period', period?.id, err);
+                                return period;
+                            }
+                        }));
+
+                        // Re-render with enriched dynamic counts
+                        displayPeriods(enrichedPeriods);
+                    } catch (enrichErr) {
+                        console.warn('Failed to enrich payroll periods with dynamic counts:', enrichErr);
+                    }
+                } else {
+                    console.error('Failed to load periods:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading periods:', error);
+            }
+        }
+
+        // Helpers
+        function formatPeriodTitle(startDateStr, endDateStr) {
+            try {
+                const start = new Date(startDateStr);
+                const end = new Date(endDateStr);
+                const monthDay = { month: 'long', day: 'numeric' };
+                const startPart = start.toLocaleDateString('en-US', monthDay);
+                const endPart = end.toLocaleDateString('en-US', monthDay);
+                const yearPart = end.getFullYear();
+                return `${startPart} – ${endPart}, ${yearPart}`;
+            } catch (e) {
+                return `${startDateStr} – ${endDateStr}`;
+            }
+        }
+
+        function getHalfLabel(startDateStr) {
+            const d = new Date(startDateStr);
+            const day = d.getDate();
+            return day <= 15 ? 'First Half' : 'Second Half';
+        }
+
+        // Display periods
+        function displayPeriods(periods) {
+            const container = document.getElementById('periodsList');
+            
+            if (periods.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Payroll Periods Found</h4>
+                        <p class="text-muted">No payroll periods have been created yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = periods.map(period => `
+                <div class="period-card">
+                    <div class="period-header">
+                        <div>
+                            <h3 class="period-title">${formatPeriodTitle(period.start_date, period.end_date)}</h3>
+                            <div class="period-range">${getHalfLabel(period.start_date)} • ${period.period_name || ''}</div>
+                        </div>
+                        <span class="period-status status-${period.status}">${period.status.toUpperCase()}</span>
+                    </div>
+                    
+                    <div class="period-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${period.total_employees || 0}</div>
+                            <div class="stat-label">Employees</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${period.pending_employees || 0}</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${period.approved_employees || 0}</div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${period.released_employees || 0}</div>
+                            <div class="stat-label">Released</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₱${parseFloat(period.total_amount || 0).toLocaleString()}</div>
+                            <div class="stat-label">Total Amount</div>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div class="period-actions">
+                        <button class="btn-action btn-view" onclick="viewPeriodDetails(${period.id})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        ${period.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="followUpPeriod(${period.id})">
+                                <i class="fas fa-clipboard-check"></i> Follow Up
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+
+        // View period details
+        async function viewPeriodDetails(periodId) {
+            currentPeriodId = periodId;
+            
+            try {
+                // Get period details
+                const periodResponse = await fetch(`/hr/payroll-periods/${periodId}`);
+                const periodData = await periodResponse.json();
+                
+                if (!periodData.success) {
+                    throw new Error(periodData.error || 'Failed to fetch period details');
+                }
+
+                const period = periodData.period;
+                
+                // Update modal header
+                document.getElementById('periodModalTitle').textContent = `Period Details - ${period.period_name}`;
+                document.getElementById('modalPeriodName').textContent = period.period_name;
+                document.getElementById('modalPeriodStatus').textContent = period.status.toUpperCase();
+                document.getElementById('modalStartDate').textContent = new Date(period.start_date).toLocaleDateString();
+                document.getElementById('modalEndDate').textContent = new Date(period.end_date).toLocaleDateString();
+
+                // Get employee entries
+                const entriesResponse = await fetch(`/hr/payroll-periods/${periodId}/entries`);
+                const entriesData = await entriesResponse.json();
+                
+                if (!entriesData.success) {
+                    throw new Error(entriesData.error || 'Failed to fetch employee entries');
+                }
+
+                modalEntries = Array.isArray(entriesData.entries) ? entriesData.entries : [];
+                modalPage = 1;
+                renderEntriesTable();
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('periodModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error loading period details:', error);
+                alert('Failed to load period details: ' + error.message);
+            }
+        }
+
+        // Display employee entries
+        function renderEntriesTable() {
+            const tbody = document.getElementById('employeeEntriesTable');
+            const pager = document.getElementById('entriesPagination');
+            const total = modalEntries.length;
+            const totalPages = Math.max(1, Math.ceil(total / modalPageSize));
+            if (modalPage > totalPages) modalPage = totalPages;
+            const startIdx = (modalPage - 1) * modalPageSize;
+            const endIdx = Math.min(startIdx + modalPageSize, total);
+            const pageItems = modalEntries.slice(startIdx, endIdx);
+            
+            if (total === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-2x mb-2"></i><br>
+                            No employee entries found for this period.
+                        </td>
+                    </tr>
+                `;
+                if (pager) pager.innerHTML = '';
+                return;
+            }
+
+            const formatDate = (value) => {
+                if (!value) return '-';
+                try {
+                    const d = new Date(value);
+                    if (Number.isNaN(d.getTime())) return '-';
+                    return d.toLocaleDateString();
+                } catch (_) { return '-'; }
+            };
+
+            tbody.innerHTML = pageItems.map(entry => `
+                <tr>
+                    <td>
+                        <div class="employee-name">
+                            <img src="${entry.profile_picture || '/hr/default-profile-picture'}" 
+                                 alt="Profile" class="employee-avatar" 
+                                 onerror="this.src='/hr/default-profile-picture'">
+                            <span>${entry.full_name || entry.employee_name || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td>${entry.position || 'N/A'}</td>
+                    <td>${entry.department_name || 'N/A'}</td>
+                    <td>
+                        <span class="period-status status-${entry.status || 'pending'}">${(entry.status || 'pending').toUpperCase()}</span>
+                    </td>
+                    <td>₱${parseFloat(entry.net_salary || entry.net_pay || 0).toLocaleString()}</td>
+                    <td>${formatDate((entry.status || '').toLowerCase() === 'released' 
+                        ? (entry.released_at || entry.updated_at)
+                        : (entry.approved_at || entry.updated_at))}</td>
+                </tr>
+            `).join('');
+
+            if (pager) {
+                pager.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="small text-muted">Showing ${startIdx + 1}-${endIdx} of ${total}</div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="small text-muted">Show</span>
+                            <select class="form-select form-select-sm" style="width:auto;" onchange="changeEntriesPageSize(this.value)">
+                                <option value="5" ${modalPageSize === 5 ? 'selected' : ''}>5</option>
+                                <option value="10" ${modalPageSize === 10 ? 'selected' : ''}>10</option>
+                                <option value="20" ${modalPageSize === 20 ? 'selected' : ''}>20</option>
+                                <option value="50" ${modalPageSize === 50 ? 'selected' : ''}>50</option>
+                            </select>
+                            <span class="small text-muted">entries</span>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" ${modalPage === 1 ? 'disabled' : ''} onclick="changeEntriesPage(${modalPage - 1})">Prev</button>
+                        <span class="btn btn-sm btn-outline-secondary disabled">Page ${modalPage}/${totalPages}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" ${modalPage === totalPages ? 'disabled' : ''} onclick="changeEntriesPage(${modalPage + 1})">Next</button>
+                    </div>
+                `;
+            }
+        }
+
+        function changeEntriesPage(page) {
+            modalPage = Math.max(1, page);
+            renderEntriesTable();
+        }
+
+        function changeEntriesPageSize(value) {
+            const newSize = parseInt(value, 10);
+            modalPageSize = Number.isFinite(newSize) && newSize > 0 ? newSize : 10;
+            modalPage = 1;
+            renderEntriesTable();
+        }
+
+        // View entry details
+        function viewEntryDetails(entryId) {
+            // This could open another modal or navigate to detailed view
+            alert(`Viewing details for entry ID: ${entryId}`);
+        }
+
+        // Follow up on period
+        async function followUpPeriod(periodId) {
+            try {
+                // Get period details for follow-up
+                const periodResponse = await fetch(`/hr/payroll-periods/${periodId}`);
+                const periodData = await periodResponse.json();
+                
+                if (!periodData.success) {
+                    throw new Error(periodData.error || 'Failed to fetch period details');
+                }
+
+                const period = periodData.period;
+                
+                // Get employee entries for follow-up
+                const entriesResponse = await fetch(`/hr/payroll-periods/${periodId}/entries`);
+                const entriesData = await entriesResponse.json();
+                
+                if (!entriesData.success) {
+                    throw new Error(entriesData.error || 'Failed to fetch employee entries');
+                }
+
+                const entries = entriesData.entries;
+                const pendingEntries = entries.filter(entry => (entry.status || 'pending') === 'pending');
+                
+                // Show follow-up information
+                let followUpMessage = `Follow-up for Period: ${period.period_name}\n\n`;
+                followUpMessage += `Status: ${period.status.toUpperCase()}\n`;
+                followUpMessage += `Total Employees: ${period.total_employees || 0}\n`;
+                followUpMessage += `Pending Entries: ${pendingEntries.length}\n`;
+                followUpMessage += `Approved Entries: ${entries.length - pendingEntries.length}`;
+                
+                // Show dialog instead of plain alert
+                const followUpEl = document.getElementById('followUpContent');
+                if (followUpEl) followUpEl.textContent = followUpMessage;
+                const followUpModal = new bootstrap.Modal(document.getElementById('followUpModal'));
+                followUpModal.show();
+
+                // Wire confirm button to trigger notification explicitly with confirmation
+                const btn = document.getElementById('followUpConfirmBtn');
+                if (btn) {
+                    btn.onclick = async function() {
+                        if (!confirm('Are you sure you want to notify Finance?')) return;
+                        try {
+                            console.log('🔔 Sending notification request for period:', periodId);
+                            const notifyRes = await fetch(`/hr/payroll-periods/${periodId}/follow-up-notify`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                            const notifyData = await notifyRes.json();
+                            console.log('📨 Notification response:', notifyData);
+                            
+                            if (!notifyData?.success) {
+                                console.warn('❌ Finance notification failed', notifyData?.error || notifyData);
+                                alert('Failed to notify Finance: ' + (notifyData?.error || 'Unknown error'));
+                            } else {
+                                console.log('✅ Finance notification successful, notified:', notifyData.notified, 'users');
+                                alert(`Successfully notified ${notifyData.notified} Finance Manager(s)!`);
+                                // close modal on success
+                                const fuModal = bootstrap.Modal.getInstance(document.getElementById('followUpModal'));
+                                if (fuModal) fuModal.hide();
+                            }
+                        } catch (e) {
+                            console.warn('❌ Finance notification error', e);
+                            alert('Error notifying Finance: ' + e.message);
+                        }
+                    };
+                }
+                
+            } catch (error) {
+                console.error('Error in follow-up:', error);
+                alert('Failed to get follow-up information: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
