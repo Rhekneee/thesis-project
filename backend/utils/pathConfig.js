@@ -49,14 +49,11 @@ class PathConfig {
                     // Test if we can read and write to this directory
                     if (this.isPathAccessible(possiblePath)) {
                         basePath = possiblePath;
-                        console.log(`✅ Found accessible uploads directory: ${basePath}`);
                         break;
                     } else {
-                        console.log(`⚠️  Found directory but no access: ${possiblePath}`);
                     }
                 }
             } catch (error) {
-                console.log(`⚠️  Cannot access path: ${possiblePath}`);
                 continue;
             }
         }
@@ -165,25 +162,11 @@ class PathConfig {
      * Log current path configuration
      */
     logConfiguration() {
-        console.log('\n📋 Upload Path Configuration:');
-        console.log('=============================');
-        console.log(`🏠 Current Working Directory: ${this.getCurrentWorkingDir()}`);
-        console.log(`👤 User Home Directory: ${this.getUserHomeDir()}`);
-        console.log(`📁 Base Uploads Directory: ${this.getBasePath()}`);
-        console.log('📂 Upload Subdirectories:');
-        Object.entries(this.uploadDirs).forEach(([key, dirPath]) => {
-            const accessible = this.isPathAccessible(dirPath);
-            const status = accessible ? '✅' : '❌';
-            console.log(`  ${status} ${key}: ${dirPath}`);
-        });
-        console.log('=============================\n');
     }
 }
 
 // Create and export a singleton instance
 const pathConfig = new PathConfig();
 
-// Log the configuration on startup
-pathConfig.logConfiguration();
 
 module.exports = pathConfig;

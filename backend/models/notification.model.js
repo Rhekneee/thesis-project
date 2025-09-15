@@ -12,8 +12,18 @@ class Notifications {
             VALUES (?, ?, ?, ?, ?, 0, NOW())
         `;
         const params = [userId, departmentId, title, message, type];
-        const [result] = await db.query(sql, params);
-        return { id: result.insertId };
+        
+        console.log('🔍 Notification SQL:', sql);
+        console.log('🔍 Notification params:', params);
+        
+        try {
+            const [result] = await db.query(sql, params);
+            console.log('✅ Notification insert result:', result);
+            return { id: result.insertId };
+        } catch (error) {
+            console.error('❌ Notification insert error:', error);
+            throw error;
+        }
     }
 
     static async getUnreadFor({ userId = null, departmentId = null, limit = 50 }) {

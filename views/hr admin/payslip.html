@@ -63,6 +63,104 @@
             .search-container { flex-direction: column; align-items: stretch; gap: 8px; }
             .entries-per-page { margin-left: 0; justify-content: flex-start; }
         }
+
+        /* Salary breakdown styling */
+        .salary-breakdown {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .salary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .salary-item:last-child {
+            border-bottom: none;
+        }
+
+        .salary-item.final-salary {
+            background: #e8f5e8;
+            margin: 10px -15px -15px -15px;
+            padding: 15px;
+            border-radius: 0 0 8px 8px;
+            border-top: 2px solid #28a745;
+        }
+
+        .salary-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .salary-value {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        /* Deduction table styling */
+        .table-bordered th {
+            background-color: #f8f9fa !important;
+            border-color: #dee2e6 !important;
+        }
+
+        .table-bordered td {
+            border-color: #dee2e6 !important;
+            vertical-align: middle;
+        }
+
+        .badge {
+            font-size: 0.75em;
+            padding: 0.4em 0.6em;
+        }
+
+        /* Calculation summary styling */
+        .calculation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .calculation-item:last-child {
+            border-bottom: none;
+        }
+
+        .calc-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .calc-value {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .final-calculation {
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .final-label {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #155724;
+            margin-right: 15px;
+        }
+
+        .final-value {
+            font-size: 1.8em;
+            font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -489,6 +587,21 @@
             }).format(amount);
         }
 
+        // Get badge color for deduction type
+        function getDeductionBadgeColor(type) {
+            const colorMap = {
+                'SSS': 'primary',
+                'PhilHealth': 'info',
+                'Pag-IBIG': 'success',
+                'Income Tax': 'warning',
+                'Late': 'danger',
+                'Absence': 'danger',
+                'Loan': 'secondary',
+                'Other': 'dark'
+            };
+            return colorMap[type] || 'secondary';
+        }
+
         // Update entries message
         function updateEntriesMessage(total) {
             const start = (currentPage - 1) * itemsPerPage + 1;
@@ -613,40 +726,82 @@
                         </div>
                         <div class="col-md-6">
                             <h6 class="fw-bold">Salary Details</h6>
-                            <p><strong>Basic Salary:</strong> ${formatCurrency(payslip.basic_salary)}</p>
-                            <p><strong>Salary Before Tax:</strong> ${formatCurrency(payslip.salary_before_tax)}</p>
-                            <p><strong>Total Deductions:</strong> ${formatCurrency(payslip.total_deductions)}</p>
-                            <p><strong>Net Salary:</strong> <span class="text-success fw-bold">${formatCurrency(payslip.net_salary)}</span></p>
-                        </div>
-                    </div>
-                    
-                    ${payslip.deductions && payslip.deductions.length > 0 ? `
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <h6 class="fw-bold">Deductions Breakdown</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Type</th>
-                                                <th>Description</th>
-                                                <th>Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${payslip.deductions.map(d => `
-                                                <tr>
-                                                    <td>${d.type}</td>
-                                                    <td>${d.description}</td>
-                                                    <td class="text-danger">-${formatCurrency(d.amount)}</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
+                            <div class="salary-breakdown">
+                                <div class="salary-item">
+                                    <span class="salary-label">Basic Salary:</span>
+                                    <span class="salary-value text-primary">${formatCurrency(payslip.basic_salary)}</span>
+                                </div>
+                                <div class="salary-item">
+                                    <span class="salary-label">Salary Before Tax:</span>
+                                    <span class="salary-value text-info">${formatCurrency(payslip.salary_before_tax)}</span>
+                                </div>
+                                <div class="salary-item">
+                                    <span class="salary-label">Absence Deduction:</span>
+                                    <span class="salary-value text-danger">-${formatCurrency(payslip.absence_deduction || 0)}</span>
+                                </div>
+                                <div class="salary-item">
+                                    <span class="salary-label">Total Deductions:</span>
+                                    <span class="salary-value text-danger">-${formatCurrency(payslip.total_deductions)}</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="salary-item final-salary">
+                                    <span class="salary-label fw-bold">Net Salary:</span>
+                                    <span class="salary-value text-success fw-bold fs-5">${formatCurrency(payslip.net_salary)}</span>
                                 </div>
                             </div>
                         </div>
-                    ` : ''}
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-minus-circle text-danger me-2"></i>Detailed Deductions Breakdown
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="20%">Category</th>
+                                            <th width="30%">Description</th>
+                                            <th width="15%">Type</th>
+                                            <th width="15%">Percentage</th>
+                                            <th width="20%" class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${payslip.deductions && payslip.deductions.length > 0 ? 
+                                            payslip.deductions.map(d => `
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge bg-${getDeductionBadgeColor(d.type)}">${d.type}</span>
+                                                    </td>
+                                                    <td>${d.description || 'Standard deduction'}</td>
+                                                    <td>
+                                                        <small class="text-muted">${d.tax_status || 'N/A'}</small>
+                                                    </td>
+                                                    <td>
+                                                        ${d.percentage ? `${d.percentage}%` : 'Fixed'}
+                                                    </td>
+                                                    <td class="text-end text-danger fw-bold">-${formatCurrency(d.amount)}</td>
+                                                </tr>
+                                            `).join('') : 
+                                            `<tr>
+                                                <td colspan="5" class="text-center text-muted py-3">
+                                                    <i class="fas fa-info-circle me-2"></i>No deductions applied
+                                                </td>
+                                            </tr>`
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="4" class="text-end">Total Deductions:</th>
+                                            <th class="text-end text-danger">-${formatCurrency(payslip.total_deductions)}</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                     
                     ${payslip.allowances && payslip.allowances.length > 0 ? `
                         <div class="row mb-3">
@@ -676,9 +831,56 @@
                         </div>
                     ` : ''}
                     
+                    <!-- Salary Summary -->
                     <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-calculator text-primary me-2"></i>Salary Calculation Summary
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="calculation-item">
+                                                <span class="calc-label">Basic Salary:</span>
+                                                <span class="calc-value text-primary">${formatCurrency(payslip.basic_salary)}</span>
+                                            </div>
+                                            <div class="calculation-item">
+                                                <span class="calc-label">Salary Before Tax:</span>
+                                                <span class="calc-value text-info">${formatCurrency(payslip.salary_before_tax)}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="calculation-item">
+                                                <span class="calc-label">Total Deductions:</span>
+                                                <span class="calc-value text-danger">-${formatCurrency(payslip.total_deductions)}</span>
+                                            </div>
+                                            <div class="calculation-item">
+                                                <span class="calc-label">Absence Deduction:</span>
+                                                <span class="calc-value text-danger">-${formatCurrency(payslip.absence_deduction || 0)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-3">
+                                    <div class="row">
+                                        <div class="col-12 text-center">
+                                            <div class="final-calculation">
+                                                <span class="final-label">NET SALARY:</span>
+                                                <span class="final-value text-success">${formatCurrency(payslip.net_salary)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
                         <div class="col-12 text-center">
                             <small class="text-muted">
+                                <i class="fas fa-calendar-alt me-1"></i>
                                 Generated on ${formatDate(payslip.payslip_date)} by ${payslip.approved_by_name || 'System'}
                             </small>
                         </div>

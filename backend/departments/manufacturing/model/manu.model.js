@@ -108,17 +108,28 @@ const ManufacturingModel = {
   },
 
   getProjectsByDeveloper: async (developerId) => {
-    const query = `
-      SELECT 
-        p.*,
-        da.company_name as developer_company
-      FROM projects p
-      LEFT JOIN developer_accounts da ON p.developer_id = da.id
-      WHERE p.developer_id = ?
-      ORDER BY p.created_at DESC
-    `;
-    const [rows] = await db.execute(query, [developerId]);
-    return rows;
+    try {
+      console.log("🔍 DEBUG: Model - Getting projects for developer ID:", developerId);
+      
+      const query = `
+        SELECT 
+          p.*,
+          da.company_name as developer_company
+        FROM projects p
+        LEFT JOIN developer_accounts da ON p.developer_id = da.id
+        WHERE p.developer_id = ?
+        ORDER BY p.created_at DESC
+      `;
+      
+      console.log("🔍 DEBUG: Model - Executing query with developer ID:", developerId);
+      const [rows] = await db.execute(query, [developerId]);
+      console.log("🔍 DEBUG: Model - Query executed successfully, found", rows.length, "projects");
+      
+      return rows;
+    } catch (error) {
+      console.error("❌ ERROR: Model - Error in getProjectsByDeveloper:", error);
+      throw error;
+    }
   },
 
   getProjectsByStatus: async (status) => {

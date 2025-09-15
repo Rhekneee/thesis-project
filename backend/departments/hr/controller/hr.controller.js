@@ -4,7 +4,8 @@ const moment = require('moment');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { sendEmailNotification, sendHireNotification, sendRejectNotification, sendSupplierAccountNotification, sendEmployeeAccountNotification } = require('../../../utils/emailService');
+const { sendEmailNotification, sendHireNotification, sendRejectNotification, sendSupplierAccountNotification, sendEmployeeAccountNotification, sendDeveloperApprovalNotification } = require('../../../utils/emailService');
+const Notifications = require('../../../models/notification.model');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -708,11 +709,39 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 });
             }
 
+
             // Process each employee's payroll
             const payrollRecords = [];
             for (const employee of employees) {
-                const deductions = await HRModel.getDeductionsBySalary(employee.monthly_salary);
-                const totalDeductions = deductions.reduce((sum, d) => sum + parseFloat(d.fixed_amount || 0), 0);
+                // If employee has no attendance (0 days present), net pay should be 0
+                if (employee.days_present === 0) {
+                    payrollRecords.push({
+                        employee_id: employee.employee_id,
+                        employee_name: employee.full_name,
+                        position: employee.position,
+                        start_date: startDate,
+                        end_date: endDate,
+                        days_present: employee.days_present,
+                        days_absent: employee.days_absent,
+                        days_half_day: employee.days_half_day,
+                        days_early_out: employee.days_early_out,
+                        total_hours: employee.total_hours,
+                        overtime_hours: employee.overtime_hours,
+                        monthly_salary: employee.monthly_salary,
+                        semi_monthly_payout: employee.monthly_salary / 2,
+                        daily_rate: employee.monthly_salary / 26,
+                        total_deductions: 0,
+                        absence_deduction: 0,
+                        net_pay: 0,
+                        payroll_period: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                        status: 'pending'
+                    });
+                    continue;
+                }
+
+                // Calculate deductions using the enhanced system with period-specific logic
+                const deductionCalculation = await HRModel.calculateDeductions(employee.monthly_salary, period);
+                const totalDeductions = deductionCalculation.totalDeductions;
                 
                 // Calculate absence deduction
                 const absenceDeduction = employee.days_absent * (employee.monthly_salary / 26);
@@ -722,6 +751,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
                 payrollRecords.push({
                     employee_id: employee.employee_id,
+                    employee_name: employee.full_name,
+                    position: employee.position,
                     start_date: startDate,
                     end_date: endDate,
                     days_present: employee.days_present,
@@ -734,6 +765,10 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                     semi_monthly_payout: employee.monthly_salary / 2,
                     daily_rate: employee.monthly_salary / 26,
                     total_deductions: totalDeductions,
+                    taxable_deductions: deductionCalculation.taxableDeductions,
+                    non_taxable_deductions: deductionCalculation.nonTaxableDeductions,
+                    deduction_details: deductionCalculation.deductionDetails,
+                    next_period_deductions: deductionCalculation.nextPeriodDeductions,
                     absence_deduction: absenceDeduction,
                     net_pay: netPay,
                     payroll_period: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
@@ -741,17 +776,17 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 });
             }
 
-            // Insert payroll records with period ID
-            const insertedIds = await HRModel.insertPayrollRecordsWithPeriod(payrollRecords, periodId);
-
-            console.log(`✅ Generated payroll for ${payrollRecords.length} employees with period ID: ${periodId}`);
+            // Return calculated payroll data for preview (no database insert)
+            console.log(`✅ Generated payroll preview for ${payrollRecords.length} employees with period ID: ${periodId}`);
 
             res.json({
                 success: true,
-                message: `Payroll generated successfully for ${payrollRecords.length} employees.`,
+                message: `Payroll preview generated successfully for ${payrollRecords.length} employees. Review and submit when ready.`,
                 payrollData: payrollRecords,
                 periodId: periodId,
-                insertedIds: insertedIds
+                periodName: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                startDate: startDate,
+                endDate: endDate
             });
 
         } catch (error) {
@@ -876,6 +911,36 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
 
+    // Approve payroll period (HR can approve periods)
+    approvePayrollPeriod: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Unauthorized: No session found' });
+            }
+
+            const { periodId } = req.params;
+            const success = await HRModel.updatePayrollPeriodStatus(periodId, 'approved');
+            
+            if (!success) {
+                return res.status(404).json({ 
+                    success: false, 
+                    error: 'Payroll period not found' 
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Payroll period approved successfully'
+            });
+        } catch (error) {
+            console.error('Error in approvePayrollPeriod:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: error.message || 'Failed to approve payroll period' 
+            });
+        }
+    },
+
     // Get payroll period summary
     getPayrollPeriodSummary: async (req, res) => {
         try {
@@ -973,6 +1038,91 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 success: false, 
                 error: error.message || 'Failed to fetch approved payroll periods' 
             });
+        }
+    },
+
+    // Notify finance managers for follow-up
+    notifyFinanceFollowUp: async (req, res) => {
+        try {
+            console.log('🔔 HR Follow-up notification requested for period:', req.params.periodId);
+            
+            if (!req.session?.user) {
+                return res.status(401).json({ success: false, error: 'Unauthorized' });
+            }
+
+            const { periodId } = req.params;
+
+            // Get period details
+            const period = await HRModel.getPayrollPeriodById(periodId);
+            if (!period) {
+                console.log('❌ Period not found:', periodId);
+                return res.status(404).json({ success: false, error: 'Payroll period not found' });
+            }
+            console.log('✅ Period found:', period.period_name);
+
+            // Get entries to compute pending count
+            const entries = await HRModel.getPayrollEntriesByPeriod(periodId);
+            const pendingCount = Array.isArray(entries) ? entries.filter(e => e.status !== 'approved').length : 0;
+            console.log('📊 Entries found:', entries.length, 'Pending:', pendingCount);
+
+            // Find finance_accounting role id and all users under it
+            const roleRow = await (async () => {
+                const [rows] = await require('../../../db').query(`SELECT id FROM roles WHERE name = 'finance_accounting' LIMIT 1`);
+                return rows && rows[0] ? rows[0] : null;
+            })();
+            if (!roleRow) {
+                console.log('❌ finance_accounting role not found');
+                return res.status(400).json({ success: false, error: 'finance_accounting role not found' });
+            }
+            console.log('✅ Finance manager role ID:', roleRow.id);
+
+            const [financeUsers] = await require('../../../db').query(`SELECT id FROM users WHERE role_id = ? AND is_active = 1`, [roleRow.id]);
+            console.log('👥 Finance users found:', financeUsers.length, financeUsers.map(u => u.id));
+
+            const title = `Payroll Follow-up: ${new Date(period.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} – ${new Date(period.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+            const message = `HR requested follow-up on this period. Pending entries: ${pendingCount}.`;
+            console.log('📝 Notification title:', title);
+            console.log('📝 Notification message:', message);
+
+            // Create a notification per finance user
+            let notificationsCreated = 0;
+            for (const u of financeUsers) {
+                try {
+                    console.log('🔄 Creating notification for user', u.id, 'with data:', {
+                        userId: u.id,
+                        departmentId: null,
+                        title: title.substring(0, 50) + '...',
+                        message: message.substring(0, 50) + '...',
+                        type: 'info'
+                    });
+                    
+                    const result = await Notifications.create({ userId: u.id, departmentId: null, title, message, type: 'info' });
+                    console.log('✅ Notification created for user', u.id, 'with ID:', result.id);
+                    notificationsCreated++;
+                } catch (notifError) {
+                    console.error('❌ Failed to create notification for user', u.id, ':', notifError);
+                    console.error('❌ Error details:', {
+                        message: notifError.message,
+                        code: notifError.code,
+                        sqlMessage: notifError.sqlMessage
+                    });
+                }
+            }
+
+            console.log('🎉 Total notifications created:', notificationsCreated);
+            
+            // Test: Try to query notifications table to verify it exists
+            try {
+                const [testQuery] = await require('../../../db').query('SELECT COUNT(*) as count FROM notifications');
+                console.log('📊 Total notifications in database:', testQuery[0].count);
+            } catch (testError) {
+                console.error('❌ Error querying notifications table:', testError);
+            }
+            
+            return res.json({ success: true, notified: notificationsCreated });
+        } catch (error) {
+            console.error('❌ Error notifying finance follow-up:', error);
+            return res.status(500).json({ success: false, error: error.message || 'Failed to notify finance' });
         }
     },
 
@@ -1201,8 +1351,17 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 });
             }
 
-            // Insert payroll records into database
-            const insertedIds = await HRModel.insertPayrollRecords(payrollData);
+            // Create payroll period first (with duplicate check)
+            const startDate = payrollData[0]?.start_date;
+            const endDate = payrollData[0]?.end_date;
+            const periodName = `${month} ${year} - ${period}`;
+            
+            // Use findOrCreatePayrollPeriod to avoid duplicates
+            const periodId = await HRModel.findOrCreatePayrollPeriod(startDate, endDate, periodName);
+            console.log('Created/found payroll period with ID:', periodId);
+            
+            // Insert payroll records into database with period ID
+            const insertedIds = await HRModel.insertPayrollRecordsWithPeriod(payrollData, periodId);
             
             // Save deduction overrides for entries that have them
             const overridePromises = payrollData
@@ -2039,8 +2198,27 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 return res.status(400).json({ error: 'Developer is not in pending status' });
             }
             
-            await HRModel.approveDeveloper(id);
-            res.json({ message: 'Developer approved successfully' });
+            const result = await HRModel.approveDeveloper(id);
+            
+            // Send approval email to developer
+            try {
+                const developerPortalLink = `${req.protocol}://${req.get('host')}/developer/dashboard`;
+                await sendDeveloperApprovalNotification(
+                    developer.email,
+                    developer.username,
+                    result.tempPassword,
+                    developerPortalLink
+                );
+                console.log('Developer approval email sent successfully');
+            } catch (emailError) {
+                console.error('Error sending developer approval email:', emailError);
+                // Don't fail the approval if email fails
+            }
+            
+            res.json({ 
+                message: 'Developer approved successfully',
+                emailSent: true
+            });
         } catch (error) {
             console.error('Error approving developer:', error);
             res.status(500).json({ error: 'Failed to approve developer' });
@@ -2795,12 +2973,58 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             const [existingDeductions] = await db.query('SELECT COUNT(*) as count FROM payroll_deductions');
             
             if (existingDeductions[0].count === 0) {
-                // Insert sample government deductions
+                // Insert sample government deductions with tax status and percentage calculations
                 const sampleDeductions = [
-                    { deduction_type: 'SSS Premium', fixed_amount: 1350.00, description: 'Social Security System Premium', category: 'government' },
-                    { deduction_type: 'PhilHealth', fixed_amount: 400.00, description: 'Philippine Health Insurance Corporation', category: 'government' },
-                    { deduction_type: 'Pag-IBIG', fixed_amount: 100.00, description: 'Pag-IBIG Fund Contribution', category: 'government' },
-                    { deduction_type: 'Tax', fixed_amount: 0.00, description: 'Income Tax (calculated separately)', category: 'government' }
+                    { 
+                        deduction_type: 'SSS Premium', 
+                        fixed_amount: 0.00, 
+                        percentage: 11.00,
+                        min_salary_range: 0.00,
+                        max_salary_range: 30000.00,
+                        tax_status: 'non_taxable',
+                        description: 'Social Security System Premium (11% of salary)', 
+                        category: 'government' 
+                    },
+                    { 
+                        deduction_type: 'PhilHealth', 
+                        fixed_amount: 0.00, 
+                        percentage: 3.00,
+                        min_salary_range: 0.00,
+                        max_salary_range: 999999.99,
+                        tax_status: 'non_taxable',
+                        description: 'Philippine Health Insurance Corporation (3% of salary)', 
+                        category: 'government' 
+                    },
+                    { 
+                        deduction_type: 'Pag-IBIG', 
+                        fixed_amount: 100.00, 
+                        percentage: 0.00,
+                        min_salary_range: 0.00,
+                        max_salary_range: 999999.99,
+                        tax_status: 'non_taxable',
+                        description: 'Pag-IBIG Fund Contribution (Fixed ₱100)', 
+                        category: 'government' 
+                    },
+                    { 
+                        deduction_type: 'Income Tax', 
+                        fixed_amount: 0.00, 
+                        percentage: 0.00,
+                        min_salary_range: 0.00,
+                        max_salary_range: 999999.99,
+                        tax_status: 'taxable',
+                        description: 'Income Tax (calculated based on tax brackets)', 
+                        category: 'government' 
+                    },
+                    { 
+                        deduction_type: 'Company Loan', 
+                        fixed_amount: 0.00, 
+                        percentage: 5.00,
+                        min_salary_range: 15000.00,
+                        max_salary_range: 50000.00,
+                        tax_status: 'taxable',
+                        description: 'Company Loan Deduction (5% of salary)', 
+                        category: 'company' 
+                    }
                 ];
 
                 for (const deduction of sampleDeductions) {

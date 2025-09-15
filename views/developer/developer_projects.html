@@ -984,10 +984,38 @@
             ? 'http://localhost:4000/manufacturing'
             : `${window.location.origin}/manufacturing`;
 
+        // Get current developer ID from session
+        async function getCurrentDeveloperId() {
+            try {
+                console.log('🔍 DEBUG: Fetching developer session...');
+                const sessionResponse = await fetch('/crm/developer/check-session', {
+                    credentials: 'include'
+                });
+                
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to fetch session data');
+                }
+                
+                const sessionData = await sessionResponse.json();
+                console.log('🔍 DEBUG: Session data received:', sessionData);
+                console.log('🔍 DEBUG: Developer ID:', sessionData.id);
+                return sessionData.id;
+            } catch (error) {
+                console.error('❌ ERROR: Error getting developer ID:', error);
+                return null;
+            }
+        }
+
         // Fetch and display projects with optional filtering
         async function fetchAndDisplayProjects(filter = 'all') {
             try {
-                const response = await fetch(`${API_URL}/projects/developer/652a2ce3-d7f5-4380-8e24-d9b0055f659a`);
+                const developerId = await getCurrentDeveloperId();
+                if (!developerId) {
+                    console.error('No developer ID available');
+                    return;
+                }
+                
+                const response = await fetch(`${API_URL}/projects/developer/${developerId}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1062,7 +1090,12 @@
             const location = document.getElementById('projectLocation').value;
             const deadline = document.getElementById('projectDeadline').value;
             const imageFile = document.getElementById('projectImage').files[0];
-            const developerId = '652a2ce3-d7f5-4380-8e24-d9b0055f659a';
+            
+            const developerId = await getCurrentDeveloperId();
+            if (!developerId) {
+                alert('Unable to get developer ID. Please refresh the page and try again.');
+                return;
+            }
 
             if (!name || !location || !deadline) {
                 alert('Please fill in all required fields');

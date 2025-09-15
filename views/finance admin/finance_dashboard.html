@@ -13,11 +13,15 @@
     <link rel="stylesheet" href="/css/side_top.css">
     <script src="/js/side_top.js"></script>
     <style>
+        html, body { height: 100%; }
         #content { 
-            margin-left: 0; 
+            margin-left: 0 !important; 
             transition: margin-left 0.3s; 
-            padding: 20px; 
+            padding: 20px 0 20px 20px; 
             margin-top: 50px;
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         /* Dashboard Hero Section */
@@ -45,8 +49,8 @@
         /* Key Metrics Cards */
         .metrics-row {
             margin-bottom: 30px;
-            margin-left: -5px;
-            margin-right: -5px;
+            margin-left: -8px;
+            margin-right: -8px;
         }
 
         .metric-card {
@@ -122,6 +126,8 @@
         /* Charts Section */
         .charts-section {
             margin-bottom: 30px;
+            margin-left: -8px;
+            margin-right: -8px;
         }
 
         /* Right-side stacked cards */
@@ -368,18 +374,8 @@
             <span>Notifications</span>
             <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
         </div>
-        <div class="notification-item">
-            <div class="notification-title">New Payroll Request</div>
-            <div class="notification-time">5 minutes ago</div>
-        </div>
-        <div class="notification-item">
-            <div class="notification-title">Purchase Order Approved</div>
-            <div class="notification-time">1 hour ago</div>
-        </div>
-        <div class="notification-item">
-            <div class="notification-title">Salary Payment Processed</div>
-                <div class="notification-time">2 hours ago</div>
-            </div>
+        <div id="notificationList">
+            <!-- Notifications will be loaded here -->
         </div>
     </div>
 
@@ -839,6 +835,115 @@
 
         // Auto-refresh dashboard data every 5 minutes
         setInterval(loadDashboardData, 300000);
+
+        // ==============================
+        // Notification Management
+        // ==============================
+        
+        // Load notifications from server
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/finance/notifications/unread');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayNotifications(data.notifications);
+                    updateNotificationBadge(data.notifications.length);
+                } else {
+                    console.error('Failed to load notifications:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        // Display notifications in dropdown
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById('notificationList');
+            
+            if (!notifications || notifications.length === 0) {
+                notificationList.innerHTML = '<div class="notification-item"><div class="notification-title">No new notifications</div></div>';
+                return;
+            }
+
+            notificationList.innerHTML = notifications.map(notification => `
+                <div class="notification-item" onclick="markNotificationAsRead(${notification.id})">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${formatNotificationTime(notification.created_at)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Update notification badge count
+        function updateNotificationBadge(count) {
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // Format notification time
+        function formatNotificationTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Mark single notification as read
+        async function markNotificationAsRead(notificationId) {
+            try {
+                const response = await fetch(`/finance/notifications/${notificationId}/read`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reload notifications to update the list
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Mark all notifications as read
+        async function markAllAsRead() {
+            try {
+                const response = await fetch('/finance/notifications/read-all', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reload notifications to update the list
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+
+        // Load notifications on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNotifications();
+            // Refresh notifications every 30 seconds
+            setInterval(loadNotifications, 30000);
+        });
 
         // ==============================
         // Payment Link UI logic
