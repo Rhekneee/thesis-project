@@ -54,6 +54,44 @@ router.get('/approved-orders', SCMController.getApprovedPurchaseOrders);
 
 // Update purchase order delivery status (supplier only)
 router.put('/orders/:orderId/delivery', SCMController.updatePurchaseOrderDelivery);
+// Save proof and mark received (with increased payload limit for large files)
+router.post('/purchase_orders/:orderId/proof', express.json({ limit: '50mb' }), SCMController.setPurchaseOrderProof);
+
+// Products (Supplier)
+router.post('/products', SCMController.createMaterial);          // compatibility: delegate to materials creation (logistics-only)
+router.get('/products/my', SCMController.getMyProducts);         // supplier lists own
+router.get('/materials/my', SCMController.getMyMaterials);       // supplier lists own materials (materials table)
+
+// Products (SCM review)
+router.get('/products/pending', SCMController.getPendingProducts);           // SCM lists pending
+router.put('/products/:productId/status', SCMController.updateProductStatus); // SCM approve/reject
+
+// Materials (SCM create)
+router.post('/materials', SCMController.createMaterial);
+router.get('/materials', SCMController.getAllMaterials);
+// Materials (SCM admin can view by supplier)
+router.get('/materials/supplier/:supplierId', logisticsAuth, SCMController.getSupplierMaterials);
+
+// Purchases (PR/PO flow)
+router.get('/purchases/suppliers-for-item', SCMController.getSuppliersForItem); // query: name, brand_name?
+router.post('/purchases', SCMController.createPurchase);
+router.get('/purchases', SCMController.listPurchases);
+router.get('/orders', SCMController.listOrders);
+
+// Set purchase status and sync purchase_requests
+router.put('/purchases/:purchaseId/status', SCMController.setPurchaseStatus);
+
+// Save supplier invoice for a purchase
+router.post('/purchases/:purchaseId/invoice', SCMController.setPurchaseInvoice);
+
+// Bulk purchase requests (new schema)
+router.post('/purchase-requests/bulk', SCMController.createBulkPurchaseRequests);
+
+// Get supplier's purchase orders (from purchases table)
+router.get('/purchases/supplier', SCMController.getSupplierPurchaseOrders);
+
+// Submit refund request (Supplier only)
+router.post('/purchases/:purchaseId/refund', express.json({ limit: '50mb' }), SCMController.submitRefundRequest);
 
 // Supplier-specific routes for profile management
 router.get('/supplier/check-session', (req, res) => {

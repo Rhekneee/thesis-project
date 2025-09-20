@@ -1,5 +1,5 @@
 const SCMModel = require('../model/scm.model');
-const { sendSupplierAccountNotification } = require('../../../utils/emailService');
+const { sendSupplierAccountNotification, sendManualSupplierWelcome } = require('../../../utils/emailService');
 
 const SCMController = {
     // Get all suppliers
@@ -25,7 +25,9 @@ const SCMController = {
                 postal_code,
                 country,
                 account_number,
-                payment_terms
+                payment_terms,
+                supplier_type,
+                categories
             } = req.body;
 
             // Basic validation
@@ -57,16 +59,25 @@ const SCMController = {
                 country,
                 account_number,
                 payment_terms,
-                status: 'active'
+                status: 'active',
+                supplier_type: supplier_type || 'manual',
+                categories: categories || []
             });
 
-            // Send supplier account email (do not block response if it fails)
-            sendSupplierAccountNotification(
-                contact_email,
-                supplier_name,
-                'default123',
-                'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
-            ).catch(err => console.error('Failed to send supplier account email:', err));
+            // Send supplier email based on type (do not block response if it fails)
+            if ((supplier_type || '').toLowerCase() === 'manual') {
+                sendManualSupplierWelcome(
+                    contact_email,
+                    supplier_name
+                ).catch(err => console.error('Failed to send manual supplier welcome email:', err));
+            } else {
+                sendSupplierAccountNotification(
+                    contact_email,
+                    supplier_name,
+                    'default123',
+                    'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                ).catch(err => console.error('Failed to send supplier account email:', err));
+            }
 
             res.status(201).json({ 
                 message: 'Supplier and accounts created successfully.',
@@ -104,7 +115,9 @@ const SCMController = {
                 country,
                 account_number,
                 payment_terms,
-                status
+                status,
+                supplier_type,
+                categories
             } = req.body;
 
             if (!supplier_id || !supplier_name || !contact_name || !contact_email || !contact_phone || !address || !city || !postal_code || !country || !account_number || !payment_terms) {
@@ -131,7 +144,9 @@ const SCMController = {
                 country,
                 account_number,
                 payment_terms,
-                status: status || 'active'
+                status: status || 'active',
+                supplier_type: supplier_type || 'manual',
+                categories: categories || []
             });
 
             res.json({ message: 'Supplier updated successfully.' });
@@ -819,6 +834,602 @@ const SCMController = {
                 success: false,
                 error: 'Failed to update delivery status' 
             });
+        }
+    },
+
+    // Save proof picture for purchase_order and mark as Received
+    setPurchaseOrderProof: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const { orderId } = req.params;
+            const { proof_picture } = req.body;
+            if (!proof_picture) return res.status(400).json({ error: 'proof_picture is required' });
+            const result = await SCMModel.setPurchaseOrderProof(Number(orderId), proof_picture);
+            if (!result.success) return res.status(404).json({ error: 'Order not found' });
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Error in setPurchaseOrderProof:', e);
+            res.status(500).json({ error: 'Failed to save proof picture' });
+        }
+    },
+
+    // ===== Products (Supplier + SCM Review) =====
+    createProduct: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            // Logistics-only creation; suppliers cannot create products
+            const user = req.session.user;
+            const isLogistics = (user.role_name === 'logistics') || user.role_id === 26 || user.role_id === 1;
+            if (!isLogistics) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required to create products' });
+            }
+
+            const { supplier_id, name, description, size, unit, price, effective_date, price_validity } = req.body;
+            if (!supplier_id || !name || !price || !effective_date) {
+                return res.status(400).json({ error: 'supplier_id, name, price and effective_date are required' });
+            }
+            const priceNum = parseFloat(price);
+            if (isNaN(priceNum) || priceNum <= 0) {
+                return res.status(400).json({ error: 'Invalid price' });
+            }
+
+            const insertId = await SCMModel.createProduct({
+                supplier_id: Number(supplier_id),
+                name,
+                description,
+                size,
+                unit,
+                price: priceNum,
+                effective_date,
+                price_validity
+            });
+            res.status(201).json({ success: true, product_id: insertId, status: 'Pending' });
+        } catch (error) {
+            console.error('Error in createProduct:', error);
+            res.status(500).json({ error: 'Failed to create product' });
+        }
+    },
+
+    getMyProducts: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isSupplierRole = user.role_id === 27 || (user.role_name && user.role_name.toLowerCase() === 'supplier');
+            const isSupplierFlag = !!user.is_supplier;
+            if (!isSupplierRole && !isSupplierFlag) {
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+            const supplierId = user.supplier_id;
+            if (!supplierId) {
+                return res.status(400).json({ error: 'Missing supplier_id in session' });
+            }
+            console.log('🔍 getMyProducts for supplier_id:', supplierId);
+            let rows = [];
+            try {
+                rows = await SCMModel.getProductsForSupplier(supplierId);
+            } catch (innerErr) {
+                // This path should rarely occur now that the model catches missing table
+                console.warn('⚠️ getProductsForSupplier failed, falling back to materials:', innerErr?.message || innerErr);
+            }
+
+            // Fallback to materials normalization if products are empty
+            if (!rows || rows.length === 0) {
+                const mats = await SCMModel.getMaterialsForSupplier(supplierId);
+                rows = (mats || []).map(m => ({
+                    product_id: m.material_id,
+                    supplier_id: m.supplier_id,
+                    name: m.name,
+                    description: m.description,
+                    size: m.variant || null,
+                    unit: m.unit || null,
+                    price: m.price,
+                    effective_date: m.effective_date,
+                    price_validity: m.price_validity,
+                    status: m.status || 'Active'
+                }));
+            }
+            console.log('📦 Products resolved (with fallback):', rows?.length || 0);
+            res.json(rows);
+        } catch (error) {
+            console.error('Error in getMyProducts:', error);
+            res.status(500).json({ error: 'Failed to fetch products' });
+        }
+    },
+
+    getPendingProducts: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            // SCM/logistics or developer can review
+            const user = req.session.user;
+            const allowed = (user.role_name === 'logistics') || [1, 26].includes(user.role_id);
+            if (!allowed) {
+                return res.status(403).json({ error: 'Forbidden: SCM review access required' });
+            }
+            const rows = await SCMModel.getPendingProducts();
+            res.json(rows);
+        } catch (error) {
+            console.error('Error in getPendingProducts:', error);
+            res.status(500).json({ error: 'Failed to fetch pending products' });
+        }
+    },
+
+    updateProductStatus: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            // SCM/logistics or developer can approve/reject
+            const user = req.session.user;
+            const allowed = (user.role_name === 'logistics') || [1, 26].includes(user.role_id);
+            if (!allowed) {
+                return res.status(403).json({ error: 'Forbidden: SCM review access required' });
+            }
+            const { productId } = req.params;
+            const { status } = req.body; // 'Active' or 'Inactive' (or 'Pending')
+            const result = await SCMModel.updateProductStatus(productId, status);
+            if (!result.success) {
+                return res.status(400).json({ error: result.error });
+            }
+            res.json({ success: true, status });
+        } catch (error) {
+            console.error('Error in updateProductStatus:', error);
+            res.status(500).json({ error: 'Failed to update product status' });
+        }
+    },
+
+    requestPriceChange: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            if (user.role_id !== 27) {
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+            const { productId } = req.params;
+            const { price } = req.body;
+            const priceNum = parseFloat(price);
+            if (isNaN(priceNum) || priceNum <= 0) {
+                return res.status(400).json({ error: 'Invalid price' });
+            }
+            const result = await SCMModel.requestPriceChange(productId, user.supplier_id, priceNum);
+            if (!result.success) return res.status(400).json({ error: result.error });
+            res.json({ success: true, status: 'Pending' });
+        } catch (error) {
+            console.error('Error in requestPriceChange:', error);
+            res.status(500).json({ error: 'Failed to request price change' });
+        }
+    },
+
+    // Create material (logistics only): inserts brand (if needed) and materials
+    createMaterial: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isLogistics = (user.role_name === 'logistics') || user.role_id === 26 || user.role_id === 1;
+            if (!isLogistics) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+            const { supplier_id, brand_name, name, variant, size, type, description, category, unit, price, quantity } = req.body;
+            if (!supplier_id || !name || !type || !price) {
+                return res.status(400).json({ error: 'supplier_id, name, type, price are required' });
+            }
+            const priceNum = parseFloat(price);
+            const qtyNum = quantity !== undefined ? parseFloat(quantity) : 0;
+            if (isNaN(priceNum) || priceNum <= 0) return res.status(400).json({ error: 'Invalid price' });
+            if (qtyNum < 0 || isNaN(qtyNum)) return res.status(400).json({ error: 'Invalid quantity' });
+
+            const result = await SCMModel.createMaterial({
+                supplier_id: Number(supplier_id),
+                brand_name: brand_name || '',
+                name,
+                variant: variant ?? size ?? null,
+                type,
+                description,
+                category: category || null,
+                unit,
+                price: priceNum,
+                quantity: qtyNum
+            });
+            res.status(201).json({ success: true, material_id: result.material_id, brand_id: result.brand_id });
+        } catch (error) {
+            console.error('Error in createMaterial:', error);
+            res.status(500).json({ error: 'Failed to create material' });
+        }
+    },
+
+    getAllMaterials: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+            const rows = await SCMModel.getAllMaterials();
+            res.json(rows);
+        } catch (e) {
+            console.error('Error in getAllMaterials:', e);
+            res.status(500).json({ error: 'Failed to fetch materials' });
+        }
+    },
+
+    // ===== Purchases (PR/PO flow) =====
+    // Find suppliers that offer the same item
+    getSuppliersForItem: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+
+            const { name, brand_name } = req.query;
+            if (!name) return res.status(400).json({ error: 'name is required' });
+            const rows = await SCMModel.getSuppliersForItem({ name, brand_name: brand_name || null });
+            res.json(rows);
+        } catch (e) {
+            console.error('Error in getSuppliersForItem:', e);
+            res.status(500).json({ error: 'Failed to fetch suppliers for item' });
+        }
+    },
+
+    // Create purchase
+    createPurchase: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            // Allow logistics and developer to create
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+
+            const { supplier_id, material_id, variant, quantity, unit, unit_price, remarks } = req.body;
+            if (!supplier_id || !material_id || !quantity || !unit_price) {
+                return res.status(400).json({ error: 'supplier_id, material_id, quantity, unit_price are required' });
+            }
+            const qty = parseFloat(quantity);
+            const price = parseFloat(unit_price);
+            if (isNaN(qty) || qty <= 0) return res.status(400).json({ error: 'Invalid quantity' });
+            if (isNaN(price) || price <= 0) return res.status(400).json({ error: 'Invalid unit_price' });
+
+            const id = await SCMModel.createPurchase({
+                requested_by: u.id,
+                supplier_id: Number(supplier_id),
+                material_id: Number(material_id),
+                variant: variant || null,
+                quantity: qty,
+                unit: unit || null,
+                unit_price: price,
+                remarks: remarks || null
+            });
+            res.status(201).json({ success: true, purchase_id: id });
+        } catch (e) {
+            console.error('Error in createPurchase:', e);
+            res.status(500).json({ error: 'Failed to create purchase' });
+        }
+    },
+
+    listPurchases: async (_req, res) => {
+        try {
+            const rows = await SCMModel.listPurchases();
+            res.json(rows);
+        } catch (e) {
+            console.error('Error in listPurchases:', e);
+            res.status(500).json({ error: 'Failed to list purchases' });
+        }
+    },
+
+    // Aggregate orders based on purchases, grouped by purchase_id with materials array
+    listOrders: async (_req, res) => {
+        try {
+            console.log('🔎 [SCM] GET /scm/orders called');
+            // Return purchases rows first (matches current frontend grouping by purchase_id)
+            const rows = await SCMModel.listPurchases();
+            console.log('🔎 [SCM] purchases rows:', Array.isArray(rows) ? rows.length : 'not array');
+            if (Array.isArray(rows) && rows.length) {
+                try {
+                    console.log('🔎 [SCM] purchases sample:', rows[0]);
+                } catch (_) {}
+                return res.json(rows);
+            }
+
+            // Fallback: map purchase_order rows to a minimal aggregated structure
+            const poRows = await SCMModel.getAllPurchaseOrders();
+            console.log('🔎 [SCM] purchase_order rows:', Array.isArray(poRows) ? poRows.length : 'not array');
+            if (Array.isArray(poRows) && poRows.length) {
+                const orders = poRows.map(r => ({
+                    id: String(r.po_id),
+                    orderType: 'Registered',
+                    requestApproveDate: r.order_date || r.created_at,
+                    orderApproveDate: r.order_date || r.created_at,
+                    deliverDate: r.order_date || r.created_at,
+                    status: r.status,
+                    invoice: r.invoice_number || '',
+                    materials: [{
+                        type: r.material_type,
+                        supplier: r.supplier_name,
+                        quantity: r.quantity,
+                        unit: r.unit,
+                        packaging: r.variant || '',
+                        pricePerUnit: undefined,
+                        attributes: { size: r.variant || '-' },
+                        supplierStatus: r.status
+                    }]
+                }));
+                try {
+                    console.log('🔎 [SCM] orders (from PO) sample:', orders[0]);
+                } catch (_) {}
+                return res.json(orders);
+            }
+
+            // Nothing found
+            console.log('🔎 [SCM] No rows found in purchases or purchase_order');
+            res.json([]);
+        } catch (e) {
+            console.error('Error in listOrders:', e);
+            res.json([]);
+        }
+    },
+
+    // Update purchase status (sync purchase_requests where applicable)
+    setPurchaseStatus: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const { purchaseId } = req.params;
+            const { status, delivery_cost, discount } = req.body;
+
+            const allowed = ['Pending', 'Processed', 'Out for Delivery', 'Partially Delivered', 'Received', 'Returned', 'Backordered', 'Cancelled'];
+            if (!allowed.includes(status)) {
+                return res.status(400).json({ error: 'Invalid status' });
+            }
+
+            const result = await SCMModel.updatePurchaseStatus(Number(purchaseId), status, {
+                delivery_cost,
+                discount
+            });
+            if (!result.success) return res.status(404).json({ error: result.error || 'Update failed' });
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Error in setPurchaseStatus:', e);
+            res.status(500).json({ error: 'Failed to update purchase status' });
+        }
+    },
+
+    // Save supplier invoice (as URL/path or base64) for a purchase
+    setPurchaseInvoice: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const { purchaseId } = req.params;
+            const { supplier_invoice, invoice_date } = req.body;
+            if (!supplier_invoice) return res.status(400).json({ error: 'supplier_invoice is required' });
+            console.log('📥 setPurchaseInvoice:', { purchaseId, length: supplier_invoice ? String(supplier_invoice).length : 0, hasDataUrl: String(supplier_invoice).startsWith('data:') });
+            const result = await SCMModel.updatePurchaseInvoice(Number(purchaseId), supplier_invoice, invoice_date || null);
+            if (!result.success) return res.status(404).json({ error: 'Purchase not found or update failed' });
+            res.json({ success: true, migrated: !!result.migrated });
+        } catch (e) {
+            console.error('Error in setPurchaseInvoice:', e);
+            res.status(500).json({ error: 'Failed to save supplier invoice' });
+        }
+    },
+
+    // Create bulk purchase requests (new schema)
+    createBulkPurchaseRequests: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            // Allow logistics and developer to create
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+
+            const { materials, requestDate } = req.body;
+            
+            if (!materials || !Array.isArray(materials) || materials.length === 0) {
+                return res.status(400).json({ error: 'Materials array is required and cannot be empty' });
+            }
+
+            // Validate each material
+            for (const material of materials) {
+                if (!material.supplier_id || !material.material_id || !material.quantity || !material.unit_price) {
+                    return res.status(400).json({ 
+                        error: 'Each material must have supplier_id, material_id, quantity, and unit_price' 
+                    });
+                }
+            }
+
+            const results = await SCMModel.createBulkPurchaseRequests({
+                requested_by: u.id,
+                materials: materials,
+                request_date: requestDate || new Date()
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: 'Purchase requests created successfully',
+                request_ids: results
+            });
+        } catch (e) {
+            console.error('Error in createBulkPurchaseRequests:', e);
+            res.status(500).json({ error: 'Failed to create purchase requests' });
+        }
+    },
+
+    // Get supplier's purchase orders (from purchases table)
+    getSupplierPurchaseOrders: async (req, res) => {
+        try {
+            console.log('🔍 getSupplierPurchaseOrders called');
+            console.log('📋 Session user:', req.session?.user);
+            
+            if (!req.session?.user) {
+                console.log('❌ No session user');
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            
+            const user = req.session.user;
+            console.log('👤 User role_id:', user.role_id);
+            console.log('🏢 Supplier ID:', user.supplier_id);
+            
+            if (user.role_id !== 27) {
+                console.log('❌ Not a supplier role');
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+
+            const supplierId = user.supplier_id;
+            if (!supplierId) {
+                console.log('❌ No supplier_id in session');
+                return res.status(400).json({ error: 'Missing supplier_id in session' });
+            }
+
+            console.log('🔍 Fetching orders for supplier_id:', supplierId);
+            const orders = await SCMModel.getSupplierPurchaseOrders(supplierId);
+            console.log('📦 Found orders:', orders.length);
+            
+            res.json({
+                success: true,
+                orders: orders
+            });
+        } catch (error) {
+            console.error('💥 Error in getSupplierPurchaseOrders:', error);
+            res.status(500).json({ error: 'Failed to fetch supplier purchase orders' });
+        }
+    },
+
+    // Get materials for the logged-in supplier
+    getMyMaterials: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isSupplierRole = user.role_id === 27 || (user.role_name && user.role_name.toLowerCase() === 'supplier');
+            const isSupplierFlag = !!user.is_supplier;
+            if (!isSupplierRole && !isSupplierFlag) {
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+            const supplierId = user.supplier_id;
+            if (!supplierId) {
+                return res.status(400).json({ error: 'Missing supplier_id in session' });
+            }
+
+            // 1) Try materials table first
+            const mats = await SCMModel.getMaterialsForSupplier(supplierId);
+            if (mats && mats.length) {
+                return res.json({ success: true, materials: mats });
+            }
+
+            // 2) Fallback: use products (supplier catalog) and normalize
+            const products = await SCMModel.getProductsForSupplier(supplierId);
+            const normalized = (products || []).map(p => ({
+                material_id: p.product_id, // use product_id as surrogate
+                supplier_id: p.supplier_id,
+                supplier_name: undefined,
+                brand_id: null,
+                brand_name: null,
+                name: p.name,
+                variant: p.size || null,
+                type: null,
+                description: p.description || null,
+                unit: p.unit || null,
+                price: p.price,
+                quantity: null,
+                effective_date: p.effective_date,
+                price_validity: p.price_validity,
+                status: p.status
+            }));
+
+            return res.json({ success: true, materials: normalized });
+        } catch (error) {
+            console.error('Error in getMyMaterials:', error);
+            res.status(500).json({ error: 'Failed to fetch supplier materials' });
+        }
+    },
+
+    // Get materials for a specific supplier (SCM admin access)
+    getSupplierMaterials: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isLogistics = (user.role_name === 'logistics') || user.role_id === 26 || user.role_id === 1;
+            if (!isLogistics) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const { supplierId } = req.params;
+            if (!supplierId) {
+                return res.status(400).json({ error: 'Supplier ID is required' });
+            }
+
+            const materials = await SCMModel.getMaterialsForSupplier(supplierId);
+            return res.json({ success: true, materials });
+        } catch (error) {
+            console.error('Error in getSupplierMaterials:', error);
+            res.status(500).json({ error: 'Failed to fetch supplier materials' });
+        }
+    },
+
+    // Submit refund request (Logistics/Supply only)
+    submitRefundRequest: async (req, res) => {
+        try {
+            console.log('🔍 submitRefundRequest called');
+            console.log('📋 Session user:', req.session?.user);
+            
+            if (!req.session?.user) {
+                console.log('❌ No session user');
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            
+            const user = req.session.user;
+            console.log('👤 User role_id:', user.role_id);
+            console.log('👤 User role_name:', user.role_name);
+            
+            // Only allow logistics/supply users to submit refund requests
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1; // Allow developers for testing
+            
+            if (!isLogistics && !isDeveloper) {
+                console.log('❌ Not a logistics or developer role');
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const { purchaseId } = req.params;
+            const { return_reason, return_proof } = req.body;
+
+            // Validate required fields
+            if (!return_reason || return_reason.trim() === '') {
+                return res.status(400).json({ error: 'Return reason is required' });
+            }
+
+            console.log('🔍 Processing refund request for purchase_id:', purchaseId);
+            console.log('📝 Return reason:', return_reason);
+            console.log('📎 Return proof provided:', !!return_proof);
+
+            // Submit the refund request (logistics can refund any purchase)
+            const result = await SCMModel.setPurchaseRefund(
+                Number(purchaseId), 
+                return_reason.trim(), 
+                return_proof || null
+            );
+
+            if (!result.success) {
+                console.log('❌ Failed to submit refund request');
+                return res.status(500).json({ error: 'Failed to submit refund request' });
+            }
+
+            console.log('✅ Refund request submitted successfully');
+            res.json({
+                success: true,
+                message: 'Refund request submitted successfully. Waiting for finance approval.',
+                status: 'Return Pending'
+            });
+        } catch (error) {
+            console.error('💥 Error in submitRefundRequest:', error);
+            res.status(500).json({ error: 'Failed to submit refund request' });
         }
     }
 };

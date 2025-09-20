@@ -968,15 +968,12 @@ class FinanceModel {
             FROM purchases p
             LEFT JOIN supplier_account sa ON sa.supplier_id = p.supplier_id
             LEFT JOIN materials m ON m.material_id = p.material_id
-            WHERE p.status = 'Pending'
+            WHERE p.status = 'Pending' AND (COALESCE(p.delivery_cost,0) > 0 OR COALESCE(p.discount,0) > 0)
             ORDER BY p.created_date DESC
         `;
         try {
-            
-            const [allPurchases] = await db.query('SELECT COUNT(*) as count FROM purchases');
-            const [statusCheck] = await db.query('SELECT status, COUNT(*) as count FROM purchases GROUP BY status'); 
             const [rows] = await db.query(SQL);
-            const processedRows = rows.map(r => {
+            return rows.map(r => {
                 const subtotal = Number(r.quantity) * Number(r.unit_price);
                 const discountAmount = subtotal * (Number(r.discount_percent) / 100);
                 const final_total = subtotal - discountAmount + Number(r.delivery_cost);
@@ -987,8 +984,8 @@ class FinanceModel {
                     final_total: Number(final_total.toFixed(2))
                 };
             });
-            return processedRows;
         } catch (err) {
+            console.error('Error in getPendingPurchaseEstimations:', err);
             throw new Error('Failed to fetch pending purchase estimations');
         }
     }
@@ -1020,46 +1017,6 @@ class FinanceModel {
         } catch (err) {
             console.error('Error in approvePurchaseEstimation:', err);
             throw new Error('Failed to approve purchase estimation');
-        }
-    }
-
-    // Update purchase estimation status (approve/reject with delivery cost and discount)
-    static async updatePurchaseEstimation(purchaseId, status, remarks = null, delivery_cost = null, discount = null) {
-        try {
-            // Only save delivery_cost/discount when approving (status = 'Processed')
-            if (status === 'Processed' && (delivery_cost !== null || discount !== null)) {
-                await db.query(
-                    `UPDATE purchases SET 
-                        delivery_cost = ?,
-                        discount = ?
-                     WHERE purchase_id = ? AND status = 'Pending'`,
-                    [delivery_cost || 0, discount || 0, purchaseId]
-                );
-            }
-
-            // Update status and remarks
-            const [result] = await db.query(
-                `UPDATE purchases SET 
-                    status = ?,
-                    remarks = ?
-                 WHERE purchase_id = ? AND status = 'Pending'`,
-                [status, remarks, purchaseId]
-            );
-
-            if (result.affectedRows === 0) {
-                return { 
-                    success: false, 
-                    message: 'Purchase not found or not in Pending status' 
-                };
-            }
-
-            return {
-                success: true,
-                message: `Purchase estimation ${status.toLowerCase()} successfully`
-            };
-        } catch (error) {
-            console.error('Error in updatePurchaseEstimation:', error);
-            throw new Error(`Failed to ${status.toLowerCase()} purchase estimation: ${error.message}`);
         }
     }
 
@@ -1237,92 +1194,67 @@ class FinanceModel {
     static async getPurchaseOrdersWithEstimations() {
         const SQL_COMMAND = `
             SELECT 
-                p.purchase_id,
-                p.pr_id,
-                p.supplier_id,
-                sa.supplier_name,
-                p.material_id,
-                m.name AS material_name,
-                p.variant,
-                CAST(p.quantity AS DECIMAL(10,2)) AS quantity,
-                p.unit,
-                CAST(p.unit_price AS DECIMAL(10,2)) AS unit_price,
-                COALESCE(p.delivery_cost, 0) AS delivery_cost,
-                COALESCE(p.discount, 0) AS discount_percent,
-                DATE_FORMAT(p.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                po.po_id,
+                po.material_type,
+                po.quantity,
+                po.unit,
+                po.estimation_cost,
+                po.status,
+                po.created_at,
+                po.updated_at,
+                s.supplier_name,
+                s.supplier_id,
+                pr.request_id,
                 pr.justification,
                 pr.requested_by,
-                d.name as department_name
-            FROM purchases p
-            LEFT JOIN supplier_account sa ON sa.supplier_id = p.supplier_id
-            LEFT JOIN materials m ON m.material_id = p.material_id
-            LEFT JOIN purchase_requests pr ON pr.pr_id = p.pr_id
+                d.name as department_name,
+                DATE_FORMAT(po.created_at, '%Y-%m-%d %H:%i:%s') as created_date,
+                DATE_FORMAT(po.updated_at, '%Y-%m-%d %H:%i:%s') as updated_date
+            FROM purchase_order po
+            JOIN supplier_account s ON po.supplier_id = s.supplier_id
+            JOIN purchase_requests pr ON po.pr_id = pr.request_id
             LEFT JOIN departments d ON pr.department = d.id
-            WHERE p.status = 'Pending'
-            ORDER BY p.created_date DESC
+            WHERE po.status = 'pending Estimation'
+            ORDER BY po.created_at DESC;
         `;
-        
+
         try {
+            console.log('Executing SQL query for purchase orders with estimations...');
             const [orders] = await db.query(SQL_COMMAND);
-            const mappedOrders = orders.map(r => {
-                const subtotal = Number(r.quantity) * Number(r.unit_price);
-                const discountAmount = subtotal * (Number(r.discount_percent) / 100);
-                const final_total = subtotal - discountAmount + Number(r.delivery_cost);
-                return {
-                    ...r,
-                    po_id: r.purchase_id,
-                    material_type: r.material_name,
-                    estimation_cost: final_total,
-                    subtotal: Number(subtotal.toFixed(2)),
-                    discount_amount: Number(discountAmount.toFixed(2)),
-                    final_total: Number(final_total.toFixed(2))
-                };
-            });
-            return mappedOrders;
-            
+            console.log('Number of purchase orders found:', orders.length);
+            return orders;
         } catch (error) {
-            console.error('🔍 DEBUG: Error in getPurchaseOrdersWithEstimations:', error);
-            throw new Error('Failed to fetch purchases with estimations');
+            console.error('Error in getPurchaseOrdersWithEstimations:', error);
+            throw new Error('Failed to fetch purchase orders with estimations');
         }
     }
 
     // Update purchase order status (approve/reject estimation)
-    static async updatePurchaseOrderEstimation(poId, status, remarks = null, payment_type = null, delivery_cost = null, discount = null) {
+    static async updatePurchaseOrderEstimation(poId, status, remarks = null, payment_type = null) {
         const SQL_COMMAND = `
-            UPDATE purchases 
+            UPDATE purchase_order 
             SET 
                 status = ?,
                 remarks = ?,
                 payment_type = ?,
-                updated_date = NOW()
-            WHERE purchase_id = ? AND status = 'pending'
+                updated_at = NOW()
+            WHERE po_id = ? AND status = 'pending Estimation'
         `;
 
         try {
-            // Only save delivery_cost/discount when approving (status = 'Processed')
-            if (status === 'Processed' && (delivery_cost !== null || discount !== null)) {
-                await db.query(
-                    `UPDATE purchases SET 
-                        delivery_cost = ?,
-                        discount = ?
-                     WHERE purchase_id = ? AND status = 'Pending'`,
-                    [delivery_cost || 0, discount || 0, poId]
-                );
-            }
-
             const [result] = await db.query(SQL_COMMAND, [status, remarks, payment_type, poId]);
             
             if (result.affectedRows === 0) {
-                throw new Error('Purchase not found or already processed');
+                throw new Error('Purchase order not found or already processed');
             }
 
             return {
                 success: true,
-                message: `Purchase ${status.toLowerCase()} successfully${payment_type ? ` with ${payment_type} payment` : ''}`
+                message: `Purchase order ${status.toLowerCase()} successfully${payment_type ? ` with ${payment_type} payment` : ''}`
             };
         } catch (error) {
             console.error('Error in updatePurchaseOrderEstimation:', error);
-            throw new Error(`Failed to ${status.toLowerCase()} purchase: ${error.message}`);
+            throw new Error(`Failed to ${status.toLowerCase()} purchase order: ${error.message}`);
         }
     }
 

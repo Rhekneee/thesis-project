@@ -16,96 +16,65 @@
       transition: margin-left 0.3s;
       padding: 20px;
     }
-    .request-form {
+    /* Material Search Container Styles */
+    .material-search-container {
       background: #f8f9fa;
       border-radius: 10px;
       padding: 20px;
       box-shadow: 0 0 10px rgba(0,0,0,0.05);
       margin-bottom: 20px;
     }
-    .material-list {
-      margin-top: 20px;
-    }
-    .material-item {
-      background: white;
-      border-radius: 5px;
-      padding: 15px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .form-label {
-      font-weight: 500;
-    }
-    .btn-add-material {
-      margin-top: 10px;
-    }
-    .table th {
-      background-color: #f8f9fa;
-    }
-    .materials-list {
-      background: #e9ecef;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .materials-list h5 {
-      color: #495057;
+
+     .search-container {
+       display: flex;
+       gap: 15px;
+       align-items: center;
       margin-bottom: 15px;
     }
-    .recent-requests {
-      background: #e9ecef;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-top: 30px;
-    }
-    .recent-requests h4 {
-      color: #495057;
-      margin-bottom: 20px;
-    }
-    .table {
-      background: white;
-      border-radius: 5px;
-    }
-    .table thead {
-      background: #f8f9fa;
-    }
 
-    /* Pagination Styles */
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 5px;
-      margin-top: 20px;
-    }
+     .search-wrapper {
+       position: relative;
+       flex: 0.6;
+       min-width: 200px;
+       max-width: 400px;
+     }
 
-    .pagination button {
-      padding: 8px 12px;
+     .search-bar {
+       width: 100%;
+       padding: 10px 35px 10px 15px;
       border: 1px solid #dee2e6;
-      background-color: white;
-      color: #007bff;
-      cursor: pointer;
       border-radius: 5px;
-      transition: all 0.3s ease;
-    }
+       font-size: 14px;
+       background-color: white;
+     }
 
-    .pagination button:hover {
-      background-color: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
+     .search-bar:focus {
+       outline: none;
+       border-color: #80bdff;
+       box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+     }
 
-    .pagination button.active {
-      background-color: #007bff;
-      color: white;
-      border-color: #007bff;
-    }
+     .clear-search {
+       position: absolute;
+       right: 10px;
+       top: 50%;
+       transform: translateY(-50%);
+       background: none;
+       border: none;
+       color: #6c757d;
+       font-size: 18px;
+       cursor: pointer;
+       padding: 5px;
+       display: none;
+       line-height: 1;
+     }
 
-    .pagination button:disabled {
-      background-color: #e9ecef;
-      color: #6c757d;
-      cursor: not-allowed;
+     .clear-search.visible {
+       display: inline-block;
+     }
+
+     .clear-search:hover {
+       color: #343a40;
     }
 
     .status-filter {
@@ -117,23 +86,306 @@
       max-width: 200px;
     }
 
-    .form-select {
+     /* Table Styles */
+     .material-table {
       width: 100%;
-      padding: 8px 12px;
+       border-collapse: separate;
+       border-spacing: 0;
+       background: white;
+       border-radius: 10px;
+       overflow: hidden;
+       box-shadow: 0 0 10px rgba(0,0,0,0.05);
+     }
+
+     .material-table th {
+       background-color: #f8f9fa;
+       padding: 15px;
+       text-align: left;
+       font-weight: 600;
+       color: #495057;
+       border-bottom: 2px solid #dee2e6;
+     }
+
+     .material-table td {
+       padding: 12px 15px;
+       border-bottom: 1px solid #dee2e6;
+       color: #212529;
+     }
+
+     .material-table tr:last-child td {
+      border-bottom: none;
+     }
+
+     .material-table tr:hover {
+       background-color: #f8f9fa;
+     }
+
+     /* Status Badge Styles */
+     .status-badge {
+       padding: 5px 15px;
+       border-radius: 15px;
+       font-size: 0.9em;
+       font-weight: 500;
+       display: inline-block;
+       min-width: 100px;
+       text-align: center;
+     }
+
+     .status-pending {
+       background-color: #ffc107;
+       color: #000;
+     }
+
+     .status-approved {
+       background-color: #28a745;
+       color: white;
+     }
+
+     .status-finance-approved {
+       background-color: #17a2b8;
+       color: white;
+     }
+
+    .status-in-transit {
+      background-color: #fd7e14;
+      color: white;
+    }
+
+    .status-delivered {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+     .status-completed {
+       background-color: #007bff;
+       color: white;
+     }
+
+     .status-rejected {
+       background-color: #dc3545;
+       color: white;
+     }
+   </style>
+
+  <link href="side_top.css" rel="stylesheet">
+  <style>
+    /* Match HR table header and sortable styles */
+    table thead th {
+      background: #f8f9fb;
+      font-weight: 600;
+      vertical-align: middle;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      white-space: nowrap;
+    }
+    /* Center-align all columns in supplier dashboard table */
+    #supplier-dashboard-table th,
+    #supplier-dashboard-table td { text-align: center !important; vertical-align: middle; }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable .sort-icon { opacity: 0.5; margin-left: 6px; transition: transform 0.2s ease, opacity 0.2s ease; }
+    .sortable.active .sort-icon { opacity: 1; color: #0d6efd; }
+
+    /* Page background to match provided image (soft light tone) */
+    body { background: #f3f7fd; }
+    #content { margin-top: 56px; padding: 24px; }
+
+    /* HR glass-card and data-table styles */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .data-table {
+      border-radius: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .table > :not(caption) > * > * { padding: 0.9rem 0.75rem; }
+    .table thead th, .table tbody td { white-space: nowrap; }
+    #supplier-dashboard-table { min-width: 1000px; }
+    /* Improve Show entries select: compact width, number near caret, cross-browser */
+    #entriesSelect {
+      width: 86px;                        /* Compact, consistent width */
+      min-width: 86px;
+      text-align: center;                 /* Center text for Firefox/legacy */
+      text-align-last: center;            /* Center selected value */
+      padding-right: 2rem;                /* Space for caret */
+      padding-left: .75rem;               /* Balance padding */
+      background-position: right .55rem center; /* Keep caret close to edge */
+    }
+    #entriesSelect option { text-align: center; }
+    /* Remove blue glow on focus for toolbar controls */
+    .toolbar .form-control:focus,
+    .toolbar .form-select:focus {
+      box-shadow: none !important;
+      outline: none !important;
+      border-color: #dee2e6 !important;
+    }
+
+    /* Status Badge Styles */
+    .status-badge {
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 0.9em;
+      font-weight: 500;
+      display: inline-block;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .status-pending {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .status-approved {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .status-finance-approved {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    .status-in-transit {
+      background-color: #fd7e14;
+      color: white;
+    }
+
+    .status-delivered {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    .status-completed {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .status-rejected {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    /* Issue Badge Styles */
+    .issue-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+      display: inline-block;
+      margin: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .issue-badge:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .issue-urgent {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .issue-high {
+      background-color: #fd7e14;
+      color: white;
+    }
+
+    .issue-medium {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .issue-low {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    .issue-none {
+      background-color: #28a745;
+      color: white;
+    }
+
+    /* Issue Modal Styles */
+    .issue-item {
       border: 1px solid #dee2e6;
-      border-radius: 5px;
-      font-size: 14px;
-      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+
+    .issue-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .issue-type {
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .issue-date {
+      font-size: 0.875rem;
+      color: #6c757d;
+    }
+
+    .issue-description {
+      margin-bottom: 15px;
       color: #212529;
+      line-height: 1.5;
     }
 
-    .form-select:focus {
-      outline: none;
-      border-color: #80bdff;
-      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    .issue-evidence {
+      margin-bottom: 15px;
     }
 
-    /* Modal Styles */
+    .evidence-image {
+      max-width: 100px;
+      max-height: 100px;
+      border-radius: 4px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .evidence-image:hover {
+      transform: scale(1.1);
+    }
+
+    .response-section {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .response-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .response-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    /* Modal Styles (match supplier.html) */
     .modal-content {
       border: none;
       border-radius: 16px;
@@ -163,66 +415,6 @@
     .modal-body {
       padding: 2rem;
       background: #f8f9fa;
-    }
-
-    .order-info {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.75rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      border: 1px solid #e9ecef;
-    }
-
-    .order-info .row {
-      margin-bottom: 1.25rem;
-    }
-
-    .order-info .row:last-child {
-      margin-bottom: 0;
-    }
-
-    .info-label {
-      font-size: 0.85em;
-      color: #6c757d;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-
-    .info-value {
-      font-weight: 600;
-      color: #2c3e50;
-      font-size: 1.1em;
-      padding: 8px 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      border: 1px solid #e9ecef;
-    }
-
-    .invoice-section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.75rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      border: 1px solid #e9ecef;
-    }
-
-    .invoice-section h6 {
-      color: #1a237e;
-      font-weight: 600;
-      font-size: 1.2em;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #e9ecef;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .invoice-section h6 i {
-      color: #5c6bc0;
     }
 
     .modal-footer {
@@ -261,235 +453,113 @@
       opacity: 1;
     }
 
-    .close-btn {
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    .close-btn:hover {
-      background: #bb2d3b;
-    }
-
-    .materials-section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.75rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    /* Purchase Request Style Classes */
+    .request-header-card {
       border: 1px solid #e9ecef;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .materials-section h6 {
-      color: #1a237e;
+    .info-item {
+      margin-bottom: 0.5rem;
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 0.875rem;
       font-weight: 600;
-      font-size: 1.2em;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #e9ecef;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .materials-section h6 i {
-      color: #5c6bc0;
+    .info-value {
+      font-size: 1rem;
+      color: #212529;
+      font-weight: 500;
     }
 
-    .materials-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.25rem;
-      padding-right: 8px;
+    .materials-container {
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 10px;
     }
 
-    .materials-grid::-webkit-scrollbar {
+    .materials-container::-webkit-scrollbar {
       width: 6px;
     }
 
-    .materials-grid::-webkit-scrollbar-track {
+    .materials-container::-webkit-scrollbar-track {
       background: #f1f1f1;
-      border-radius: 10px;
+      border-radius: 3px;
     }
 
-    .materials-grid::-webkit-scrollbar-thumb {
-      background: #c5cae9;
-      border-radius: 10px;
+    .materials-container::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
     }
 
-    .materials-grid::-webkit-scrollbar-thumb:hover {
-      background: #9fa8da;
+    .materials-container::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
 
-    .material-item {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.25rem;
-      border: 1px solid #e9ecef;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    /* Invoice Upload Styles (match order.html) */
+    .invoice-upload-section { text-align: center; }
+    .invoice-upload-section label { cursor: pointer; transition: all 0.2s ease; }
+    .invoice-upload-section label:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .invoice-upload-section .img-thumbnail { border: 2px solid #dee2e6; border-radius: 8px; object-fit: cover; }
+    .invoice-upload-section .btn-outline-danger { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
+    .invoice-preview-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .invoice-preview-card .img-thumbnail { border: 2px solid #dee2e6; border-radius: 6px; object-fit: cover; cursor: pointer; transition: transform 0.2s ease; }
+    .invoice-preview-card .img-thumbnail:hover { transform: scale(1.05); border-color: #007bff; }
+    .cost-breakdown .input-group { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .cost-breakdown .input-group-text { background-color: #f8f9fa; border-color: #dee2e6; font-weight: 500; color: #495057; }
+    .cost-breakdown .form-control { border-color: #dee2e6; font-size: 0.9rem; text-align: left; }
+
+    .supplier-header {
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
     }
 
-    .material-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      border-color: #c5cae9;
+    .supplier-total {
+      background: #f8f9fa;
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      border-left: 4px solid #007bff;
     }
 
-    .material-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e9ecef;
+    .supplier-separator {
+      border-top: 1px solid #dee2e6;
     }
 
-    .material-icon {
-      width: 40px;
-      height: 40px;
-      background: #e8eaf6;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #5c6bc0;
-      font-size: 1.2em;
-    }
-
-    .material-name {
-      font-weight: 600;
-      font-size: 1.1em;
-      color: #1a237e;
-      flex: 1;
-    }
-
-    .material-details {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .material-detail {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 10px;
+    /* Delivery Proof Styles */
+    .delivery-proof-section {
       background: #f8f9fa;
       border-radius: 8px;
-      border: 1px solid #e9ecef;
+      padding: 1rem;
+      border: 1px solid #dee2e6;
     }
 
-    .detail-label {
-      font-size: 0.8em;
-      color: #6c757d;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
+    .delivery-proof-card {
+      background: #fff;
+      border-radius: 6px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .detail-value {
-      font-weight: 600;
-      color: #2c3e50;
-      font-size: 1.1em;
+    .delivery-proof-card .img-thumbnail {
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      object-fit: cover;
+      transition: transform 0.2s ease;
     }
 
-    /* Success Alert Styles */
-    .alert.fade {
-      transition: opacity 0.15s linear;
-    }
-    .alert.fade:not(.show) {
-      opacity: 0;
-    }
-    .alert.show {
-      opacity: 1;
-    }
-
-    /* Print styles */
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      
-      #invoicePDF, #invoicePDF * {
-        visibility: visible;
-      }
-      
-      #invoicePDF {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-        background-color: white;
-      }
-
-      .modal, .modal-backdrop {
-        display: none !important;
-      }
-
-      @page {
-        size: letter;
-        margin: 0.5in;
-      }
-    }
-
-    /* Updated table alignment styles */
-    .table {
-      border-collapse: collapse;
-    }
-
-    .table th,
-    .table td {
-      vertical-align: middle !important;
-      padding: 0.75rem !important;
-    }
-
-    .table td[rowspan] {
-      vertical-align: middle !important;
-    }
-
-    .amount-cell {
-      text-align: left !important;
-      vertical-align: middle !important;
-      white-space: nowrap;
-      padding: 0.75rem 1rem !important;
-    }
-
-    /* Add specific header alignment */
-    .table th.amount-header {
-      text-align: left;
-      padding: 0.75rem 1rem !important;
-    }
-
-    /* Ensure consistent row heights */
-    .table tr {
-      height: 3.5rem;
-    }
-
-    /* Ensure consistent cell spacing */
-    .table th, .table td {
-      padding: 0.75rem 1rem !important;
-    }
-
-    /* Hidden text style */
-    .hidden-text {
-      color: white;
-      user-select: none;
-    }
-
-    /* Hide input field */
-    .hidden-input {
-      display: none !important;
+    .delivery-proof-card .img-thumbnail:hover {
+      transform: scale(1.05);
+      border-color: #28a745;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -581,137 +651,265 @@
     <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
       <i class="fas fa-bars"></i>
     </button>
-    <h2>Supplier Invoice List</h2>
+    <h2>Purchase Orders</h2>
 
-    <div class="request-form">
-      <div class="row mb-3">
-        <div class="col-md-3 d-flex align-items-center">
-          <label for="entriesPerPage" class="form-label mb-0 me-2">Entries:</label>
-          <select id="entriesPerPage" class="form-select form-select-sm" onchange="setEntriesPerPage()">
-            <option value="5">5 entries</option>
-            <option value="10">10 entries</option>
-            <option value="15">15 entries</option>
-            <option value="20">20 entries</option>
-          </select>
+    <div class="glass-card p-3 h-100 mb-3">
+      <div class="toolbar d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group" style="max-width: 420px;">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search purchase orders...">
         </div>
-        <div class="col-md-3 d-flex align-items-center">
-          <label for="statusFilter" class="form-label mb-0 me-2">Status:</label>
-          <select id="statusFilter" class="form-select form-select-sm" onchange="filterByStatus()">
-            <option value="all">All Status</option>
-
-            <option value="Pending">Pending</option>
-            <option value="Pending Estimation">Pending Estimation</option>
-            <option value="Approved">Approved</option>
-            <option value="Paid">Paid</option>
-            <option value="Cancelled">Cancelled</option>
+        <div class="d-flex align-items-center gap-2">
+          <label for="entriesSelect" class="text-muted small mb-0">Show</label>
+          <select id="entriesSelect" class="form-select form-select-sm" style="width: auto;">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all">All</option>
           </select>
+          <span class="text-muted small">entries</span>
+        </div>
+
         </div>
       </div>
 
-      <div class="materials-list">
-        <h5>Pending Orders</h5>
-        <div class="table-responsive mb-3">
-          <table class="table table-striped">
+    <div class="data-table table-responsive">
+      <table class="table mb-0 align-middle text-center" id="supplier-dashboard-table">
             <thead>
               <tr>
-                <th class="hidden-text">Order ID</th>
-                <th>Order Date</th>
-                <th>Material Type</th>
-                <th>Unit</th>
+            <th class="sortable" data-key="orderId">Purchase Order ID <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+            <th class="sortable" data-key="orderApproveDate">Order Date <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+            <th class="sortable" data-key="status">Status <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+            <th>Material</th>
                 <th>Quantity</th>
-                <th class="amount-header">Estimated Cost</th>
-                <th>Status</th>
-                <th>Actions</th>
+            <th>Delivery Cost</th>
+            <th>Discount (%)</th>
+            <th>Total Amount</th>
+            <th>Action</th>
               </tr>
             </thead>
-            <tbody id="supplierdashboardBody">
-              <!-- Data rows will be inserted here -->
+        <tbody id="supplierDashboardBody">
             </tbody>
           </table>
         </div>
-
-        <div id="paginationControls" class="pagination">
-          <!-- Pagination buttons will be inserted here -->
-        </div>
-      </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div id="entriesMessage" class="text-muted small"></div>
+      <nav aria-label="Table pagination">
+        <ul class="pagination mb-0" id="pagination"></ul>
+      </nav>
     </div>
   </div>
 
-  <!-- Success Alert -->
-  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+
+
+  <!-- Edit Invoice Modal -->
+  <div class="modal fade" id="editInvoiceModal" tabindex="-1" aria-labelledby="editInvoiceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-body text-center p-4">
-          <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
-          <h5 class="mt-3" id="successMessage"></h5>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Order Details Modal -->
-  <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-      <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="orderDetailsModalLabel">
-            <i class="fas fa-file-invoice"></i> Order Details
+          <h5 class="modal-title" id="editInvoiceModalLabel">
+            <i class="fas fa-edit"></i> Edit Invoice
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-0">
-          <div class="container-fluid">
-            <div class="row g-0">
-              <!-- Order Details Section -->
-              <div class="col-12">
-                <div class="p-4">
-                  <div class="order-info">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="info-label">Order ID</div>
-                        <div id="modalOrderId" class="info-value"></div>
+        <div class="modal-body">
+          <form>
+            <div class="form-group mb-3">
+              <label for="editInvoiceOrderId" class="form-label">Order ID</label>
+              <input type="text" id="editInvoiceOrderId" class="form-control" required />
                       </div>
-                      <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="editInvoiceSupplier" class="form-label">Supplier</label>
+              <input type="text" id="editInvoiceSupplier" class="form-control" required />
+                    </div>
+            <div class="form-group mb-3">
+              <label for="editInvoiceAmount" class="form-label">Invoice Amount</label>
+              <input type="number" id="editInvoiceAmount" class="form-control" required min="0" step="0.01" />
+                    </div>
+            <div class="form-group mb-3">
+              <label for="editInvoiceDate" class="form-label">Invoice Date</label>
+              <input type="date" id="editInvoiceDate" class="form-control" required />
+                      </div>
+            <div class="form-group mb-3">
+              <label for="editInvoiceStatus" class="form-label">Status</label>
+              <select id="editInvoiceStatus" class="form-select" required>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="In Transit">In Transit</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+                      </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-primary" onclick="confirmEditInvoice()">
+            <i class="fas fa-save"></i> Update
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Details Modal -->
+  <div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-labelledby="viewDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewDetailsModalLabel">
+            <i class="fas fa-shopping-cart"></i> Purchase Order Details
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <!-- Order Header Section -->
+          <div class="row mb-4">
+              <div class="col-12">
+                <div class="request-header-card p-3 bg-light rounded">
+                  <div class="row align-items-center">
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Purchase Order ID</div>
+                        <div id="modalOrderId" class="info-value fw-bold text-primary"></div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Order Date</div>
+                        <div id="modalOrderDate" class="info-value"></div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
                         <div class="info-label">Status</div>
                         <div id="modalStatus" class="info-value"></div>
-                    </div>
-                    </div>
-                    <div class="row mt-3">
-                      <div class="col-md-4">
-                        <div class="info-label">Order Approve Date</div>
-                        <div id="modalApproveDate" class="info-value"></div>
-                      </div>
-                      <div class="col-md-4">
-                        <div class="info-label">Deliver Date</div>
-                        <div id="modalDeliverDate" class="info-value"></div>
-                      </div>
-                      <div class="col-md-4">
-                        <div class="info-label">Finance Payment Date</div>
-                        <div id="modalFinanceApproveDate" class="info-value"></div>
                       </div>
                     </div>
-                  </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Total Amount</div>
+                        <div id="modalGrandTotal" class="info-value fw-bold text-dark fs-5"></div>
+                      </div>
+                    </div>
+                </div>
+                </div>
                 </div>
               </div>
-            </div>
+            
             <!-- Materials Section -->
-            <div class="row g-0">
+            <div class="row">
               <div class="col-12">
-                <div class="p-4">
-                  <div class="materials-section">
-                    <h6><i class="fas fa-boxes"></i>Ordered Materials</h6>
-                    <div id="modalMaterials" class="materials-grid"></div>
-                  </div>
-                </div>
-              </div>
+                <div class="materials-section">
+                  <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-boxes text-primary me-2"></i>
+                    <h5 class="mb-0">Ordered Materials</h5>
+            </div>
+                  <div id="modalMaterials" class="materials-container"></div>
+          </div>
+        </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <div class="d-flex justify-content-between w-100">
-            <div id="actionButtons" class="d-flex gap-2">
-              <!-- Action buttons will be dynamically inserted here -->
+        <div class="modal-footer d-flex justify-content-between">
+          <div>
+            <button type="button" class="btn btn-success" id="confirmOrderBtn" onclick="confirmOrder()" style="display: none;">
+              <i class="fas fa-check"></i> Confirm Order
+            </button>
+            <button type="button" class="btn btn-danger" id="rejectOrderBtn" onclick="rejectOrder()" style="display: none;">
+              <i class="fas fa-times"></i> Reject Order
+            </button>
+            <button type="button" class="btn btn-warning" id="markOutForDeliveryBtn" onclick="markOutForDelivery()" style="display: none;">
+              <i class="fas fa-truck"></i> Mark Out for Delivery
+            </button>
+            <button type="button" class="btn btn-info" id="markDeliveredBtn" onclick="markDelivered()" style="display: none;">
+              <i class="fas fa-check-circle"></i> Mark as Delivered
+            </button>
+            <button type="button" class="btn btn-success" id="redeliverBtn" onclick="redeliverOrder()" style="display: none;">
+              <i class="fas fa-truck"></i> Redeliver
+            </button>
+          </div>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issue Management Modal -->
+  <div class="modal fade" id="issueManagementModal" tabindex="-1" aria-labelledby="issueManagementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="issueManagementModalLabel">
+            <i class="fas fa-exclamation-triangle"></i> Issue Management
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <!-- Order Header Section -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="request-header-card p-3 bg-light rounded">
+                  <div class="row align-items-center">
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Order ID</div>
+                        <div id="issueModalOrderId" class="info-value fw-bold text-primary"></div>
+          </div>
+        </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Order Date</div>
+                        <div id="issueModalOrderDate" class="info-value"></div>
+      </div>
+    </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div id="issueModalStatus" class="info-value"></div>
+  </div>
+      </div>
+                    <div class="col-md-3">
+                      <div class="info-item">
+                        <div class="info-label">Total Issues</div>
+                        <div id="issueModalTotalIssues" class="info-value fw-bold text-dark fs-5"></div>
+              </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <!-- Issues Section -->
+              <div class="row">
+              <div class="col-12">
+                <div class="issues-section">
+                  <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    <h5 class="mb-0">Reported Issues</h5>
+                </div>
+                  <div id="issueItemsContainer" class="issues-container">
+                    <!-- Issues will be loaded here -->
+                </div>
+                </div>
+              </div>
+            </div>
+        </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+        <div>
+        </div>
+          <div>
+            <button type="button" class="btn btn-success" id="redeliverBtn" onclick="redeliverOrder()" style="display: none;">
+              <i class="fas fa-truck"></i> Redeliver
+            </button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               <i class="fas fa-times"></i> Close
             </button>
@@ -721,354 +919,29 @@
     </div>
   </div>
 
-  <!-- Invoice Modal -->
-  <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title" id="invoiceModalLabel">
-            <i class="fas fa-file-invoice"></i> Invoice Details
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-        <div class="modal-body">
-          <div class="row mb-4">
-            <div class="col-md-6">
-              <h6 class="text-muted">Invoice Number</h6>
-              <h5 id="viewInvoiceNumber"></h5>
-        </div>
-            <div class="col-md-6 text-md-end">
-              <h6 class="text-muted">Date</h6>
-              <h5 id="viewInvoiceDate"></h5>
-          </div>
-        </div>
-
-          <div class="card mb-4">
-            <div class="card-header bg-light">
-              <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Materials</h6>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Material</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th class="text-end">Price per Unit</th>
-                      <th class="text-end">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody id="viewInvoiceMaterials">
-                    <!-- Materials will be populated here -->
-                  </tbody>
-                  <tfoot class="table-light">
-                    <tr>
-                      <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                      <td class="text-end" id="viewInvoiceSubtotal"></td>
-                    </tr>
-                    <tr>
-                      <td colspan="4" class="text-end"><strong>Shipping Fee:</strong></td>
-                      <td class="text-end" id="viewInvoiceShipping"></td>
-                    </tr>
-                    <tr>
-                      <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
-                      <td class="text-end" id="viewInvoiceTotal"></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header bg-light">
-              <h6 class="mb-0"><i class="fas fa-university me-2"></i>Bank Details</h6>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-4">
-                  <h6 class="text-muted">Bank Name</h6>
-                  <p id="viewBankName" class="mb-3"></p>
-                </div>
-                <div class="col-md-4">
-                  <h6 class="text-muted">Account Number</h6>
-                  <p id="viewAccountNumber" class="mb-3"></p>
-                </div>
-                <div class="col-md-4">
-                  <h6 class="text-muted">Account Holder</h6>
-                  <p id="viewAccountHolder" class="mb-3"></p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <div class="d-flex justify-content-between w-100">
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-primary" onclick="printInvoice()">
-                <i class="fas fa-print me-2"></i>Print Invoice
-            </button>
-              <button type="button" class="btn btn-success" onclick="downloadInvoice()">
-                <i class="fas fa-download me-2"></i>Download PDF
-            </button>
-          </div>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              <i class="fas fa-times me-2"></i>Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Create Invoice Modal -->
-  <div class="modal fade" id="createInvoiceModal" tabindex="-1" aria-labelledby="createInvoiceModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="createInvoiceModalLabel">
-            <i class="fas fa-file-invoice"></i> Create Invoice
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="createInvoiceForm" onsubmit="event.preventDefault();">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Order ID</label>
-                <input type="text" class="form-control" id="invoiceOrderId" readonly>
-          </div>
-              <div class="col-md-6">
-                <label class="form-label">Invoice Date</label>
-                <input type="date" class="form-control" id="invoiceDate" required>
-        </div>
-      </div>
-
-            <div class="materials-section mb-4">
-              <h6 class="mb-3"><i class="fas fa-boxes"></i> Materials</h6>
-              <div id="invoiceMaterialsList" class="table-responsive">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Material</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th>Price per Unit</th>
-                      <th>Total</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="invoiceMaterialsBody">
-                    <!-- Materials will be added here dynamically -->
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                      <td id="subtotalAmount" class="text-end"></td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
-    </div>
-  </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Shipping Fee</label>
-                <div class="input-group">
-                  <span class="input-group-text">₱</span>
-                  <input type="number" class="form-control" id="shippingFee" required min="0" step="1" value="0" onchange="updateTotal()">
-      </div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Total Amount</label>
-                <div class="input-group">
-                  <span class="input-group-text">₱</span>
-                  <input type="text" class="form-control" id="totalAmount" readonly>
-                </div>
-              </div>
-            </div>
-
-            <div class="bank-details-section mb-4">
-              <h6 class="mb-3"><i class="fas fa-university"></i> Bank Account Details</h6>
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Bank Name</label>
-                  <input type="text" class="form-control" id="bankName" required>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Account Number</label>
-                  <input type="text" class="form-control" id="accountNumber" required pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="20">
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Account Holder</label>
-                  <input type="text" class="form-control" id="accountHolder" required>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="fas fa-times"></i> Cancel
-        </button>
-          <button type="button" class="btn btn-primary" onclick="confirmCreateInvoice()">
-            <i class="fas fa-check"></i> Create Invoice
-        </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add this hidden div for PDF generation -->
-  <div id="invoicePDF" style="display: none;">
-    <div class="p-4">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="color: #1a237e;">INVOICE</h2>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
-        <div>
-          <h4>Invoice Number:</h4>
-          <p id="pdfInvoiceNumber"></p>
-        </div>
-        <div style="text-align: right;">
-          <h4>Date:</h4>
-          <p id="pdfInvoiceDate"></p>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 40px;">
-        <h4 style="margin-bottom: 20px;">Materials</h4>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background-color: #f8f9fa;">
-              <th style="border: 1px solid #dee2e6; padding: 12px;">Material</th>
-              <th style="border: 1px solid #dee2e6; padding: 12px;">Quantity</th>
-              <th style="border: 1px solid #dee2e6; padding: 12px;">Unit</th>
-              <th style="border: 1px solid #dee2e6; padding: 12px; text-align: right;">Price per Unit</th>
-              <th style="border: 1px solid #dee2e6; padding: 12px; text-align: right;">Total</th>
-            </tr>
-          </thead>
-          <tbody id="pdfMaterialsBody">
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Subtotal:</strong></td>
-              <td id="pdfSubtotal" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
-            </tr>
-            <tr>
-              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Shipping Fee:</strong></td>
-              <td id="pdfShipping" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
-            </tr>
-            <tr>
-              <td colspan="4" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"><strong>Total Amount:</strong></td>
-              <td id="pdfTotal" style="border: 1px solid #dee2e6; padding: 12px; text-align: right;"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      <div style="margin-bottom: 40px;">
-        <h4 style="margin-bottom: 20px;">Bank Details</h4>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Bank Name</th>
-            <td id="pdfBankName" style="border: 1px solid #dee2e6; padding: 12px;"></td>
-          </tr>
-          <tr>
-            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Account Number</th>
-            <td id="pdfAccountNumber" style="border: 1px solid #dee2e6; padding: 12px;"></td>
-          </tr>
-          <tr>
-            <th style="border: 1px solid #dee2e6; padding: 12px; background-color: #f8f9fa;">Account Holder</th>
-            <td id="pdfAccountHolder" style="border: 1px solid #dee2e6; padding: 12px;"></td>
-          </tr>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Material Availability Confirmation Modal -->
-  <div class="modal fade" id="materialAvailabilityModal" tabindex="-1" aria-labelledby="materialAvailabilityModalLabel" aria-hidden="true">
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="materialAvailabilityModalLabel">
-            <i class="fas fa-exclamation-triangle text-warning"></i> Confirm Material Availability
+          <h5 class="modal-title" id="deleteModalLabel">
+            <i class="fas fa-exclamation-triangle"></i> Delete Invoice
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <p>Are you sure you want to mark <strong id="materialName"></strong> as not available?</p>
-          <p>This will exclude it from the total calculation.</p>
+        <div class="modal-body text-center">
+            <div class="mb-3">
+            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+            </div>
+          <h5 class="text-danger mb-3">Delete Invoice?</h5>
+          <p class="text-muted">Are you sure you want to delete this invoice?</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="fas fa-times"></i> Cancel
           </button>
-          <button type="button" class="btn btn-danger" id="confirmNotAvailable">
-            <i class="fas fa-check"></i> Confirm
-        </button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <!-- Set Estimated Cost Modal -->
-  <div class="modal fade" id="setEstimatedCostModal" tabindex="-1" aria-labelledby="setEstimatedCostModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title" id="setEstimatedCostModalLabel">
-            <i class="fas fa-calculator"></i> Set Estimated Cost
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="estimatedCostForm">
-            <input type="hidden" id="orderIdInput" class="hidden-input">
-            <div class="mb-3 hidden-input">
-              <label class="form-label">Order ID</label>
-              <input type="text" class="form-control" id="displayOrderId" readonly>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Material Type</label>
-              <input type="text" class="form-control" id="displayMaterialType" readonly>
-            </div>
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Quantity</label>
-                <input type="text" class="form-control" id="displayQuantity" readonly>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Unit</label>
-                <input type="text" class="form-control" id="displayUnit" readonly>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Cost per Unit (₱)</label>
-              <div class="input-group">
-                <span class="input-group-text">₱</span>
-                <input type="number" class="form-control" id="estimatedCostPerUnit" required min="0" step="0.01" oninput="calculateTotalCost()">
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Total Estimated Cost (₱)</label>
-              <div class="input-group">
-                <span class="input-group-text">₱</span>
-                <input type="text" class="form-control" id="totalEstimatedCost" readonly>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="fas fa-times"></i> Cancel
-          </button>
-          <button type="button" class="btn btn-primary" onclick="submitEstimatedCost()">
-            <i class="fas fa-check"></i> Submit Cost
+          <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+            <i class="fas fa-trash"></i> Delete
         </button>
       </div>
     </div>
@@ -1077,976 +950,1374 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Remove the hardcoded invoices array and material prices
-  let itemsPerPage = 5;
-  let currentPage = 1;
-  let filteredOrders = [];
-  let allOrders = [];
+   // Initialize empty array - will be populated from backend
+   let invoices = [];
+   let myMaterials = [];
 
-  // Initialize the dashboard
-  document.addEventListener('DOMContentLoaded', async function() {
-    await loadPurchaseOrders();
-    initializeModals();
-  });
-
-  // Load purchase orders from the backend
-  async function loadPurchaseOrders() {
-    try {
-      console.log('Fetching purchase orders...'); // Debug log
-      const response = await fetch('/scm/purchase-orders');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch purchase orders: ${response.status} ${response.statusText}`);
-      }
-      const data = await response.json();
-      console.log('Received orders:', data); // Debug log
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Received invalid data format from server');
-      }
-
-      allOrders = data;
-      filteredOrders = [...allOrders];
-      console.log('Orders loaded:', allOrders.length); // Debug log
-      
-      // Log the first few orders to verify data structure
-      if (allOrders.length > 0) {
-        console.log('Sample order:', allOrders[0]);
-      }
-
-      renderTable();
-    } catch (error) {
-      console.error('Error loading purchase orders:', error);
-      showError('Failed to load purchase orders. Please try again later.');
-    }
-  }
-
-  // Render the purchase orders table
-  function renderTable() {
-    const tableBody = document.getElementById('supplierdashboardBody');
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = filteredOrders.slice(startIndex, endIndex);
-
-    console.log('Rendering table with orders:', currentItems.map(o => o.po_id)); // Debug log
-
-    tableBody.innerHTML = '';
-    
-    currentItems.forEach(order => {
-      const row = document.createElement('tr');
-      
-      // Format the estimated cost display
-      const estimatedCostDisplay = order.estimation_cost ? 
-        `₱${parseFloat(order.estimation_cost).toFixed(2)}` : '-';
-      
-      // Create action buttons based on status
-      let actionButtons = '';
-      switch(order.status) {
-        case 'Pending':
-          actionButtons = `
-            <button type="button" class="btn btn-sm btn-primary me-1" onclick="openSetEstimatedCostModal('${order.po_id}')" title="Set Estimated Cost">
-              <i class="fas fa-calculator"></i> Set Cost
-            </button>
-            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
-              <i class="fas fa-eye"></i>
-            </button>`;
-          break;
-        case 'Pending Estimation':
-          actionButtons = `
-            <button type="button" class="btn btn-sm btn-primary me-1" onclick="openSetEstimatedCostModal('${order.po_id}')" title="Update Cost">
-              <i class="fas fa-calculator"></i> Update Cost
-            </button>
-            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
-              <i class="fas fa-eye"></i>
-            </button>`;
-          break;
-        default:
-          actionButtons = `
-            <button type="button" class="btn btn-sm btn-info me-1" onclick="viewOrderDetails('${order.po_id}')" title="View Details">
-              <i class="fas fa-eye"></i>
-            </button>`;
-      }
-      
-      row.innerHTML = `
-        <td class="hidden-text">${order.po_id}</td>
-        <td>${formatDate(order.order_date)}</td>
-        <td>${order.material_type}</td>
-        <td>${order.unit}</td>
-        <td>${order.quantity}</td>
-        <td class="amount-cell">${estimatedCostDisplay}</td>
-        <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
-        <td>${actionButtons}</td>
-      `;
-      
-      tableBody.appendChild(row);
-    });
-  
-    renderPagination();
-  }
-
-  // Set estimated cost for an order
-  async function submitEstimatedCost() {
-    const orderId = document.getElementById('orderIdInput').value;
-    const costPerUnit = parseFloat(document.getElementById('estimatedCostPerUnit').value);
-    const quantity = parseFloat(document.getElementById('displayQuantity').value);
-    const totalEstimatedCost = costPerUnit * quantity;
-
-    if (!costPerUnit || costPerUnit <= 0) {
-      alert('Please enter a valid cost per unit');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/scm/purchase-orders/${orderId}/cost`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // Include cookies for session-based auth
-        body: JSON.stringify({ estimationCost: totalEstimatedCost })
-      });
-
-      if (response.status === 401) {
-        // Session expired or not logged in
-        window.location.href = '/'; // Redirect to login page
-      return;
-    }
-
-      if (response.status === 403) {
-        throw new Error('You are not authorized to update this order. Please check your permissions.');
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update estimated cost');
-      }
-
-      // Close modal and show success message
-      const modal = bootstrap.Modal.getInstance(document.getElementById('setEstimatedCostModal'));
-      modal.hide();
-      showSuccess('Estimated cost submitted successfully');
-      
-      // Reload orders
-      await loadPurchaseOrders();
-    } catch (error) {
-      console.error('Error updating estimated cost:', error);
-      showError(error.message || 'Failed to update estimated cost. Please try again.');
-    }
-  }
-
-  // Create invoice for an order
-  async function submitInvoice() {
-    const orderId = document.getElementById('invoiceOrderId').value;
-    const invoiceData = {
-      invoice_number: document.getElementById('invoiceNumber').value,
-      invoice_date: document.getElementById('invoiceDate').value,
-      shipping_fee: parseFloat(document.getElementById('shippingFee').value),
-      bank_name: document.getElementById('bankName').value,
-      account_number: document.getElementById('accountNumber').value,
-      account_holder: document.getElementById('accountHolder').value
+    const state = {
+      records: [...invoices],
+      filtered: [],
+      sort: { key: '', dir: 'asc' },
+      pageSize: 5,
+      currentPage: 1,
     };
 
-    try {
-      const response = await fetch(`/scm/purchase-orders/${orderId}/invoice`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(invoiceData)
-      });
+  // No local confirmation persistence; rely on backend status
 
-      if (!response.ok) {
-        throw new Error('Failed to create invoice');
-      }
-
-      // Close modal and show success message
-      const modal = bootstrap.Modal.getInstance(document.getElementById('createInvoiceModal'));
-      modal.hide();
-      showSuccess('Invoice created successfully');
-      
-      // Reload orders
-      await loadPurchaseOrders();
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      showError('Failed to create invoice. Please try again.');
-    }
-  }
-
-  // Update order status
-  async function updateOrderStatus(orderId, newStatus) {
-    try {
-      const response = await fetch(`/scm/purchase-orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update order status');
-      }
-
-      showSuccess(`Order status updated to ${newStatus}`);
-      await loadPurchaseOrders();
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      showError('Failed to update order status. Please try again.');
-    }
-  }
-
-  // Helper functions
-  function formatDate(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  function getStatusColor(status) {
-    switch(status) {
-      case 'Pending': return 'warning';
-      case 'Pending Estimation': return 'info';
-      case 'Approved': return 'primary';
-      case 'Paid': return 'success';
-      case 'Cancelled': return 'danger';
-      default: return 'secondary';
-    }
-  }
-
-  function showSuccess(message) {
-    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-    document.getElementById('successMessage').textContent = message;
-    successModal.show();
-  }
-
-  function showError(message) {
-    alert(message);
-  }
-
-  // Status update functions
-  function startDelivery(orderId) {
-    if (confirm('Are you sure you want to start delivery for this order?')) {
-      updateOrderStatus(orderId, 'In Transit');
-    }
-  }
-
-  function markAsDelivered(orderId) {
-    if (confirm('Are you sure you want to mark this order as delivered?')) {
-      updateOrderStatus(orderId, 'Completed');
-    }
-  }
-
-  // Filter and pagination functions
-  function filterByStatus() {
-    const status = document.getElementById('statusFilter').value;
-    filteredOrders = status === 'all' 
-      ? [...allOrders]
-      : allOrders.filter(order => order.status === status);
-    currentPage = 1;
-    renderTable();
-  }
-  
-  function setEntriesPerPage() {
-    itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
-    currentPage = 1;
-    renderTable();
-  }
-  
-  function renderPagination() {
-    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-    const pagination = document.getElementById('paginationControls');
-    
-    let paginationHTML = '';
-    
-    // Previous button
-    paginationHTML += `
-      <button onclick="changePage(${currentPage - 1})" 
-              class="btn btn-sm" 
-              ${currentPage === 1 ? 'disabled' : ''}>
-        <i class="fas fa-chevron-left"></i>
-      </button>`;
-    
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-      paginationHTML += `
-        <button onclick="changePage(${i})" 
-                class="btn btn-sm ${i === currentPage ? 'active' : ''}">
-          ${i}
-        </button>`;
-    }
-    
-    // Next button
-    paginationHTML += `
-      <button onclick="changePage(${currentPage + 1})" 
-              class="btn btn-sm" 
-              ${currentPage === totalPages ? 'disabled' : ''}>
-        <i class="fas fa-chevron-right"></i>
-      </button>`;
-    
-    pagination.innerHTML = paginationHTML;
-  }
-
-  function changePage(page) {
-    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-    if (page >= 1 && page <= totalPages) {
-      currentPage = page;
-    renderTable();
-    }
-  }
-
-  // Initialize all modals
-  function initializeModals() {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-      new bootstrap.Modal(modal);
-      
-      modal.addEventListener('hidden.bs.modal', function() {
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-          backdrop.remove();
+    // Fetch supplier materials
+    async function fetchMyMaterials() {
+      try {
+        console.log('🔍 Fetching my materials...');
+        const res = await fetch('/scm/materials/my');
+        console.log('📡 Materials response status:', res.status);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        console.log('📦 Materials response data:', data);
+        if (data.success && Array.isArray(data.materials)) {
+          myMaterials = data.materials;
+          console.log('✅ Materials count:', myMaterials.length);
+          renderMyMaterials();
+        } else {
+          console.warn('⚠️ Materials payload unexpected');
+          myMaterials = [];
+          renderMyMaterials();
         }
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('padding-right');
-        document.body.style.removeProperty('overflow');
-      });
-    });
-  }
+      } catch (e) {
+        console.error('💥 Error fetching my materials:', e);
+        myMaterials = [];
+        renderMyMaterials();
+      }
+    }
 
-  function viewOrderDetails(orderId) {
-    const order = allOrders.find(o => o.po_id === orderId);
-    if (!order) return;
-
-    // Convert order ID to string and pad with zeros if needed
-    const orderIdStr = String(order.po_id).padStart(4, '0');
-    const displayOrderId = 'Order #' + orderIdStr.slice(-4);
-
-    // Update modal content
-    document.getElementById('modalOrderId').textContent = displayOrderId;
-    document.getElementById('modalStatus').innerHTML = `<span class="badge bg-${getStatusColor(order.status)}">${order.status}</span>`;
-    document.getElementById('modalApproveDate').textContent = order.estimation_submitted_at || '-';
-    document.getElementById('modalDeliverDate').textContent = '-';
-    document.getElementById('modalFinanceApproveDate').textContent = '-';
-
-    // Render materials
-    const materialsContainer = document.getElementById('modalMaterials');
-    materialsContainer.innerHTML = '';
-    
-        const materialDiv = document.createElement('div');
-        materialDiv.className = 'material-item';
-        materialDiv.innerHTML = `
-          <div class="material-header">
-            <div class="material-icon">
-              <i class="fas fa-box"></i>
-            </div>
-        <div class="material-name">${order.material_type}</div>
-          </div>
-          <div class="material-details">
-            <div class="material-detail">
-              <span class="detail-label">Quantity</span>
-          <span class="detail-value">${order.quantity}</span>
-            </div>
-            <div class="material-detail">
-              <span class="detail-label">Unit</span>
-          <span class="detail-value">${order.unit}</span>
-        </div>
-        <div class="material-detail">
-          <span class="detail-label">Estimated Cost</span>
-          <span class="detail-value">${order.estimation_cost ? `₱${parseFloat(order.estimation_cost).toFixed(2)}` : '-'}</span>
-            </div>
-          </div>
+    function renderMyMaterials() {
+      const tbody = document.getElementById('modalMaterials');
+      if (!tbody) {
+        console.warn('⚠️ modalMaterials not found');
+        return;
+      }
+      tbody.innerHTML = '';
+      if (!myMaterials.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No materials found.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+      myMaterials.forEach(m => {
+        const fullName = String(m.name || '').trim();
+        // Remove any pipe-based category suffix from name if present
+        const nameWithoutCategory = fullName.split('|')[0].trim();
+        const parts = nameWithoutCategory.split(' ');
+        const baseItem = parts[0] || '-';
+        const itemNameCombined = (m.brand_name ? `${m.brand_name} ${baseItem}` : baseItem).trim();
+        const categoryLabel = (m.category && String(m.category).trim()) || 'Office Supplies';
+        const size = m.variant || m.size || (m.attributes && m.attributes.size) || '-';
+        const unit = m.unit || '-';
+        const price = Number(m.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const qty = (m.quantity === null || m.quantity === undefined) ? '-' : Number(m.quantity).toString();
+        const imageUrl = (m.image || m.imageUrl) || (m.attributes && (m.attributes.image || m.attributes.imageUrl)) || '';
+        const imageHtml = imageUrl
+          ? `<img src="${imageUrl}" alt="Material image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">`
+          : '<span class="text-muted">-</span>';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="text-center">${imageHtml}</td>
+          <td>${itemNameCombined}</td>
+          <td>${categoryLabel}</td>
+          <td>${size}</td>
+          <td>${unit}</td>
+          <td>₱${price}</td>
+          <td>${qty}</td>
         `;
-        materialsContainer.appendChild(materialDiv);
-
-    // Update action buttons based on status
-    const actionButtons = document.getElementById('actionButtons');
-    let buttonsHTML = '';
-    switch (order.status) {
-      case 'Pending':
-        buttonsHTML = `
-          <button type="button" class="btn btn-primary me-2" onclick="openSetEstimatedCostModal('${order.po_id}')">
-            <i class="fas fa-calculator"></i> Set Estimated Cost
-          </button>`;
-        break;
-      case 'Pending Estimation':
-        buttonsHTML = `
-          <button type="button" class="btn btn-primary me-2" onclick="openSetEstimatedCostModal('${order.po_id}')">
-            <i class="fas fa-calculator"></i> Update Cost
-          </button>`;
-        break;
-      default:
-        buttonsHTML = ''; // No action buttons for other statuses
+        tbody.appendChild(tr);
+      });
+      console.log('🖨️ Rendered materials rows:', myMaterials.length);
     }
-    actionButtons.innerHTML = buttonsHTML;
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
-    modal.show();
-  }
-
-  function approveOrder(orderId) {
-    if(confirm('Are you sure you want to approve this order?')) {
-      const order = allOrders.find(o => o.po_id === orderId);
-      if(order && order.status === 'Pending') {
-        order.status = 'Approved';
-        order.order_date = new Date().toISOString().split('T')[0];
-        renderTable();
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
-        modal.hide();
-        // Show success message
-        showSuccessMessage('Order approved successfully!');
+    // Fetch purchase orders from backend
+    async function fetchPurchaseOrders() {
+      try {
+        console.log('🔍 Fetching purchase orders...');
+        const response = await fetch('/scm/purchases/supplier');
+        console.log('📡 Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('📦 Response data:', data);
+        
+        if (data.success && data.orders) {
+          console.log('✅ Found orders:', data.orders.length);
+          // Transform backend data to match frontend format
+          invoices = data.orders.map(order => ({
+            id: order.purchase_id,
+            orderId: `PO${order.purchase_id}`,
+            orderApproveDate: order.created_date_formatted,
+            status: order.status,
+            supplier: order.supplier_name,
+            // Prefer approved final amount if available; fallback to computed subtotal
+            amount: (order.invoice_amount != null && !isNaN(Number(order.invoice_amount)))
+              ? Number(order.invoice_amount)
+              : Number(order.total_price),
+            materials: [{
+              id: order.material_id,
+              name: order.material_name,
+              category: order.material_category || 'Office Supplies',
+              quantity: order.quantity,
+              unit: order.unit,
+              supplier: order.supplier_name,
+              status: 'Active',
+              attributes: { size: order.variant || '-' },
+              pricePerUnit: order.unit_price,
+              packaging: 'Unit'
+            }],
+            // Additional fields from purchases table
+            pr_id: order.pr_id,
+            requested_by_name: order.requested_by_name,
+            deliveryCost: order.delivery_cost,
+            discountPercent: order.discount,
+            supplier_invoice: order.supplier_invoice,
+            invoice_date: order.invoice_date,
+            invoice_amount: order.invoice_amount,
+            quantity_received: order.quantity_received,
+            quantity_returned: order.quantity_returned,
+            issueReports: [] // Initialize empty for now
+          }));
+          
+          console.log('🔄 Transformed invoices:', invoices);
+          // Update state and render
+          state.records = [...invoices];
+          applyFilters();
+        } else {
+          console.error('❌ Failed to fetch purchase orders:', data.error);
+          // Show sample data for testing if no orders found
+          invoices = [{
+            id: 1,
+            orderId: 'PO001',
+            orderApproveDate: '2024-01-15 10:30:00',
+            status: 'Pending',
+            supplier: 'Test Supplier',
+            amount: 1500.00,
+            materials: [{
+              id: 1,
+              name: 'Test Material',
+              quantity: 10,
+              unit: 'pcs',
+              supplier: 'Test Supplier',
+              status: 'Active',
+              category: 'General',
+              attributes: { size: 'Medium' },
+              pricePerUnit: 150.00,
+              packaging: 'Unit'
+            }],
+            pr_id: 1,
+            requested_by_name: 'Test User',
+            delivery_cost: 0,
+            discount: 0,
+            supplier_invoice: null,
+            invoice_date: null,
+            invoice_amount: 0,
+            quantity_received: 0,
+            quantity_returned: 0,
+            issueReports: []
+          }];
+          state.records = [...invoices];
+          applyFilters();
+        }
+      } catch (error) {
+        console.error('💥 Error fetching purchase orders:', error);
+        invoices = [];
+        state.records = [];
+        applyFilters();
       }
     }
-  }
 
-  function rejectOrder(orderId) {
-    if(confirm('Are you sure you want to reject this order?')) {
-      const order = allOrders.find(o => o.po_id === orderId);
-      if(order) {
-        order.status = 'Rejected';
-        renderTable();
-        // Close the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
-        modal.hide();
-        // Show success message
-        showSuccessMessage('Order rejected successfully!');
+    function getStatusClass(status) {
+      switch(status) {
+        case 'Pending': return 'status-pending';
+        case 'Processed': return 'status-approved';
+        case 'Out for Delivery': return 'status-in-transit';
+        case 'Partially Delivered': return 'status-in-transit';
+        case 'Received': return 'status-delivered';
+        case 'Returned': return 'status-rejected';
+        case 'Backordered': return 'status-pending';
+        case 'Cancelled': return 'status-rejected';
+        default: return 'status-pending';
       }
     }
-  }
 
-  function createInvoice(orderId) {
-    try {
-      // Prevent any form submission
-      const form = document.getElementById('createInvoiceForm');
-      form.onsubmit = function(e) {
-        e.preventDefault();
-        return false;
-      };
+    function renderTable(rows) {
+      const tbody = document.getElementById('supplierDashboardBody');
+      tbody.innerHTML = '';
 
-      console.log('Creating invoice for order:', orderId);
-      const order = allOrders.find(o => o.po_id === orderId);
-      if (!order) {
-        console.error('Order not found:', orderId);
+      if (!rows.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="7" class="text-center py-5 text-muted">
+          <i class="fa-regular fa-face-frown me-2"></i>No purchase orders found.
+        </td>`;
+        tbody.appendChild(tr);
         return;
       }
 
-      try {
-        // Set order ID and default date
-        const orderIdInput = document.getElementById('invoiceOrderId');
-        const dateInput = document.getElementById('invoiceDate');
-        const materialsBody = document.getElementById('invoiceMaterialsBody');
-        const subtotalElement = document.getElementById('subtotalAmount');
+      rows.forEach((invoice) => {
+        const tr = document.createElement('tr');
+        
+        // Get material info
+        const material = invoice.materials && invoice.materials.length > 0 ? invoice.materials[0] : null;
+        const materialName = material ? material.name : 'N/A';
+        const quantity = material ? `${material.quantity} ${material.unit}` : 'N/A';
+        
+        tr.innerHTML = `
+          <td>${invoice.orderId}</td>
+          <td>${invoice.orderApproveDate}</td>
+          <td>
+            <span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>
+          </td>
+          <td>${materialName}</td>
+          <td>${quantity}</td>
+          <td>
+            <input type="text" class="form-control form-control-sm text-end" value="₱${Number(invoice.deliveryCost || 0).toLocaleString()}" readonly>
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm text-end" value="${Number(invoice.discountPercent || 0).toFixed(2)}%" readonly>
+          </td>
+          <td>₱${(() => {
+            // When Out for Delivery, show the approved invoice_amount if available
+            if (String(invoice.status) === 'Out for Delivery' && invoice.invoice_amount != null && !isNaN(Number(invoice.invoice_amount))) {
+              return Number(invoice.invoice_amount).toLocaleString();
+            }
+            // Otherwise compute from materials subtotal + delivery - discount%
+            const mat = (invoice.materials && invoice.materials[0]) || {};
+            const unitPrice = Number(mat.pricePerUnit || 0);
+            const qty = Number(mat.quantity || 0);
+            const subtotal = unitPrice * qty;
+            const discPct = Number(invoice.discountPercent || 0);
+            const delivery = Number(invoice.deliveryCost || 0);
+            const discountAmount = subtotal * (isNaN(discPct) ? 0 : discPct / 100);
+            const finalTotal = subtotal - discountAmount + delivery;
+            return Number(finalTotal).toLocaleString();
+          })()}</td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${invoice.id}"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-        if (!orderIdInput || !dateInput || !materialsBody || !subtotalElement) {
-          console.error('Required elements not found');
-          return;
+    function paginate(rows, pageSize, currentPage) {
+      if (pageSize === 'all') return { pagedRows: rows, start: rows.length ? 1 : 0, end: rows.length, pages: 1 };
+      const size = Number(pageSize) || 10;
+      const pages = Math.max(1, Math.ceil(rows.length / size));
+      const page = Math.min(Math.max(1, currentPage), pages);
+      const startIndex = (page - 1) * size;
+      const endIndex = Math.min(startIndex + size, rows.length);
+      const pagedRows = rows.slice(startIndex, endIndex);
+      return { pagedRows, start: rows.length ? startIndex + 1 : 0, end: endIndex, pages };
+    }
+
+    function renderPagination(currentPage, totalPages) {
+      const ul = document.getElementById('pagination');
+      ul.innerHTML = '';
+      if (totalPages <= 1) return;
+      const addItem = (label, page, disabled = false, active = false) => {
+        const li = document.createElement('li');
+        li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+        const a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.dataset.page = page;
+        a.textContent = label;
+        li.appendChild(a);
+        ul.appendChild(li);
+      };
+      addItem('Prev', String(currentPage - 1), currentPage === 1, false);
+      const windowSize = 5;
+      let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+      let end = Math.min(totalPages, start + windowSize - 1);
+      start = Math.max(1, Math.min(start, end - windowSize + 1));
+      for (let p = start; p <= end; p++) addItem(String(p), String(p), false, p === currentPage);
+      addItem('Next', String(currentPage + 1), currentPage === totalPages, false);
+    }
+
+    function updateEntriesMessage(start, end, total) {
+      const msg = document.getElementById('entriesMessage');
+      msg.textContent = total ? `Showing ${start} to ${end} of ${total} entries` : 'No entries to show';
+    }
+
+
+
+    function applyFilters() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      state.currentPage = 1;
+      let rows = [...state.records];
+      if (q) {
+        rows = rows.filter(r => {
+          const material = r.materials && r.materials.length > 0 ? r.materials[0] : null;
+          const materialName = material ? material.name : '';
+          const searchText = (
+            String(r.id) + ' ' + 
+            String(r.orderId) + ' ' + 
+            String(r.status) + ' ' +
+            String(materialName) + ' ' +
+            String(r.requested_by_name || '')
+          ).toLowerCase();
+          return searchText.includes(q);
+        });
+      }
+      state.filtered = rows;
+      applySort();
+    }
+
+    function applySort() {
+      const { key, dir } = state.sort;
+      let rows = [...(state.filtered.length ? state.filtered : state.records)];
+      if (key) {
+        rows.sort((a, b) => {
+          const av = a[key];
+          const bv = b[key];
+          if (typeof av === 'number' || typeof bv === 'number') {
+            return dir === 'asc' ? (av - bv) : (bv - av);
+          }
+          return dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+        });
+      }
+      const total = rows.length;
+      const sizeSel = document.getElementById('entriesSelect');
+      state.pageSize = sizeSel ? sizeSel.value : 10;
+      const { pagedRows, start, end, pages } = paginate(rows, state.pageSize, state.currentPage);
+      renderTable(pagedRows);
+      renderPagination(state.currentPage, pages);
+      updateEntriesMessage(start, end, total);
+    }
+
+    function highlightSortHeader() {
+      document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('active'));
+      if (!state.sort.key) return;
+      const th = document.querySelector(`th.sortable[data-key="${state.sort.key}"]`);
+      if (th) {
+        th.classList.add('active');
+        const icon = th.querySelector('.sort-icon');
+        if (icon) {
+          const isNum = ['id'].includes(state.sort.key);
+          const up = isNum ? 'fa-arrow-up-1-9' : 'fa-arrow-up-a-z';
+          const down = isNum ? 'fa-arrow-down-1-9' : 'fa-arrow-down-a-z';
+          icon.classList.remove('fa-arrow-up-1-9','fa-arrow-up-a-z','fa-arrow-down-1-9','fa-arrow-down-a-z');
+          icon.classList.add('fa-solid');
+          icon.classList.add(state.sort.dir === 'asc' ? up : down);
+        }
+      }
+    }
+
+    function handleHeaderClick(e) {
+      const th = e.target.closest('th.sortable');
+      if (!th) return;
+      const key = th.dataset.key;
+      if (state.sort.key === key) {
+        state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort.key = key;
+        state.sort.dir = 'asc';
+      }
+      applySort();
+      highlightSortHeader();
+    }
+
+    // ===== Edit Invoice modal wiring =====
+    let editingInvoiceId = null;
+
+    function openEditInvoiceModal(id) {
+      const rec = state.records.find(r => String(r.id) === String(id));
+      if (!rec) return;
+      editingInvoiceId = rec.id;
+      const modalEl = document.getElementById('editInvoiceModal');
+      if (!modalEl) return;
+      const orderIdEl = document.getElementById('editInvoiceOrderId');
+      const supplierEl = document.getElementById('editInvoiceSupplier');
+      const amountEl = document.getElementById('editInvoiceAmount');
+      const dateEl = document.getElementById('editInvoiceDate');
+      const statusEl = document.getElementById('editInvoiceStatus');
+      if (orderIdEl) orderIdEl.value = rec.orderId || '';
+      if (supplierEl) supplierEl.value = rec.supplier || '';
+      if (amountEl) amountEl.value = rec.amount || '';
+      if (dateEl) dateEl.value = rec.orderApproveDate || '';
+      if (statusEl) statusEl.value = rec.status || 'Pending';
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    function closeEditInvoiceModal() {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editInvoiceModal'));
+      if (modal) modal.hide();
+    }
+
+    function confirmEditInvoice() {
+      if (editingInvoiceId === null) { closeEditInvoiceModal(); return; }
+      const orderId = (document.getElementById('editInvoiceOrderId')?.value || '').trim();
+      const supplier = (document.getElementById('editInvoiceSupplier')?.value || '').trim();
+      const amount = (document.getElementById('editInvoiceAmount')?.value || '').trim();
+      const date = (document.getElementById('editInvoiceDate')?.value || '').trim();
+      const status = (document.getElementById('editInvoiceStatus')?.value || '').trim();
+      
+      if (!orderId || !supplier || !amount || !date || !status) {
+        alert('Please provide all required fields.');
+        return;
+      }
+
+      const idx = state.records.findIndex(r => String(r.id) === String(editingInvoiceId));
+      if (idx >= 0) {
+        state.records[idx].orderId = orderId;
+        state.records[idx].supplier = supplier;
+        state.records[idx].amount = amount;
+        state.records[idx].orderApproveDate = date;
+        state.records[idx].status = status;
+      }
+      editingInvoiceId = null;
+      closeEditInvoiceModal();
+      applyFilters();
+    }
+
+    // ===== View Details modal wiring =====
+    function openViewDetailsModal(id) {
+      const invoice = state.records.find(r => String(r.id) === String(id));
+      if (!invoice) return;
+
+      // Update order information
+      document.getElementById('modalOrderId').textContent = invoice.orderId || '-';
+      document.getElementById('modalOrderDate').textContent = invoice.orderApproveDate || '-';
+      document.getElementById('modalGrandTotal').innerHTML = `₱ ${Number(invoice.amount || 0).toLocaleString()}`;
+      
+      // Update status with badge
+      const statusElement = document.getElementById('modalStatus');
+      statusElement.innerHTML = `<span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>`;
+      
+      // Show/hide buttons based on status
+      const confirmBtn = document.getElementById('confirmOrderBtn');
+      const rejectBtn = document.getElementById('rejectOrderBtn');
+      const markOutForDeliveryBtn = document.getElementById('markOutForDeliveryBtn');
+      const markDeliveredBtn = document.getElementById('markDeliveredBtn');
+      const redeliverBtn = document.getElementById('redeliverBtn');
+      
+      // Hide all buttons first
+      [confirmBtn, rejectBtn, markOutForDeliveryBtn, markDeliveredBtn, redeliverBtn].forEach(btn => {
+        if (btn) btn.style.display = 'none';
+      });
+      
+      // Show appropriate buttons based on status and confirmation
+      if (invoice.status === 'Pending') {
+        if (confirmBtn) {
+          confirmBtn.style.display = 'inline-flex';
+          confirmBtn.setAttribute('data-invoice-id', invoice.id);
+        }
+        if (rejectBtn) {
+          rejectBtn.style.display = 'inline-flex';
+          rejectBtn.setAttribute('data-invoice-id', invoice.id);
+        }
+        // Ensure inputs are editable on Pending
+        const delInp = document.getElementById('deliveryCostInput');
+        const discInp = document.getElementById('discountInput');
+        if (delInp) delInp.disabled = false;
+        if (discInp) discInp.disabled = false;
+      } else if (invoice.status === 'Processed') {
+        if (markOutForDeliveryBtn) {
+          markOutForDeliveryBtn.style.display = 'inline-flex';
+          markOutForDeliveryBtn.setAttribute('data-invoice-id', invoice.id);
+        }
+        // Keep inputs visible but read-only once processed
+        const delInp = document.getElementById('deliveryCostInput');
+        const discInp = document.getElementById('discountInput');
+        if (delInp) delInp.disabled = true;
+        if (discInp) discInp.disabled = true;
+      } else if (invoice.status === 'Out for Delivery') {
+        if (markDeliveredBtn) {
+          markDeliveredBtn.style.display = 'inline-flex';
+          markDeliveredBtn.setAttribute('data-invoice-id', invoice.id);
+        }
+        // Keep inputs visible and read-only in modal for reference
+        const delInp = document.getElementById('deliveryCostInput');
+        const discInp = document.getElementById('discountInput');
+        if (delInp) delInp.disabled = true;
+        if (discInp) discInp.disabled = true;
+      } else if (invoice.status === 'Returned') {
+        if (redeliverBtn) {
+          redeliverBtn.style.display = 'inline-flex';
+          redeliverBtn.setAttribute('data-invoice-id', invoice.id);
+        }
+      }
+
+      // Update materials display
+      const materialsContainer = document.getElementById('modalMaterials');
+      materialsContainer.innerHTML = '';
+
+      if (invoice.materials && invoice.materials.length > 0) {
+        // Display materials in a single table since all belong to the same supplier
+        const materialsTableDiv = document.createElement('div');
+        materialsTableDiv.className = 'materials-table mb-4';
+        materialsTableDiv.innerHTML = `
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th class="text-center">Image</th>
+                  <th class="text-center">Item Name</th>
+                  <th class="text-center">Category</th>
+                  <th class="text-center">Size</th>
+                  <th class="text-center">Unit</th>
+                  <th class="text-center">Quantity</th>
+                  <th class="text-center">Price Per Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${invoice.materials.map(material => {
+                  // Clean name by removing any pipe-based category suffix (e.g., "| CATEGORY ...")
+                  const rawName = String(material.name || '');
+                  const nameWithoutCategory = rawName.split('|')[0].trim();
+                  // Use the full cleaned name for Item Name
+                  const itemName = nameWithoutCategory || '-';
+                  const categoryLabel = material.category || 'Office Supplies';
+                  return `
+                    <tr>
+                      <td class=\"text-center\">-</td>
+                      <td class=\"text-center\">${itemName}</td>
+                      <td class=\"text-center\">${categoryLabel}</td>
+                      <td class=\"text-center\">${(material.attributes && material.attributes.size) || '-'}</td>
+                      <td class=\"text-center\">${material.unit || '-'}</td>
+                      <td class=\"text-center\">${material.quantity || 0}</td>
+                      <td class=\"text-center\">₱${Number(material.pricePerUnit || 0).toFixed(2)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        materialsContainer.appendChild(materialsTableDiv);
+
+        // Calculate subtotal from materials (pricePerUnit * quantity)
+        const subtotal = (invoice.materials || []).reduce((sum, m) => {
+          const price = Number(m.pricePerUnit || 0);
+          const qty = Number(m.quantity || 0);
+          return sum + price * qty;
+        }, 0);
+        // Ensure editable fields exist on invoice
+        if (typeof invoice.deliveryCost === 'undefined') invoice.deliveryCost = 0;
+        if (typeof invoice.discount === 'undefined') invoice.discount = 0;
+
+        // Summary block with editable Subtotal, Delivery Cost, Discount (manual-order style)
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'row mt-3';
+        const editableSubtotal = (typeof invoice.subtotal === 'number' ? invoice.subtotal : subtotal);
+        const uploadSection = ((invoice.status === 'Processed') || (invoice.status === 'Out for Delivery') || invoice.confirmed === true) ? `
+          <div class="col-md-6 d-flex justify-content-end align-items-end">
+            <div class="invoice-upload-section">
+              <label for="invoiceUpload_${invoice.id}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-upload me-1"></i>Upload Invoice Image
+              </label>
+              <input type="file" id="invoiceUpload_${invoice.id}" class="d-none" accept="image/*,application/pdf">
+              <div id="invoicePreview_${invoice.id}" class="mt-2" style="display: none;">
+                <div class="invoice-preview-card">
+                  <img id="previewImg_${invoice.id}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;">
+                  <div class="invoice-info">
+                    <div class="file-info">
+                      <small class="text-muted"><i class="fas fa-clock me-1"></i><span id="uploadDate_${invoice.id}"></span></small>
+                    </div>
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="removeInvoice_${invoice.id}"><i class="fas fa-trash"></i> Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : '';
+        summaryDiv.innerHTML = `
+          <div class="col-md-6">
+            <div class="cost-breakdown">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Subtotal:</span>
+                <div class="fw-bold text-dark">
+                  ₱${editableSubtotal.toFixed(2)}
+            </div>
+          </div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Delivery Cost:</span>
+                <div class="input-group" style="width: 150px;">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" id="deliveryCostInput" class="form-control form-control-sm" value="${Number(invoice.deliveryCost || 0).toFixed(2)}" step="0.01" min="0" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''}>
+            </div>
+        </div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>Discount (%):</span>
+                <div class="input-group" style="width: 150px;">
+                  <span class="input-group-text">%</span>
+                  <input type="number" id="discountInput" class="form-control form-control-sm" value="${Number(invoice.discountPercent || 0).toFixed(2)}" step="0.01" min="0" max="100" inputmode="decimal" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''} onkeydown="return window.preventNegativeAndInvalid(event)" onpaste="return window.preventNegativePaste(event)">
+                </div>
+              </div>
+              <hr class="my-2">
+              <div class="d-flex justify-content-between">
+                <strong>Total:</strong>
+                <strong id="summaryTotal">₱${(editableSubtotal + Number(invoice.deliveryCost || 0) - Number(invoice.discount || 0)).toFixed(2)}</strong>
+              </div>
+            </div>
+          </div>
+          ${uploadSection}
+        `;
+        materialsContainer.appendChild(summaryDiv);
+
+        // Add delivery proof section for delivered orders
+        if (invoice.status === 'Delivered') {
+          const deliveryProofDiv = document.createElement('div');
+          deliveryProofDiv.className = 'row mt-4';
+          deliveryProofDiv.innerHTML = `
+            <div class="col-12">
+              <div class="delivery-proof-section">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="fas fa-truck text-success me-2"></i>
+                  <h6 class="mb-0">Delivery Proof</h6>
+                </div>
+                <div class="delivery-proof-card">
+                  ${invoice.deliveryProof ? `
+                    <img src="${invoice.deliveryProof}" alt="Delivery Proof" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 150px; cursor: pointer;" onclick="window.open('${invoice.deliveryProof}', '_blank')">
+                    <div class="delivery-proof-info">
+                      <small class="text-muted"><i class="fas fa-clock me-1"></i>Delivered on ${invoice.deliveryDate || 'Unknown date'}</small>
+                    </div>
+                  ` : `
+                    <div class="text-center py-4 text-muted">
+                      <i class="fas fa-image fa-2x mb-3"></i>
+                      <p class="mb-0">No delivery proof available</p>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+          materialsContainer.appendChild(deliveryProofDiv);
         }
 
-        orderIdInput.value = orderId;
-        dateInput.valueAsDate = new Date();
+        const deliveryInput = summaryDiv.querySelector('#deliveryCostInput');
+        const discountInput = summaryDiv.querySelector('#discountInput');
+        const totalEl = summaryDiv.querySelector('#summaryTotal');
+        const headerTotalEl = document.getElementById('modalGrandTotal') || document.getElementById('modalTotal');
+        
+        // Add focus handlers to clear default values when clicked
+        deliveryInput.addEventListener('focus', function() {
+          if (this.value === '0.00') {
+            this.value = '';
+          }
+        });
+        
+        discountInput.addEventListener('focus', function() {
+          if (this.value === '0.00') {
+            this.value = '';
+          }
+        });
+        
+        // Add blur handlers to restore default if empty
+        deliveryInput.addEventListener('blur', function() {
+          if (this.value === '' || this.value === '0') {
+            this.value = '0.00';
+          }
+        });
+        
+        discountInput.addEventListener('blur', function() {
+          if (this.value === '' || this.value === '0') {
+            this.value = '0.00';
+          }
+        });
+        const recalc = () => {
+          const sub = editableSubtotal; // fixed subtotal value
+          const delivery = Math.max(0, Number(deliveryInput.value || 0));
+          let discPct = Number(discountInput.value || 0);
+          if (isNaN(discPct)) discPct = 0;
+          discPct = Math.max(0, Math.min(100, discPct));
+          // Persist values on invoice object
+          invoice.deliveryCost = delivery;
+          invoice.discountPercent = discPct;
+          const discountAmount = sub * (discPct / 100);
+          const newTotal = sub - discountAmount + delivery;
+          totalEl.textContent = `₱${newTotal.toFixed(2)}`;
+          if (headerTotalEl) headerTotalEl.textContent = `₱ ${newTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+        deliveryInput.addEventListener('input', () => {
+          if (!deliveryInput.disabled) {
+            recalc();
+            checkApprovalRequirements(); // Check approval requirements when delivery cost changes
+          }
+        });
+        discountInput.addEventListener('input', recalc);
+        // Initial sync
+        recalc();
 
-        // Initialize or get availability status from the order
-        if (!order.materialAvailability) {
-          order.materialAvailability = {};
-          order.materials.forEach(material => {
-            order.materialAvailability[material.material] = true;
+        // ===== Invoice Upload wiring (preview and remove) =====
+        const uploadInput = summaryDiv.querySelector(`#invoiceUpload_${invoice.id}`);
+        const previewContainer = summaryDiv.querySelector(`#invoicePreview_${invoice.id}`);
+        const previewImg = summaryDiv.querySelector(`#previewImg_${invoice.id}`);
+        const removeBtn = summaryDiv.querySelector(`#removeInvoice_${invoice.id}`);
+        const uploadDateEl = summaryDiv.querySelector(`#uploadDate_${invoice.id}`);
+
+        const showPreview = (dataUrl) => {
+          if (!previewContainer || !previewImg) return;
+          previewImg.src = dataUrl;
+          previewContainer.style.display = 'block';
+        };
+
+        // Auto-show preview from DB if supplier_invoice exists
+        if (invoice.supplier_invoice) {
+          try {
+            // If it's a data URL (image/pdf), show as-is; otherwise treat as path/URL
+            const val = String(invoice.supplier_invoice);
+            if (val.startsWith('data:')) {
+              // Decide image vs pdf placeholder
+              if (/^data:application\/pdf/i.test(val)) {
+                if (previewImg) previewImg.src = 'https://via.placeholder.com/200x200?text=PDF';
+                showPreview(previewImg ? previewImg.src : '');
+                invoice.invoicePdf = val;
+              } else {
+                showPreview(val);
+                invoice.invoiceImage = val;
+              }
+            } else {
+              // Treat as URL/path
+              const lower = val.toLowerCase();
+              if (lower.endsWith('.pdf')) {
+                if (previewImg) previewImg.src = 'https://via.placeholder.com/200x200?text=PDF';
+                showPreview(previewImg ? previewImg.src : '');
+                invoice.invoicePdf = val;
+              } else {
+                showPreview(val);
+                invoice.invoiceImage = val;
+              }
+            }
+            if (uploadDateEl) uploadDateEl.textContent = new Date(invoice.invoice_date || Date.now()).toLocaleString();
+          } catch (_) {}
+        } else if (invoice.invoiceImage) {
+          showPreview(invoice.invoiceImage);
+        }
+
+        if (uploadInput) {
+          uploadInput.addEventListener('change', async (e) => {
+            if (uploadInput.disabled) return;
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            // Reset previous refs
+            if (invoice.invoicePdf && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+              try { URL.revokeObjectURL(invoice.invoicePdf); } catch (_) {}
+            }
+            invoice.invoicePdf = '';
+            invoice.invoiceImage = '';
+
+            if (file.type === 'application/pdf') {
+              const reader = new FileReader();
+              reader.onload = async (ev) => {
+                const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : '';
+                // Show placeholder but keep dataUrl for opening and saving
+                if (previewImg) previewImg.src = 'https://via.placeholder.com/200x200?text=PDF';
+                showPreview(previewImg ? previewImg.src : '');
+                invoice.invoicePdf = dataUrl;
+                if (uploadDateEl) uploadDateEl.textContent = new Date().toLocaleString();
+                checkApprovalRequirements();
+              };
+              reader.readAsDataURL(file);
+            } else if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = async (ev) => {
+                const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : '';
+                invoice.invoiceImage = dataUrl;
+                showPreview(dataUrl);
+                if (uploadDateEl) uploadDateEl.textContent = new Date().toLocaleString();
+                
+                // Check approval requirements after invoice upload
+                checkApprovalRequirements();
+              };
+              reader.readAsDataURL(file);
+            }
           });
         }
 
-        // Populate materials table
-        materialsBody.innerHTML = '';
-        let subtotal = 0;
+        // No separate submit button; submission happens on Mark Out for Delivery
 
-        order.materials.forEach((material, index) => {
-          const price = parseInt(materialPrices[material.material]) || 0;
-          const isAvailable = order.materialAvailability[material.material];
-          const total = (price && isAvailable) ? price * material.quantity : 0;
-          if (isAvailable) {
-            subtotal += total;
-          }
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => {
+            if (removeBtn.disabled) return;
+            if (invoice.invoicePdf && typeof URL !== 'undefined' && URL.revokeObjectURL) {
+              try { URL.revokeObjectURL(invoice.invoicePdf); } catch (_) {}
+            }
+            invoice.invoicePdf = '';
+            invoice.invoiceImage = '';
+            if (previewContainer && previewImg) {
+              previewImg.src = '';
+              previewContainer.style.display = 'none';
+            }
+            if (uploadInput) uploadInput.value = '';
+            
+            // Check approval requirements after invoice removal
+            checkApprovalRequirements();
+          });
+        }
 
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${material.material}</td>
-            <td>${material.quantity}</td>
-            <td>${material.unit}</td>
-            <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${price}</td>
-            <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${total}</td>
-            <td class="text-center">
-              <div class="d-flex gap-2 justify-content-center">
-                ${!price ? `
-                  <button class="btn btn-sm btn-primary" onclick="setMaterialPrice('${material.material}')">
-                    <i class="fas fa-plus-circle"></i> Set Price
-                  </button>
-                ` : ''}
-                ${isAvailable ? `
-                  <button type="button" class="btn btn-sm btn-danger" onclick="event.preventDefault(); toggleMaterialAvailability('${material.material}', '${orderId}')" title="Mark as Not Available">
-                    <i class="fas fa-times"></i>
-                  </button>
-                ` : `
-                  <span class="badge bg-danger">Not Available</span>
-                `}
-              </div>
-            </td>
-          `;
-          materialsBody.appendChild(row);
+        // Clicking preview opens PDF if available; otherwise opens image in new tab
+        if (previewImg) {
+          previewImg.style.cursor = 'pointer';
+          previewImg.addEventListener('click', () => {
+            if (invoice.invoicePdf) {
+              const a = document.createElement('a');
+              a.href = invoice.invoicePdf;
+              a.target = '_blank';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              return;
+            }
+            if (invoice.invoiceImage) {
+              const a = document.createElement('a');
+              a.href = invoice.invoiceImage;
+              a.target = '_blank';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            }
+          });
+        }
+
+        // No manual invoice date input in order.html pattern; using upload timestamp like manual modal
+        
+      } else {
+        materialsContainer.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-box-open fa-2x mb-3"></i>
+            <p class="mb-0">No materials found for this order.</p>
+          </div>
+        `;
+      }
+
+      const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+      modal.show();
+    }
+
+    function closeViewDetailsModal() {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal'));
+      if (modal) modal.hide();
+    }
+
+    function checkApprovalRequirements() {
+      const approveBtn = document.getElementById('approveOrderBtn');
+      if (!approveBtn || approveBtn.style.display === 'none') return;
+      
+      const invoiceId = approveBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
+      
+      const invoice = state.records.find(r => String(r.id) === String(invoiceId));
+      if (!invoice) return;
+      
+      // Check if delivery cost is entered (allow 0 or empty values)
+      const deliveryCostInput = document.getElementById('deliveryCostInput');
+      const deliveryCost = deliveryCostInput ? Number(deliveryCostInput.value || 0) : 0;
+      
+      // Check if invoice is uploaded
+      const hasInvoice = invoice.invoiceImage || invoice.invoicePdf;
+      
+      // Enable/disable approve button based on requirements (delivery cost no longer required)
+      const canApprove = hasInvoice;
+      approveBtn.disabled = !canApprove;
+    }
+
+    async function confirmOrder() {
+      const confirmBtn = document.getElementById('confirmOrderBtn');
+      if (!confirmBtn) return;
+      
+      const invoiceId = confirmBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
+      
+      // Find the invoice in the records
+      const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
+      if (invoiceIndex === -1) return;
+      
+      // Read and validate delivery cost and discount percent before confirming
+      const deliveryInput = document.getElementById('deliveryCostInput');
+      const discountInput = document.getElementById('discountInput');
+      let delivery = Number(deliveryInput ? deliveryInput.value : 0);
+      let discPct = Number(discountInput ? discountInput.value : 0);
+      if (isNaN(delivery) || delivery < 0) {
+        alert('Please enter a valid non-negative delivery cost.');
+        return;
+      }
+      if (isNaN(discPct) || discPct < 0 || discPct > 100) {
+        alert('Please enter a valid discount percentage between 0 and 100.');
+        return;
+      }
+      // Persist values and submit for finance approval – status remains Pending
+      state.records[invoiceIndex].deliveryCost = delivery;
+      state.records[invoiceIndex].discountPercent = discPct;
+      state.records[invoiceIndex].status = 'Pending';
+
+      // Send to backend so finance can see it in pending estimations
+      try {
+        await fetch(`/scm/purchases/${state.records[invoiceIndex].id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'Pending',
+            delivery_cost: delivery,
+            discount: discPct // store percent; finance view computes amount
+          })
+        });
+      } catch (_) {}
+      
+      // Close the modal
+      closeViewDetailsModal();
+      
+      // Refresh the table to reflect new available actions
+      applyFilters();
+      
+      // Show success message
+      alert('Submitted for finance approval. Status remains Pending until approved.');
+    }
+
+    async function redeliverOrder() {
+      const redeliverBtn = document.getElementById('redeliverBtn');
+      if (!redeliverBtn) return;
+      
+      const invoiceId = redeliverBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
+      
+      try {
+        const response = await fetch(`/scm/purchases/${invoiceId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status: 'Out for Delivery'
+          })
         });
 
-        // Set initial values
-        subtotalElement.textContent = `₱${subtotal}`;
-        document.getElementById('shippingFee').value = '0';
-        document.getElementById('totalAmount').value = subtotal;
-
-        // Show modal
-        const createInvoiceModal = new bootstrap.Modal(document.getElementById('createInvoiceModal'));
-        createInvoiceModal.show();
+        if (response.ok) {
+          // Update the local state
+          const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
+          if (invoiceIndex !== -1) {
+            state.records[invoiceIndex].status = 'Out for Delivery';
+            renderTable();
+          }
+          
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal'));
+          if (modal) modal.hide();
+          
+          alert('Order marked for redelivery successfully!');
+        } else {
+          alert('Failed to redeliver order. Please try again.');
+        }
       } catch (error) {
-        console.error('Error creating invoice:', error);
-      }
-    } catch (error) {
-      console.error('Error confirming invoice creation:', error);
-    }
-  }
-
-  function toggleMaterialAvailability(materialName, orderId) {
-    try {
-      // Show confirmation modal
-      const modal = new bootstrap.Modal(document.getElementById('materialAvailabilityModal'));
-      document.getElementById('materialName').textContent = materialName;
-      
-      // Set up confirmation button handler
-      const confirmButton = document.getElementById('confirmNotAvailable');
-      confirmButton.onclick = function(e) {
-        e.preventDefault(); // Prevent any default action
-        const order = allOrders.find(o => o.po_id === orderId);
-        if (order) {
-          order.materialAvailability[materialName] = false;
-          modal.hide();
-          createInvoice(orderId);
-          showSuccessMessage(`${materialName} marked as not available`);
-        }
-      };
-      
-      modal.show();
-    } catch (error) {
-      console.error('Error in toggleMaterialAvailability:', error);
-    }
-  }
-
-  function setMaterialPrice(materialName) {
-    const price = prompt(`Enter price for ${materialName}:`);
-    if (price !== null) {
-      const numPrice = parseFloat(price);
-      if (!isNaN(numPrice) && numPrice >= 0) {
-        materialPrices[materialName] = numPrice;
-        // Refresh the invoice display
-        const orderId = document.getElementById('invoiceOrderId').value;
-        createInvoice(orderId);
-      } else {
-        alert('Please enter a valid price (must be a number greater than or equal to 0)');
+        console.error('Error redelivering order:', error);
+        alert('Failed to redeliver order. Please try again.');
       }
     }
-  }
 
-  function updateTotal() {
-    try {
-      const subtotalText = document.getElementById('subtotalAmount').textContent;
-      const subtotal = parseInt(subtotalText.replace(/[^\d]/g, '')) || 0;
-      const shippingFee = parseInt(document.getElementById('shippingFee').value) || 0;
+    function rejectOrder() {
+      const rejectBtn = document.getElementById('rejectOrderBtn');
+      if (!rejectBtn) return;
       
-      // Calculate total
-      const total = subtotal + shippingFee;
-
-      // Update the display
-      document.getElementById('totalAmount').value = total;
-    } catch (error) {
-      console.error('Error updating total:', error);
-    }
-  }
-
-  function showSuccessMessage(message) {
-    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-    document.getElementById('successMessage').textContent = message;
-    successModal.show();
-    setTimeout(() => {
-      successModal.hide();
-    }, 2000);
-  }
-
-  function closeAllModals() {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modalEl => {
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) {
-        modal.hide();
-      }
-    });
-    
-    // Remove any remaining backdrop and cleanup
-    const backdrop = document.querySelector('.modal-backdrop');
-    if (backdrop) {
-      backdrop.remove();
-    }
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('padding-right');
-    document.body.style.removeProperty('overflow');
-  }
-
-  function confirmCreateInvoice() {
-    try {
-      const orderId = document.getElementById('invoiceOrderId').value;
-      const order = allOrders.find(o => o.po_id === orderId);
+      const invoiceId = rejectBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
       
-      if (order) {
-        // Get bank details
-        const bankName = document.getElementById('bankName').value;
-        const accountNumber = document.getElementById('accountNumber').value;
-        const accountHolder = document.getElementById('accountHolder').value;
-        const shippingFee = parseInt(document.getElementById('shippingFee').value) || 0;
-
-        // Validate bank details
-        if (!bankName || !accountNumber || !accountHolder) {
-          alert('Please fill in all bank account details');
-          return;
-        }
-
-        // Filter out unavailable materials
-        const availableMaterials = order.materials.filter(material => 
-          order.materialAvailability[material.material] !== false
-        );
-
-        if (availableMaterials.length === 0) {
-          alert('Cannot create invoice: No available materials');
-          return;
-        }
-
-        // Generate invoice number
-        const invoiceNumber = 'INV' + orderId.substring(3);
-        
-        // Create a new order object with only available materials
-        const newOrder = {
-          ...order,
-          status: 'Pending Payment',
-          invoice: invoiceNumber,
-          invoiceDate: document.getElementById('invoiceDate').value,
-          shippingFee: shippingFee,
-          bankDetails: {
-            bankName,
-            accountNumber,
-            accountHolder
-          },
-          materials: availableMaterials,
-          originalMaterials: [...order.materials],
-          materialAvailability: { ...order.materialAvailability }
-        };
-
-        // Update the invoices array
-        const orderIndex = allOrders.findIndex(o => o.po_id === orderId);
-        if (orderIndex !== -1) {
-          allOrders[orderIndex] = newOrder;
-          filteredOrders = [...allOrders];
-        }
-
-        // Close modals
-        closeAllModals();
-
-        // Clear invoice view modal content
-        document.getElementById('viewInvoiceMaterials').innerHTML = '';
-        document.getElementById('pdfMaterialsBody').innerHTML = '';
-        document.getElementById('viewInvoiceNumber').textContent = '';
-        document.getElementById('viewInvoiceDate').textContent = '';
-        document.getElementById('viewInvoiceSubtotal').textContent = '';
-        document.getElementById('viewInvoiceShipping').textContent = '';
-        document.getElementById('viewInvoiceTotal').textContent = '';
-        document.getElementById('viewBankName').textContent = '';
-        document.getElementById('viewAccountNumber').textContent = '';
-        document.getElementById('viewAccountHolder').textContent = '';
+      // Find the invoice in the records
+      const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
+      if (invoiceIndex === -1) return;
+      
+      // Update the status to Rejected
+      state.records[invoiceIndex].status = 'Rejected';
+      
+      // Close the modal
+      closeViewDetailsModal();
+      
+      // Refresh the table to show updated status
+      applyFilters();
 
         // Show success message
-        showSuccessMessage('Invoice created successfully! Invoice number: ' + invoiceNumber);
-
-        // Update table
-        renderTable();
-
-        // Show invoice details after a short delay
-        setTimeout(() => {
-          viewInvoice(invoiceNumber, orderId);
-        }, 500);
-      }
-    } catch (error) {
-      console.error('Error confirming invoice creation:', error);
+      alert('Order has been rejected!');
     }
-  }
 
-  function viewPaymentProof(orderId) {
-    const invoice = allOrders.find(o => o.po_id === orderId);
-    if (invoice && invoice.paymentProof) {
-      // Update modal title
-      document.getElementById('invoiceModalLabel').innerHTML = `
-        <i class="fas fa-receipt"></i> Payment Proof - ${orderId}
-      `;
+    async function markOutForDelivery() {
+      const markOutForDeliveryBtn = document.getElementById('markOutForDeliveryBtn');
+      if (!markOutForDeliveryBtn) return;
       
-      // Show the payment proof in the modal
-      const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
-      modal.show();
-
-      // Update modal content to show payment proof
-      document.getElementById('viewInvoiceNumber').textContent = invoice.po_id;
-      document.getElementById('viewInvoiceDate').textContent = invoice.finance_approve_date || 'Pending';
+      const invoiceId = markOutForDeliveryBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
       
-      // You might want to adjust this part based on how you want to display the payment proof
-      const modalBody = document.querySelector('#invoiceModal .modal-body');
-      modalBody.innerHTML = `
-        <div class="text-center">
-          <img src="/payment_proofs/${invoice.paymentProof}" class="img-fluid" alt="Payment Proof">
-        </div>
-      `;
-    }
-  }
-
-  function viewInvoice(invoiceNumber, orderId) {
-    const order = allOrders.find(o => o.po_id === orderId);
-    if (!order || !order.invoice) return;
-
-    try {
-      // Set invoice details
-      document.getElementById('viewInvoiceNumber').textContent = order.invoice;
-      document.getElementById('viewInvoiceDate').textContent = order.invoiceDate;
-      document.getElementById('pdfInvoiceNumber').textContent = order.invoice;
-      document.getElementById('pdfInvoiceDate').textContent = order.invoiceDate;
+      // Find the invoice in the records
+      const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
+      if (invoiceIndex === -1) return;
       
-      // Populate materials tables
-      const materialsBody = document.getElementById('viewInvoiceMaterials');
-      const pdfMaterialsBody = document.getElementById('pdfMaterialsBody');
-      materialsBody.innerHTML = '';
-      pdfMaterialsBody.innerHTML = '';
-      let subtotal = 0;
-
-      const allMaterials = order.originalMaterials || order.materials;
-      allMaterials.forEach(material => {
-        const price = parseInt(materialPrices[material.material]) || 0;
-        const isAvailable = !order.materialAvailability || order.materialAvailability[material.material] !== false;
-        const total = isAvailable ? price * material.quantity : 0;
-        if (isAvailable) {
-          subtotal += total;
-        }
-
-        // Modal row
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>
-            ${material.material}
-            ${!isAvailable ? '<span class="badge bg-danger ms-2">Not Available</span>' : ''}
-          </td>
-          <td>${material.quantity}</td>
-          <td>${material.unit}</td>
-          <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${price}</td>
-          <td class="text-end ${!isAvailable ? 'text-muted' : ''}">₱${total}</td>
-        `;
-        if (!isAvailable) {
-          row.classList.add('table-secondary');
-        }
-        materialsBody.appendChild(row);
-
-        // PDF row
-        const pdfRow = document.createElement('tr');
-        pdfRow.innerHTML = `
-          <td style="border: 1px solid #dee2e6; padding: 12px;">
-            ${material.material}
-            ${!isAvailable ? '<span style="color: #dc3545; margin-left: 8px;">(Not Available)</span>' : ''}
-          </td>
-          <td style="border: 1px solid #dee2e6; padding: 12px;">${material.quantity}</td>
-          <td style="border: 1px solid #dee2e6; padding: 12px;">${material.unit}</td>
-          <td style="border: 1px solid #dee2e6; padding: 12px; text-align: right; ${!isAvailable ? 'color: #6c757d;' : ''}">₱${price}</td>
-          <td style="border: 1px solid #dee2e6; padding: 12px; text-align: right; ${!isAvailable ? 'color: #6c757d;' : ''}">₱${total}</td>
-        `;
-        pdfMaterialsBody.appendChild(pdfRow);
-      });
-
-      // Set totals
-      const totalWithShipping = subtotal + (order.shippingFee || 0);
-      document.getElementById('viewInvoiceSubtotal').textContent = `₱${subtotal}`;
-      document.getElementById('viewInvoiceShipping').textContent = `₱${order.shippingFee || 0}`;
-      document.getElementById('viewInvoiceTotal').textContent = `₱${totalWithShipping}`;
-      
-      document.getElementById('pdfSubtotal').textContent = `₱${subtotal}`;
-      document.getElementById('pdfShipping').textContent = `₱${order.shippingFee || 0}`;
-      document.getElementById('pdfTotal').textContent = `₱${totalWithShipping}`;
-
-      // Set bank details
-      document.getElementById('viewBankName').textContent = order.bankDetails.bankName;
-      document.getElementById('viewAccountNumber').textContent = order.bankDetails.accountNumber;
-      document.getElementById('viewAccountHolder').textContent = order.bankDetails.accountHolder;
-      
-      document.getElementById('pdfBankName').textContent = order.bankDetails.bankName;
-      document.getElementById('pdfAccountNumber').textContent = order.bankDetails.accountNumber;
-      document.getElementById('pdfAccountHolder').textContent = order.bankDetails.accountHolder;
-
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
-      modal.show();
-    } catch (error) {
-      console.error('Error viewing invoice:', error);
-    }
-  }
-
-  function printInvoice() {
-    // Show the invoice content
-    const element = document.getElementById('invoicePDF');
-    element.style.display = 'block';
-    
-    // Print the document
-    window.print();
-    
-    // Hide the invoice content after printing
-    setTimeout(() => {
-      element.style.display = 'none';
-    }, 500);
-  }
-
-  function downloadInvoice() {
-    const element = document.getElementById('invoicePDF');
-    const opt = {
-      margin: [0.5, 0.5],
-      filename: `invoice_${document.getElementById('pdfInvoiceNumber').textContent}.pdf`,
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        logging: true
-      },
-      jsPDF: { 
-        unit: 'in', 
-        format: 'letter', 
-        orientation: 'portrait'
-      }
-    };
-
-    // Make sure the hidden div is temporarily visible for PDF generation
-    element.style.display = 'block';
-    
-    // Generate PDF
-    html2pdf().set(opt).from(element).save().then(() => {
-      // Hide the element again after PDF generation
-      element.style.display = 'none';
-    });
-  }
-
-  renderTable();
-
-  // Sidebar toggle functionality
-  document.getElementById('sidebar-toggle').onclick = function() {
-    const sidebar = document.getElementById('sidebar');
-    const content = document.getElementById('content');
-    if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-      sidebar.style.display = 'block';
-      content.style.marginLeft = '300px';
-    } else {
-      sidebar.style.display = 'none';
-      content.style.marginLeft = '0';
-    }
-  };
-
-  // Initialize
-  function initializePage() {
-    const select = document.getElementById('entriesPerPage');
-    itemsPerPage = parseInt(select.value);
-    renderTable();
-  }
-
-  // Call initialize when the page loads
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializePage);
-  } else {
-    initializePage();
-  }
-
-  function resetCreateInvoiceForm() {
-    // Reset shipping fee
-    document.getElementById('shippingFee').value = '0';
-    
-    // Reset bank details
-    document.getElementById('bankName').value = '';
-    document.getElementById('accountNumber').value = '';
-    document.getElementById('accountHolder').value = '';
-    
-    // Reset material availability
-    const order = allOrders.find(o => o.po_id === document.getElementById('invoiceOrderId').value);
-    if (order) {
-      order.materialAvailability = {};
-      order.materials.forEach(material => {
-        order.materialAvailability[material.material] = true;
-      });
-    }
-  }
-
-  // Add event listener for modal close
-  document.getElementById('createInvoiceModal').addEventListener('hidden.bs.modal', function () {
-    resetCreateInvoiceForm();
-  });
-
-  function openSetEstimatedCostModal(orderId) {
-    console.log('Opening modal for order:', orderId);
-    console.log('Available orders:', allOrders);
-    
-    let order = allOrders.find(o => o.po_id === orderId);
-    if (!order) {
-      order = allOrders.find(o => String(o.po_id) === String(orderId));
-    }
-    if (!order) {
-      order = allOrders.find(o => Number(o.po_id) === Number(orderId));
-    }
-    
-    if (!order) {
-      console.error('Order not found:', orderId);
-      console.error('Available order IDs:', allOrders.map(o => o.po_id));
-      return;
-    }
-    
-    try {
-      console.log('Found order:', order);
-      
-      // Convert order ID to string and pad with zeros if needed
-      const orderIdStr = String(order.po_id).padStart(4, '0');
-      const displayOrderId = 'Order #' + orderIdStr.slice(-4);
-      
-      // Populate modal fields
-      document.getElementById('orderIdInput').value = order.po_id;
-      document.getElementById('displayOrderId').value = displayOrderId;
-      document.getElementById('displayMaterialType').value = order.material_type;
-      document.getElementById('displayQuantity').value = order.quantity;
-      document.getElementById('displayUnit').value = order.unit;
-      document.getElementById('estimatedCostPerUnit').value = '';
-      document.getElementById('totalEstimatedCost').value = '';
-      
-      // Initialize and show modal
-      const modalElement = document.getElementById('setEstimatedCostModal');
-      if (!modalElement) {
-        console.error('Modal element not found');
+      const inv = state.records[invoiceIndex];
+      // Require invoice uploaded before proceeding
+      if (!(inv.invoiceImage || inv.invoicePdf)) {
+        alert('Please upload an invoice image or PDF before marking Out for Delivery.');
         return;
       }
 
-      const modal = new bootstrap.Modal(modalElement);
+      // If invoice exists (image/pdf), persist it now with a proper MySQL datetime
+      try {
+        const payload = {};
+        if (inv.invoiceImage) payload.supplier_invoice = inv.invoiceImage;
+        if (inv.invoicePdf) payload.supplier_invoice = inv.invoicePdf;
+        if (payload.supplier_invoice) {
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          const mysqlDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+          payload.invoice_date = mysqlDate;
+          const resp = await fetch(`/scm/purchases/${inv.id}/invoice`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!resp.ok) {
+            const t = await resp.text().catch(() => '');
+            alert('Failed to save invoice. ' + t);
+            return;
+          }
+        }
+      } catch (err) {
+        alert('Failed to save invoice.');
+        return;
+      }
+
+      // Update the status to Out for Delivery (UI)
+      state.records[invoiceIndex].status = 'Out for Delivery';
+
+      // Persist to backend: send status plus delivery values
+      try {
+        const resp = await fetch(`/scm/purchases/${inv.id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'Out for Delivery',
+            delivery_cost: Number(inv.deliveryCost || 0),
+            discount: Number(inv.discountPercent || 0) // percent; backend stores as percent
+          })
+        });
+        if (!resp.ok) {
+          const t = await resp.text().catch(() => '');
+          alert('Failed to update status. ' + t);
+          return;
+        }
+      } catch (_) { return; }
+      
+      // Close the modal
+      closeViewDetailsModal();
+      
+      // Refresh from backend to pull latest invoice_amount and status
+      await fetchPurchaseOrders();
+      
+      // Show success message
+      alert('Order has been marked as Out for Delivery!');
+    }
+
+    function markDelivered() {
+      const markDeliveredBtn = document.getElementById('markDeliveredBtn');
+      if (!markDeliveredBtn) return;
+      
+      const invoiceId = markDeliveredBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
+      
+      // Find the invoice in the records
+      const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
+      if (invoiceIndex === -1) return;
+      
+      // Update the status to Received (UI)
+      state.records[invoiceIndex].status = 'Received';
+
+      // Persist to backend
+      try {
+        fetch(`/scm/purchases/${state.records[invoiceIndex].id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'Received' })
+        }).catch(() => {});
+      } catch (_) {}
+      
+      // Close the modal
+      closeViewDetailsModal();
+      
+      // Refresh the table to show updated status
+      applyFilters();
+      
+      // Show success message
+      alert('Order has been marked as Delivered!');
+    }
+
+    // ===== Delete modal wiring =====
+    let itemIdToDelete = null;
+
+    function openDeleteModal(id) {
+      itemIdToDelete = id;
+      const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
       modal.show();
-    } catch (error) {
-      console.error('Error opening modal:', error);
-      console.error('Error details:', {
-        orderId,
-        order,
-        modalElement: document.getElementById('setEstimatedCostModal')
+    }
+
+    function closeDeleteModal() {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+      if (modal) modal.hide();
+      itemIdToDelete = null;
+    }
+
+    function confirmDelete() {
+      if (itemIdToDelete !== null) {
+        const idx = state.records.findIndex(r => String(r.id) === String(itemIdToDelete));
+        if (idx !== -1) {
+          state.records.splice(idx, 1);
+          applyFilters();
+        }
+      }
+      closeDeleteModal();
+    }
+
+    // ===== Issue Management Functions =====
+    let currentIssueOrderId = null;
+
+    function openIssueManagement(invoiceId) {
+      const invoice = state.records.find(r => String(r.id) === String(invoiceId));
+      if (!invoice) return;
+
+      currentIssueOrderId = invoiceId;
+
+      // Update modal header information
+      document.getElementById('issueModalOrderId').textContent = invoice.orderId || '-';
+      document.getElementById('issueModalOrderDate').textContent = invoice.orderApproveDate || '-';
+      document.getElementById('issueModalStatus').innerHTML = `<span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>`;
+      
+      // Count total issues
+      const totalIssues = invoice.issueReports ? invoice.issueReports.length : 0;
+      document.getElementById('issueModalTotalIssues').textContent = totalIssues;
+
+      // Load issues
+      loadIssuesForOrder(invoice);
+
+      const modal = new bootstrap.Modal(document.getElementById('issueManagementModal'));
+      modal.show();
+    }
+
+    function loadIssuesForOrder(invoice) {
+      const container = document.getElementById('issueItemsContainer');
+      container.innerHTML = '';
+
+      if (!invoice.issueReports || invoice.issueReports.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+            <p class="mb-0">No issues reported for this order.</p>
+          </div>
+        `;
+        return;
+      }
+
+      invoice.issueReports.forEach((issue, index) => {
+        const issueDiv = document.createElement('div');
+        issueDiv.className = `issue-item ${issue.priority}`;
+        
+        const issueTypeLabels = {
+          'damage': 'Damage',
+          'missing_items': 'Missing Items',
+          'quality_issue': 'Quality Issue',
+          'delivery_delay': 'Delivery Delay',
+          'wrong_item': 'Wrong Item',
+          'other': 'Other'
+        };
+
+        const priorityLabels = {
+          'urgent': 'Urgent',
+          'high': 'High',
+          'medium': 'Medium',
+          'low': 'Low'
+        };
+
+        const statusLabels = {
+          'open': 'Open',
+          'in_progress': 'In Progress',
+          'resolved': 'Resolved',
+          'closed': 'Closed'
+        };
+
+        const statusColors = {
+          'open': 'danger',
+          'in_progress': 'warning',
+          'resolved': 'success',
+          'closed': 'secondary'
+        };
+
+        issueDiv.innerHTML = `
+          <div class="issue-header position-relative">
+            <div>
+              <span class="issue-type">${issueTypeLabels[issue.issueType] || issue.issueType}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="issue-date">
+                <i class="fas fa-clock me-1"></i>
+                ${new Date(issue.reportDate).toLocaleDateString()} ${new Date(issue.reportDate).toLocaleTimeString()}
+              </div>
+            </div>
+            ${issue.status === 'in_transit' ? '<span class="badge bg-warning text-dark fs-6 px-3 py-2 position-absolute top-0 end-0 m-2"><i class="fas fa-truck me-1"></i>In Transit</span>' : ''}
+          </div>
+          
+          <div class="issue-description">
+            <strong>Item Name:</strong> ${issue.itemName || 'N/A'}<br><br>
+            <strong>Description:</strong> ${issue.itemDescription || 'N/A'}<br><br>
+            <strong>Quantity:</strong> ${issue.quantity || 'N/A'}<br><br>
+            <strong>Issue Description:</strong> ${issue.description}
+          </div>
+
+          ${issue.evidenceFiles && issue.evidenceFiles.length > 0 ? `
+            <div class="issue-evidence">
+              <strong>Evidence:</strong><br>
+              ${issue.evidenceFiles.map(file => `
+                <img src="${file.url}" alt="${file.name}" class="evidence-image" onclick="viewEvidenceImage('${file.url}', '${file.name}')">
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${issue.status === 'open' || issue.status === 'in_progress' || issue.status === 'in_transit' ? `
+            <div class="response-section">
+              <label class="form-label"><strong>Your Response:</strong></label>
+              <textarea class="form-control response-textarea" id="response_${issue.id}" placeholder="Please provide your response to this issue..."></textarea>
+              <div class="response-actions">
+                ${issue.status === 'in_transit' ? `
+                  <button type="button" class="btn btn-warning btn-sm disabled" disabled>
+                    <i class="fas fa-truck me-1"></i>In Transit
+                  </button>
+                ` : `
+                  <button type="button" class="btn btn-warning btn-sm" onclick="updateIssueStatus('${issue.id}', 'in_transit')">
+                    <i class="fas fa-truck me-1"></i>Mark as In Transit
+                  </button>
+                `}
+              </div>
+            </div>
+          ` : ''}
+
+          ${issue.status === 'resolved' ? `
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle me-2"></i>
+              <strong>Issue Resolved</strong> - ${issue.resolvedDate ? new Date(issue.resolvedDate).toLocaleDateString() : 'Recently'}
+            </div>
+          ` : ''}
+        `;
+
+        container.appendChild(issueDiv);
       });
     }
-  }
 
-  function calculateTotalCost() {
-    const costPerUnit = parseFloat(document.getElementById('estimatedCostPerUnit').value) || 0;
-    const quantity = parseFloat(document.getElementById('displayQuantity').value) || 0;
-    const totalCost = costPerUnit * quantity;
-    document.getElementById('totalEstimatedCost').value = totalCost.toFixed(2);
-  }
+
+    function updateIssueStatus(issueId, newStatus) {
+      const invoice = state.records.find(r => String(r.id) === String(currentIssueOrderId));
+      if (!invoice || !invoice.issueReports) return;
+
+      const issue = invoice.issueReports.find(i => i.id === issueId);
+      if (issue) {
+        issue.status = newStatus;
+        if (newStatus === 'in_transit') {
+          issue.inTransitDate = new Date().toISOString();
+        }
+      }
+
+      // Refresh the issues display
+      loadIssuesForOrder(invoice);
+      
+      // Refresh the main table to update issue badges
+      applyFilters();
+      
+      // Show success message with emphasis for in transit status
+      if (newStatus === 'in_transit') {
+        alert('Issue has been marked as In Transit! The status indicator is now visible in the top-right corner of the issue card.');
+      } else {
+        alert(`Issue status updated to ${newStatus}!`);
+      }
+    }
+
+
+
+    function viewEvidenceImage(imageUrl, imageName) {
+      // Create a simple modal to view the evidence image
+      const modalHtml = `
+        <div class="modal fade" id="evidenceModal" tabindex="-1">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Evidence: ${imageName}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img src="${imageUrl}" alt="${imageName}" class="img-fluid" style="max-height: 70vh;">
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Remove existing modal if any
+      const existingModal = document.getElementById('evidenceModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // Add new modal to body
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('evidenceModal'));
+      modal.show();
+      
+      // Clean up when modal is hidden
+      document.getElementById('evidenceModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Guard helpers to prevent negative typing/paste in numeric inputs
+      window.preventNegativeAndInvalid = function(e) {
+        const invalidKeys = ['-','e','E','+'];
+        if (invalidKeys.includes(e.key)) { e.preventDefault(); return false; }
+        return true;
+      };
+      window.preventNegativePaste = function(e) {
+        const data = (e.clipboardData || window.clipboardData).getData('text');
+        if (/[-eE+]/.test(data)) { e.preventDefault(); return false; }
+        return true;
+      };
+      // Fetch purchase orders from backend
+      fetchPurchaseOrders();
+      // Fetch materials for this supplier
+      fetchMyMaterials();
+      
+      document.querySelector('thead').addEventListener('click', handleHeaderClick);
+      // Actions on table rows
+      document.getElementById('supplier-dashboard-table').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        if (btn.dataset.action === 'edit') {
+          openEditInvoiceModal(id);
+        } else if (btn.dataset.action === 'delete') {
+          openDeleteModal(id);
+        } else if (btn.dataset.action === 'view') {
+          openViewDetailsModal(id);
+        }
+      });
+      document.getElementById('pagination').addEventListener('click', (e) => {
+        const a = e.target.closest('a.page-link');
+        if (!a) return;
+        e.preventDefault();
+        const target = Number(a.dataset.page);
+        if (isNaN(target)) return;
+        state.currentPage = target;
+        applySort();
+      });
+      document.getElementById('entriesSelect').addEventListener('change', () => {
+        state.currentPage = 1;
+        applySort();
+      });
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+    });
 </script>
 </body>
 </html>

@@ -160,8 +160,12 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm-dashboard.html')); // Adjusted path
   });
 
-  app.get('/scm/outside_purchases', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'outside.html')); // Adjusted path
+  app.get('/scm/product_request', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'product_request.html')); // Adjusted path
+  });
+
+  app.get('/scm/manual_purchase', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'manual.html')); // Adjusted path
   });
 
   app.get('/scm/request_material', (req, res) => {
