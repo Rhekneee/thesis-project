@@ -359,11 +359,45 @@ const sendDeveloperApprovalNotification = async (to, username, password, link) =
     }
 };
 
+// Email notification for manual supplier welcome (no system access)
+const sendManualSupplierWelcome = async (to, supplierName) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: 'Welcome to MDB Construction – Supplier Onboarding',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4f6ef5;">Welcome to MDB Construction!</h2>
+                    <p>Dear ${supplierName},</p>
+                    <p>Thank you for partnering with <strong>MDB Construction</strong>. Your supplier profile has been successfully added to our system.</p>
+                    <p>This email is a confirmation of your onboarding. Since your account is configured as <strong>Manual</strong>, you will coordinate orders and pricing directly with our Supply Chain team.</p>
+                    <div style="background-color: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;">
+                        <p style="margin: 6px 0; color: #374151;">For any updates (pricing, catalog, contact info) kindly reach out to:</p>
+                        <p style="margin: 0; color: #111827; font-weight: 600;">SCM Team – scm@mdbconstruction.com</p>
+                    </div>
+                    <p>If you were expecting portal access, please let us know and we can upgrade your account to a <strong>Registered</strong> supplier with portal credentials.</p>
+                    <br>
+                    <p>We look forward to a successful partnership.</p>
+                    <p>Best regards,<br>Supply Chain Management Team<br>MDB Construction</p>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Manual supplier welcome email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending manual supplier welcome email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
     sendRejectNotification,
     sendSupplierAccountNotification,
     sendEmployeeAccountNotification,
-    sendDeveloperApprovalNotification
+    sendDeveloperApprovalNotification,
+    sendManualSupplierWelcome
 }; 

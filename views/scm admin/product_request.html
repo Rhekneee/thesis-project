@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/js/side_top.js"></script>
+
+  <title>Supplier UI</title>
+  <style>
+  
+    #content {
+      margin-left: 0;
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+
+  </style>
+</head>
+<body>
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name">John Doe</div>
+                      <div class="profile-position">SCM Manager</div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Supplier Added</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Purchase Order Approved</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Inventory Updated</div>
+                  <div class="notification-time">2 hours ago</div>
+              </div>
+          </div>
+      </div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
+  </div>
+  <ul class="list-unstyled">
+    <li class="nav-item">
+      <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
+    </li>
+    
+    <li class="nav-item">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
+        <i class="fas fa-file-invoice"></i> Purchase Request
+      </a>
+      <ul class="collapse" id="PurchaseRequest">
+        <li class="nav-item"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
+        <li class="nav-item"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
+      </ul>
+    </li>
+   
+    <li class="nav-item">
+      <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+    </li>
+    <li class="nav-item">
+        <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
+    </li>
+    <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+  </ul>
+  </div>
+
+  <div id="content">
+    <h2>Pending Product Requests</h2>
+
+    <div class="card p-3 mb-3">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group" style="max-width: 420px;">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" id="supplierSearch" class="form-control" placeholder="Search supplier...">
+        </div>
+        <button class="btn btn-outline-secondary" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        <button class="btn btn-success ms-auto" id="approveSelectedBtn" disabled><i class="fa-solid fa-check"></i> Approve Selected</button>
+        <button class="btn btn-danger" id="rejectSelectedBtn" disabled><i class="fa-solid fa-xmark"></i> Reject Selected</button>
+      </div>
+    </div>
+
+    <div class="table-responsive card p-3">
+      <table class="table align-middle mb-0" id="pendingSuppliersTable">
+        <thead>
+          <tr>
+            <th style="width:36px;"><input type="checkbox" id="selectAllSuppliers"></th>
+            <th>Supplier</th>
+            <th>Pending Items</th>
+            <th>Latest Submitted</th>
+            <th style="width:160px;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="pendingSuppliersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: Supplier Pending Items -->
+  <div class="modal fade" id="supplierItemsModal" tabindex="-1" aria-labelledby="supplierItemsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="supplierItemsModalLabel"><i class="fas fa-list"></i> Pending Items</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <strong id="modalSupplierName" class="me-auto"></strong>
+            <button class="btn btn-sm btn-success" id="modalApproveBtn" disabled><i class="fa-solid fa-check"></i> Approve Selected</button>
+            <button class="btn btn-sm btn-danger" id="modalRejectBtn" disabled><i class="fa-solid fa-xmark"></i> Reject Selected</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th style="width:32px;"><input type="checkbox" id="modalSelectAll"></th>
+                  <th>Name</th>
+                  <th>Size</th>
+                  <th>Unit</th>
+                  <th>Price</th>
+                  <th>Effective Date</th>
+                </tr>
+              </thead>
+              <tbody id="modalItemsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      pending: [], // flat list of pending products from API
+      grouped: new Map(), // supplier_id -> { supplier_name, items: [] }
+      selectedSuppliers: new Set(),
+      modal: { supplierId: null, items: [], selected: new Set() }
+    };
+
+    function bySupplier(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        const key = String(r.supplier_id);
+        if (!map.has(key)) map.set(key, { supplier_id: r.supplier_id, supplier_name: r.supplier_name, items: [] });
+        map.get(key).items.push(r);
+      });
+      return map;
+    }
+
+    function formatDate(d) {
+      if (!d) return '-';
+      try { return new Date(d).toLocaleDateString(); } catch { return d; }
+    }
+
+    async function fetchPending() {
+      const res = await fetch('/scm/products/pending');
+      if (!res.ok) throw new Error('Failed to load pending products');
+      const data = await res.json();
+      state.pending = Array.isArray(data) ? data : [];
+      state.grouped = bySupplier(state.pending);
+      renderSuppliers();
+    }
+
+    function renderSuppliers() {
+      const tbody = document.getElementById('pendingSuppliersBody');
+      const q = (document.getElementById('supplierSearch').value || '').toLowerCase();
+      tbody.innerHTML = '';
+      const rows = Array.from(state.grouped.values())
+        .filter(g => !q || (g.supplier_name || '').toLowerCase().includes(q));
+      if (rows.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="5" class="text-center text-muted py-4">No pending items</td>`;
+        tbody.appendChild(tr);
+      }
+      rows.forEach(g => {
+        const latest = g.items.reduce((m, r) => m && m.effective_date > r.effective_date ? m : r, null);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="supplier-checkbox" data-id="${g.supplier_id}"></td>
+          <td>${g.supplier_name}</td>
+          <td><span class="badge bg-warning text-dark">${g.items.length} pending</span></td>
+          <td>${formatDate(latest?.effective_date)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${g.supplier_id}">
+              <i class="fa-solid fa-eye"></i> View Items
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      syncBulkButtons();
+    }
+
+    function syncBulkButtons() {
+      const hasSel = state.selectedSuppliers.size > 0;
+      document.getElementById('approveSelectedBtn').disabled = !hasSel;
+      document.getElementById('rejectSelectedBtn').disabled = !hasSel;
+    }
+
+    function openSupplierModal(supplierId) {
+      const g = state.grouped.get(String(supplierId));
+      if (!g) return;
+      state.modal = { supplierId: g.supplier_id, items: g.items, selected: new Set() };
+      document.getElementById('modalSupplierName').textContent = g.supplier_name;
+      renderModalItems();
+      new bootstrap.Modal(document.getElementById('supplierItemsModal')).show();
+    }
+
+    function renderModalItems() {
+      const tbody = document.getElementById('modalItemsBody');
+      tbody.innerHTML = '';
+      state.modal.items.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="modal-item-checkbox" data-id="${it.product_id}"></td>
+          <td>${it.name}</td>
+          <td>${it.size || '-'}</td>
+          <td>${it.unit || '-'}</td>
+          <td>${Number(it.price).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td>${formatDate(it.effective_date)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      syncModalButtons();
+    }
+
+    function syncModalButtons() {
+      const hasSel = state.modal.selected.size > 0;
+      document.getElementById('modalApproveBtn').disabled = !hasSel;
+      document.getElementById('modalRejectBtn').disabled = !hasSel;
+    }
+
+    async function bulkUpdate(productIds, status) {
+      // sequentially update to keep it simple
+      for (const id of productIds) {
+        await fetch(`/scm/products/${id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+      }
+    }
+
+    // Event wiring
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchPending().catch(err => console.error(err));
+
+      document.getElementById('refreshBtn').onclick = () => fetchPending().catch(console.error);
+      document.getElementById('supplierSearch').addEventListener('input', renderSuppliers);
+
+      document.getElementById('selectAllSuppliers').addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        state.selectedSuppliers = new Set();
+        document.querySelectorAll('.supplier-checkbox').forEach(cb => {
+          cb.checked = checked;
+          if (checked) state.selectedSuppliers.add(cb.dataset.id);
+        });
+        syncBulkButtons();
+      });
+
+      document.getElementById('pendingSuppliersTable').addEventListener('change', (e) => {
+        const cb = e.target.closest('.supplier-checkbox');
+        if (!cb) return;
+        if (cb.checked) state.selectedSuppliers.add(cb.dataset.id); else state.selectedSuppliers.delete(cb.dataset.id);
+        syncBulkButtons();
+      });
+
+      document.getElementById('pendingSuppliersTable').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="view"]');
+        if (!btn) return;
+        openSupplierModal(btn.dataset.id);
+      });
+
+      document.getElementById('modalSelectAll').addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        state.modal.selected = new Set();
+        document.querySelectorAll('.modal-item-checkbox').forEach(cb => {
+          cb.checked = checked; if (checked) state.modal.selected.add(cb.dataset.id);
+        });
+        syncModalButtons();
+      });
+
+      document.getElementById('supplierItemsModal').addEventListener('change', (e) => {
+        const cb = e.target.closest('.modal-item-checkbox');
+        if (!cb) return;
+        if (cb.checked) state.modal.selected.add(cb.dataset.id); else state.modal.selected.delete(cb.dataset.id);
+        syncModalButtons();
+      });
+
+      document.getElementById('modalApproveBtn').onclick = async () => {
+        const ids = Array.from(state.modal.selected);
+        await bulkUpdate(ids, 'Active');
+        await fetchPending();
+        bootstrap.Modal.getInstance(document.getElementById('supplierItemsModal')).hide();
+      };
+      document.getElementById('modalRejectBtn').onclick = async () => {
+        const ids = Array.from(state.modal.selected);
+        await bulkUpdate(ids, 'Inactive');
+        await fetchPending();
+        bootstrap.Modal.getInstance(document.getElementById('supplierItemsModal')).hide();
+      };
+
+      document.getElementById('approveSelectedBtn').onclick = async () => {
+        // approve all items for selected suppliers
+        const toApprove = [];
+        state.selectedSuppliers.forEach(sid => {
+          const g = state.grouped.get(String(sid));
+          if (g) g.items.forEach(it => toApprove.push(it.product_id));
+        });
+        await bulkUpdate(toApprove, 'Active');
+        await fetchPending();
+      };
+      document.getElementById('rejectSelectedBtn').onclick = async () => {
+        const toReject = [];
+        state.selectedSuppliers.forEach(sid => {
+          const g = state.grouped.get(String(sid));
+          if (g) g.items.forEach(it => toReject.push(it.product_id));
+        });
+        await bulkUpdate(toReject, 'Inactive');
+        await fetchPending();
+      };
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -423,6 +423,11 @@
                     <i class="fas fa-shopping-cart"></i> All Orders
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="refunds-tab" data-bs-toggle="tab" data-bs-target="#refunds" type="button" role="tab">
+                    <i class="fas fa-undo"></i> Refund Requests
+                </button>
+            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -445,14 +450,14 @@
                     <table class="table table-striped" id="estimationTable">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>Purchase ID</th>
                                 <th>Supplier</th>
                                 <th>Material</th>
-                                <th>Quantity</th>
-                                <th>Estimation Cost</th>
-                                <th>Requested By</th>
-                                <th>Department</th>
-                                <th>Date Submitted</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Delivery Cost</th>
+                                <th>Discount (%)</th>
+                                <th>Final Total</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -532,7 +537,12 @@
                             <tr>
                                 <th onclick="sortPO('orderId')">Order ID <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortPO('supplier')">Supplier <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortPO('receivedDate')">Received Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('material_name')">Item Name <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('quantity')">Quantity <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('delivery_cost')">Delivery Cost <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('discount')">Discount <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('invoice_amount')">Invoice Amount <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('receivedDate')">Order Date <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Invoice</th>
                                 <th onclick="sortPO('status')">Status <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Actions</th>
@@ -544,6 +554,43 @@
                 <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
                     <span id="showingEntries"></span>
                     <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+                </div>
+            </div>
+
+            <!-- Refund Requests Tab -->
+            <div class="tab-pane fade" id="refunds" role="tabpanel">
+                <div class="search-container mb-3">
+                    <input type="text" id="refundSearchBar" class="form-control" placeholder="Search by purchase ID or supplier...">
+                    <div class="entries-per-page ms-auto">
+                        <label for="refundEntriesPerPage" class="me-2">Entries per page:</label>
+                        <select id="refundEntriesPerPage" class="form-select">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped" id="refundTable">
+                        <thead>
+                            <tr>
+                                <th>Purchase ID</th>
+                                <th>Supplier</th>
+                                <th>Material</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                                <th>Return Reason</th>
+                                <th>Request Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="refundList"></tbody>
+                    </table>
+                </div>
+                <div id="refundPagination" class="d-flex justify-content-between align-items-center mt-3">
+                    <span id="refundEntriesInfo"></span>
+                    <nav><ul class="pagination mb-0" id="refundPaginationControls"></ul></nav>
                 </div>
             </div>
         </div>
@@ -758,6 +805,16 @@
                             <label for="estimationRemarks" class="form-label">Remarks (required for rejection)</label>
                             <textarea id="estimationRemarks" class="form-control" rows="3"></textarea>
                         </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Delivery Cost</label>
+                                <input type="number" min="0" step="0.01" id="estimationDeliveryCost" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Discount (%)</label>
+                                <input type="number" min="0" max="100" step="0.01" id="estimationDiscount" class="form-control" placeholder="0.00">
+                            </div>
+                        </div>
                         <!-- Add payment type selection (only shown when approving) -->
                         <div id="paymentTypeSection" class="mb-3" style="display: none;">
                             <label class="form-label">Payment Type</label>
@@ -931,74 +988,234 @@
         </div>
     </div>
 
+    <!-- Refund Action Modal -->
+    <div class="modal fade" id="refundActionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 800px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-undo"></i> 
+                        <span id="refundActionTitle">Review Refund Request</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="refund-details mb-4">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Purchase ID</label>
+                                <div id="modalRefundPurchaseId" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Supplier</label>
+                                <div id="modalRefundSupplier" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Material</label>
+                                <div id="modalRefundMaterial" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity</label>
+                                <div id="modalRefundQuantity" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Amount</label>
+                                <div id="modalRefundAmount" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Request Date</label>
+                                <div id="modalRefundDate" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Return Reason</label>
+                                <div id="modalRefundReason" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label">Proof of Issue</label>
+                                <div id="modalRefundProof" class="form-control-plaintext">
+                                    <span class="text-muted">No proof provided</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <div class="mb-3">
+                            <label for="refundRemarks" class="form-label">Finance Remarks (required for rejection)</label>
+                            <textarea id="refundRemarks" class="form-control" rows="3" placeholder="Enter your remarks..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" id="rejectRefundBtn" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Reject Request
+                            </button>
+                            <button type="button" id="approveReturnBtn" class="btn btn-warning">
+                                <i class="fas fa-undo"></i> Approve Return
+                            </button>
+                            <button type="button" id="approveRefundBtn" class="btn btn-success">
+                                <i class="fas fa-check"></i> Approve Refund
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Returned Order View Modal -->
+    <div class="modal fade" id="returnedOrderModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 800px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-undo"></i> 
+                        <span id="returnedOrderTitle">Returned Order Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info-circle"></i> Order Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Purchase ID:</strong></td>
+                                    <td id="returnedPurchaseId">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Supplier:</strong></td>
+                                    <td id="returnedSupplier">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Material:</strong></td>
+                                    <td id="returnedMaterial">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Quantity:</strong></td>
+                                    <td id="returnedQuantity">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Amount:</strong></td>
+                                    <td id="returnedAmount">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Order Date:</strong></td>
+                                    <td id="returnedDate">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-invoice"></i> Invoice Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Invoice Number:</strong></td>
+                                    <td id="returnedInvoiceNumber">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Invoice Date:</strong></td>
+                                    <td id="returnedInvoiceDate">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Invoice File:</strong></td>
+                                    <td id="returnedInvoiceFile">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Return Information</h6>
+                            <div class="alert alert-warning">
+                                <strong>Return Reason:</strong>
+                                <p id="returnedReason" class="mb-2">-</p>
+                                
+                                <strong>Proof of Issue:</strong>
+                                <div id="returnedProof" class="mt-2">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="redeliverBtn" class="btn btn-success" style="margin-left: 10px;">
+                        <i class="fas fa-truck"></i> Redeliver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Sample purchase order data
-        let purchaseOrders = [
-            {
-                orderId: 'PO-2024-001',
-                supplier: 'ABC Construction Supplies',
-                receivedDate: '2024-03-15',
-                status: 'received',
-                totalAmount: 150000,
-                invoiceFile: 'invoice_po_2024_001.pdf',
-                invoice: {
-                    items: [
-                        {
-                            name: 'Cement',
-                            quantity: 100,
-                            unit: 'bags',
-                            price: 500,
-                            total: 50000
-                        },
-                        {
-                            name: 'Steel Bars',
-                            quantity: 50,
-                            unit: 'pieces',
-                            price: 2000,
-                            total: 100000
+        // Wait for DOM to be fully loaded before adding event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+        // Load purchase orders from backend
+        async function loadPurchaseOrders() {
+            try {
+                const response = await fetch('/finance/purchases/all');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Transform the data to match the expected format
+                    window.purchaseOrders = data.orders.map(order => ({
+                        orderId: order.purchase_id,
+                        purchase_id: order.purchase_id,
+                        supplier: order.supplier_name || 'Unknown Supplier',
+                        supplier_name: order.supplier_name || 'Unknown Supplier',
+                        material_name: order.material_name || 'Unknown Material',
+                        quantity: order.quantity,
+                        unit: order.unit,
+                        unit_price: order.unit_price,
+                        total_price: order.total_price,
+                        delivery_cost: order.delivery_cost,
+                        discount: order.discount,
+                        invoice_amount: order.invoice_amount,
+                        receivedDate: order.created_date,
+                        created_date: order.created_date,
+                        status: order.status,
+                        invoiceFile: order.supplier_invoice,
+                        supplier_invoice: order.supplier_invoice,
+                        invoice_date: order.invoice_date_formatted,
+                        invoice_number: order.invoice_number,
+                        return_reason: order.return_reason,
+                        return_proof: order.return_proof,
+                        invoice: {
+                            items: [{
+                                name: order.material_name || 'Unknown Material',
+                                quantity: order.quantity,
+                                unit: order.unit,
+                                price: order.unit_price,
+                                total: order.total_price
+                            }]
                         }
-                    ]
+                    }));
+                    
+                    console.log('✅ Loaded purchase orders:', window.purchaseOrders.length);
+                    renderPOs();
+                } else {
+                    console.error('❌ Failed to load purchase orders:', data.error);
+                    showAlert('error', 'Failed to load purchase orders');
                 }
-            },
-            {
-                orderId: 'PO-2024-002',
-                supplier: 'XYZ Building Materials',
-                receivedDate: '2024-03-16',
-                status: 'paid',
-                totalAmount: 75000,
-                invoiceFile: 'invoice_po_2024_002.pdf',
-                invoice: {
-                    items: [
-                        {
-                            name: 'Lumber',
-                            quantity: 200,
-                            unit: 'pieces',
-                            price: 375,
-                            total: 75000
-                        }
-                    ]
-                }
-            },
-            {
-                orderId: 'PO-2024-003',
-                supplier: 'Best Construction Supplies',
-                receivedDate: '',
-                status: 'to-deliver',
-                totalAmount: 120000,
-                invoiceFile: '',
-                invoice: {
-                    items: [
-                        {
-                            name: 'Paint',
-                            quantity: 20,
-                            unit: 'gallons',
-                            price: 6000,
-                            total: 120000
-                        }
-                    ]
-                }
+            } catch (error) {
+                console.error('❌ Error loading purchase orders:', error);
+                showAlert('error', 'Failed to load purchase orders');
             }
-        ];
+        }
+
+        // Initialize with empty array, then load real data
+        window.purchaseOrders = [];
+        
+        // Load purchase orders when page loads
+        loadPurchaseOrders();
 
         // --- Purchase Order Table Logic ---
         let poCurrentPage = 1;
@@ -1009,14 +1226,14 @@
         let poStatusFilter = 'all';
 
         function filterAndSortPOs() {
-            let filtered = purchaseOrders.filter(po => {
+            let filtered = window.purchaseOrders.filter(po => {
                 // Status filter
                 if (poStatusFilter !== 'all' && po.status !== poStatusFilter) return false;
                 // Search filter
                 const search = poSearchValue.toLowerCase();
                 return (
-                    po.orderId.toLowerCase().includes(search) ||
-                    po.supplier.toLowerCase().includes(search)
+                    String(po.orderId).toLowerCase().includes(search) ||
+                    (po.supplier && po.supplier.toLowerCase().includes(search))
                 );
             });
             // Sorting
@@ -1051,10 +1268,15 @@
                 row.innerHTML = `
                     <td>${po.orderId}</td>
                     <td>${po.supplier}</td>
+                    <td>${po.material_name || 'Unknown Material'}</td>
+                    <td>${po.quantity} ${po.unit || ''}</td>
+                    <td>₱${(po.delivery_cost || 0).toLocaleString()}</td>
+                    <td>₱${(po.discount || 0).toLocaleString()}</td>
+                    <td>₱${(po.invoice_amount || po.total_price || 0).toLocaleString()}</td>
                     <td>${po.receivedDate || '-'}</td>
                     <td>
                         ${po.invoiceFile ? 
-                            `<button onclick="viewInvoice('${po.invoiceFile}', ${purchaseOrders.indexOf(po)})" class="btn btn-sm btn-outline-primary">
+                            `<button onclick="viewInvoice('${po.invoiceFile}', ${window.purchaseOrders.indexOf(po)})" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-file-pdf"></i> View Invoice
                             </button>` : 
                             '<span class="text-muted">No invoice</span>'
@@ -1063,7 +1285,10 @@
                     <td><span class="po-status status-${po.status}">${po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPO(${purchaseOrders.indexOf(po)})" title="View"><i class="fas fa-eye"></i></button>
+                            ${po.status === 'Returned' ? 
+                                `<button class="action-btn view-btn btn btn-warning btn-sm" onclick="viewReturnedOrder('${po.purchase_id || po.orderId}')" title="View Returned Order"><i class="fas fa-undo"></i></button>` :
+                                `<button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPO(${window.purchaseOrders.indexOf(po)})" title="View"><i class="fas fa-eye"></i></button>`
+                            }
                         </div>
                     </td>
                 `;
@@ -1131,12 +1356,13 @@
             renderPOs();
         }
 
-        // Modal state
-        let currentPOIdx = null;
+        // Modal state - make globally accessible
+        window.currentPOIdx = null;
 
-        function viewPO(idx) {
-            currentPOIdx = idx;
-            const po = purchaseOrders[idx];
+        // Make viewPO function globally accessible
+        window.viewPO = function(idx) {
+            window.currentPOIdx = idx;
+            const po = window.purchaseOrders[idx];
             
             // Update order info
             document.getElementById('modalOrderId').textContent = po.orderId;
@@ -1160,11 +1386,11 @@
             // Show modal
             var viewModal = new bootstrap.Modal(document.getElementById('viewPOModal'));
             viewModal.show();
-        }
+        };
 
         document.getElementById('modalPayBtn').onclick = function() {
-            if (currentPOIdx !== null) {
-                const po = purchaseOrders[currentPOIdx];
+            if (window.currentPOIdx !== null) {
+                const po = window.purchaseOrders[window.currentPOIdx];
                 // Show confirmation modal
                 var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
                 confirmModal.show();
@@ -1172,26 +1398,26 @@
         };
 
         document.getElementById('confirmActionBtn').onclick = function() {
-            if (currentPOIdx !== null) {
-                purchaseOrders[currentPOIdx].status = 'paid';
+            if (window.currentPOIdx !== null) {
+                window.purchaseOrders[window.currentPOIdx].status = 'paid';
                 renderPOs();
                 // Hide both modals
                 var confirmModalEl = document.getElementById('confirmModal');
                 var viewModalEl = document.getElementById('viewPOModal');
                 bootstrap.Modal.getInstance(confirmModalEl).hide();
                 bootstrap.Modal.getInstance(viewModalEl).hide();
-                currentPOIdx = null;
+                window.currentPOIdx = null;
             }
         };
 
         document.getElementById('modalViewInvoiceBtn').onclick = function() {
-            if (currentPOIdx !== null) {
-                viewFullscreenInvoice(purchaseOrders[currentPOIdx].invoiceFile, currentPOIdx);
+            if (window.currentPOIdx !== null) {
+                viewFullscreenInvoice(window.purchaseOrders[window.currentPOIdx].invoiceFile, window.currentPOIdx);
             }
         };
 
         function viewFullscreenInvoice(fileName, poIndex) {
-            const po = purchaseOrders[poIndex];
+            const po = window.purchaseOrders[poIndex];
             currentInvoiceFile = fileName;
             
             // Update title with order ID
@@ -1287,47 +1513,132 @@
         let estimationItemsPerPage = 5;
         let currentEstimationId = null;
 
+        // Basic debug check - this should always show
+        console.log('🔍 DEBUG: JavaScript is working!');
+        console.log('🔍 DEBUG: Page title:', document.title);
+        console.log('🔍 DEBUG: Estimations variables initialized');
+        
+        // Alert to make sure we're on the right page
+        console.log('🔍 DEBUG: Current page URL:', window.location.href);
+        if (window.location.href.includes('finance_purchase_order')) {
+            console.log('🔍 DEBUG: Confirmed - we are on the finance purchase order page');
+        } else {
+            console.log('🔍 DEBUG: WARNING - we might not be on the right page');
+        }
+
+        // Add global error handler to catch any JavaScript errors
+        window.addEventListener('error', function(e) {
+            console.error('🔍 DEBUG: JavaScript Error:', e.error);
+            console.error('🔍 DEBUG: Error message:', e.message);
+            console.error('🔍 DEBUG: Error file:', e.filename);
+            console.error('🔍 DEBUG: Error line:', e.lineno);
+        });
+
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('🔍 DEBUG: Unhandled Promise Rejection:', e.reason);
+        });
+
+        // Test if console is working with a simple alert (remove this after testing)
+        console.log('🔍 DEBUG: Testing console - if you see this, console is working');
+        // Uncomment the line below if you want to see an alert popup
+        // alert('Finance Purchase Order page loaded - check console for debug logs');
+
+        // Approve purchase estimation function - declare early
+        async function approvePurchaseEstimation(purchaseId) {
+            try {
+                console.log('🔍 DEBUG: Approving purchase estimation with ID:', purchaseId);
+                const res = await fetch(`/finance/purchases/${purchaseId}/approve-estimation`, { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                console.log('🔍 DEBUG: Approval response:', data);
+                
+                if (!data.success) throw new Error(data.error || data.message || 'Failed to approve');
+                showAlert('success', 'Purchase estimation approved successfully and status changed to Processed.');
+                await fetchPurchaseOrderEstimations();
+            } catch (err) {
+                console.error('🔍 DEBUG: Approval error:', err);
+                showAlert('error', err.message || 'Failed to approve estimation');
+            }
+        }
+
         // Fetch purchase order estimations
         async function fetchPurchaseOrderEstimations() {
             try {
-                const response = await fetch('/finance/purchase-orders/estimations');
+                console.log('🔍 DEBUG: Fetching pending estimations from /finance/purchases/pending-estimations');
+                const response = await fetch('/finance/purchases/pending-estimations');
+                console.log('🔍 DEBUG: Response status:', response.status);
+                
                 const data = await response.json();
+                console.log('🔍 DEBUG: Response data:', data);
                 
                 if (data.success) {
-                    estimations = data.orders;
+                    estimations = data.items; // Changed back to data.items for pending estimations
+                    console.log('🔍 DEBUG: Estimations loaded:', estimations.length, 'items');
+                    console.log('🔍 DEBUG: First estimation:', estimations[0]);
                     renderEstimations();
                 } else {
+                    console.error('🔍 DEBUG: Failed to fetch estimations:', data);
                     showAlert('error', 'Failed to fetch purchase order estimations');
                 }
             } catch (error) {
-                console.error('Error fetching estimations:', error);
+                console.error('🔍 DEBUG: Error fetching estimations:', error);
                 showAlert('error', 'Failed to fetch purchase order estimations');
             }
         }
 
         // Render estimations table
         function renderEstimations() {
+            console.log('🔍 DEBUG: renderEstimations called with', estimations.length, 'estimations');
             const estimationList = document.getElementById('estimationList');
             estimationList.innerHTML = '';
             
             const startIndex = (currentEstimationPage - 1) * estimationItemsPerPage;
             const endIndex = Math.min(startIndex + estimationItemsPerPage, estimations.length);
             const paginatedEstimations = estimations.slice(startIndex, endIndex);
+            
+            console.log('🔍 DEBUG: Pagination - startIndex:', startIndex, 'endIndex:', endIndex, 'paginatedEstimations:', paginatedEstimations.length);
+
+            if (estimations.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="9" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        No pending estimations found
+                    </td>
+                `;
+                estimationList.appendChild(row);
+                updateEstimationPagination();
+                return;
+            }
 
             paginatedEstimations.forEach(estimation => {
                 const row = document.createElement('tr');
+                // Use the data structure from pending estimations
+                const unitPrice = Number(estimation.unit_price) || 0;
+                const quantity = Number(estimation.quantity) || 0;
+                const delCost = Number(estimation.delivery_cost) || 0;
+                const discountPct = Number(estimation.discount_percent) || 0;
+                const subtotal = unitPrice * quantity;
+                const discountAmount = subtotal * (discountPct / 100);
+                const finalTotal = subtotal + delCost - discountAmount;
+                
                 row.innerHTML = `
-                    <td>${estimation.po_id}</td>
-                    <td>${estimation.supplier_name}</td>
-                    <td>${estimation.material_type}</td>
-                    <td>${estimation.quantity} ${estimation.unit}</td>
-                    <td>₱${parseFloat(estimation.estimation_cost).toLocaleString()}</td>
-                    <td>${estimation.requested_by}</td>
-                    <td>${estimation.department}</td>
-                    <td>${new Date(estimation.created_date).toLocaleDateString()}</td>
+                    <td>${estimation.purchase_id}</td>
+                    <td>${estimation.supplier_name || '-'}</td>
+                    <td>${estimation.material_name || '-'}</td>
+                    <td>${quantity.toFixed(2)} ${estimation.unit || ''}</td>
+                    <td>₱${unitPrice.toLocaleString()}</td>
+                    <td>₱${delCost.toLocaleString()}</td>
+                    <td>${discountPct ? discountPct.toFixed(2) : '0.00'}%</td>
+                    <td>₱${finalTotal.toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="reviewEstimation(${estimation.po_id})">
-                            <i class="fas fa-eye"></i> Review
+                        <button class="btn btn-success btn-sm" onclick="approvePurchaseEstimation(${estimation.purchase_id})">
+                            <i class="fas fa-check"></i> Approve
                         </button>
                     </td>
                 `;
@@ -1412,31 +1723,69 @@
             modal.show();
         }
 
+        // View estimation details and open modal
+        function viewEstimationDetails(purchaseId) {
+            // Find the estimation data
+            const estimation = estimations.find(e => e.purchase_id == purchaseId);
+            if (!estimation) {
+                showAlert('error', 'Estimation not found');
+                return;
+            }
+
+            currentEstimationId = purchaseId;
+
+            // Populate modal fields
+            document.getElementById('estimationOrderId').textContent = estimation.purchase_id;
+            document.getElementById('estimationSupplier').textContent = estimation.supplier_name || 'N/A';
+            document.getElementById('estimationMaterial').textContent = estimation.material_name || 'N/A';
+            document.getElementById('estimationQuantity').textContent = `${estimation.quantity} ${estimation.unit || ''}`;
+            document.getElementById('estimationUnitPrice').textContent = `₱${Number(estimation.unit_price || 0).toLocaleString()}`;
+            
+            // Calculate totals
+            const subtotal = Number(estimation.quantity) * Number(estimation.unit_price || 0);
+            const discountAmount = subtotal * (Number(estimation.discount_percent || 0) / 100);
+            const finalTotal = subtotal + Number(estimation.delivery_cost || 0) - discountAmount;
+            
+            document.getElementById('estimationSubtotal').textContent = `₱${subtotal.toLocaleString()}`;
+            document.getElementById('estimationDeliveryCost').value = estimation.delivery_cost || 0;
+            document.getElementById('estimationDiscount').value = estimation.discount_percent || 0;
+            document.getElementById('estimationFinalTotal').textContent = `₱${finalTotal.toLocaleString()}`;
+            
+            // Clear previous remarks
+            document.getElementById('estimationRemarks').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('estimationActionModal'));
+            modal.show();
+        }
+
         // Handle estimation approval
         async function handleEstimationAction(status) {
             const remarks = document.getElementById('estimationRemarks').value.trim();
             
-            if (status === 'Rejected' && !remarks) {
-                showAlert('error', 'Remarks are required when rejecting an estimation');
+            if (status === 'Cancelled' && !remarks) {
+                showAlert('error', 'Remarks are required when cancelling an estimation');
                 return;
             }
 
             try {
-                const response = await fetch(`/finance/purchase-orders/${currentEstimationId}/estimation`, {
+                const response = await fetch(`/finance/purchases/${currentEstimationId}/estimation`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         status,
-                        remarks: status === 'Rejected' ? remarks : null
+                        remarks: status === 'Cancelled' ? remarks : null,
+                        delivery_cost: status === 'Processed' ? Number(document.getElementById('estimationDeliveryCost').value || 0) : null,
+                        discount: status === 'Processed' ? Number(document.getElementById('estimationDiscount').value || 0) : null
                     })
                 });
 
                 const data = await response.json();
                 
                 if (data.success) {
-                    if (status === 'Approved') {
+                    if (status === 'Processed') {
                         // Get the current estimation details
                         const estimation = estimations.find(e => e.po_id === currentEstimationId);
                         if (!estimation) {
@@ -1525,17 +1874,24 @@
         });
 
         // Event Listeners
-        document.getElementById('approveEstimationBtn').addEventListener('click', () => handleEstimationAction('Approved'));
-        document.getElementById('rejectEstimationBtn').addEventListener('click', () => handleEstimationAction('Rejected'));
+        document.getElementById('approveEstimationBtn').addEventListener('click', () => handleEstimationAction('Processed'));
+        document.getElementById('rejectEstimationBtn').addEventListener('click', () => handleEstimationAction('Cancelled'));
 
         document.getElementById('estimationSearchBar').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            estimations = estimations.filter(estimation => 
-                estimation.po_id.toString().includes(searchTerm) ||
-                estimation.supplier_name.toLowerCase().includes(searchTerm)
+            // Filter estimations based on search term
+            const filteredEstimations = estimations.filter(estimation => 
+                estimation.purchase_id.toString().includes(searchTerm) ||
+                (estimation.supplier_name && estimation.supplier_name.toLowerCase().includes(searchTerm)) ||
+                (estimation.material_name && estimation.material_name.toLowerCase().includes(searchTerm))
             );
+            
+            // Temporarily replace estimations array for rendering
+            const originalEstimations = estimations;
+            estimations = filteredEstimations;
             currentEstimationPage = 1;
             renderEstimations();
+            estimations = originalEstimations; // Restore original array
         });
 
         document.getElementById('estimationEntriesPerPage').addEventListener('change', function(e) {
@@ -1544,10 +1900,32 @@
             renderEstimations();
         });
 
+        // Add immediate debug log to check if script is running
+        console.log('🔍 DEBUG: Finance purchase order script loaded');
+        console.log('🔍 DEBUG: Current timestamp:', new Date().toISOString());
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            fetchPurchaseOrderEstimations();
+            console.log('🔍 DEBUG: DOM loaded, initializing finance purchase order page');
+            console.log('🔍 DEBUG: Current URL:', window.location.href);
+            console.log('🔍 DEBUG: About to fetch purchase order estimations');
+            
+            // Check if the function exists
+            if (typeof fetchPurchaseOrderEstimations === 'function') {
+                console.log('🔍 DEBUG: fetchPurchaseOrderEstimations function exists, calling it');
+                fetchPurchaseOrderEstimations();
+            } else {
+                console.error('🔍 DEBUG: fetchPurchaseOrderEstimations function does not exist!');
+            }
         });
+
+        // Also try immediate execution as backup
+        setTimeout(function() {
+            console.log('🔍 DEBUG: Timeout backup execution');
+            if (typeof fetchPurchaseOrderEstimations === 'function') {
+                fetchPurchaseOrderEstimations();
+            }
+        }, 1000);
 
         // Update the showAlert function to use modals
         function showAlert(type, message) {
@@ -1724,6 +2102,381 @@
         document.getElementById('payments-tab').addEventListener('shown.bs.tab', function() {
             fetchPaymentAuditList();
         });
+
+        // =============================================
+        // REFUND REQUESTS FUNCTIONALITY
+        // =============================================
+
+        // Refund requests variables - make globally accessible
+        window.refundRequests = [];
+        let currentRefundPage = 1;
+        let refundItemsPerPage = 5;
+        window.currentRefundId = null;
+
+        // Fetch pending refund requests
+        async function fetchPendingRefunds() {
+            try {
+                const response = await fetch('/finance/refunds/pending');
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.refundRequests = data.refunds || [];
+                    renderRefunds();
+                    
+                    // Show info message if no pending refunds
+                    if (window.refundRequests.length === 0) {
+                        console.log('No pending refund requests found');
+                    }
+                } else {
+                    console.error('Failed to fetch refund requests:', data.message);
+                    showAlert('error', 'Failed to fetch refund requests');
+                }
+            } catch (error) {
+                console.error('Error fetching refund requests:', error);
+                showAlert('error', 'Failed to fetch refund requests');
+            }
+        }
+
+        // Render refunds table
+        function renderRefunds() {
+            const refundList = document.getElementById('refundList');
+            refundList.innerHTML = '';
+            
+            if (window.refundRequests.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        No pending refund requests found
+                    </td>
+                `;
+                refundList.appendChild(row);
+                updateRefundPagination();
+                updateRefundEntriesInfo();
+                return;
+            }
+            
+            const startIndex = (currentRefundPage - 1) * refundItemsPerPage;
+            const endIndex = Math.min(startIndex + refundItemsPerPage, window.refundRequests.length);
+            const paginatedRefunds = window.refundRequests.slice(startIndex, endIndex);
+
+            paginatedRefunds.forEach(refund => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${refund.purchase_id}</td>
+                    <td>${refund.supplier_name || '-'}</td>
+                    <td>${refund.material_name || '-'}</td>
+                    <td>${Number(refund.quantity).toFixed(2)} ${refund.unit || ''}</td>
+                    <td>₱${Number(refund.total_price || refund.invoice_amount).toLocaleString()}</td>
+                    <td>
+                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="${refund.return_reason || 'No reason provided'}">
+                            ${refund.return_reason || 'No reason provided'}
+                        </span>
+                    </td>
+                    <td>${formatDate(refund.created_date)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="reviewRefund(${refund.purchase_id})">
+                            <i class="fas fa-eye"></i> Review
+                        </button>
+                    </td>
+                `;
+                refundList.appendChild(row);
+            });
+
+            updateRefundPagination();
+            updateRefundEntriesInfo();
+        }
+
+        // Update refund pagination
+        function updateRefundPagination() {
+            const totalPages = Math.ceil(window.refundRequests.length / refundItemsPerPage);
+            const paginationControls = document.getElementById('refundPaginationControls');
+            paginationControls.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentRefundPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${currentRefundPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentRefundPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentRefundPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${currentRefundPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        // Change refund page
+        function changeRefundPage(newPage) {
+            const totalPages = Math.ceil(window.refundRequests.length / refundItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentRefundPage = newPage;
+                renderRefunds();
+            }
+            return false;
+        }
+
+        // Update refund entries info
+        function updateRefundEntriesInfo() {
+            const startIndex = (currentRefundPage - 1) * refundItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + refundItemsPerPage - 1, window.refundRequests.length);
+            const info = document.getElementById('refundEntriesInfo');
+            
+            if (window.refundRequests.length === 0) {
+                info.textContent = 'No refund requests to display';
+            } else {
+                info.textContent = `Showing ${startIndex} to ${endIndex} of ${window.refundRequests.length} refund requests`;
+            }
+        }
+
+        // Make reviewRefund function globally accessible
+        window.reviewRefund = function(purchaseId) {
+            const refund = window.refundRequests.find(r => r.purchase_id === purchaseId);
+            if (!refund) return;
+
+            window.currentRefundId = purchaseId;
+            
+            // Update modal content
+            document.getElementById('modalRefundPurchaseId').textContent = refund.purchase_id;
+            document.getElementById('modalRefundSupplier').textContent = refund.supplier_name || 'Unknown';
+            document.getElementById('modalRefundMaterial').textContent = refund.material_name || 'Unknown';
+            document.getElementById('modalRefundQuantity').textContent = `${Number(refund.quantity).toFixed(2)} ${refund.unit || ''}`;
+            document.getElementById('modalRefundAmount').textContent = `₱${Number(refund.total_price || refund.invoice_amount).toLocaleString()}`;
+            document.getElementById('modalRefundDate').textContent = formatDate(refund.created_date);
+            document.getElementById('modalRefundReason').textContent = refund.return_reason || 'No reason provided';
+            
+            // Handle proof display
+            const proofElement = document.getElementById('modalRefundProof');
+            if (refund.return_proof) {
+                // If it's a base64 image, display it
+                if (refund.return_proof.startsWith('data:image/')) {
+                    proofElement.innerHTML = `<img src="${refund.return_proof}" class="img-fluid" style="max-height: 200px;" alt="Proof of issue">`;
+                } else {
+                    proofElement.innerHTML = `<a href="${refund.return_proof}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Proof
+                    </a>`;
+                }
+            } else {
+                proofElement.innerHTML = '<span class="text-muted">No proof provided</span>';
+            }
+            
+            // Clear previous remarks
+            document.getElementById('refundRemarks').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('refundActionModal'));
+            modal.show();
+        };
+
+        // Make viewReturnedOrder function globally accessible
+        window.viewReturnedOrder = function(purchaseId) {
+            const order = window.purchaseOrders.find(o => o.purchase_id === purchaseId);
+            if (!order) return;
+
+            window.currentReturnedOrderId = purchaseId;
+            
+            // Update modal content
+            document.getElementById('returnedPurchaseId').textContent = order.purchase_id;
+            document.getElementById('returnedSupplier').textContent = order.supplier || 'Unknown';
+            document.getElementById('returnedMaterial').textContent = order.material_name || 'Unknown';
+            document.getElementById('returnedQuantity').textContent = `${Number(order.quantity).toFixed(2)} ${order.unit || ''}`;
+            document.getElementById('returnedAmount').textContent = `₱${Number(order.total_price || order.invoice_amount).toLocaleString()}`;
+            document.getElementById('returnedDate').textContent = formatDate(order.created_date);
+            
+            // Invoice information
+            document.getElementById('returnedInvoiceNumber').textContent = order.invoice_number || 'N/A';
+            document.getElementById('returnedInvoiceDate').textContent = order.invoice_date ? formatDate(order.invoice_date) : 'N/A';
+            
+            // Handle invoice file display
+            const invoiceFileElement = document.getElementById('returnedInvoiceFile');
+            if (order.supplier_invoice) {
+                if (order.supplier_invoice.startsWith('data:image/')) {
+                    invoiceFileElement.innerHTML = `<img src="${order.supplier_invoice}" class="img-fluid" style="max-height: 150px;" alt="Invoice">`;
+                } else {
+                    invoiceFileElement.innerHTML = `<a href="${order.supplier_invoice}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Invoice
+                    </a>`;
+                }
+            } else {
+                invoiceFileElement.innerHTML = '<span class="text-muted">No invoice file</span>';
+            }
+            
+            // Return information
+            document.getElementById('returnedReason').textContent = order.return_reason || 'No reason provided';
+            
+            // Handle proof display
+            const proofElement = document.getElementById('returnedProof');
+            if (order.return_proof) {
+                if (order.return_proof.startsWith('data:image/')) {
+                    proofElement.innerHTML = `<img src="${order.return_proof}" class="img-fluid" style="max-height: 200px;" alt="Proof of issue">`;
+                } else {
+                    proofElement.innerHTML = `<a href="${order.return_proof}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Proof
+                    </a>`;
+                }
+            } else {
+                proofElement.innerHTML = '<span class="text-muted">No proof provided</span>';
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('returnedOrderModal'));
+            modal.show();
+        };
+
+        // Handle redeliver action
+        async function handleRedeliver() {
+            if (!window.currentReturnedOrderId) return;
+
+            try {
+                const response = await fetch(`/finance/purchases/${window.currentReturnedOrderId}/redeliver`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('returnedOrderModal')).hide();
+                    showAlert('success', 'Order marked for redelivery successfully');
+                    loadPurchaseOrders();
+                } else {
+                    showAlert('error', data.message || 'Failed to redeliver order');
+                }
+            } catch (error) {
+                console.error('Error redelivering order:', error);
+                showAlert('error', 'Failed to redeliver order');
+            }
+        }
+
+        // Handle refund approval/rejection
+        async function handleRefundAction(status) {
+            const remarks = document.getElementById('refundRemarks').value.trim();
+            
+            if (status === 'Refund Rejected' && !remarks) {
+                showAlert('error', 'Remarks are required when rejecting a refund request');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/finance/refunds/${window.currentRefundId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status,
+                        remarks: status === 'Refund Rejected' ? remarks : null
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('refundActionModal')).hide();
+                    
+                    // Show success message
+                    const successMessage = status === 'Refunded' 
+                        ? 'Refund request approved successfully - Order cancelled'
+                        : status === 'Returned'
+                        ? 'Return request approved successfully'
+                        : 'Refund request rejected successfully';
+                    showAlert('success', successMessage);
+                    
+                    // Refresh refund requests after a short delay to ensure the success message is visible
+                    setTimeout(async () => {
+                        try {
+                            await fetchPendingRefunds();
+                        } catch (error) {
+                            console.error('Error refreshing refund requests:', error);
+                        }
+                    }, 1500);
+                } else {
+                    showAlert('error', data.message || 'Failed to process refund request');
+                }
+            } catch (error) {
+                console.error('Error processing refund request:', error);
+                showAlert('error', 'Failed to process refund request');
+            }
+        }
+
+        // Event listeners for refund requests
+        const approveRefundBtn = document.getElementById('approveRefundBtn');
+        const approveReturnBtn = document.getElementById('approveReturnBtn');
+        const rejectRefundBtn = document.getElementById('rejectRefundBtn');
+        
+        if (approveRefundBtn) {
+            approveRefundBtn.addEventListener('click', () => handleRefundAction('Refunded'));
+        }
+        if (approveReturnBtn) {
+            approveReturnBtn.addEventListener('click', () => handleRefundAction('Returned'));
+        }
+        if (rejectRefundBtn) {
+            rejectRefundBtn.addEventListener('click', () => handleRefundAction('Refund Rejected'));
+        }
+
+        // Add event listener for redeliver button
+        const redeliverBtn = document.getElementById('redeliverBtn');
+        if (redeliverBtn) {
+            redeliverBtn.addEventListener('click', handleRedeliver);
+        }
+
+        const refundSearchBar = document.getElementById('refundSearchBar');
+        if (refundSearchBar) {
+            refundSearchBar.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                // Note: This is a simple client-side filter. In a real app, you'd want server-side filtering
+                const filtered = window.refundRequests.filter(refund => 
+                    refund.purchase_id.toString().includes(searchTerm) ||
+                    (refund.supplier_name && refund.supplier_name.toLowerCase().includes(searchTerm))
+                );
+                
+                // Temporarily replace the array for filtering
+                const originalRefunds = window.refundRequests;
+                window.refundRequests = filtered;
+                currentRefundPage = 1;
+                renderRefunds();
+                
+                // Restore original array
+                window.refundRequests = originalRefunds;
+            });
+        }
+
+        const refundEntriesPerPage = document.getElementById('refundEntriesPerPage');
+        if (refundEntriesPerPage) {
+            refundEntriesPerPage.addEventListener('change', function(e) {
+                refundItemsPerPage = parseInt(e.target.value);
+                currentRefundPage = 1;
+                renderRefunds();
+            });
+        }
+
+        // Initialize refund requests when tab is shown
+        const refundsTab = document.getElementById('refunds-tab');
+        if (refundsTab) {
+            refundsTab.addEventListener('shown.bs.tab', function() {
+                fetchPendingRefunds();
+            });
+        }
+
+        // Helper function to format dates
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        }); // End of DOMContentLoaded
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

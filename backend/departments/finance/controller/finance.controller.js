@@ -260,19 +260,22 @@ exports.getAllPurchaseRequests = async (req, res) => {
         const requests = await FinanceModel.getAllPurchaseRequests();
     
 
-        // Format the data for frontend
+        // Format the data for frontend (updated for new schema)
         const formattedRequests = requests.map(request => ({
-            request_id: request.request_id,
-            material_type: request.material_type,
-            quantity: parseFloat(request.quantity),
+            pr_id: request.pr_id,
+            requested_by: request.requested_by,
+            supplier_id: request.supplier_id,
+            supplier_name: request.supplier_name,
+            material_id: request.material_id,
+            material_name: request.material_name,
+            variant: request.variant,
+            quantity_requested: parseFloat(request.quantity_requested),
             unit: request.unit,
-            justification: request.justification,
+            unit_price: parseFloat(request.unit_price),
+            total_price: parseFloat(request.total_price),
+            created_date: request.created_date_formatted,
             status: request.status || 'Pending',
-            requested_by: request.requester_name || request.requested_by,
-            department: request.department_name || request.department,
-            request_date: request.request_date,
-            approved_date: request.approved_date,
-            remarks: request.remarks
+            requested_by_name: request.requested_by_name
         }));
 
     
@@ -301,7 +304,7 @@ exports.updatePurchaseRequestStatus = async (req, res) => {
         const { status, remarks } = req.body;
 
         // Validate status
-        const validStatuses = ['Approved', 'Rejected', 'In Transit', 'Delivered'];
+        const validStatuses = ['Finance Approved', 'Finance Rejected', 'Converted to PO'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 success: false,
@@ -310,7 +313,7 @@ exports.updatePurchaseRequestStatus = async (req, res) => {
         }
 
         // Validate remarks for rejection
-        if (status === 'Rejected' && (!remarks || remarks.trim() === '')) {
+        if (status === 'Finance Rejected' && (!remarks || remarks.trim() === '')) {
             return res.status(400).json({
                 success: false,
                 message: "Remarks are required when rejecting a request"
@@ -362,7 +365,8 @@ exports.approvePurchaseRequest = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: result.message
+            message: result.message,
+            purchase_id: result.purchase_id
         });
 
     } catch (error) {
@@ -393,17 +397,97 @@ exports.getApprovedPurchaseRequests = async (req, res) => {
     }
 };
 
-// Get purchase orders with supplier estimations
-exports.getPurchaseOrdersWithEstimations = async (req, res) => {
+// List purchases awaiting finance approval (supplier provided delivery cost/discount)
+exports.getPendingPurchaseEstimations = async (req, res) => {
     try {
-        // Check if user is authorized (Finance)
-        if (!req.session?.user?.role_id === 25) { // Assuming 25 is finance role
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Unauthorized: Finance access required' 
+        
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+      
+        
+        const rows = await FinanceModel.getPendingPurchaseEstimations();
+
+        return res.status(200).json({ success: true, items: rows });
+    } catch (error) {
+
+        return res.status(500).json({ success: false, error: 'Failed to fetch pending estimations' });
+    }
+};
+
+// Approve a supplier estimation → move purchase to Processed
+exports.approvePurchaseEstimation = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+        const { purchaseId } = req.params;
+        if (!purchaseId) return res.status(400).json({ success: false, error: 'purchaseId required' });
+        const result = await FinanceModel.approvePurchaseEstimation(Number(purchaseId));
+        if (!result.success) return res.status(404).json({ success: false, error: result.message });
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('Error in approvePurchaseEstimation:', error);
+        return res.status(500).json({ success: false, error: 'Failed to approve estimation' });
+    }
+};
+
+// Update purchase estimation status (approve/reject with delivery cost and discount)
+exports.updatePurchaseEstimation = async (req, res) => {
+    const { purchaseId } = req.params;
+    const { status, remarks, delivery_cost, discount } = req.body;
+
+    try {
+        // Validate status
+        if (!['Processed', 'Cancelled'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status. Must be either "Processed" or "Cancelled"'
             });
         }
 
+        // Validate remarks for cancellation
+        if (status === 'Cancelled' && (!remarks || remarks.trim() === '')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Remarks are required when cancelling an estimation'
+            });
+        }
+
+        // Update the purchase estimation status
+        const result = await FinanceModel.updatePurchaseEstimation(
+            purchaseId,
+            status,
+            remarks,
+            status === 'Processed' ? delivery_cost : null,
+            status === 'Processed' ? discount : null
+        );
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: `Purchase estimation ${status.toLowerCase()} successfully. ${status === 'Processed' ? 'Waiting for delivery and receipt.' : ''}`,
+                data: result.data
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: result.message
+            });
+        }
+    } catch (error) {
+        console.error('Error updating purchase estimation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update purchase estimation',
+            error: error.message
+        });
+    }
+};
+
+// Get purchase orders with supplier estimations
+exports.getPurchaseOrdersWithEstimations = async (req, res) => {
+    try {
         const orders = await FinanceModel.getPurchaseOrdersWithEstimations();
 
         // Format the data for frontend
@@ -441,37 +525,39 @@ exports.getPurchaseOrdersWithEstimations = async (req, res) => {
 // Update purchase order estimation status (approve/reject)
 exports.updatePurchaseOrderEstimation = async (req, res) => {
     const { poId } = req.params;
-    const { status, remarks, payment_type } = req.body;
+    const { status, remarks, payment_type, delivery_cost, discount } = req.body;
 
     try {
         // Validate status
-        if (!['Approved', 'Rejected'].includes(status)) {
+        if (!['Processed', 'Cancelled'].includes(status)) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid status. Must be either "Approved" or "Rejected"'
+                message: 'Invalid status. Must be either "Processed" or "Cancelled"'
             });
         }
 
         // Validate remarks for rejection
-        if (status === 'Rejected' && (!remarks || remarks.trim() === '')) {
+        if (status === 'Cancelled' && (!remarks || remarks.trim() === '')) {
             return res.status(400).json({
                 success: false,
-                message: 'Remarks are required when rejecting an estimation'
+                message: 'Remarks are required when cancelling an estimation'
             });
         }
 
-        // Update the purchase order status (without payment processing)
+        // Update the purchase order status (and optionally persist delivery_cost/discount only when approving)
         const result = await FinanceModel.updatePurchaseOrderEstimation(
             poId,
             status,
             remarks,
-            payment_type // Store payment type for later use
+            payment_type, // Store payment type for later use
+            status === 'Processed' ? delivery_cost : null,
+            status === 'Processed' ? discount : null
         );
 
         if (result.success) {
             res.json({
                 success: true,
-                message: `Purchase order ${status.toLowerCase()} successfully. ${status === 'Approved' ? 'Waiting for delivery and receipt.' : ''}`,
+                message: `Purchase order ${status.toLowerCase()} successfully. ${status === 'Processed' ? 'Waiting for delivery and receipt.' : ''}`,
                 data: result.data
             });
         } else {
@@ -496,14 +582,6 @@ exports.processPurchaseOrderPayment = async (req, res) => {
     const { payment_type, reference_number } = req.body;
 
     try {
-        // Check if user is authorized (Finance)
-        if (!req.session?.user?.role_id === 25) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Unauthorized: Finance access required' 
-            });
-        }
-
         // Get order details first to verify status
         const order = await FinanceModel.getPurchaseOrderById(poId);
         
@@ -569,14 +647,6 @@ exports.processPurchaseOrderPayment = async (req, res) => {
 // Get purchase orders pending payment
 exports.getPurchaseOrdersPendingPayment = async (req, res) => {
     try {
-        // Check if user is authorized (Finance)
-        if (!req.session?.user?.role_id === 25) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Unauthorized: Finance access required' 
-            });
-        }
-
         const orders = await FinanceModel.getPurchaseOrdersPendingPayment();
 
         // Format the data for frontend
@@ -614,14 +684,6 @@ exports.updatePurchaseOrderPayment = async (req, res) => {
     const { status, reference_number } = req.body;
 
     try {
-        // Check if user is authorized (Finance)
-        if (!req.session?.user?.role_id === 25) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Unauthorized: Finance access required' 
-            });
-        }
-
         // Validate status
         if (!['Paid', 'Payment Failed'].includes(status)) {
             return res.status(400).json({
@@ -663,6 +725,125 @@ exports.updatePurchaseOrderPayment = async (req, res) => {
             success: false,
             message: 'Failed to update purchase order payment',
             error: error.message
+        });
+    }
+};
+
+// Get pending refund requests (Finance view)
+exports.getPendingRefunds = async (req, res) => {
+    try {
+        const refunds = await FinanceModel.getPendingRefunds();
+
+        return res.status(200).json({
+            success: true,
+            refunds: refunds
+        });
+
+    } catch (error) {
+        console.error('Error in getPendingRefunds controller:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Internal server error while fetching pending refunds'
+        });
+    }
+};
+
+// Approve or reject refund request (Finance only)
+exports.updateRefundStatus = async (req, res) => {
+    try {
+        const { purchaseId } = req.params;
+        const { status, remarks } = req.body;
+
+        // Validate status
+        const validStatuses = ['Refunded', 'Returned', 'Refund Rejected'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status. Must be either "Refunded", "Returned", or "Refund Rejected"'
+            });
+        }
+
+        // Validate remarks for rejection
+        if (status === 'Refund Rejected' && (!remarks || remarks.trim() === '')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Remarks are required when rejecting a refund request'
+            });
+        }
+
+        // Update the refund status
+        const result = await FinanceModel.updateRefundStatus(
+            purchaseId,
+            status,
+            remarks
+        );
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: result.message,
+                data: result.data
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: result.message
+            });
+        }
+    } catch (error) {
+        console.error('Error updating refund status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update refund status',
+            error: error.message
+        });
+    }
+};
+
+// Redeliver returned order (Finance only)
+exports.redeliverOrder = async (req, res) => {
+    try {
+        const { purchaseId } = req.params;
+
+        // Update the purchase status to 'Out for Delivery'
+        const result = await FinanceModel.redeliverOrder(purchaseId);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Order marked for redelivery successfully',
+                data: result.data
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: result.message
+            });
+        }
+    } catch (error) {
+        console.error('Error redelivering order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to redeliver order',
+            error: error.message
+        });
+    }
+};
+
+// Get all purchase orders from purchases table (Finance only)
+exports.getAllPurchaseOrders = async (req, res) => {
+    try {
+        const orders = await FinanceModel.getAllPurchaseOrders();
+        
+        res.json({
+            success: true,
+            orders: orders
+        });
+    } catch (error) {
+        console.error('Error in getAllPurchaseOrders controller:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch purchase orders'
         });
     }
 };

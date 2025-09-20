@@ -59,6 +59,15 @@ router.get('/purchase-orders/estimations', financeController.getPurchaseOrdersWi
 // Update purchase order estimation status (approve/reject)
 router.post('/purchase-orders/:poId/estimation', financeController.updatePurchaseOrderEstimation);
 
+// Purchases: pending supplier estimations (delivery cost/discount) awaiting finance
+router.get('/purchases/pending-estimations', financeController.getPendingPurchaseEstimations);
+
+// Approve a purchase estimation (set purchases.status='Processed')
+router.post('/purchases/:purchaseId/approve-estimation', financeController.approvePurchaseEstimation);
+
+// Update purchase estimation status (approve/reject with delivery cost and discount)
+router.post('/purchases/:purchaseId/estimation', financeController.updatePurchaseEstimation);
+
 // =============================================
 // PURCHASE ORDER PAYMENTS
 // These routes handle payment processing for delivered orders
@@ -72,6 +81,23 @@ router.post('/purchase-orders/:poId/payment', financeController.processPurchaseO
 
 // Update purchase order payment status
 router.put('/purchase-orders/:poId/payment-status', financeController.updatePurchaseOrderPayment);
+
+// =============================================
+// REFUND MANAGEMENT
+// These routes handle refund operations
+// =============================================
+
+// Get pending refund requests
+router.get('/refunds/pending', financeController.getPendingRefunds);
+
+// Approve or reject refund request
+router.put('/refunds/:purchaseId/status', financeController.updateRefundStatus);
+
+// Redeliver returned order
+router.put('/purchases/:purchaseId/redeliver', financeController.redeliverOrder);
+
+// Get all purchase orders from purchases table
+router.get('/purchases/all', financeController.getAllPurchaseOrders);
 
 // =============================================
 // PAYSLIP MANAGEMENT ROUTES
