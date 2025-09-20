@@ -168,10 +168,10 @@
             margin-top: 0.25rem;
         }
         .status-pending { background-color: #ffc107; color: #000; }
-        .status-approved { background-color: #28a745; color: #fff; }
-        .status-rejected { background-color: #dc3545; color: #fff; }
-        .status-in-transit { background-color: #0dcaf0; color: #fff; }
-        .status-delivered { background-color: #6c757d; color: #fff; }
+        .status-finance-approved { background-color: #28a745; color: #fff; }
+        .status-finance-rejected { background-color: #dc3545; color: #fff; }
+        .status-converted-to-po { background-color: #0dcaf0; color: #fff; }
+        .status-cancelled { background-color: #6c757d; color: #fff; }
         .modal-footer {
             padding: 1rem 1.5rem;
         }
@@ -365,12 +365,13 @@
     <div id="content">
         <h2>Purchase Request Management</h2>
         <div class="search-container mb-2">
-            <input type="text" id="searchBar" class="form-control" placeholder="Search by request ID or manager...">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search by request ID, supplier, or material...">
             <select id="statusFilter" class="form-select ms-2" style="min-width:150px;" aria-label="Filter by status">
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="Pending">Pending</option>
+                <option value="Finance Approved">Finance Approved</option>
+                <option value="Finance Rejected">Finance Rejected</option>
+                <option value="Converted to PO">Converted to PO</option>
             </select>
             <div class="entries-per-page ms-auto d-flex align-items-center">
                 <label for="entriesPerPageSelect" class="me-2 mb-0">Entries per page:</label>
@@ -385,13 +386,15 @@
             <table class="table table-striped" id="prTable">
                 <thead>
                     <tr>
-                        <th onclick="sortPR('requestDate')">Request Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPR('department')">Department <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPR('requester')">Requested By <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPR('materialType')">Material <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPR('quantity')">Quantity <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('pr_id')">Request ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('created_date')">Request Date <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('supplier_name')">Supplier <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('material_name')">Material <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('variant')">Variant <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('quantity_requested')">Quantity <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortPR('unit')">Unit <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortPR('justification')">Justification <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('unit_price')">Unit Price <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortPR('total_price')">Total Price <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortPR('status')">Status <i class="fas fa-sort sort-icon"></i></th>
                         <th>Actions</th>
                     </tr>
@@ -435,11 +438,11 @@
                                     <div class="form-control-plaintext" id="modalRequestDate"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label text-muted small">Department</label>
+                                    <label class="form-label text-muted small">Requested By</label>
                                     <div class="form-control-plaintext" id="modalDepartment"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label text-muted small">Requested By</label>
+                                    <label class="form-label text-muted small">User ID</label>
                                     <div class="form-control-plaintext" id="modalRequester"></div>
                                 </div>
                                 <div class="col-md-6">
@@ -458,20 +461,32 @@
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label text-muted small">Material Type</label>
+                                    <label class="form-label text-muted small">Material Name</label>
                                     <div class="form-control-plaintext" id="modalMaterialType"></div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small">Variant</label>
+                                    <div class="form-control-plaintext" id="modalVariant"></div>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label text-muted small">Quantity</label>
                                     <div class="form-control-plaintext" id="modalQuantity"></div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <label class="form-label text-muted small">Unit</label>
                                     <div class="form-control-plaintext" id="modalUnit"></div>
                                 </div>
-                                <div class="col-12">
-                                    <label class="form-label text-muted small">Justification</label>
-                                    <div class="form-control-plaintext" id="modalJustification"></div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small">Supplier</label>
+                                    <div class="form-control-plaintext" id="modalSupplier"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small">Unit Price</label>
+                                    <div class="form-control-plaintext" id="modalUnitPrice"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small">Total Price</label>
+                                    <div class="form-control-plaintext" id="modalTotalPrice"></div>
                                 </div>
                             </div>
                         </div>
@@ -545,56 +560,9 @@
     </div>
 
     <script>
-        // Sample purchase request data
-        let purchaseRequests = [
-            {
-                requestId: 'PR-2024-001',
-                manager: 'John Smith',
-                requestDate: '2024-03-15',
-                approvalDate: '',
-                status: 'pending',
-                materials: [
-                    {
-                        name: 'Cement',
-                        quantity: 100,
-                        unit: 'bags'
-                    },
-                    {
-                        name: 'Steel Bars',
-                        quantity: 50,
-                        unit: 'pieces'
-                    }
-                ]
-            },
-            {
-                requestId: 'PR-2024-002',
-                manager: 'Sarah Johnson',
-                requestDate: '2024-03-16',
-                approvalDate: '2024-03-17',
-                status: 'approved',
-                materials: [
-                    {
-                        name: 'Lumber',
-                        quantity: 200,
-                        unit: 'pieces'
-                    }
-                ]
-            },
-            {
-                requestId: 'PR-2024-003',
-                manager: 'Michael Brown',
-                requestDate: '2024-03-14',
-                approvalDate: '2024-03-15',
-                status: 'rejected',
-                materials: [
-                    {
-                        name: 'Paint',
-                        quantity: 20,
-                        unit: 'gallons'
-                    }
-                ]
-            }
-        ];
+        // Purchase request data (will be loaded from backend)
+        let purchaseRequests = [];
+        let filteredPurchaseRequests = [];
 
         // --- Purchase Request Table Logic ---
         let prCurrentPage = 1;
@@ -617,18 +585,25 @@
                     throw new Error('Invalid response format from server');
                 }
 
-                // Validate and transform the data
+                // Validate and transform the data for new schema
                 purchaseRequests = data.requests.map(request => {
-                    if (!request || !request.request_id) {
+                    if (!request || !request.pr_id) {
                         console.error('Invalid request data:', request);
                         return null;
                     }
                     return {
                         ...request,
-                        request_id: String(request.request_id), // Ensure request_id is always a string
-                        department: request.department_name || request.department || '-',
-                        requester: request.requester_name || request.requested_by || '-',
-                        status: request.status || 'Pending'
+                        pr_id: String(request.pr_id), // Ensure pr_id is always a string
+                        supplier_name: request.supplier_name || '-',
+                        material_name: request.material_name || '-',
+                        variant: request.variant || '-',
+                        quantity_requested: request.quantity_requested || 0,
+                        unit: request.unit || '-',
+                        unit_price: request.unit_price || 0,
+                        total_price: request.total_price || 0,
+                        status: request.status || 'Pending',
+                        created_date: request.created_date || '-',
+                        requested_by: request.requested_by || '-'
                     };
                 }).filter(request => request !== null); // Remove any invalid requests
 
@@ -641,7 +616,7 @@
                 if (prList) {
                     prList.innerHTML = `
                         <tr>
-                            <td colspan="9" class="text-center text-danger">
+                            <td colspan="11" class="text-center text-danger">
                                 <i class="fas fa-exclamation-circle me-2"></i>
                                 Failed to load purchase requests. Please try again later.
                             </td>
@@ -660,12 +635,13 @@
                 
                 // Search filter
                 const search = prSearchValue.toLowerCase();
-                const requestIdStr = String(pr.request_id).toLowerCase();
+                const prIdStr = String(pr.pr_id).toLowerCase();
                 return (
-                    requestIdStr.includes(search) ||
-                    (pr.department && pr.department.toLowerCase().includes(search)) ||
-                    (pr.requester && pr.requester.toLowerCase().includes(search)) ||
-                    (pr.material_type && pr.material_type.toLowerCase().includes(search))
+                    prIdStr.includes(search) ||
+                    (pr.supplier_name && pr.supplier_name.toLowerCase().includes(search)) ||
+                    (pr.material_name && pr.material_name.toLowerCase().includes(search)) ||
+                    (pr.variant && pr.variant.toLowerCase().includes(search)) ||
+                    (pr.requested_by_name && pr.requested_by_name.toLowerCase().includes(search))
                 );
             });
 
@@ -675,13 +651,13 @@
                     let valueA = a[prSortColumn];
                     let valueB = b[prSortColumn];
                     
-                    if (prSortColumn === 'requestDate') {
+                    if (prSortColumn === 'created_date') {
                         valueA = new Date(valueA || 0);
                         valueB = new Date(valueB || 0);
-                    } else if (prSortColumn === 'quantity') {
+                    } else if (prSortColumn === 'quantity_requested' || prSortColumn === 'unit_price' || prSortColumn === 'total_price') {
                         valueA = parseFloat(valueA) || 0;
                         valueB = parseFloat(valueB) || 0;
-                    } else if (prSortColumn === 'requestId') {
+                    } else if (prSortColumn === 'pr_id') {
                         valueA = String(valueA || '').toLowerCase();
                         valueB = String(valueB || '').toLowerCase();
                     } else {
@@ -713,7 +689,7 @@
             if (paginated.length === 0) {
                 prList.innerHTML = `
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-2x mb-2"></i>
                             <p class="mb-0">No purchase requests found</p>
                         </td>
@@ -723,27 +699,29 @@
             }
 
             paginated.forEach(pr => {
-                if (!pr || !pr.request_id) {
+                if (!pr || !pr.pr_id) {
                     console.error('Invalid purchase request data:', pr);
                     return;
                 }
 
-                // Ensure request_id is converted to string
-                const requestIdStr = String(pr.request_id);
+                // Ensure pr_id is converted to string
+                const prIdStr = String(pr.pr_id);
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${pr.request_date || '-'}</td>
-                    <td>${pr.department || '-'}</td>
-                    <td>${pr.requester || '-'}</td>
-                    <td>${pr.material_type || '-'}</td>
-                    <td>${pr.quantity || '-'}</td>
+                    <td>${pr.pr_id || '-'}</td>
+                    <td>${pr.created_date || '-'}</td>
+                    <td>${pr.supplier_name || '-'}</td>
+                    <td>${pr.material_name || '-'}</td>
+                    <td>${pr.variant || '-'}</td>
+                    <td>${pr.quantity_requested || '-'}</td>
                     <td>${pr.unit || '-'}</td>
-                    <td>${pr.justification || '-'}</td>
-                    <td><span class="pr-status status-${(pr.status || 'pending').toLowerCase()}">${pr.status || 'Pending'}</span></td>
+                    <td>₱${parseFloat(pr.unit_price || 0).toFixed(2)}</td>
+                    <td>₱${parseFloat(pr.total_price || 0).toFixed(2)}</td>
+                    <td><span class="pr-status status-${(pr.status || 'pending').toLowerCase().replace(/\s+/g, '-')}">${pr.status || 'Pending'}</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPR('${requestIdStr}')" title="View Details">
+                            <button class="action-btn view-btn btn btn-primary btn-sm" onclick="viewPR('${prIdStr}')" title="View Details">
                                 <i class="fas fa-eye"></i> View
                             </button>
                         </div>
@@ -818,17 +796,17 @@
         let currentPRIdx = null;
         let pendingAction = null;
 
-        function viewPR(requestId) {
+        function viewPR(prId) {
             try {
-                // Convert requestId to string for consistent comparison
-                const requestIdStr = String(requestId);
+                // Convert prId to string for consistent comparison
+                const prIdStr = String(prId);
                 
                 // Find the purchase request
-                currentPRIdx = purchaseRequests.findIndex(pr => String(pr.request_id) === requestIdStr);
+                currentPRIdx = purchaseRequests.findIndex(pr => String(pr.pr_id) === prIdStr);
                 
                 // Check if request exists
                 if (currentPRIdx === -1) {
-                    console.error('Purchase request not found:', requestIdStr);
+                    console.error('Purchase request not found:', prIdStr);
                     alert('Purchase request not found. Please refresh the page and try again.');
                     return;
                 }
@@ -842,20 +820,22 @@
                     return;
                 }
 
-                // Store request ID but don't display it
-                // document.getElementById('modalRequestId').textContent = pr.request_id || '-'; // Remove this line
+                // Update modal with new schema data
                 document.getElementById('modalStatus').textContent = pr.status || 'Pending';
-                document.getElementById('modalStatus').className = 'pr-status status-' + (pr.status || 'pending').toLowerCase();
-                document.getElementById('modalRequestDate').textContent = pr.request_date || '-';
-                document.getElementById('modalDepartment').textContent = pr.department || '-';
-                document.getElementById('modalRequester').textContent = pr.requester || '-';
+                document.getElementById('modalStatus').className = 'pr-status status-' + (pr.status || 'pending').toLowerCase().replace(/\s+/g, '-');
+                document.getElementById('modalRequestDate').textContent = pr.created_date || '-';
+                document.getElementById('modalDepartment').textContent = pr.requested_by_name || '-';
+                document.getElementById('modalRequester').textContent = pr.requested_by_name || '-';
                 document.getElementById('modalApprovalDate').textContent = pr.approved_date || '-';
                 
-                // Update material details with null checks
-                document.getElementById('modalMaterialType').textContent = pr.material_type || '-';
-                document.getElementById('modalQuantity').textContent = pr.quantity || '-';
+                // Update material details with new schema
+                document.getElementById('modalMaterialType').textContent = pr.material_name || '-';
+                document.getElementById('modalVariant').textContent = pr.variant || '-';
+                document.getElementById('modalQuantity').textContent = pr.quantity_requested || '-';
                 document.getElementById('modalUnit').textContent = pr.unit || '-';
-                document.getElementById('modalJustification').textContent = pr.justification || '-';
+                document.getElementById('modalSupplier').textContent = pr.supplier_name || '-';
+                document.getElementById('modalUnitPrice').textContent = `₱${parseFloat(pr.unit_price || 0).toFixed(2)}`;
+                document.getElementById('modalTotalPrice').textContent = `₱${parseFloat(pr.total_price || 0).toFixed(2)}`;
                 
                 // Handle remarks
                 const remarksRow = document.getElementById('modalRemarksRow');
@@ -886,15 +866,17 @@
 
         document.getElementById('modalApproveBtn').onclick = function() {
             const pr = purchaseRequests[currentPRIdx];
-            pendingAction = 'Approved';
+            pendingAction = 'Finance Approved';
             
             // Show confirmation modal
             document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-check-circle text-success"></i>';
             document.getElementById('confirmTitle').textContent = 'Approve Purchase Request?';
             document.getElementById('confirmModalBody').innerHTML = 
                 `Are you sure you want to approve this purchase request?<br>
-                 <strong>Request ID:</strong> ${pr.request_id}<br>
-                 <strong>Material:</strong> ${pr.material_type}`;
+                 <strong>Request ID:</strong> ${pr.pr_id}<br>
+                 <strong>Material:</strong> ${pr.material_name}<br>
+                 <strong>Supplier:</strong> ${pr.supplier_name}<br>
+                 <strong>Total Cost:</strong> ₱${parseFloat(pr.total_price || 0).toFixed(2)}`;
             
             document.getElementById('remarksFormContainer').style.display = 'none';
             var confirmBtn = document.getElementById('confirmActionBtn');
@@ -907,15 +889,17 @@
 
         document.getElementById('modalRejectBtn').onclick = function() {
             const pr = purchaseRequests[currentPRIdx];
-            pendingAction = 'Rejected';
+            pendingAction = 'Finance Rejected';
             
             // Show confirmation modal
             document.getElementById('confirmIcon').innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
             document.getElementById('confirmTitle').textContent = 'Reject Purchase Request?';
             document.getElementById('confirmModalBody').innerHTML = 
                 `Are you sure you want to reject this purchase request?<br>
-                 <strong>Request ID:</strong> ${pr.request_id}<br>
-                 <strong>Material:</strong> ${pr.material_type}`;
+                 <strong>Request ID:</strong> ${pr.pr_id}<br>
+                 <strong>Material:</strong> ${pr.material_name}<br>
+                 <strong>Supplier:</strong> ${pr.supplier_name}<br>
+                 <strong>Total Cost:</strong> ₱${parseFloat(pr.total_price || 0).toFixed(2)}`;
             
             document.getElementById('remarksFormContainer').style.display = 'block';
             document.getElementById('remarksInput').value = '';
@@ -935,7 +919,7 @@
             const pr = purchaseRequests[currentPRIdx];
             let remarks = '';
 
-            if (pendingAction === 'Rejected') {
+            if (pendingAction === 'Finance Rejected') {
                 remarks = document.getElementById('remarksInput').value.trim();
                 if (!remarks) {
                     document.getElementById('remarksError').style.display = 'block';
@@ -944,7 +928,7 @@
             }
 
             try {
-                const response = await fetch(`/finance/purchase-requests/${pr.request_id}/status`, {
+                const response = await fetch(`/finance/purchase-requests/${pr.pr_id}/status`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -956,6 +940,8 @@
                 });
 
                 if (!response.ok) throw new Error('Failed to update status');
+
+                const responseData = await response.json();
 
                 // Update local state
                 pr.status = pendingAction;
@@ -969,8 +955,12 @@
                 bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
                 bootstrap.Modal.getInstance(document.getElementById('viewPRModal')).hide();
 
-                // Show success message
-                alert(`Purchase request ${pendingAction.toLowerCase()} successfully!`);
+                // Show success message with purchase order info
+                let successMessage = `Purchase request ${pendingAction.toLowerCase()} successfully!`;
+                if (pendingAction === 'Finance Approved' && responseData.purchase_id) {
+                    successMessage += ` Purchase Order #${responseData.purchase_id} has been created for the supplier.`;
+                }
+                alert(successMessage);
 
                 // Reset state
                 currentPRIdx = null;

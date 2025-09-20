@@ -17,237 +17,711 @@
       transition: margin-left 0.3s;
       padding: 20px;
     }
-    .request-form {
-      background: #f8f9fa;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+/* Match inventory.html table header and sortable styles */
+table thead th {
+      background: #f8f9fb;
+      font-weight: 600;
+      vertical-align: middle;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      white-space: nowrap;
     }
-    .material-list {
-      margin-top: 20px;
-    }
-    .material-item {
-      background: white;
-      border-radius: 5px;
-      padding: 15px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .form-label {
-      font-weight: 500;
-    }
-    .btn-add-material {
-      margin-top: 10px;
-    }
-    .table th {
-      background-color: #f8f9fa;
-    }
-    .materials-list {
-      background: #e9ecef;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .materials-list h5 {
-      color: #495057;
-      margin-bottom: 15px;
-    }
-    .recent-requests {
-      background: #e9ecef;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-top: 30px;
-    }
-    .recent-requests h4 {
-      color: #495057;
-      margin-bottom: 20px;
-    }
-    .table {
-      background: white;
-      border-radius: 5px;
-    }
-    .table thead {
-      background: #f8f9fa;
-    }
-    .btn-group {
-      background: #f8f9fa;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    .date-range {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 15px;
-    }
-    
-    .date-range input[type="date"] {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .date-range span {
-      color: #666;
+    /* Center-align all columns in purchase request table */
+    #purchase-table th,
+    #purchase-table td { text-align: center !important; vertical-align: middle; }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable .sort-icon { opacity: 0.5; margin-left: 6px; transition: transform 0.2s ease, opacity 0.2s ease; }
+    .sortable.active .sort-icon { opacity: 1; color: #0d6efd; }
+
+    /* Page background to match inventory.html (soft light tone) */
+    body { background: #f3f7fd; }
+    #content { margin-top: 56px; padding: 24px !important; }
+
+    /* Request Details Modal Improvements */
+    .request-header-card {
+      border: 1px solid #e9ecef;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .date-sort-options {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-top: 20px;
-      width: 100%;
+    .info-item {
+      margin-bottom: 0.5rem;
     }
 
-    .date-component-select {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .date-component-select select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background-color: #1e293b;
-      color: #fff;
-    }
-
-    .date-component-select select:focus {
-      outline: none;
-      border-color: #4CAF50;
-    }
-
-    .date-component-select button {
-      margin-top: 10px;
-      width: 100%;
-    }
-
-    .status-filter {
-      margin-bottom: 20px;
-    }
-
-    .status-filter select {
-      width: 200px;
-    }
-
-    .filter-controls {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 20px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: nowrap;
-    }
-
-    .filter-left {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-
-    .filter-right {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-
-    .status-filter {
+    .info-item:last-child {
       margin-bottom: 0;
     }
 
-    .status-filter select {
-      width: 200px;
-      padding: 8px;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      background-color: #1e293b;
-      color: #fff;
+    .info-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .quick-filters select {
-      width: 200px;
-      padding: 8px;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      background-color: #1e293b;
-      color: #fff;
-    }
-
-    .date-range {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .date-range input[type="date"] {
-      padding: 8px;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      background-color: #1e293b;
-      color: #fff;
-    }
-
-    .date-range span {
-      color: #94a3b8;
-    }
-
-    .status-cell {
+    .info-value {
+      font-size: 1rem;
+      color: #212529;
       font-weight: 500;
     }
 
-    .status-cell.pending {
-      color: #ff6a00; /* Orange color */
+    .materials-container {
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 10px;
     }
 
-    .status-cell.approved {
-      color: #22c55e; /* Green color */
+    .materials-container::-webkit-scrollbar {
+      width: 6px;
     }
 
-    .status-cell.rejected {
-      color: #ef4444; /* Red color */
+    .materials-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
     }
 
-    .status-cell.draft {
-      color: #94a3b8; /* Gray color */
+    .materials-container::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
     }
 
-    .quick-filters {
-      display: flex;
-      gap: 10px;
-      align-items: center;
+    .materials-container::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
 
-    .quick-filters .action-btn {
+    .attribute-item {
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .attribute-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .attribute-label {
+      font-weight: 600;
+      color: #6c757d;
+      margin-right: 0.5rem;
+    }
+
+    .attribute-value {
+      color: #212529;
+    }
+
+    .supplier-header-card {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .supplier-total .card {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .grand-total .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    #content h2 { font-size: 28px; margin: 0; padding: 20px; }
+
+    /* HR glass-card and data-table styles */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .data-table {
+      border-radius: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .table > :not(caption) > * > * { padding: 0.9rem 0.75rem; }
+    .table thead th, .table tbody td { white-space: nowrap; }
+    #purchase-table { min-width: 1300px; }
+    /* Improve Show entries select: compact width, number near caret, cross-browser */
+    #entriesSelect {
+      width: 86px;                        /* Compact, consistent width */
+      min-width: 86px;
+      text-align: center;                 /* Center text for Firefox/legacy */
+      text-align-last: center;            /* Center selected value */
+      padding-right: 2rem;                /* Space for caret */
+      padding-left: .75rem;               /* Balance padding */
+      background-position: right .55rem center; /* Keep caret close to edge */
+    }
+    #entriesSelect option { text-align: center; }
+    /* Remove blue glow on focus for toolbar controls */
+    .toolbar .form-control:focus,
+    .toolbar .form-select:focus {
+      box-shadow: none !important;
+      outline: none !important;
+      border-color: #dee2e6 !important;
+    }
+
+    /* Status Badge Styles to match inventory.html */
+    .status-badge {
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 0.9em;
+      font-weight: 500;
+      display: inline-block;
+      min-width: 100px;
+      text-align: center;
+    }
+    .status-pending { background-color: #ffc107; color: #000; }
+    .status-approved { background-color: #28a745; color: #fff; }
+    .status-rejected { background-color: #dc3545; color: #fff; }
+    .status-cancelled { background-color: #6c757d; color: #fff; }
+
+    /* Button Styles to match inventory.html */
+    .action-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background-color: #007bff;
+      color: white;
       white-space: nowrap;
     }
 
-    .edit-input {
-      background-color: #1e293b;
-      color: #fff;
-      border: 1px solid #334155;
-      padding: 4px 8px;
-      border-radius: 4px;
+    .action-btn:hover {
+      background-color: #0056b3;
+      transform: translateY(-1px);
+    }
+
+    .action-btn i {
+      margin-right: 5px;
+    }
+    /* Align Add Request button with controls */
+    .toolbar .action-btn {
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+
+    /* Form Styles to match inventory.html */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #495057;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
       width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-size: 14px;
     }
-    .edit-input:focus {
+
+    .form-group input:focus,
+    .form-group select:focus {
       outline: none;
-      border-color: #4CAF50;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
     }
-    .edit-input[type="number"] {
-      width: 80px;
+
+    /* Pagination Styles to match inventory.html */
+    .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; }
+    .pagination .page-link {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background-color: #ffffff;
+      color: #007bff;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.3s ease;
     }
-    .edit-input[type="text"] {
-      width: 150px;
+    .pagination .page-link:hover {
+      background-color: #007bff;
+      color: #ffffff;
+      border-color: #007bff;
     }
-    .action-btn i.bi-check-lg {
-      color: #22c55e;
+    .pagination .page-item.active .page-link {
+      background-color: #007bff;
+      color: #ffffff;
+      border-color: #007bff;
+    }
+    .pagination .page-item.disabled .page-link {
+      background-color: #e9ecef;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    /* Searchable Dropdown Styles - Updated to match inventory.html */
+    .supplier-comparison tbody tr {
+      cursor: pointer;
+    }
+    .supplier-comparison tbody tr.best-supplier {
+      background-color: #fffbea;
+    }
+    .supplier-dropdown-container {
+      position: relative;
+    }
+
+    .supplier-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .supplier-option,
+    .material-option,
+    .edit-material-option,
+    .edit-supplier-option {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f8f9fa;
+      transition: background-color 0.2s ease;
+    }
+
+    .supplier-option:hover,
+    .material-option:hover,
+    .edit-material-option:hover,
+    .edit-supplier-option:hover {
+      background-color: #f8f9fa;
+    }
+
+    .supplier-option:last-child,
+    .material-option:last-child,
+    .edit-material-option:last-child,
+    .edit-supplier-option:last-child {
+      border-bottom: none;
+    }
+
+    .supplier-option.selected,
+    .material-option.selected,
+    .edit-material-option.selected,
+    .edit-supplier-option.selected {
+      background-color: #f8f9fa;
+      color: #212529;
+    }
+
+    .supplier-option.hidden,
+    .material-option.hidden,
+    .edit-material-option.hidden,
+    .edit-supplier-option.hidden {
+      display: none;
+    }
+
+    /* Material Dropdown Styles - Updated to match inventory.html */
+    .material-dropdown-container {
+      position: relative;
+    }
+
+    .material-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    
+
+    /* Edit Material Dropdown Styles - Updated to match inventory.html */
+    .edit-material-dropdown-container {
+      position: relative;
+    }
+
+    .edit-material-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    
+
+    /* Edit Supplier Dropdown Styles - Updated to match inventory.html */
+    .edit-supplier-dropdown-container {
+      position: relative;
+    }
+
+    .edit-supplier-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    
+
+    /* Modal Styles */
+    .modal-content {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      padding: 1.75rem 2rem;
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .modal-title i {
+      margin-right: 12px;
+      font-size: 1.3em;
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+
+    .order-info {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .order-info .row {
+      margin-bottom: 1.25rem;
+    }
+
+    .order-info .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 0.85em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e9ecef;
+    }
+
+    .materials-section h6 {
+      color: #1a237e;
+      font-weight: 600;
+      font-size: 1.2em;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .materials-section h6 i {
+      color: #5c6bc0;
+    }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      padding-right: 8px;
+    }
+
+    .materials-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .materials-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb {
+      background: #c5cae9;
+      border-radius: 10px;
+    }
+
+    .materials-grid::-webkit-scrollbar-thumb:hover {
+      background: #9fa8da;
+    }
+
+    .material-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .material-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #c5cae9;
+    }
+
+    .material-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .material-icon {
+      width: 40px;
+      height: 40px;
+      background: #e8eaf6;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5c6bc0;
+      font-size: 1.2em;
+    }
+
+    .material-name {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #1a237e;
+      flex: 1;
+    }
+
+    .material-details {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .material-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .detail-label {
+      font-size: 0.8em;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+
+    .modal-footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #e9ecef;
+      background: #fff;
+      border-radius: 0 0 16px 16px;
+    }
+
+    .modal-footer .btn {
+      padding: 0.7rem 1.75rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-footer .btn i {
+      font-size: 1.1em;
+    }
+
+    .modal-footer .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .btn-close:hover {
+      opacity: 1;
+    }
+
+    /* Score Bar Styles */
+    .score-bar-container {
+      width: 100%;
+      background-color: #e9ecef;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 20px;
+      position: relative;
+    }
+
+    .score-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-bar-text {
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      position: absolute;
+      z-index: 2;
+    }
+
+    .score-value {
+      font-weight: 600;
+      color: #28a745;
+      font-size: 14px;
+    }
+
+    /* Materials table container - no scrolling */
+    .materials-table-container {
+      overflow: hidden !important;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    
+    .materials-table-container .table {
+      margin-bottom: 0 !important;
+      width: 100%;
+      table-layout: fixed;
+    }
+    
+    /* Ensure table columns have appropriate widths */
+    .materials-table-container .table th,
+    .materials-table-container .table td {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Specific column widths for materials table */
+    .materials-table-container .table th:nth-child(1),
+    .materials-table-container .table td:nth-child(1) {
+      width: 18%; /* Item Name */
+    }
+    
+    .materials-table-container .table th:nth-child(2),
+    .materials-table-container .table td:nth-child(2) {
+      width: 15%; /* Category */
+    }
+    
+    .materials-table-container .table th:nth-child(3),
+    .materials-table-container .table td:nth-child(3) {
+      width: 8%; /* Size */
+    }
+    
+    .materials-table-container .table th:nth-child(4),
+    .materials-table-container .table td:nth-child(4) {
+      width: 8%; /* Unit */
+    }
+    
+    .materials-table-container .table th:nth-child(5),
+    .materials-table-container .table td:nth-child(5) {
+      width: 10%; /* Quantity */
+    }
+    
+    .materials-table-container .table th:nth-child(6),
+    .materials-table-container .table td:nth-child(6) {
+      width: 12%; /* Supplier */
+    }
+    
+    .materials-table-container .table th:nth-child(7),
+    .materials-table-container .table td:nth-child(7) {
+      width: 12%; /* Price per Unit */
+    }
+    
+    .materials-table-container .table th:nth-child(8),
+    .materials-table-container .table td:nth-child(8) {
+      width: 10%; /* Total Cost */
+    }
+    
+    .materials-table-container .table th:nth-child(9),
+    .materials-table-container .table td:nth-child(9) {
+      width: 7%; /* Actions */
     }
   </style>
 </head>
@@ -333,14 +807,22 @@
         </li>
         
         <li class="nav-item">
-          <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
+          <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
+            <i class="fas fa-file-invoice"></i> Purchase Request
+          </a>
+          <ul class="collapse" id="PurchaseRequest">
+            <li class="nav-item"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
+            <li class="nav-item"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
+          </ul>
         </li>
        
         <li class="nav-item">
-          <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+          <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
         </li>
+    
+       
         <li class="nav-item">
-          <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Request Material</span></a>
+          <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
         </li>
         <li class="nav-item">
             <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
@@ -353,51 +835,110 @@
     <h2>Purchase Request</h2>
 
     <!-- Request Form -->
-    <div class="request-form">
+    <div class="glass-card p-3 h-100 mb-3">
       <form id="purchaseRequestForm">
+        <!-- Single Row Layout -->
         <div class="row mb-3">
-          <div class="col-md-4">
-            <label for="materialType" class="form-label">Material Type</label>
-            <select class="form-select" id="materialType" required>
-              <option value="">Select Material Type...</option>
-              <option value="cement">Cement</option>
-              <option value="steel">Steel</option>
-              <option value="wood">Wood</option>
-              <option value="bricks">Bricks</option>
-              <option value="sand">Sand</option>
-          </select>
-        </div>
-          <div class="col-md-3">
-            <label for="quantity" class="form-label">Quantity</label>
-            <input type="number" class="form-control" id="quantity" min="1" required>
+          <div class="col-md-2">
+            <label for="requestDate" class="form-label">Request Date</label>
+            <input type="date" class="form-control" id="requestDate" min="1900-01-01" max="2100-12-31" required>
           </div>
           <div class="col-md-3">
+            <label for="materialType" class="form-label">Item Name <small class="text-muted">(from inventory)</small></label>
+            <div class="material-dropdown-container position-relative">
+              <input type="text" class="form-control" id="materialTypeSearch" placeholder="Search item" autocomplete="off">
+              <div class="material-dropdown" id="materialTypeDropdown" style="display: none;">
+                <!-- Material options will be populated dynamically -->
+              </div>
+              <input type="hidden" id="materialType">
+              <input type="hidden" id="material_id">
+              <input type="hidden" id="material_price">
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label for="description" class="form-label">Category</label>
+            <input type="text" class="form-control" id="description" placeholder="Category" readonly>
+          </div>
+          <div class="col-md-1">
+            <label for="size" class="form-label">Size</label>
+            <input type="text" class="form-control" id="size" placeholder="Size" readonly>
+          </div>
+          <div class="col-md-1">
             <label for="unit" class="form-label">Unit</label>
-            <select class="form-select" id="unit" required>
-              <option value="">Select Unit...</option>
-              <option value="kg">Kilograms (kg)</option>
-              <option value="bags">Bags</option>
-              <option value="pieces">Pieces</option>
-              <option value="cubic">Cubic Meters</option>
-          </select>
+            <input type="text" class="form-control" id="unit" placeholder="Unit" readonly>
+          </div>
+          <div class="col-md-2">
+            <label for="supplier" class="form-label">Select Supplier</label>
+            <div class="supplier-dropdown-container position-relative">
+              <input type="text" class="form-control" id="supplierSearch" placeholder="Search suppliers..." autocomplete="off">
+              <div class="supplier-dropdown" id="supplierDropdown" style="display: none;">
+                <div class="supplier-option" data-value="supplier1">ABC Construction Supplies</div>
+                <div class="supplier-option" data-value="supplier2">XYZ Building Materials</div>
+                <div class="supplier-option" data-value="supplier3">Metro Hardware & Tools</div>
+                <div class="supplier-option" data-value="supplier4">Premier Construction Co.</div>
+                <div class="supplier-option" data-value="supplier5">Global Materials Ltd.</div>
+              </div>
+              <input type="hidden" id="supplier">
+              <input type="hidden" id="supplier_id">
+            </div>
+          </div>
+          <div class="col-md-1">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity" min="1" step="1" required>
+          </div>
         </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button type="button" class="btn btn-success w-100" onclick="addMaterial()">
-              <i class="fas fa-plus"></i> Add
+        
+        <!-- Add Button Row -->
+        <div class="row mb-3">
+          <div class="col-md-12 d-flex justify-content-end">
+            <button type="button" class="btn btn-success" onclick="addMaterial()">
+              <i class="fas fa-plus"></i> Add Material
             </button>
+          </div>
         </div>
-      </div>
 
-        <!-- Materials List -->
-        <div class="materials-list">
-          <h5>Materials to Purchase</h5>
+        <!-- Supplier Comparison Table -->
+        <div class="supplier-comparison mb-4">
+          <h5>Supplier Comparison <span id="selectedMaterialType"></span></h5>
           <div class="table-responsive mb-3">
             <table class="table table-bordered">
               <thead class="table-light">
                 <tr>
-                  <th>Material Type</th>
-                  <th>Quantity</th>
+                  <th>Supplier</th>
+                  <th>Price per Unit</th>
+                  <th>Delivery Time (Days)</th>
+                  <th>Price Rating</th>
+                  <th>Time Rating</th>
+                  <th>Score</th>
+                  <th>Rank</th>
+                </tr>
+              </thead>
+              <tbody id="supplierComparisonBody" style="display: none;">
+                <!-- Supplier comparison data will be loaded here dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        
+
+        
+
+        <!-- Materials List -->
+        <div class="materials-list">
+          <h5>Materials to Purchase</h5>
+          <div class="materials-table-container empty">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Supplier</th>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Variant</th>
                   <th>Unit</th>
+                  <th>Quantity Requested</th>
+                  <th>Unit Price</th>
+                  <th>Total Price</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -405,6 +946,11 @@
                 <!-- Materials will be added here dynamically -->
               </tbody>
             </table>
+            <div class="d-flex justify-content-start mt-3">
+              <div class="h5 mb-0">
+                <strong>Total: <span id="grandTotal" class="text-primary">₱0.00</span></strong>
+              </div>
+            </div>
     </div>
 
           <div class="d-flex justify-content-end">
@@ -417,14 +963,42 @@
       </div>
 
     <!-- Recent Requests Table -->
-    <div class="recent-requests">
-      <h4>Purchase Requests</h4>
-      <table class="table table-striped">
+    <div class="glass-card p-3 h-100 mb-3">
+      <div class="toolbar d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group" style="max-width: 420px;">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search by request ID, supplier, date, status, or total...">
+        </div>
+        <select id="statusFilter" class="form-select" style="max-width: 200px;">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <div class="d-flex align-items-center gap-2">
+          <label for="entriesSelect" class="text-muted small mb-0">Show</label>
+          <select id="entriesSelect" class="form-select form-select-sm" style="width: auto;">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all">All</option>
+          </select>
+          <span class="text-muted small">entries</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-table table-responsive">
+      <table class="table mb-0 align-middle text-center" id="purchase-table">
         <thead>
           <tr>
-            <th>Request ID</th>
-            <th>Request Date</th>
-            <th>Approval Date</th>
+            <th class="sortable" data-key="id">Request ID <i class="fa-solid fa-arrow-up-a-z sort-icon"></i></th>
+            <th class="sortable" data-key="requestDate">Request Date <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+            <th class="sortable" data-key="approvalDate">Approval Date <i class="fa-solid fa-arrow-up-1-9 sort-icon"></i></th>
+            <th>Suppliers</th>
+            <th>Total</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -434,13 +1008,21 @@
         </tbody>
       </table>
     </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div id="entriesMessage" class="text-muted small"></div>
+      <nav aria-label="Table pagination">
+        <ul class="pagination mb-0" id="pagination"></ul>
+      </nav>
+    </div>
 
     <!-- Submit Confirmation Modal -->
     <div class="modal fade" id="submitConfirmationModal" tabindex="-1" aria-labelledby="submitConfirmationModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="submitConfirmationModalLabel">Confirm Purchase Request</h5>
+            <h5 class="modal-title" id="submitConfirmationModalLabel">
+              <i class="fas fa-check-circle"></i> Confirm Purchase Request
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -448,107 +1030,259 @@
               <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
               <div id="successMessage" class="alert alert-success" style="display: none;"></div>
             </div>
-            <div id="confirmationContent">
-              <p>Please confirm the following details:</p>
-              <div class="mb-3">
-                <strong>Request Date:</strong> <span id="confirmRequestDate"></span>
+            <div class="container-fluid">
+              <!-- Request Header Section -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <div class="request-header-card p-3 bg-light rounded">
+                    <div class="row align-items-center">
+                      <div class="col-md-3">
+                        <div class="info-item">
+                          <div class="info-label">Request Date</div>
+                          <div id="confirmRequestDate" class="info-value fw-bold text-primary"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="info-item">
+                          <div class="info-label">Total Suppliers</div>
+                          <div id="confirmSupplierCount" class="info-value fw-bold text-success"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="info-item">
+                          <div class="info-label">Total Materials</div>
+                          <div id="confirmMaterialsCount" class="info-value fw-bold text-info"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="info-item">
+                          <div class="info-label">Estimated Total</div>
+                          <div id="confirmEstimatedTotal" class="info-value fw-bold text-dark fs-5"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="mb-3">
-                <strong>Materials:</strong>
-                <ul id="confirmMaterialsList" class="list-unstyled">
-                </ul>
+              
+              <!-- Suppliers Section -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <div class="materials-section">
+                    <div class="d-flex align-items-center mb-3">
+                      <i class="fas fa-truck text-primary me-2"></i>
+                      <h5 class="mb-0">Selected Suppliers</h5>
+                    </div>
+                    <div id="confirmSupplier" class="suppliers-container"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Materials Section -->
+              <div class="row">
+                <div class="col-12">
+                  <div class="materials-section">
+                    <div class="d-flex align-items-center mb-3">
+                      <i class="fas fa-boxes text-primary me-2"></i>
+                      <h5 class="mb-0">Requested Materials</h5>
+                    </div>
+                    <div id="confirmMaterialsList" class="materials-container">
+                      <div id="confirmMaterialsTableBody">
+                        <!-- Materials will be populated here, organized by supplier -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer" id="modalFooter">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="submitRequest()">Confirm Request</button>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-primary" onclick="submitRequest()">
+              <i class="fas fa-paper-plane"></i> Confirm Request
+            </button>
           </div>
         </div>
+      </div>
     </div>
-  </div>
 
     <!-- Request Details Modal -->
     <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="requestDetailsModalLabel">Request Details</h5>
+            <h5 class="modal-title" id="requestDetailsModalLabel">
+              <i class="fas fa-file-invoice"></i> Request Details
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
+          </div>
           <div class="modal-body">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <p><strong>Request ID:</strong> <span id="modalRequestId"></span></p>
-                <p><strong>Request Date:</strong> <span id="modalRequestDate"></span></p>
-  </div>
-              <div class="col-md-6">
-                <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-                <p><strong>Approval Date:</strong> <span id="modalApprovalDate"></span></p>
-      </div>
+            <div class="container-fluid">
+              <!-- Request Header Section -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <div class="request-header-card p-3 bg-light rounded">
+                    <div class="row align-items-center">
+                      <div class="col-md-2">
+                        <div class="info-item">
+                          <div class="info-label">Request ID</div>
+                          <div id="modalRequestId" class="info-value fw-bold text-primary"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-2">
+                        <div class="info-item">
+                          <div class="info-label">Request Date</div>
+                          <div id="modalRequestDate" class="info-value"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-2">
+                        <div class="info-item">
+                          <div class="info-label">Status</div>
+                          <div id="modalStatus" class="info-value"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-2">
+                        <div class="info-item">
+                          <div class="info-label">Approval Date</div>
+                          <div id="modalApprovalDate" class="info-value"></div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="info-item">
+                          <div class="info-label">Grand Total</div>
+                          <div id="modalGrandTotal" class="info-value fw-bold text-dark fs-5"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-12">
+                        <div class="info-item">
+                          <div class="info-label">Suppliers</div>
+                          <select id="modalSupplier" class="form-select">
+                            <option value="">Loading suppliers...</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Materials Section -->
+              <div class="row">
+                <div class="col-12">
+                  <div class="materials-section">
+                    <div class="d-flex align-items-center mb-3">
+                      <i class="fas fa-boxes text-primary me-2"></i>
+                      <h5 class="mb-0">Requested Materials</h5>
+                    </div>
+                    <div id="modalMaterials" class="materials-container"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h6>Requested Materials</h6>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times"></i> Close
+            </button>
+            <button type="button" class="btn btn-danger" id="cancelRequestBtn" style="display: none;" onclick="cancelRequest()">
+              <i class="fas fa-ban"></i> Cancel Request
+            </button>
+            <button type="button" class="btn btn-success" id="sendOrderBtn" style="display: none;">
+              <i class="fas fa-paper-plane"></i> Send Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Materials Modal -->
+    <div class="modal fade" id="allMaterialsModal" tabindex="-1" aria-labelledby="allMaterialsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="allMaterialsModalLabel">
+              <i class="fas fa-boxes"></i> All Materials - <span id="selectedMaterialName"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
             <div class="table-responsive">
-              <table class="table table-bordered">
-                <thead class="table-light">
+              <table class="table table-striped table-hover">
+                <thead class="table-dark">
                   <tr>
-                    <th>Material Type</th>
-                    <th>Quantity</th>
+                    <th>Stock Status</th>
+                    <th>Item Name</th>
+                    <th>Brand</th>
+                    <th>Variant</th>
+                    <th>Category</th>
                     <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Supplier</th>
+                    <th>Valid Until</th>
                   </tr>
                 </thead>
-                <tbody id="modalMaterialsList">
+                <tbody id="allMaterialsTableBody">
+                  <!-- Materials will be populated here -->
                 </tbody>
               </table>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-danger" id="cancelRequestBtn" style="display: none;" onclick="cancelRequest()">Cancel Request</button>
           </div>
+        </div>
       </div>
     </div>
-  </div>
 
     <!-- Edit Material Modal -->
     <div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
       <div class="modal-dialog">
-    <div class="modal-content">
+        <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="editMaterialModalLabel">Edit Material</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
+            <h5 class="modal-title" id="editMaterialModalLabel">
+              <i class="fas fa-edit"></i> Edit Material
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetEditingIndex()"></button>
+          </div>
           <div class="modal-body">
-            <form id="editMaterialForm">
-              <div class="mb-3">
-                <label for="editMaterialType" class="form-label">Material Type</label>
-                <select class="form-select" id="editMaterialType" required>
-                  <option value="">Select Material Type...</option>
-                  <option value="cement">Cement</option>
-                  <option value="steel">Steel</option>
-                  <option value="wood">Wood</option>
-                  <option value="bricks">Bricks</option>
-                  <option value="sand">Sand</option>
-          </select>
-        </div>
-              <div class="mb-3">
-                <label for="editQuantity" class="form-label">Quantity</label>
-                <input type="number" class="form-control" id="editQuantity" min="1" required>
+            <div class="mb-3">
+              <label for="editSupplierDisplay" class="form-label">Supplier</label>
+              <input type="text" class="form-control" id="editSupplierDisplay" readonly style="background-color: #f8f9fa;">
+            </div>
+            <div class="mb-3">
+              <label for="editMaterialTypeDisplay" class="form-label">Material Type</label>
+              <input type="text" class="form-control" id="editMaterialTypeDisplay" readonly style="background-color: #f8f9fa;">
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editSizeDisplay" class="form-label">Size</label>
+                  <input type="text" class="form-control" id="editSizeDisplay" readonly style="background-color: #f8f9fa;">
+                </div>
               </div>
-              <div class="mb-3">
-                <label for="editUnit" class="form-label">Unit</label>
-                <select class="form-select" id="editUnit" required>
-                  <option value="">Select Unit...</option>
-                  <option value="kg">Kilograms (kg)</option>
-                  <option value="bags">Bags</option>
-                  <option value="pieces">Pieces</option>
-                  <option value="cubic">Cubic Meters</option>
-                </select>
-        </div>
-      </form>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editUnitDisplay" class="form-label">Unit</label>
+                  <input type="text" class="form-control" id="editUnitDisplay" readonly style="background-color: #f8f9fa;">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editQuantity" class="form-label">Quantity</label>
+                  <input type="number" class="form-control" id="editQuantity" min="1" step="1" required>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetEditingIndex()">Cancel</button>
             <button type="button" class="btn btn-primary" onclick="saveMaterialEdit()">Save Changes</button>
           </div>
         </div>
@@ -560,52 +1294,1790 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Sidebar functionality
-    document.getElementById('sidebar-toggle').onclick = function() {
-        const sidebar = document.getElementById('sidebar');
-        const content = document.getElementById('content');
-        if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-            sidebar.style.display = 'block';
-            content.style.marginLeft = '300px';
-        } else {
-            sidebar.style.display = 'none';
-            content.style.marginLeft = '0';
-        }
-    };
-
-    // Global variables
-    let materials = [];
+ // Global variables
+ let materials = [];
     let editingIndex = -1;
     let requests = {};
 
-    // Add material to the list
-    function addMaterial() {
-      const requestDate = document.getElementById('requestDate').value;
-      const materialType = document.getElementById('materialType');
-      const quantity = document.getElementById('quantity');
-      const unit = document.getElementById('unit');
+    // Function to format date for table display (MM/DD/YY)
+    function formatDateForTable(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${month}/${day}/${year}`;
+    }
 
-      // Validate other inputs
-      if (!materialType.value || !quantity.value || !unit.value) {
-        alert('Please fill in all material details');
+    // Function to calculate total price (for table display only)
+    function calculateTotalPrice() {
+      // This function is now only used for table calculations
+      // Unit price and total price are calculated when materials are added to the table
+      return;
+    }
+
+    // Function to get price per unit for a material
+    function getPricePerUnit(material) {
+      if (!material.typeValue || !supplierComparisonData) {
+        return '₱0.00';
+      }
+      
+      // Handle different material types
+      const materialType = material.typeValue;
+      let supplierData = null;
+      
+      
+      if ((materialType.includes('paint') || materialType.includes('boysen') || materialType.includes('davies') || materialType.includes('primer') || materialType.includes('latex') || materialType.includes('permacoat')) && supplierComparisonData.paint) {
+        console.log('Processing PAINT material');
+        const parts = materialType.split('_');
+        console.log('Paint parts:', parts);
+        if (parts.length >= 2) {
+          const size = parts[parts.length - 1]; // e.g., "1", "4", "14", "16" (last part)
+          console.log('Looking for paint - Size:', size, 'Supplier:', material.supplier);
+          supplierData = supplierComparisonData.paint.find(s => 
+            s.supplier === material.supplier && s.size === size
+          );
+          console.log('Found paint supplier data:', supplierData);
+        }
+      } else if (materialType.includes('nail') && supplierComparisonData.nail) {
+        supplierData = supplierComparisonData.nail.find(s => 
+          s.supplier === material.supplier && s.size === (material.attributes && material.attributes.size ? material.attributes.size : '')
+        );
+      } else if (materialType.includes('cement_holcim') && supplierComparisonData['Cement Holcim']) {
+        const parts = materialType.split('_');
+        if (parts.length >= 2) {
+          const size = parts[1]; // e.g., "40"
+          supplierData = supplierComparisonData['Cement Holcim'].find(s => 
+            s.supplier === material.supplier && s.size === size
+          );
+        }
+      } else if (materialType.includes('eagle_cement') && supplierComparisonData['Eagle Cement']) {
+        const parts = materialType.split('_');
+        if (parts.length >= 2) {
+          const size = parts[1]; // e.g., "40"
+          supplierData = supplierComparisonData['Eagle Cement'].find(s => 
+            s.supplier === material.supplier && s.size === size
+          );
+        }
+      }
+      
+      if (supplierData) {
+        return supplierData.price;
+      }
+      
+      // If no specific match found, try to find any matching supplier for the material type
+      if ((materialType.includes('paint') || materialType.includes('boysen') || materialType.includes('davies') || materialType.includes('primer') || materialType.includes('latex') || materialType.includes('permacoat')) && supplierComparisonData.paint) {
+        // Try to find by supplier and size first
+        const fallbackData = supplierComparisonData.paint.find(s => 
+          s.supplier === material.supplier && 
+          s.size === (material.attributes && material.attributes.size ? material.attributes.size : '')
+        );
+        if (fallbackData) {
+          return fallbackData.price;
+        }
+        // If still no match, try just by supplier
+        const supplierFallback = supplierComparisonData.paint.find(s => s.supplier === material.supplier);
+        if (supplierFallback) {
+          return supplierFallback.price;
+        }
+      } else if (materialType.includes('nail') && supplierComparisonData.nail) {
+        const fallbackData = supplierComparisonData.nail.find(s => s.supplier === material.supplier);
+        if (fallbackData) {
+          return fallbackData.price;
+        }
+      } else if (materialType.includes('cement_holcim') && supplierComparisonData['Cement Holcim']) {
+        const fallbackData = supplierComparisonData['Cement Holcim'].find(s => s.supplier === material.supplier);
+        if (fallbackData) {
+          return fallbackData.price;
+        }
+      } else if (materialType.includes('eagle_cement') && supplierComparisonData['Eagle Cement']) {
+        const fallbackData = supplierComparisonData['Eagle Cement'].find(s => s.supplier === material.supplier);
+        if (fallbackData) {
+          return fallbackData.price;
+        }
+      }
+      
+      return '₱0.00';
+    }
+
+    // Function to calculate total cost for a material
+    function calculateMaterialTotal(material) {
+      console.log('=== CALCULATING MATERIAL TOTAL ===');
+      console.log('Material for total calculation:', material);
+      console.log('pricePerUnit:', material.pricePerUnit);
+      console.log('quantity:', material.quantity);
+      
+      if (material.pricePerUnit && material.quantity) {
+        const price = parseFloat(material.pricePerUnit.replace('₱', '').replace(',', ''));
+        const quantity = parseFloat(material.quantity);
+        const total = price * quantity;
+        console.log('Calculated total:', `₱${total.toFixed(2)}`);
+        return `₱${total.toFixed(2)}`;
+      }
+      
+      console.log('Missing pricePerUnit or quantity - returning ₱0.00');
+      return '₱0.00';
+    }
+
+    // Function to calculate grand total
+    function calculateGrandTotal() {
+      let grandTotal = 0;
+      
+      materials.forEach(material => {
+        if (material.total_price) {
+          const totalPrice = parseFloat(material.total_price);
+          grandTotal += totalPrice;
+        }
+      });
+      
+      document.getElementById('grandTotal').textContent = `₱${grandTotal.toFixed(2)}`;
+    }
+
+    // Function to calculate total cost for a request
+    function calculateRequestTotal(request) {
+      if (!request.materials || !request.materials.length) {
+        return '₱0.00';
+      }
+      
+      let total = 0;
+      
+      request.materials.forEach(material => {
+        if (material.pricePerUnit && material.quantity) {
+          const pricePerUnit = parseFloat(material.pricePerUnit.replace('₱', '').replace(',', ''));
+          const quantity = parseFloat(material.quantity);
+          total += pricePerUnit * quantity;
+        }
+      });
+      
+      return `₱${total.toFixed(2)}`;
+    }
+
+    function calculateSupplierTotals(request) {
+      if (!request.materials || !request.materials.length) {
+        return [];
+      }
+      
+      const supplierGroups = {};
+      
+      request.materials.forEach(material => {
+        const supplier = material.supplier || 'Not specified';
+        if (!supplierGroups[supplier]) {
+          supplierGroups[supplier] = 0;
+        }
+        
+        if (material.pricePerUnit && material.quantity) {
+          const pricePerUnit = parseFloat(material.pricePerUnit.replace('₱', '').replace(',', ''));
+          const quantity = parseFloat(material.quantity);
+          supplierGroups[supplier] += pricePerUnit * quantity;
+        }
+      });
+      
+      return Object.entries(supplierGroups).map(([supplier, total]) => ({
+        supplier,
+        total: `₱${total.toFixed(2)}`
+      }));
+    }
+
+    // Function to get inventory data (shared with inventory.html)
+    function getInventoryData() {
+      // This should match the inventory data structure from inventory.html
+      return [
+        { id: 1, name: 'Boysen', description: 'Permacoat Semi-Gloss Latex B7501 Tulle White', quantity: 150, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '1' } },
+        { id: 2, name: 'Davies Sun & Rain SR001 Rose White', description: 'Weather-resistant exterior paint', quantity: 150, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '14' } },
+        { id: 4, name: 'Boysen', description: 'Epoxy Primer B2230 Gray', quantity: 50, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '4' } },
+        { id: 6, name: 'Nail', description: 'Common construction nails', quantity: 150, unit: 'kg', supplier: 'Supplier A', status: 'Active', category: 'Roofing', attributes: { size: '1inch' } },
+        { id: 7, name: 'Plywood', description: 'Standard construction plywood', quantity: 150, unit: 'pcs', supplier: 'Supplier A', status: 'Active', category: 'Wood', attributes: { size: '4ft x 8ft' } },
+        { id: 10, name: 'Wood Plank', description: 'Dimensional lumber for construction', quantity: 200, unit: 'pcs', supplier: 'Supplier C', status: 'Active', category: 'Wood', attributes: { size: '2x4x8' } },
+        // Example materials with same name but different variations
+        { id: 13, name: 'Boysen', description: 'Primer White', quantity: 100, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '1' } },
+        { id: 14, name: 'Boysen', description: 'Primer White', quantity: 75, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '4' } },
+        { id: 15, name: 'Boysen', description: 'Primer White', quantity: 200, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '14' } },
+        { id: 16, name: 'Boysen', description: 'Primer White', quantity: 150, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '16' } },
+        // Boysen Classic Latex variations
+        { id: 17, name: 'Boysen', description: 'Classic Latex', quantity: 120, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '1' } },
+        { id: 18, name: 'Boysen', description: 'Classic Latex', quantity: 90, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '4' } },
+        { id: 19, name: 'Boysen', description: 'Classic Latex', quantity: 180, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '14' } },
+        { id: 20, name: 'Boysen', description: 'Classic Latex', quantity: 160, unit: 'L', supplier: 'Supplier A', status: 'Active', category: 'Paint', attributes: { size: '16' } },
+        // New materials
+        { id: 21, name: 'Nail', description: 'Heavy-duty construction nails', quantity: 200, unit: 'kgs', supplier: 'ABC Construction Supplies', status: 'Active', category: 'Hardware', attributes: { size: '1 1/2 inch' } },
+        { id: 26, name: 'Cement Holcim', description: 'Portland cement for construction', quantity: 300, unit: 'kg', supplier: 'ABC Construction Supplies', status: 'Active', category: 'Cement', attributes: { size: '40' } },
+        { id: 27, name: 'Eagle Cement', description: 'High-quality Portland cement', quantity: 250, unit: 'kg', supplier: 'ABC Construction Supplies', status: 'Active', category: 'Cement', attributes: { size: '40' } }
+      ];
+    }
+
+    // Function to check if material exists in inventory and get stock level
+    function getMaterialStockInfo(materialName) {
+      const inventoryData = getInventoryData();
+      const material = inventoryData.find(item => {
+        if (item.status !== 'Active' || !item.name) return false;
+        const itemName = String(item.name).trim().toLowerCase();
+        const searchName = String(materialName).trim().toLowerCase();
+        return itemName.includes(searchName) || searchName.includes(itemName);
+      });
+      
+      if (!material) return null;
+      
+      return {
+        exists: true,
+        quantity: material.quantity,
+        unit: material.unit,
+        stockLevel: getStockLevel(material.quantity),
+        category: material.category,
+        size: material.attributes?.size || ''
+      };
+    }
+
+    // Function to get all material variations for a given material name
+    function getAllMaterialVariations(materialName) {
+      const inventoryData = getInventoryData();
+      const variations = inventoryData.filter(item => {
+        if (item.status !== 'Active' || !item.name) return false;
+        const itemName = String(item.name).trim().toLowerCase();
+        const searchName = String(materialName).trim().toLowerCase();
+        return itemName.includes(searchName) || searchName.includes(itemName);
+      });
+      
+      return variations.map(material => ({
+        id: material.id,
+        name: material.name,
+        quantity: material.quantity,
+        unit: material.unit,
+        stockLevel: getStockLevel(material.quantity),
+        category: material.category,
+        size: material.attributes?.size || ''
+      }));
+    }
+
+    // Show all materials with stock status
+    async function showAllMaterials(materialName) {
+      try {
+        // Set the selected material name in modal title
+        document.getElementById('selectedMaterialName').textContent = materialName;
+        
+        // Fetch all materials from the backend
+        const response = await fetch('/scm/materials');
+        if (!response.ok) {
+          throw new Error('Failed to fetch materials');
+        }
+        
+        const materials = await response.json();
+        
+        // Filter materials by name (case-insensitive)
+        const filteredMaterials = materials.filter(material => 
+          material.name.toLowerCase().includes(materialName.toLowerCase())
+        );
+        
+        // Populate the table
+        const tbody = document.getElementById('allMaterialsTableBody');
+        tbody.innerHTML = '';
+        
+        if (filteredMaterials.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No materials found</td></tr>';
+          return;
+        }
+        
+        filteredMaterials.forEach(material => {
+          const row = document.createElement('tr');
+          
+          // Stock status badge
+          let stockBadge = '';
+          if (material.stock_status === 'Low Stock') {
+            stockBadge = '<span class="badge bg-danger">Low Stock</span>';
+          } else if (material.stock_status === 'Medium Stock') {
+            stockBadge = '<span class="badge bg-warning">Medium Stock</span>';
+          } else {
+            stockBadge = '<span class="badge bg-success">Good Stock</span>';
+          }
+          
+          // Format price validity
+          const validUntil = material.price_validity ? 
+            new Date(material.price_validity).toLocaleDateString() : 'N/A';
+          
+          row.innerHTML = `
+            <td>${stockBadge}</td>
+            <td>${material.name}</td>
+            <td>${material.brand_name || 'Brandless'}</td>
+            <td>${material.variant || '-'}</td>
+            <td>${material.category || '-'}</td>
+            <td>${material.unit || '-'}</td>
+            <td>${material.quantity}</td>
+            <td>₱${parseFloat(material.price).toFixed(2)}</td>
+            <td>${material.supplier_name}</td>
+            <td>${validUntil}</td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('allMaterialsModal'));
+        modal.show();
+        
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        alert('Failed to load materials. Please try again.');
+      }
+    }
+
+    // Function to determine stock level
+    function getStockLevel(quantity) {
+      if (quantity < 50) return 'low';
+      if (quantity <= 100) return 'medium';
+      return 'good';
+    }
+
+    // Function to get stock level class for styling
+    function getStockLevelClass(quantity) {
+      if (quantity < 50) return 'text-danger';
+      if (quantity <= 100) return 'text-warning';
+      return 'text-success';
+    }
+
+    // Function to get stock level text
+    function getStockLevelText(quantity) {
+      if (quantity < 50) return 'Low Stock';
+      if (quantity <= 100) return 'Medium Stock';
+      return 'Good Stock';
+    }
+
+
+    // Supplier comparison data for different materials
+    const supplierComparisonData = {
+      paint: [
+        { supplier: 'ABC Construction Supplies', size: '1', price: '₱780.00', delivery: 3, rating: '4.2/5', timeRating: '4.5/5', score: 85, rank: 1 },
+        { supplier: 'ABC Construction Supplies', size: '4', price: '₱750.00', delivery: 3, rating: '4.0/5', timeRating: '4.5/5', score: 82, rank: 2 },
+        { supplier: 'ABC Construction Supplies', size: '14', price: '₱820.00', delivery: 3, rating: '4.5/5', timeRating: '4.8/5', score: 80, rank: 3 },
+        { supplier: 'ABC Construction Supplies', size: '16', price: '₱850.00', delivery: 3, rating: '3.8/5', timeRating: '4.0/5', score: 75, rank: 4 },
+        { supplier: 'XYZ Building Materials', size: '1', price: '₱790.00', delivery: 5, rating: '4.1/5', timeRating: '3.5/5', score: 78, rank: 5 },
+        { supplier: 'XYZ Building Materials', size: '4', price: '₱760.00', delivery: 5, rating: '4.0/5', timeRating: '3.8/5', score: 76, rank: 6 },
+        { supplier: 'XYZ Building Materials', size: '14', price: '₱830.00', delivery: 5, rating: '4.2/5', timeRating: '3.9/5', score: 77, rank: 7 },
+        { supplier: 'XYZ Building Materials', size: '16', price: '₱860.00', delivery: 5, rating: '3.9/5', timeRating: '3.7/5', score: 74, rank: 8 },
+        { supplier: 'Metro Hardware & Tools', size: '1', price: '₱800.00', delivery: 2, rating: '4.3/5', timeRating: '4.6/5', score: 81, rank: 9 },
+        { supplier: 'Metro Hardware & Tools', size: '4', price: '₱770.00', delivery: 2, rating: '4.1/5', timeRating: '4.7/5', score: 79, rank: 10 },
+        { supplier: 'Metro Hardware & Tools', size: '14', price: '₱840.00', delivery: 2, rating: '4.4/5', timeRating: '4.8/5', score: 82, rank: 11 },
+        { supplier: 'Metro Hardware & Tools', size: '16', price: '₱870.00', delivery: 2, rating: '4.0/5', timeRating: '4.9/5', score: 80, rank: 12 },
+        { supplier: 'Premier Construction Co.', size: '1', price: '₱810.00', delivery: 4, rating: '3.9/5', timeRating: '4.1/5', score: 73, rank: 13 },
+        { supplier: 'Premier Construction Co.', size: '4', price: '₱780.00', delivery: 4, rating: '3.7/5', timeRating: '4.0/5', score: 71, rank: 14 },
+        { supplier: 'Premier Construction Co.', size: '14', price: '₱850.00', delivery: 4, rating: '3.8/5', timeRating: '4.2/5', score: 72, rank: 15 },
+        { supplier: 'Premier Construction Co.', size: '16', price: '₱880.00', delivery: 4, rating: '3.6/5', timeRating: '4.1/5', score: 70, rank: 16 },
+        { supplier: 'Global Materials Ltd.', size: '1', price: '₱820.00', delivery: 6, rating: '4.0/5', timeRating: '3.6/5', score: 75, rank: 17 },
+        { supplier: 'Global Materials Ltd.', size: '4', price: '₱790.00', delivery: 6, rating: '3.9/5', timeRating: '3.5/5', score: 73, rank: 18 },
+        { supplier: 'Global Materials Ltd.', size: '14', price: '₱860.00', delivery: 6, rating: '4.1/5', timeRating: '3.7/5', score: 76, rank: 19 },
+        { supplier: 'Global Materials Ltd.', size: '16', price: '₱890.00', delivery: 6, rating: '3.8/5', timeRating: '3.4/5', score: 72, rank: 20 }
+      ],
+      nail: [
+        // 1 inch nails
+        { supplier: 'ABC Construction Supplies', size: '1inch', price: '₱35.00', delivery: 2, rating: '4.3/5', timeRating: '4.7/5', score: 88, rank: 1 },
+        { supplier: 'XYZ Building Materials', size: '1inch', price: '₱37.00', delivery: 3, rating: '4.1/5', timeRating: '4.2/5', score: 82, rank: 2 },
+        { supplier: 'Metro Hardware & Tools', size: '1inch', price: '₱33.00', delivery: 1, rating: '4.5/5', timeRating: '4.8/5', score: 90, rank: 3 },
+        { supplier: 'Premier Construction Co.', size: '1inch', price: '₱39.00', delivery: 4, rating: '3.9/5', timeRating: '4.0/5', score: 78, rank: 4 },
+        { supplier: 'Global Materials Ltd.', size: '1inch', price: '₱36.00', delivery: 5, rating: '4.0/5', timeRating: '3.6/5', score: 76, rank: 5 },
+        
+        // 1 1/2 inch nails
+        { supplier: 'ABC Construction Supplies', size: '1 1/2 inch', price: '₱45.00', delivery: 2, rating: '4.3/5', timeRating: '4.7/5', score: 88, rank: 1 },
+        { supplier: 'XYZ Building Materials', size: '1 1/2 inch', price: '₱47.00', delivery: 3, rating: '4.1/5', timeRating: '4.2/5', score: 82, rank: 2 },
+        { supplier: 'Metro Hardware & Tools', size: '1 1/2 inch', price: '₱43.00', delivery: 1, rating: '4.5/5', timeRating: '4.8/5', score: 90, rank: 3 },
+        { supplier: 'Premier Construction Co.', size: '1 1/2 inch', price: '₱49.00', delivery: 4, rating: '3.9/5', timeRating: '4.0/5', score: 78, rank: 4 },
+        { supplier: 'Global Materials Ltd.', size: '1 1/2 inch', price: '₱46.00', delivery: 5, rating: '4.0/5', timeRating: '3.6/5', score: 76, rank: 5 },
+        
+        
+      ],
+      'Cement Holcim': [
+        { supplier: 'ABC Construction Supplies', size: '40', price: '₱285.00', delivery: 3, rating: '4.4/5', timeRating: '4.5/5', score: 87, rank: 1 },
+        { supplier: 'XYZ Building Materials', size: '40', price: '₱290.00', delivery: 4, rating: '4.2/5', timeRating: '4.0/5', score: 83, rank: 2 },
+        { supplier: 'Metro Hardware & Tools', size: '40', price: '₱280.00', delivery: 2, rating: '4.6/5', timeRating: '4.8/5', score: 91, rank: 3 },
+        { supplier: 'Premier Construction Co.', size: '40', price: '₱295.00', delivery: 5, rating: '3.8/5', timeRating: '3.9/5', score: 76, rank: 4 },
+        { supplier: 'Global Materials Ltd.', size: '40', price: '₱288.00', delivery: 6, rating: '4.1/5', timeRating: '3.7/5', score: 79, rank: 5 }
+      ],
+      'Eagle Cement': [
+        { supplier: 'ABC Construction Supplies', size: '40', price: '₱275.00', delivery: 3, rating: '4.3/5', timeRating: '4.4/5', score: 85, rank: 1 },
+        { supplier: 'XYZ Building Materials', size: '40', price: '₱278.00', delivery: 4, rating: '4.1/5', timeRating: '4.1/5', score: 81, rank: 2 },
+        { supplier: 'Metro Hardware & Tools', size: '40', price: '₱272.00', delivery: 2, rating: '4.5/5', timeRating: '4.7/5', score: 89, rank: 3 },
+        { supplier: 'Premier Construction Co.', size: '40', price: '₱285.00', delivery: 5, rating: '3.9/5', timeRating: '3.8/5', score: 77, rank: 4 },
+        { supplier: 'Global Materials Ltd.', size: '40', price: '₱280.00', delivery: 6, rating: '4.0/5', timeRating: '3.6/5', score: 75, rank: 5 }
+      ]
+    };
+
+    // Close All Dropdowns function - Updated to match inventory.html pattern
+    function closeAllDropdowns() {}
+
+    // Supplier dropdown functionality - Updated to match inventory.html pattern
+    function initializeSupplierDropdown() {
+      const searchInput = document.getElementById('supplierSearch');
+      const dropdown = document.getElementById('supplierDropdown');
+      const hiddenInput = document.getElementById('supplier');
+      const container = document.querySelector('.supplier-dropdown-container');
+      
+      if (!searchInput || !dropdown || !hiddenInput || !container) return;
+
+      // Show dropdown on focus/click
+      searchInput.addEventListener('focus', () => {
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      searchInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      // Search functionality
+      searchInput.addEventListener('input', () => {
+        filterOptions();
+        dropdown.style.display = 'block';
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Option selection
+      dropdown.addEventListener('click', (e) => {
+        const option = e.target.closest('.supplier-option');
+        if (!option) return;
+        
+        const value = option.getAttribute('data-value');
+        const text = option.textContent.trim();
+        
+        searchInput.value = text;
+        hiddenInput.value = value;
+        dropdown.style.display = 'none';
+      });
+
+      function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const options = dropdown.querySelectorAll('.supplier-option');
+        
+        options.forEach(option => {
+          const text = option.textContent.toLowerCase();
+          if (text.includes(searchTerm)) {
+            option.classList.remove('hidden');
+          } else {
+            option.classList.add('hidden');
+          }
+        });
+      }
+    }
+
+    // Material type dropdown functionality - Updated to match inventory.html pattern
+    function initializeMaterialDropdown() {
+      const searchInput = document.getElementById('materialTypeSearch');
+      const dropdown = document.getElementById('materialTypeDropdown');
+      const hiddenInput = document.getElementById('materialType');
+      const container = document.querySelector('.material-dropdown-container');
+      
+      if (!searchInput || !dropdown || !hiddenInput || !container) return;
+
+      // Populate dropdown with materials from backend, sorted by stock status (Low, Medium, Good)
+      async function populateMaterialOptions() {
+        dropdown.innerHTML = '';
+        try {
+          const res = await fetch('/scm/materials');
+          if (!res.ok) throw new Error('Failed to load materials');
+          const materials = await res.json();
+          
+          // Debug: Log the materials data to see what we're getting
+          console.log('=== MATERIALS DATA FROM BACKEND ===');
+          console.log('Total materials:', materials.length);
+          console.log('First few materials:', materials.slice(0, 3));
+          console.log('Sample material structure:', materials[0]);
+
+          // Sort by stock status priority: Low -> Medium -> Good
+          const priority = { 'Low Stock': 1, 'Medium Stock': 2, 'Good Stock': 3 };
+          materials.sort((a, b) => {
+            const pa = priority[a.stock_status] || 99;
+            const pb = priority[b.stock_status] || 99;
+            if (pa !== pb) return pa - pb;
+            return String(a.name).localeCompare(String(b.name));
+          });
+
+          materials.forEach(m => {
+            // Debug: Log each material being processed
+            console.log('Processing material:', m.name, 'Price:', m.price, 'Description:', m.description);
+            
+            const option = document.createElement('div');
+            option.className = 'material-option';
+            option.setAttribute('data-value', `${String(m.name).toLowerCase().replace(/\s+/g, '_')}_${m.variant || ''}`);
+            option.setAttribute('data-material-id', m.material_id);
+            option.dataset.unit = m.unit || '';
+            option.dataset.size = m.variant || '';
+            option.dataset.description = m.description || '';
+            option.dataset.price = m.price || '0';
+            option.dataset.category = m.category || '';
+            
+            const stockClass = m.stock_status === 'Low Stock' ? 'text-danger' : (m.stock_status === 'Medium Stock' ? 'text-warning' : 'text-success');
+
+            option.innerHTML = `
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-bold">${m.name}</div>
+                  <small class="text-muted">Category: ${m.category || '-'} • Size: ${m.variant || '-'} • Unit: ${m.unit || '-'}</small>
+                </div>
+                <div class="text-end">
+                  <div class="small ${stockClass}">${m.stock_status || ''}</div>
+                  <div class="small text-muted">Stock: ${Number(m.quantity) || 0}</div>
+                </div>
+              </div>
+            `;
+
+            dropdown.appendChild(option);
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Initialize dropdown with backend data
+      populateMaterialOptions();
+
+      // Show dropdown on focus/click
+      searchInput.addEventListener('focus', () => {
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      searchInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      // Search functionality
+      searchInput.addEventListener('input', () => {
+        filterOptions();
+        dropdown.style.display = 'block';
+        
+        // Hide supplier comparison if input is empty
+        if (searchInput.value.trim() === '') {
+          hideSupplierComparison();
+        }
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Option selection
+      dropdown.addEventListener('click', (e) => {
+        const option = e.target.closest('.material-option');
+        if (!option) return;
+        
+        const value = option.getAttribute('data-value');
+        const materialName = option.querySelector('.fw-bold').textContent;
+        const details = option.querySelector('.text-muted').textContent;
+        
+        // Show only material name in the input field
+        searchInput.value = materialName;
+        hiddenInput.value = value;
+        
+        // Parse and populate separate fields
+        const parts = details.split(' • ');
+        let size = option.dataset.size || '', unit = option.dataset.unit || '', description = option.dataset.description || '';
+        // Fallback parse if dataset not present
+        if (!size || !unit || !description) {
+          const parts = details.split(' • ');
+          parts.forEach(part => {
+            if (part.startsWith('Size: ')) size = size || part.replace('Size: ', '');
+            if (part.startsWith('Unit: ')) unit = unit || part.replace('Unit: ', '');
+            if (part.startsWith('Description: ')) description = description || part.replace('Description: ', '');
+          });
+        }
+        
+        // Populate the separate fields
+        document.getElementById('size').value = size;
+        document.getElementById('unit').value = unit;
+        // Clean up description to remove "| Category:" prefix if it exists
+        let cleanDescription = option.dataset.category || description.replace(/^\s*\|\s*Category:\s*/, '');
+        
+        // Debug category detection
+        console.log('=== CATEGORY DEBUG ===');
+        console.log('Original description:', description);
+        console.log('Dataset category:', option.dataset.category);
+        console.log('Clean description:', cleanDescription);
+        console.log('Material name:', materialName);
+        
+        // If category still empty, fallback detection by name
+        if (!cleanDescription || cleanDescription.trim() === '') {
+          console.log('Category empty, using fallback detection');
+          if (materialName.toLowerCase().includes('bond paper') || 
+              materialName.toLowerCase().includes('paper') ||
+              materialName.toLowerCase().includes('office')) {
+            cleanDescription = 'Office Supplies';
+          } else if (materialName.toLowerCase().includes('equipment') ||
+                     materialName.toLowerCase().includes('tool')) {
+            cleanDescription = 'Equipment';
+          } else if (materialName.toLowerCase().includes('construction') ||
+                     materialName.toLowerCase().includes('building')) {
+            cleanDescription = 'Construction';
+          } else {
+            cleanDescription = 'General';
+          }
+        }
+        
+        console.log('Final category:', cleanDescription);
+        document.getElementById('description').value = cleanDescription;
+        
+        // Set material_id and price from the option
+        document.getElementById('material_id').value = option.getAttribute('data-material-id') || '';
+        document.getElementById('material_price').value = option.dataset.price || '0';
+        
+        // Debug price setting
+        console.log('Setting material price:', option.dataset.price, 'from option:', option);
+        
+        dropdown.style.display = 'none';
+        
+        // Show supplier comparison table based on material type
+        let materialType = 'paint'; // default
+        console.log('=== DEBUGGING MATERIAL TYPE DETECTION ===');
+        console.log('materialName:', materialName);
+        console.log('materialName.toLowerCase():', materialName.toLowerCase());
+        
+        if (materialName.toLowerCase().includes('nail')) {
+          materialType = 'nail';
+          console.log('✅ Detected as NAIL material');
+        } else if (materialName.toLowerCase().includes('cement holcim')) {
+          materialType = 'Cement Holcim';
+          console.log('✅ Detected as CEMENT HOLCIM material');
+        } else if (materialName.toLowerCase().includes('eagle cement')) {
+          materialType = 'Eagle Cement';
+          console.log('✅ Detected as EAGLE CEMENT material');
+        } else if (materialName.toLowerCase().includes('boysen') || 
+                   materialName.toLowerCase().includes('davies') || 
+                   materialName.toLowerCase().includes('primer') || 
+                   materialName.toLowerCase().includes('latex') ||
+                   materialName.toLowerCase().includes('permacoat') ||
+                   materialName.toLowerCase().includes('paint')) {
+          materialType = 'paint';
+          console.log('✅ Detected as PAINT material');
+        } else if (materialName.toLowerCase().includes('bond paper') ||
+                   materialName.toLowerCase().includes('paper') ||
+                   materialName.toLowerCase().includes('office') ||
+                   materialName.toLowerCase().includes('supplies')) {
+          materialType = 'office supplies';
+          console.log('✅ Detected as OFFICE SUPPLIES material');
+        } else if (materialName.toLowerCase().includes('equipment') ||
+                   materialName.toLowerCase().includes('tool') ||
+                   materialName.toLowerCase().includes('machine')) {
+          materialType = 'equipment';
+          console.log('✅ Detected as EQUIPMENT material');
+        } else if (materialName.toLowerCase().includes('construction') ||
+                   materialName.toLowerCase().includes('building') ||
+                   materialName.toLowerCase().includes('material')) {
+          materialType = 'construction';
+          console.log('✅ Detected as CONSTRUCTION material');
+        } else {
+          console.log('❌ No specific material type detected, using default: paint');
+        }
+        
+        console.log('Final materialType:', materialType);
+        showSupplierComparison(materialName);
+      });
+
+      function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const options = dropdown.querySelectorAll('.material-option');
+        
+        options.forEach(option => {
+          const materialName = option.querySelector('.fw-bold').textContent.toLowerCase();
+          const details = option.querySelector('.text-muted').textContent.toLowerCase();
+          
+          if (materialName.includes(searchTerm) || details.includes(searchTerm)) {
+            option.classList.remove('hidden');
+          } else {
+            option.classList.add('hidden');
+          }
+        });
+      }
+    }
+
+    // Function to show stock level warning
+    function showStockLevelWarning(materialInfo) { return; }
+
+    // Show supplier list for the selected item (fetched live from backend)
+    async function showSupplierComparison(materialText) {
+      const selectedMaterialSpan = document.getElementById('selectedMaterialType');
+      const comparisonBody = document.getElementById('supplierComparisonBody');
+      selectedMaterialSpan.textContent = materialText ? ('for ' + materialText) : '';
+      comparisonBody.innerHTML = '';
+
+      // Fetch suppliers offering this item
+      try {
+        const resp = await fetch(`/scm/purchases/suppliers-for-item?name=${encodeURIComponent(materialText)}`);
+        if (!resp.ok) throw new Error('Failed to fetch suppliers');
+        const rows = await resp.json();
+
+        // Sort by unit_price asc
+        rows.sort((a,b) => Number(a.unit_price) - Number(b.unit_price));
+
+        // Render rows
+        rows.forEach(s => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${s.supplier_name}</td>
+            <td>₱${Number(s.unit_price).toFixed(2)}</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+          `;
+          row.addEventListener('click', () => {
+            const supplierSearch = document.getElementById('supplierSearch');
+            const supplierHidden = document.getElementById('supplier');
+            const supplierIdHidden = document.getElementById('supplier_id');
+            if (supplierSearch) supplierSearch.value = s.supplier_name;
+            if (supplierHidden) supplierHidden.value = s.supplier_id;
+            if (supplierIdHidden) supplierIdHidden.value = s.supplier_id;
+
+            // Populate size/unit if available from the selected supplier offer
+            const sizeEl = document.getElementById('size');
+            const unitEl = document.getElementById('unit');
+            if (sizeEl && (s.variant !== undefined && s.variant !== null)) sizeEl.value = s.variant || '';
+            if (unitEl && (s.unit !== undefined && s.unit !== null)) unitEl.value = s.unit || '';
+
+            // Preserve the existing Category (description) value; do not clear it
+            const descEl = document.getElementById('description');
+            if (descEl) {
+              // keep current value; do not overwrite
+              descEl.value = descEl.value || '';
+            }
+
+            // Set hidden material reference fields if available
+            const matIdEl = document.getElementById('material_id');
+            const matPriceEl = document.getElementById('material_price');
+            if (matIdEl && s.material_id !== undefined) matIdEl.value = s.material_id;
+            if (matPriceEl && s.unit_price !== undefined) matPriceEl.value = String(s.unit_price);
+          });
+          comparisonBody.appendChild(row);
+        });
+
+        comparisonBody.style.display = 'table-row-group';
+      } catch (e) {
+        console.error(e);
+        comparisonBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Failed to load suppliers</td></tr>';
+        comparisonBody.style.display = 'table-row-group';
+      }
+    }
+
+    // Function to hide supplier comparison table
+    function hideSupplierComparison() {
+      const selectedMaterialSpan = document.getElementById('selectedMaterialType');
+      const comparisonBody = document.getElementById('supplierComparisonBody');
+      
+      // Clear the material type in the header
+      selectedMaterialSpan.textContent = '';
+      
+      // Hide the comparison table body
+      comparisonBody.style.display = 'none';
+    }
+
+    // Function to update unit options based on material type
+    function updateUnitOptions(materialType) { return; }
+
+    // Edit dropdown functions (stubbed for now)
+    function initializeEditMaterialDropdown() { return; }
+    function initializeEditSupplierDropdown() { return; }
+
+    // Function to clear edit paint-specific fields
+    function clearEditPaintFields() {
+      document.getElementById('editPaintType').value = '';
+      document.getElementById('editColor').value = '';
+      document.getElementById('editBrand').value = '';
+      document.getElementById('editSize').value = '';
+    }
+
+    // Function to clear edit cement-specific fields
+    function clearEditCementFields() {
+      document.getElementById('editCementBrand').value = '';
+      document.getElementById('editCementGrade').value = '';
+      document.getElementById('editCementType').value = '';
+      document.getElementById('editCementPackaging').value = '';
+    }
+
+    // Function to update edit unit options based on material type
+    function updateEditUnitOptions(materialType) {
+      const unitSelect = document.getElementById('editUnit');
+      const allOptions = unitSelect.querySelectorAll('option');
+      
+      // Hide all options first
+      allOptions.forEach(option => {
+        option.style.display = 'none';
+      });
+      
+      // Show relevant options based on material type
+      if (materialType === 'paint') {
+        // Show only paint-related units
+        allOptions.forEach(option => {
+          if (option.value === 'can' || option.value === 'pail') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'cement') {
+        // Show only cement-related units
+        allOptions.forEach(option => {
+          if (option.value === 'bags' || option.value === 'cubic') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'gravel') {
+        // Gravel only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'cubic') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'cubic';
+          }
+        });
+      } else if (materialType === 'sand') {
+        // Sand only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'cubic') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'cubic';
+          }
+        });
+      } else if (materialType === 'steel') {
+        // Steel only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'kg') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'kg';
+          }
+        });
+      } else if (materialType === 'wood') {
+        // Wood only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'bricks') {
+        // Bricks only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'gravel') {
+        // Gravel only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'cubic') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'cubic';
+          }
+        });
+      } else if (materialType === 'concrete') {
+        // Concrete only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'cubic') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'cubic';
+          }
+        });
+      } else if (materialType === 'rebar') {
+        // Rebar only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'kg') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'kg';
+          }
+        });
+      } else if (materialType === 'tiles') {
+        // Tiles only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'roofing') {
+        // Roofing materials - multiple options
+        allOptions.forEach(option => {
+          if (option.value === 'pieces' || option.value === 'meters' || option.value === 'kg') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'insulation') {
+        // Insulation only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'meters') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'meters';
+          }
+        });
+      } else if (materialType === 'electrical') {
+        // Electrical materials - multiple options
+        allOptions.forEach(option => {
+          if (option.value === 'meters' || option.value === 'pieces' || option.value === 'kg') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'plumbing') {
+        // Plumbing materials - multiple options
+        allOptions.forEach(option => {
+          if (option.value === 'meters' || option.value === 'pieces' || option.value === 'kg') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'windows') {
+        // Windows only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'doors') {
+        // Doors only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'flooring') {
+        // Flooring - multiple options
+        allOptions.forEach(option => {
+          if (option.value === 'meters' || option.value === 'pieces') {
+            option.style.display = 'block';
+          }
+        });
+      } else if (materialType === 'drywall') {
+        // Drywall only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else if (materialType === 'lumber') {
+        // Lumber only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'meters') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'meters';
+          }
+        });
+      } else if (materialType === 'nails') {
+        // Nails & Fasteners only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'kg') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'kg';
+          }
+        });
+      } else if (materialType === 'wire') {
+        // Wire & Cables only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'meters') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'meters';
+          }
+        });
+      } else if (materialType === 'pipes') {
+        // Pipes only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'meters') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'meters';
+          }
+        });
+      } else if (materialType === 'adhesive') {
+        // Adhesive & Sealants only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'kg') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'kg';
+          }
+        });
+      } else if (materialType === 'tools') {
+        // Tools & Equipment only has one unit option
+        allOptions.forEach(option => {
+          if (option.value === 'pieces') {
+            option.style.display = 'block';
+            // Automatically select the only available unit
+            unitSelect.value = 'pieces';
+          }
+        });
+      } else {
+        // Show all units for other materials
+        allOptions.forEach(option => {
+          option.style.display = 'block';
+        });
+        // Reset unit selection for materials with multiple options
+        unitSelect.value = '';
+      }
+    }
+
+    
+
+    
+
+    // Function to update edit paint unit based on size selection
+    function updateEditPaintUnit() {
+      const sizeSelect = document.getElementById('editSize');
+      const unitSelect = document.getElementById('editUnit');
+      
+      if (sizeSelect.value && unitSelect) {
+        // Paint unit mapping based on size
+        const unitMapping = {
+          '1': 'can',
+          '4': 'can', 
+          '16': 'pail',
+          '20': 'pail'
+        };
+        
+        const selectedUnit = unitMapping[sizeSelect.value];
+        if (selectedUnit) {
+          // Set the unit value directly
+          unitSelect.value = selectedUnit;
+        }
+      }
+    }
+
+    // Function to update edit cement unit based on packaging selection
+    function updateEditCementUnit() {
+      const packagingSelect = document.getElementById('editCementPackaging');
+      const unitSelect = document.getElementById('editUnit');
+      
+      if (packagingSelect.value && unitSelect) {
+        // Cement unit mapping based on packaging
+        const unitMapping = {
+          '40kg': 'bags',
+          '50kg': 'bags',
+          'bulk': 'cubic',
+          'sack': 'bags'
+        };
+        
+        const selectedUnit = unitMapping[packagingSelect.value];
+        if (selectedUnit) {
+          // Set the unit value directly
+          unitSelect.value = selectedUnit;
+        }
+      }
+    }
+
+    // Edit material type dropdown functionality - now uses inventory data
+    function initializeEditMaterialDropdown() {
+      const searchInput = document.getElementById('editMaterialTypeSearch');
+      const dropdown = document.getElementById('editMaterialTypeDropdown');
+      const hiddenInput = document.getElementById('editMaterialType');
+      
+      // Populate dropdown with inventory materials
+      function populateEditMaterialOptions() {
+        const inventoryData = getInventoryData();
+        dropdown.innerHTML = '';
+        
+        // Group materials by name to show variations
+        const materialGroups = {};
+        inventoryData.forEach(item => {
+          if (item.status === 'Active') {
+            const materialName = item.name;
+            if (!materialGroups[materialName]) {
+              materialGroups[materialName] = [];
+            }
+            materialGroups[materialName].push(item);
+          }
+        });
+        
+        // Create dropdown options for each material group
+        Object.keys(materialGroups).forEach(materialName => {
+          const variations = materialGroups[materialName];
+          
+          // If only one variation, show it directly
+          if (variations.length === 1) {
+            const item = variations[0];
+            const option = document.createElement('div');
+            option.className = 'edit-material-option';
+            option.setAttribute('data-value', item.name.toLowerCase().replace(/\s+/g, '_'));
+            option.setAttribute('data-material-id', item.id);
+            
+            const stockLevelClass = getStockLevelClass(item.quantity);
+            const stockLevelText = getStockLevelText(item.quantity);
+            
+            option.innerHTML = `
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-bold">${item.name}</div>
+                  <small class="text-muted">${item.category} • Size: ${item.attributes?.size || '-'} • Unit: ${item.unit}</small>
+                </div>
+                <div class="text-end">
+                  <div class="small ${stockLevelClass}">${stockLevelText}</div>
+                  <div class="small text-muted">Stock: ${item.quantity}</div>
+                </div>
+              </div>
+            `;
+            
+            dropdown.appendChild(option);
+          } else {
+            // Multiple variations - show each one separately
+            variations.forEach(item => {
+              const option = document.createElement('div');
+              option.className = 'edit-material-option';
+              option.setAttribute('data-value', `${item.name.toLowerCase().replace(/\s+/g, '_')}_${item.id}`);
+              option.setAttribute('data-material-id', item.id);
+              
+              const stockLevelClass = getStockLevelClass(item.quantity);
+              const stockLevelText = getStockLevelText(item.quantity);
+              
+              option.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="fw-bold">${item.name}</div>
+                    <small class="text-muted">${item.category} • Size: ${item.attributes?.size || '-'} • Unit: ${item.unit}</small>
+                  </div>
+                  <div class="text-end">
+                    <div class="small ${stockLevelClass}">${stockLevelText}</div>
+                    <div class="small text-muted">Stock: ${item.quantity}</div>
+                  </div>
+                </div>
+              `;
+              
+              dropdown.appendChild(option);
+            });
+          }
+        });
+        
+        // Add event listeners to new options
+        addEditOptionEventListeners();
+      }
+      
+      function addEditOptionEventListeners() {
+        const options = dropdown.querySelectorAll('.edit-material-option');
+        
+        options.forEach(option => {
+          option.addEventListener('click', () => {
+            const value = option.getAttribute('data-value');
+            const materialId = option.getAttribute('data-material-id');
+            const materialName = option.querySelector('.fw-bold').textContent;
+            
+            searchInput.value = materialName;
+            hiddenInput.value = value;
+            dropdown.style.display = 'none';
+            
+            // Remove selected class from all options
+            options.forEach(opt => opt.classList.remove('selected'));
+            // Add selected class to clicked option
+            option.classList.add('selected');
+            
+            // Get specific material info by ID for accurate field population
+            const inventoryData = getInventoryData();
+            const selectedMaterial = inventoryData.find(item => item.id == materialId);
+            
+            if (selectedMaterial) {
+            }
+            
+            // Hide material-specific fields for now (can be enhanced later)
+            document.getElementById('editPaintAttributes').style.display = 'none';
+            document.getElementById('editCementAttributes').style.display = 'none';
+            clearEditPaintFields();
+            clearEditCementFields();
+            updateEditUnitOptions('all');
+          });
+
+          option.addEventListener('mouseenter', () => {
+            options.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+          });
+        });
+      }
+
+      // Show dropdown on focus
+      searchInput.addEventListener('focus', () => {
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.edit-material-dropdown-container')) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Search functionality
+      searchInput.addEventListener('input', () => {
+        filterOptions();
+        dropdown.style.display = 'block';
+        
+        // Hide supplier comparison if input is empty
+        if (searchInput.value.trim() === '') {
+          hideSupplierComparison();
+        }
+      });
+
+      function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const options = dropdown.querySelectorAll('.edit-material-option');
+        
+        options.forEach(option => {
+          const materialName = option.querySelector('.fw-bold').textContent.toLowerCase();
+          const category = option.querySelector('.text-muted').textContent.toLowerCase();
+          
+          if (materialName.includes(searchTerm) || category.includes(searchTerm)) {
+            option.classList.remove('hidden');
+          } else {
+            option.classList.add('hidden');
+          }
+        });
+      }
+      
+      // Initialize dropdown with inventory data
+      populateEditMaterialOptions();
+    }
+
+    // Edit supplier dropdown functionality
+    function initializeEditSupplierDropdown() {
+      const searchInput = document.getElementById('editSupplierSearch');
+      const dropdown = document.getElementById('editSupplierDropdown');
+      const hiddenInput = document.getElementById('editSupplier');
+      const options = dropdown.querySelectorAll('.edit-supplier-option');
+
+      // Show dropdown on focus
+      searchInput.addEventListener('focus', () => {
+        dropdown.style.display = 'block';
+        filterOptions();
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.edit-supplier-dropdown-container')) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Search functionality
+      searchInput.addEventListener('input', () => {
+        filterOptions();
+        dropdown.style.display = 'block';
+      });
+
+      // Option selection
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          const value = option.getAttribute('data-value');
+          const text = option.textContent;
+          
+          searchInput.value = text;
+          hiddenInput.value = value;
+          dropdown.style.display = 'none';
+          
+          // Remove selected class from all options
+          options.forEach(opt => opt.classList.remove('selected'));
+          // Add selected class to clicked option
+          option.classList.add('selected');
+        });
+
+        option.addEventListener('mouseenter', () => {
+          options.forEach(opt => opt.classList.remove('selected'));
+          option.classList.add('selected');
+        });
+      });
+
+      function filterOptions() {
+        const searchTerm = searchInput.value.toLowerCase();
+        options.forEach(option => {
+          const text = option.textContent.toLowerCase();
+          if (text.includes(searchTerm)) {
+            option.classList.remove('hidden');
+          } else {
+            option.classList.add('hidden');
+          }
+        });
+      }
+    }
+
+    // Inventory-like state and rendering
+    const state = {
+      records: [
+        {
+          id: 'PR001',
+          requestDate: '2024-12-19',
+          approvalDate: null,
+          status: 'Pending',
+          materials: [
+            { 
+              type: 'Boysen Permacoat Semi-Gloss Latex B7501 Tulle White', 
+              supplier: 'Supplier A', 
+              quantity: 20, 
+              unit: 'L', 
+              pricePerUnit: '₱450.00',
+              attributes: { size: '1' }
+            },
+            { 
+              type: 'Cement Holcim', 
+              supplier: 'ABC Construction Supplies', 
+              quantity: 50, 
+              unit: 'kg', 
+              packaging: 'paper sack',
+              pricePerUnit: '₱285.00',
+              attributes: { size: '40' }
+            },
+            { 
+              type: 'Nail', 
+              supplier: 'ABC Construction Supplies', 
+              quantity: 25, 
+              unit: 'kgs', 
+              packaging: '',
+              pricePerUnit: '₱35.00',
+              attributes: { size: '1 1/2 inch' }
+            }
+          ]
+        },
+        {
+          id: 'PR002',
+          requestDate: '2024-12-18',
+          approvalDate: '2024-12-19',
+          status: 'Approved',
+          materials: [
+            { 
+              type: 'Davies Sun & Rain SR001 Rose White', 
+              supplier: 'XYZ Building Materials', 
+              quantity: 30, 
+              unit: 'L', 
+              pricePerUnit: '₱420.00',
+              attributes: { size: '14' }
+            },
+            { 
+              type: 'Eagle Cement', 
+              supplier: 'ABC Construction Supplies', 
+              quantity: 40, 
+              unit: 'kg', 
+              packaging: 'paper sack',
+              pricePerUnit: '₱275.00',
+              attributes: { size: '40' }
+            },
+            { 
+              type: 'Nail', 
+              supplier: 'Metro Hardware & Tools', 
+              quantity: 20, 
+              unit: 'kgs', 
+              packaging: 'box',
+              pricePerUnit: '₱33.00',
+              attributes: { size: '1inch' }
+            }
+          ]
+        },
+        {
+          id: 'PR003',
+          requestDate: '2024-12-17',
+          approvalDate: null,
+          status: 'Rejected',
+          materials: [
+            { 
+              type: 'Boysen Epoxy Primer B2230 Gray', 
+              supplier: 'Supplier A', 
+              quantity: 15, 
+              unit: 'L', 
+              pricePerUnit: '₱380.00',
+              attributes: { size: '4' }
+            },
+            { 
+              type: 'Plywood', 
+              supplier: 'Supplier A', 
+              quantity: 10, 
+              unit: 'pcs', 
+              packaging: 'sheet',
+              pricePerUnit: '₱850.00',
+              attributes: { size: '4ft x 8ft' }
+            }
+          ]
+        },
+        {
+          id: 'PR004',
+          requestDate: '2024-12-16',
+          approvalDate: '2024-12-17',
+          status: 'Approved',
+          materials: [
+            { 
+              type: 'Boysen Primer White', 
+              supplier: 'Supplier A', 
+              quantity: 25, 
+              unit: 'L', 
+              pricePerUnit: '₱320.00',
+              attributes: { size: '1' }
+            },
+            { 
+              type: 'Wood Plank', 
+              supplier: 'Supplier C', 
+              quantity: 50, 
+              unit: 'pcs', 
+              packaging: 'piece',
+              pricePerUnit: '₱120.00',
+              attributes: { size: '2x4x8' }
+            },
+            { 
+              type: 'Nail', 
+              supplier: 'Supplier A', 
+              quantity: 15, 
+              unit: 'kg', 
+              packaging: '',
+              pricePerUnit: '₱32.00',
+              attributes: { size: '1inch' }
+            }
+          ]
+        },
+        {
+          id: 'PR005',
+          requestDate: '2024-12-15',
+          approvalDate: null,
+          status: 'Pending',
+          materials: [
+            { 
+              type: 'Boysen Classic Latex', 
+              supplier: 'Supplier A', 
+              quantity: 35, 
+              unit: 'L', 
+              pricePerUnit: '₱400.00',
+              attributes: { size: '14' }
+            },
+            { 
+              type: 'Cement Holcim', 
+              supplier: 'ABC Construction Supplies', 
+              quantity: 60, 
+              unit: 'kg', 
+              packaging: 'paper sack',
+              pricePerUnit: '₱285.00',
+              attributes: { size: '40' }
+            }
+          ]
+        },
+        {
+          id: 'PR006',
+          requestDate: '2024-12-14',
+          approvalDate: '2024-12-16',
+          status: 'Approved',
+          materials: [
+            { 
+              type: 'Boysen Classic Latex', 
+              supplier: 'Supplier A', 
+              quantity: 20, 
+              unit: 'L', 
+              pricePerUnit: '₱380.00',
+              attributes: { size: '1' }
+            },
+            { 
+              type: 'Davies Sun & Rain SR001 Rose White', 
+              supplier: 'Supplier A', 
+              quantity: 25, 
+              unit: 'L', 
+              pricePerUnit: '₱420.00',
+              attributes: { size: '14' }
+            },
+            { 
+              type: 'Eagle Cement', 
+              supplier: 'ABC Construction Supplies', 
+              quantity: 30, 
+              unit: 'kg', 
+              packaging: 'paper sack',
+              pricePerUnit: '₱275.00',
+              attributes: { size: '40' }
+            }
+          ]
+        }
+      ],
+      filtered: [],
+      sort: { key: '', dir: 'asc' },
+      pageSize: 5,
+      currentPage: 1,
+    };
+
+    function getStatusClass(status) {
+      switch(status) {
+        case 'Pending': return 'status-pending';
+        case 'Approved': return 'status-approved';
+        case 'Rejected': return 'status-rejected';
+        case 'Cancelled': return 'status-cancelled';
+        default: return 'status-pending';
+      }
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('recentRequests');
+      tbody.innerHTML = '';
+
+      if (!rows.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="7" class="text-center py-5 text-muted">
+          <i class="fa-regular fa-face-frown me-2"></i>No records found.
+        </td>`;
+        tbody.appendChild(tr);
         return;
       }
 
-      const material = {
-        type: materialType.options[materialType.selectedIndex].text,
-        typeValue: materialType.value,
-        quantity: quantity.value,
-        unit: unit.options[unit.selectedIndex].text,
-        unitValue: unit.value
+      rows.forEach((request) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${request.id}</td>
+          <td>${formatDateForTable(request.requestDate)}</td>
+          <td>${formatDateForTable(request.approvalDate)}</td>
+          <td>${request.suppliers || '-'}</td>
+          <td>${calculateRequestTotal(request)}</td>
+          <td>
+            <span class="status-badge ${getStatusClass(request.status)}">${request.status}</span>
+          </td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" data-action="view" data-id="${request.id}"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function paginate(rows, pageSize, currentPage) {
+      if (pageSize === 'all') return { pagedRows: rows, start: rows.length ? 1 : 0, end: rows.length, pages: 1 };
+      const size = Number(pageSize) || 10;
+      const pages = Math.max(1, Math.ceil(rows.length / size));
+      const page = Math.min(Math.max(1, currentPage), pages);
+      const startIndex = (page - 1) * size;
+      const endIndex = Math.min(startIndex + size, rows.length);
+      const pagedRows = rows.slice(startIndex, endIndex);
+      return { pagedRows, start: rows.length ? startIndex + 1 : 0, end: endIndex, pages };
+    }
+
+    function renderPagination(currentPage, totalPages) {
+      const ul = document.getElementById('pagination');
+      ul.innerHTML = '';
+      if (totalPages <= 1) return;
+      const addItem = (label, page, disabled = false, active = false) => {
+        const li = document.createElement('li');
+        li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+        const a = document.createElement('a');
+        a.className = 'page-link';
+        a.href = '#';
+        a.dataset.page = page;
+        a.textContent = label;
+        li.appendChild(a);
+        ul.appendChild(li);
       };
+      addItem('Prev', String(currentPage - 1), currentPage === 1, false);
+      const windowSize = 5;
+      let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+      let end = Math.min(totalPages, start + windowSize - 1);
+      start = Math.max(1, Math.min(start, end - windowSize + 1));
+      for (let p = start; p <= end; p++) addItem(String(p), String(p), false, p === currentPage);
+      addItem('Next', String(currentPage + 1), currentPage === totalPages, false);
+    }
+
+    function updateEntriesMessage(start, end, total) {
+      const msg = document.getElementById('entriesMessage');
+      msg.textContent = total ? `Showing ${start} to ${end} of ${total} entries` : 'No entries to show';
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      state.currentPage = 1;
+      let rows = [...state.records];
+      if (q) {
+        rows = rows.filter(r => (
+          (String(r.id) + ' ' + String(r.requestDate) + ' ' + String(r.status) + ' ' + calculateRequestTotal(r)).toLowerCase().includes(q)
+        ));
+      }
+      if (status) {
+        rows = rows.filter(r => r.status === status);
+      }
+      state.filtered = rows;
+      applySort();
+    }
+
+    function applySort() {
+      const { key, dir } = state.sort;
+      let rows = [...(state.filtered.length ? state.filtered : state.records)];
+      // Exclude total and status from sorting
+      if (key && key !== 'total' && key !== 'status') {
+        rows.sort((a, b) => {
+          const av = a[key] ?? '';
+          const bv = b[key] ?? '';
+          return dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+        });
+      }
+      const total = rows.length;
+      const sizeSel = document.getElementById('entriesSelect');
+      state.pageSize = sizeSel ? sizeSel.value : 10;
+      const { pagedRows, start, end, pages } = paginate(rows, state.pageSize, state.currentPage);
+      renderTable(pagedRows);
+      renderPagination(state.currentPage, pages);
+      updateEntriesMessage(start, end, total);
+    }
+
+    function highlightSortHeader() {
+      document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('active'));
+      if (!state.sort.key) return;
+      // Don't highlight if the key is total or status (non-sortable columns)
+      if (state.sort.key === 'total' || state.sort.key === 'status') return;
+      const th = document.querySelector(`th.sortable[data-key="${state.sort.key}"]`);
+      if (th) {
+        th.classList.add('active');
+        const icon = th.querySelector('.sort-icon');
+        if (icon) {
+          const isNum = ['requestDate','approvalDate'].includes(state.sort.key);
+          const up = isNum ? 'fa-arrow-up-1-9' : 'fa-arrow-up-a-z';
+          const down = isNum ? 'fa-arrow-down-1-9' : 'fa-arrow-down-a-z';
+          icon.classList.remove('fa-arrow-up-1-9','fa-arrow-up-a-z','fa-arrow-down-1-9','fa-arrow-down-a-z');
+          icon.classList.add('fa-solid');
+          icon.classList.add(state.sort.dir === 'asc' ? up : down);
+        }
+      }
+    }
+
+    function handleHeaderClick(e) {
+      const th = e.target.closest('th.sortable');
+      if (!th) return;
+      const key = th.dataset.key;
+      if (state.sort.key === key) {
+        state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort.key = key;
+        state.sort.dir = 'asc';
+      }
+      applySort();
+      highlightSortHeader();
+    }
+
+    // Add material to the list - now with inventory validation
+    function addMaterial() {
+      let requestDate = document.getElementById('requestDate').value;
+      const supplier = document.getElementById('supplier');
+      const supplierSearch = document.getElementById('supplierSearch');
+      const materialType = document.getElementById('materialType');
+      const materialTypeSearch = document.getElementById('materialTypeSearch');
+      const quantity = document.getElementById('quantity');
+      const unit = document.getElementById('unit');
+
+      // Auto-fill request date if empty
+      if (!requestDate) {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        requestDate = `${y}-${m}-${d}`;
+        const requestDateInput = document.getElementById('requestDate');
+        if (requestDateInput) requestDateInput.value = requestDate;
+      }
+
+      // Validate all inputs including supplier and material type
+      if (!requestDate || !supplier.value || !supplierSearch.value || !materialType.value || !materialTypeSearch.value || !quantity.value) {
+        alert('Please fill in all required fields including supplier and material type selection');
+        console.log('Validation failed:', {
+          requestDate: !!requestDate,
+          supplierValue: !!supplier.value,
+          supplierSearchValue: !!supplierSearch.value,
+          materialTypeValue: !!materialType.value,
+          materialTypeSearchValue: !!materialTypeSearch.value,
+          quantityValue: !!quantity.value
+        });
+        return;
+      }
+      
+      console.log('Validation passed, proceeding with material creation...');
+
+      // Validate supplier is selected (check if supplier_id is set)
+      const supplierId = document.getElementById('supplier_id').value;
+      if (!supplierId || supplierId === '') {
+        alert('Please select a valid supplier from the dropdown');
+        return;
+      }
+
+      // Validate material is selected (check if material_id is set)
+      const materialId = document.getElementById('material_id').value;
+      if (!materialId || materialId === '') {
+        alert('Please select a valid material from the dropdown');
+        return;
+      }
+
+      // Validate quantity is greater than 0
+      if (!quantity.value || parseInt(quantity.value) <= 0) {
+        alert('Please enter a valid quantity (must be greater than 0)');
+        return;
+      }
+
+      // Check for duplicate material (same supplier, material type, size, unit, and packaging)
+      const isDuplicate = materials.some(existingMaterial => 
+        existingMaterial.supplier === supplierSearch.value && 
+        existingMaterial.type === materialTypeSearch.value &&
+        (existingMaterial.attributes && existingMaterial.attributes.size ? existingMaterial.attributes.size : '') === document.getElementById('size').value &&
+        existingMaterial.unit === document.getElementById('unit').value
+      );
+
+      if (isDuplicate) {
+        alert('This exact material configuration (supplier, type, size, and unit) has already been added. Please edit the existing entry or choose different specifications.');
+        return;
+      }
+
+      // Debug price values
+      const materialPrice = document.getElementById('material_price').value || '0';
+      const quantityValue = quantity.value;
+      const totalPrice = (parseFloat(quantityValue) * parseFloat(materialPrice)).toFixed(2);
+      
+      console.log('=== PRICE DEBUG ===');
+      console.log('Material price field value:', materialPrice);
+      console.log('Quantity value:', quantityValue);
+      console.log('Calculated total price:', totalPrice);
+      
+      const material = {
+        supplier: supplierSearch.value,
+        supplier_id: document.getElementById('supplier_id').value,
+        name: materialTypeSearch.value,
+        type: materialTypeSearch.value,
+        typeValue: materialType.value,
+        material_id: document.getElementById('material_id').value,
+        description: document.getElementById('description').value,
+        quantity: quantity.value,
+        unit: document.getElementById('unit').value,
+        variant: document.getElementById('size').value,
+        unit_price: materialPrice,
+        total_price: totalPrice,
+        // Add inventory info for reference (simplified since we're not checking inventory)
+        inventoryInfo: {
+          currentStock: 0,
+          stockLevel: 'Unknown',
+          category: document.getElementById('description').value || 'Unknown'
+        }
+      };
+
+      console.log('=== CREATED MATERIAL OBJECT ===');
+      console.log('Material before price calculation:', material);
+
+      // No additional attributes now that paint/cement specific fields are removed
 
       if (editingIndex >= 0) {
         // Update existing material
         materials[editingIndex] = material;
         editingIndex = -1;
+        console.log('Updated existing material at index:', editingIndex);
       } else {
         // Add new material
         materials.push(material);
+        console.log('Added new material to array. Total materials:', materials.length);
       }
 
       // Clear form fields after adding/updating
@@ -617,34 +3089,58 @@
 
     // Update the materials list in the table
     function updateMaterialsList() {
+      console.log('updateMaterialsList called, materials count:', materials.length);
       const tbody = document.getElementById('materialsList');
+      if (!tbody) {
+        console.error('materialsList tbody not found!');
+        return;
+      }
       tbody.innerHTML = '';
 
       materials.forEach((material, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${material.type}</td>
+          <td>${material.supplier || '-'}</td>
+          <td><a href="#" class="text-primary" onclick="showAllMaterials('${material.name || material.type || ''}')" style="text-decoration: none;">${material.name || material.type || '-'}</a></td>
+          <td>${material.description || '-'}</td>
+          <td>${material.variant || '-'}</td>
+          <td>${material.unit || '-'}</td>
           <td>${material.quantity}</td>
-          <td>${material.unit}</td>
-          <td>
-            <button type="button" class="btn btn-sm btn-info me-1" onclick="openEditModal(${index})" title="Edit Material">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button type="button" class="btn btn-sm btn-danger" onclick="removeMaterial(${index})" title="Remove Material">
-              <i class="fas fa-trash"></i> Delete
-            </button>
+          <td>₱${parseFloat(material.unit_price || 0).toFixed(2)}</td>
+          <td>₱${parseFloat(material.total_price || 0).toFixed(2)}</td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${index})" title="Edit Material">
+                <i class="fa-regular fa-pen-to-square"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="removeMaterial(${index})" title="Remove Material">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
           </td>
         `;
         tbody.appendChild(row);
       });
+      
+      // Update grand total
+      calculateGrandTotal();
     }
+
 
     // Open edit modal
     function openEditModal(index) {
       const material = materials[index];
-      document.getElementById('editMaterialType').value = material.typeValue;
-      document.getElementById('editQuantity').value = material.quantity;
-      document.getElementById('editUnit').value = material.unitValue;
+      
+      // Populate read-only display fields
+      document.getElementById('editSupplierDisplay').value = material.supplier || '-';
+      document.getElementById('editMaterialTypeDisplay').value = material.type || '-';
+      document.getElementById('editSizeDisplay').value = material.attributes?.size || '-';
+      document.getElementById('editUnitDisplay').value = material.unit || '-';
+      document.getElementById('editPackagingDisplay').value = material.packaging || '-';
+      
+      // Only allow editing quantity
+      document.getElementById('editQuantity').value = material.quantity || '';
+      
       editingIndex = index;
 
       const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
@@ -653,37 +3149,75 @@
 
     // Save material edit
     function saveMaterialEdit() {
-      const materialType = document.getElementById('editMaterialType');
-      const quantity = document.getElementById('editQuantity');
-      const unit = document.getElementById('editUnit');
+      // Validate editing index
+      if (editingIndex < 0 || editingIndex >= materials.length) {
+        alert('Invalid editing index. Please try again.');
+        return;
+      }
+      
+      const quantityInput = document.getElementById('editQuantity');
+      const quantity = quantityInput.value.trim();
 
-      // Validate inputs
-      if (!materialType.value || !quantity.value || !unit.value) {
-        alert('Please fill in all material details');
+      // Validate quantity
+      if (!quantity) {
+        alert('Please enter a quantity');
+        quantityInput.focus();
         return;
       }
 
-      // Show confirmation dialog
-      if (confirm('Are you sure you want to save these changes?')) {
-        const material = {
-          type: materialType.options[materialType.selectedIndex].text,
-          typeValue: materialType.value,
-          quantity: quantity.value,
-          unit: unit.options[unit.selectedIndex].text,
-          unitValue: unit.value
-        };
+      const newQuantity = parseInt(quantity);
+      if (isNaN(newQuantity) || newQuantity <= 0) {
+        alert('Please enter a valid quantity (> 0)');
+        quantityInput.focus();
+        return;
+      }
 
-        // Update the material
-        materials[editingIndex] = material;
-        editingIndex = -1;
+      const currentMaterial = materials[editingIndex];
+      
+      if (!currentMaterial) {
+        alert('Material not found. Please try again.');
+        return;
+      }
+      
+      const materialName = currentMaterial.type;
+      const unit = currentMaterial.unit;
 
-        // Update the list and close modal
-        updateMaterialsList();
-        const editModal = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
-        editModal.hide();
+      // Update only the quantity
+      materials[editingIndex].quantity = newQuantity;
+      
+      // Recalculate price and total
+      materials[editingIndex].pricePerUnit = getPricePerUnit(materials[editingIndex]);
+      
+      // Show success message
+      alert(`Quantity updated successfully!\n${materialName}: ${newQuantity} ${unit}`);
 
-        // Show success message
-        alert('Material updated successfully!');
+      // Close modal
+      try {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
+        if (modal) {
+          modal.hide();
+        }
+      } catch (error) {
+        console.error('Error closing modal:', error);
+        // Modal might already be closed, continue
+      }
+
+      // Reset editing index
+      editingIndex = -1;
+
+      // Update materials list and grand total
+      updateMaterialsList();
+      calculateGrandTotal();
+    }
+
+    // Reset editing index when modal is closed without saving
+    function resetEditingIndex() {
+      editingIndex = -1;
+      
+      // Clear the edit form
+      const editQuantity = document.getElementById('editQuantity');
+      if (editQuantity) {
+        editQuantity.value = '';
       }
     }
 
@@ -699,9 +3233,21 @@
     // Reset material form
     function resetMaterialForm() {
       document.getElementById('materialType').value = '';
-      document.getElementById('quantity').value = '';
+      document.getElementById('materialTypeSearch').value = '';
+      document.getElementById('material_id').value = '';
+      document.getElementById('material_price').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('supplier').value = '';
+      document.getElementById('supplier_id').value = '';
+      document.getElementById('supplierSearch').value = '';
+      document.getElementById('size').value = '';
       document.getElementById('unit').value = '';
+      document.getElementById('quantity').value = '';
+      
       editingIndex = -1;
+      
+      // Hide supplier comparison when form is reset
+      hideSupplierComparison();
     }
 
     // Update submit button state
@@ -710,160 +3256,232 @@
       submitButton.disabled = materials.length === 0;
     }
 
-    // Show submit confirmation modal
+    // Show submit confirmation
     function showSubmitConfirmation() {
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date().toISOString().split('T')[0];
-
-      // Update confirmation modal content
-      document.getElementById('confirmRequestDate').textContent = currentDate;
-
-      // Update materials list
-      const materialsList = document.getElementById('confirmMaterialsList');
-      materialsList.innerHTML = '';
-      materials.forEach(material => {
-        const li = document.createElement('li');
-        li.textContent = `${material.type} - ${material.quantity} ${material.unit}`;
-        materialsList.appendChild(li);
-      });
-
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('submitConfirmationModal'));
-      modal.show();
+      // Simple confirmation dialog
+      if (confirm('Are you sure you want to submit this purchase request?')) {
+        submitRequest();
+      }
     }
 
     // Submit request
-    function submitRequest() {
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date().toISOString().split('T')[0];
-
-      // Hide any previous messages
-      document.getElementById('errorMessage').style.display = 'none';
-      document.getElementById('successMessage').style.display = 'none';
-      document.getElementById('formMessages').style.display = 'block';
+    async function submitRequest() {
+      const requestDate = document.getElementById('requestDate').value;
 
       // Validate required fields
-      if (materials.length === 0) {
-        document.getElementById('errorMessage').innerHTML = 'Please add at least one material!';
-        document.getElementById('errorMessage').style.display = 'block';
-        
-        setTimeout(() => {
-          document.getElementById('errorMessage').style.display = 'none';
-        }, 2000);
+      if (!requestDate || materials.length === 0) {
+        alert('Please fill in all required fields and add at least one material!');
         return;
       }
 
       try {
-        // Generate a new request ID
-        const requestId = 'PR' + String(Object.keys(requests).length + 1).padStart(3, '0');
-
-        // Create the new request object
-        const newRequest = {
-          id: requestId,
-          requestDate: currentDate,
-          approvalDate: null,
-          status: 'Pending',
-          materials: [...materials]
-        };
-
-        // Add to requests object
-        requests[requestId] = newRequest;
-
-        // Add to the recent requests table
-        const tbody = document.getElementById('recentRequests');
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${requestId}</td>
-          <td>${currentDate}</td>
-          <td>-</td>
-          <td><span class="badge bg-warning">Pending</span></td>
-          <td>
-            <button class="btn btn-sm btn-primary me-1" onclick="viewRequestDetails('${requestId}')" title="View Request Details">
-              <i class="fas fa-eye"></i>
-            </button>
-          </td>
-        `;
-        tbody.insertBefore(row, tbody.firstChild);
+        // Submit all materials as a bulk purchase request
+        const response = await fetch('/scm/purchase-requests/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            materials: materials.map(material => ({
+              supplier_id: material.supplier_id,
+              material_id: material.material_id,
+              variant: material.variant,
+              quantity: material.quantity,
+              unit: material.unit,
+              unit_price: parseFloat(material.unit_price)
+            })),
+            requestDate: requestDate
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to submit purchase request');
+        }
+        
+        const result = await response.json();
 
         // Reset form fields
         resetFormFields();
 
-        // Hide confirmation content and show success message
-        document.getElementById('confirmationContent').style.display = 'none';
-        document.getElementById('modalFooter').style.display = 'none';
-        document.getElementById('successMessage').innerHTML = 'Purchase request submitted successfully!';
-        document.getElementById('successMessage').style.display = 'block';
+        // Show success message
+        alert(`Purchase request submitted successfully! Created ${result.request_ids.length} purchase request(s).`);
 
-        // Close modal after 2 seconds
-        setTimeout(() => {
-          const modal = bootstrap.Modal.getInstance(document.getElementById('submitConfirmationModal'));
-          modal.hide();
-          
-          // Reset modal content for next use
-          setTimeout(() => {
-            document.getElementById('confirmationContent').style.display = 'block';
-            document.getElementById('modalFooter').style.display = 'block';
-            document.getElementById('formMessages').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-          }, 500);
-        }, 2000);
+        // Apply filters to update the table
+        applyFilters();
 
       } catch (error) {
-        document.getElementById('errorMessage').innerHTML = 'An error occurred while submitting the request. Please try again.';
-        document.getElementById('errorMessage').style.display = 'block';
-        
-        setTimeout(() => {
-          document.getElementById('errorMessage').style.display = 'none';
-        }, 2000);
+        console.error('Error submitting purchase request:', error);
+        alert('An error occurred while submitting the request: ' + error.message);
       }
     }
 
     // Reset form fields
     function resetFormFields() {
+      document.getElementById('requestDate').valueAsDate = new Date();
+      document.getElementById('supplier').value = '';
+      document.getElementById('supplier_id').value = '';
+      document.getElementById('supplierSearch').value = '';
       materials = [];
       updateMaterialsList();
       updateSubmitButton();
+      
+      // Hide supplier comparison when form is reset
+      hideSupplierComparison();
     }
 
     // View request details
     function viewRequestDetails(requestId) {
-      const request = requests[requestId];
+      const request = state.records.find(r => r.id === requestId);
       if (!request) return;
 
       // Update modal content
       document.getElementById('modalRequestId').textContent = request.id;
       document.getElementById('modalRequestDate').textContent = request.requestDate;
-      document.getElementById('modalApprovalDate').textContent = request.approvalDate || '-';
+      // Populate suppliers dropdown
+      const supplierSelect = document.getElementById('modalSupplier');
+      supplierSelect.innerHTML = ''; // Clear existing options
       
+      console.log('Request materials:', request.materials);
+      
+      if (request.materials && request.materials.length > 0) {
+        // Get unique suppliers from materials
+        const suppliers = [...new Set(request.materials.map(material => material.supplier || 'Not specified'))];
+        console.log('Unique suppliers:', suppliers);
+        
+        if (suppliers.length === 1) {
+          // Single supplier
+          supplierSelect.innerHTML = `<option value="${suppliers[0]}" selected>${suppliers[0]}</option>`;
+        } else {
+          // Multiple suppliers - add "All Suppliers" option and individual suppliers
+          supplierSelect.innerHTML = `
+            <option value="all" selected>All Suppliers (${suppliers.length})</option>
+            ${suppliers.map(supplier => `<option value="${supplier}">${supplier}</option>`).join('')}
+          `;
+        }
+      } else {
+        supplierSelect.innerHTML = '<option value="">No suppliers</option>';
+      }
+      document.getElementById('modalApprovalDate').textContent = request.approvalDate || '-';
+      document.getElementById('modalGrandTotal').textContent = calculateRequestTotal(request);
+
       // Update status with appropriate badge
       let statusBadge;
-      switch(request.status) {
+      switch (request.status) {
         case 'Pending':
-          statusBadge = '<span class="badge bg-warning">Pending</span>';
-      break;
+          statusBadge = '<span class="status-badge status-pending">Pending</span>';
+          break;
         case 'Approved':
-          statusBadge = '<span class="badge bg-success">Approved</span>';
-      break;
+          statusBadge = '<span class="status-badge status-approved">Approved</span>';
+          break;
         case 'Cancelled':
-          statusBadge = '<span class="badge bg-danger">Cancelled</span>';
-      break;
-    default:
-          statusBadge = '<span class="badge bg-warning">Pending</span>';
+          statusBadge = '<span class="status-badge status-cancelled">Cancelled</span>';
+          break;
+        default:
+          statusBadge = '<span class="status-badge status-pending">Pending</span>';
       }
       document.getElementById('modalStatus').innerHTML = statusBadge;
 
+      // Toggle Send Order button visibility in modal
+      const sendOrderBtn = document.getElementById('sendOrderBtn');
+      if (sendOrderBtn) {
+        sendOrderBtn.style.display = request.status === 'Approved' ? 'inline-block' : 'none';
+        sendOrderBtn.onclick = () => sendOrder(request.id);
+      }
+
       // Update materials list
-      const materialsList = document.getElementById('modalMaterialsList');
-      materialsList.innerHTML = '';
-      request.materials.forEach(material => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${material.type}</td>
-          <td>${material.quantity}</td>
-          <td>${material.unit}</td>
-        `;
-        materialsList.appendChild(row);
-      });
+      const materialsContainer = document.getElementById('modalMaterials');
+      materialsContainer.innerHTML = '';
+      if (request.materials) {
+        // Group materials by supplier
+        const supplierGroups = {};
+        request.materials.forEach(material => {
+          const supplier = material.supplier || 'Not specified';
+          if (!supplierGroups[supplier]) {
+            supplierGroups[supplier] = [];
+          }
+          supplierGroups[supplier].push(material);
+        });
+
+        // Display materials grouped by supplier
+        Object.keys(supplierGroups).forEach(supplier => {
+          const materials = supplierGroups[supplier];
+          
+          // Add supplier header
+          const supplierHeaderDiv = document.createElement('div');
+          supplierHeaderDiv.className = 'supplier-header mb-3 mt-4';
+          supplierHeaderDiv.innerHTML = `
+            <h6 class="mb-2">${supplier}</h6>
+          `;
+          materialsContainer.appendChild(supplierHeaderDiv);
+
+          // Add materials table for this supplier
+          const materialsTableDiv = document.createElement('div');
+          materialsTableDiv.className = 'materials-table mb-4';
+          materialsTableDiv.innerHTML = `
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Size</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Supplier</th>
+                    <th>Price per Unit</th>
+                    <th>Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${materials.map(material => `
+                    <tr>
+                      <td>${material.name || material.type}</td>
+                      <td>${material.description || '-'}</td>
+                      <td>${material.attributes && material.attributes.size ? material.attributes.size : '-'}</td>
+                      <td>${material.unit}</td>
+                      <td>${material.quantity}</td>
+                      <td>${material.supplier || '-'}</td>
+                      <td>${material.pricePerUnit}</td>
+                      <td>${calculateMaterialTotal(material)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          materialsContainer.appendChild(materialsTableDiv);
+
+          // Add supplier total
+          const supplierTotal = materials.reduce((sum, material) => {
+            if (material.pricePerUnit && material.quantity) {
+              const price = parseFloat(material.pricePerUnit.replace('₱', '').replace(',', ''));
+              const quantity = parseFloat(material.quantity);
+              return sum + (price * quantity);
+            }
+            return sum;
+          }, 0);
+          const supplierTotalDiv = document.createElement('div');
+          supplierTotalDiv.className = 'supplier-total mb-3';
+          supplierTotalDiv.innerHTML = `
+            <div class="text-end">
+              <strong>Total: ₱${supplierTotal.toLocaleString()}</strong>
+            </div>
+          `;
+          materialsContainer.appendChild(supplierTotalDiv);
+          
+          // Add separator between suppliers (except for the last one)
+          const supplierKeys = Object.keys(supplierGroups);
+          const currentSupplierIndex = supplierKeys.indexOf(supplier);
+          if (currentSupplierIndex < supplierKeys.length - 1) {
+            const separatorDiv = document.createElement('div');
+            separatorDiv.className = 'supplier-separator mb-5 mt-4';
+            separatorDiv.innerHTML = `
+              <hr class="my-4">
+            `;
+            materialsContainer.appendChild(separatorDiv);
+          }
+        });
+        
+      }
 
       // Show/hide cancel button based on status
       const cancelBtn = document.getElementById('cancelRequestBtn');
@@ -878,7 +3496,7 @@
     function cancelRequest() {
       if (confirm('Are you sure you want to cancel this request?')) {
         const requestId = document.getElementById('modalRequestId').textContent;
-        const request = requests[requestId];
+        const request = state.records.find(r => r.id === requestId);
         
   if (request) {
           // Update request status
@@ -888,13 +3506,13 @@
           const rows = document.getElementById('recentRequests').getElementsByTagName('tr');
           for (let row of rows) {
             if (row.cells[0].textContent === requestId) {
-              row.cells[3].innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+              row.cells[3].innerHTML = '<span class="status-badge status-cancelled">Cancelled</span>';
               break;
             }
           }
 
           // Update the status in the modal
-          document.getElementById('modalStatus').innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+          document.getElementById('modalStatus').innerHTML = '<span class="status-badge status-cancelled">Cancelled</span>';
           
           // Hide the cancel button
           document.getElementById('cancelRequestBtn').style.display = 'none';
@@ -903,8 +3521,164 @@
         const modal = bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal'));
         modal.hide();
         alert('Request cancelled successfully');
+        
+        // Apply filters to update the table
+        applyFilters();
       }
     }
+
+    function sendOrder(requestId) {
+  const request = state.records.find(r => r.id === requestId);
+  if (!request) {
+    alert('Request not found.');
+    return;
+  }
+  if (request.status !== 'Approved') {
+    alert('Only approved requests can be sent to the supplier.');
+    return;
+  }
+
+  // Remove the request from the local table/state (so it "disappears")
+  state.records = state.records.filter(r => r.id !== requestId);
+  applyFilters();
+
+  // Close the details modal if open
+  const modalEl = document.getElementById('requestDetailsModal');
+  const modalInstance = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+  if (modalInstance) modalInstance.hide();
+
+  // Show success message
+  alert(`Order for Request ID ${requestId} has been sent to the supplier.`);
+}
+
+    // Date validation functions
+    function setupDateValidation() {
+      const requestDateInput = document.getElementById('requestDate');
+
+      if (requestDateInput) {
+        // Set initial value to today's date
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        requestDateInput.value = `${year}-${month}-${day}`;
+      }
+    }
+
+    // Quantity validation functions
+    function setupQuantityValidation() {
+      const quantityInput = document.getElementById('quantity');
+      const editQuantityInput = document.getElementById('editQuantity');
+
+      // Prevent invalid numbers and ensure minimum value
+      [quantityInput, editQuantityInput].forEach(input => {
+        if (input) {
+          input.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+              this.value = '';
+            }
+          });
+
+          input.addEventListener('keydown', function(e) {
+            // Prevent negative sign, decimal point, 'e' key, and '0' as first digit
+            if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === 'E') {
+              e.preventDefault();
+            }
+            
+            // Prevent '0' as the first character
+            if (e.key === '0' && this.value === '') {
+              e.preventDefault();
+            }
+          });
+
+          input.addEventListener('paste', function(e) {
+            // Prevent pasting invalid values
+            setTimeout(() => {
+              const value = parseInt(this.value);
+              if (isNaN(value) || value < 1) {
+                this.value = '';
+              }
+            }, 0);
+          });
+
+          // Set initial value to empty to prevent 0
+          input.value = '';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize dropdowns
+      initializeSupplierDropdown();
+      initializeMaterialDropdown();
+      // Edit dropdowns not needed for simplified edit functionality
+      // initializeEditMaterialDropdown();
+      // initializeEditSupplierDropdown();
+      
+      // Setup validations
+      setupDateValidation();
+      setupQuantityValidation();
+      
+      document.querySelector('thead').addEventListener('click', handleHeaderClick);
+      // Actions on table rows
+      document.getElementById('purchase-table').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        if (btn.dataset.action === 'view') {
+          viewRequestDetails(id);
+        }
+      });
+      document.getElementById('pagination').addEventListener('click', (e) => {
+        const a = e.target.closest('a.page-link');
+        if (!a) return;
+        e.preventDefault();
+        const target = Number(a.dataset.page);
+        if (isNaN(target)) return;
+        state.currentPage = target;
+        applySort();
+      });
+      document.getElementById('entriesSelect').addEventListener('change', () => {
+        state.currentPage = 1;
+        applySort();
+      });
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+      document.getElementById('statusFilter').addEventListener('change', applyFilters);
+      
+      // Add event listeners for auto-calculation
+      document.getElementById('quantity').addEventListener('input', calculateTotalPrice);
+      
+      applyFilters();
+
+      // Add event listener for edit material modal close
+      const editMaterialModal = document.getElementById('editMaterialModal');
+      if (editMaterialModal) {
+        editMaterialModal.addEventListener('hidden.bs.modal', function () {
+          resetEditingIndex();
+        });
+        
+        // Add keyboard support for edit modal
+        editMaterialModal.addEventListener('shown.bs.modal', function () {
+          const quantityInput = document.getElementById('editQuantity');
+          if (quantityInput) {
+            quantityInput.focus();
+            quantityInput.select();
+          }
+        });
+        
+        // Add Enter key support for saving (only once)
+        const quantityInput = document.getElementById('editQuantity');
+        if (quantityInput) {
+          quantityInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              saveMaterialEdit();
+            }
+          });
+        }
+      }
+    });
 </script>
 
 <!-- Add Date Sort Modal -->
