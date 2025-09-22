@@ -135,20 +135,68 @@
        text-align: center;
      }
 
+     /* Comprehensive Purchase Order Status Colors */
      .status-pending {
+       background-color: #6c757d;
+       color: #fff;
+     }
+
+     .status-processed {
+       background-color: #17a2b8;
+       color: #fff;
+     }
+
+     .status-out-for-delivery {
+       background-color: #fd7e14;
+       color: #fff;
+     }
+
+     .status-partially-delivered {
        background-color: #ffc107;
        color: #000;
      }
 
+     .status-received {
+       background-color: #28a745;
+       color: #fff;
+     }
+
+     .status-return-pending {
+       background-color: #e83e8c;
+       color: #fff;
+     }
+
+     .status-returned {
+       background-color: #dc3545;
+       color: #fff;
+     }
+
+     .status-refunded {
+       background-color: #6f42c1;
+       color: #fff;
+     }
+
+     .status-backordered {
+       background-color: #20c997;
+       color: #fff;
+     }
+
+     .status-cancelled {
+       background-color: #343a40;
+       color: #fff;
+     }
+
+     /* Legacy status colors for backward compatibility */
      .status-approved {
        background-color: #28a745;
        color: white;
      }
 
     .status-in-transit {
-      background-color: #ffc107;
-      color: #000;
+       background-color: #fd7e14;
+       color: #fff;
     }
+
     .status-delivered {
       background-color: #17a2b8;
       color: white;
@@ -156,11 +204,6 @@
 
     .status-completed {
       background-color: #0d6efd;
-      color: white;
-    }
-
-    .status-received {
-      background-color: #28a745;
       color: white;
     }
 
@@ -1537,11 +1580,29 @@
       border-radius: 6px;
       object-fit: cover;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: all 0.3s ease;
+      position: relative;
     }
     .invoice-preview-card .img-thumbnail:hover {
       transform: scale(1.05);
       border-color: #007bff;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+    .invoice-preview-card .img-thumbnail::after {
+      content: '🔍 Click to view';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 4px 8px;
+      font-size: 0.8em;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .invoice-preview-card .img-thumbnail:hover::after {
+      opacity: 1;
     }
     /* Upload Success Alert */
     .alert-success {
@@ -1758,6 +1819,78 @@
 
   <div id="content">
     <h2>Order List</h2>
+    
+    <!-- Status Legend -->
+    <div class="glass-card p-3 mb-3">
+      <div class="row">
+        <div class="col-12">
+          <h5 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Order Status Legend</h5>
+          <div class="row">
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-pending me-2">Pending</span>
+                <small class="text-muted">Order is awaiting processing or supplier response</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-processed me-2">Processed</span>
+                <small class="text-muted">Order has been reviewed and approved for fulfillment</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-out-for-delivery me-2">Out for Delivery</span>
+                <small class="text-muted">Order is in transit and on its way to destination</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-partially-delivered me-2">Partially Delivered</span>
+                <small class="text-muted">Some items have been delivered, others are pending</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-received me-2">Received</span>
+                <small class="text-muted">Order has been successfully delivered and received</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-return-pending me-2">Return Pending</span>
+                <small class="text-muted">Return request submitted, awaiting finance approval</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-returned me-2">Returned</span>
+                <small class="text-muted">Items have been returned to supplier</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-refunded me-2">Refunded</span>
+                <small class="text-muted">Refund has been processed and completed</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-backordered me-2">Backordered</span>
+                <small class="text-muted">Items are temporarily out of stock</small>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-2">
+              <div class="d-flex align-items-center">
+                <span class="badge status-cancelled me-2">Cancelled</span>
+                <small class="text-muted">Order has been cancelled and will not be fulfilled</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div class="glass-card p-3 h-100 mb-3">
       <div class="toolbar d-flex flex-wrap align-items-center gap-2">
         <div class="input-group" style="max-width: 420px;">
@@ -2578,8 +2711,23 @@ async function loadOrdersFromBackend() {
           if (m) m.hide();
         }
         
-        // Refresh the orders list
-        loadOrdersFromBackend();
+        // Update in-memory status immediately
+        const orderIndex = Array.isArray(orders) ? orders.findIndex(o => String(o.id) === String(orderId)) : -1;
+        if (orderIndex !== -1) {
+          orders[orderIndex].status = 'Return Pending';
+        }
+
+        // Update status badge in the order details modal if open
+        (function updateModalStatusBadge(){
+          const statusContainer = document.getElementById('modalStatus');
+          if (statusContainer) {
+            statusContainer.innerHTML = '<span class="status-badge status-return-pending">Return Pending</span>';
+          }
+        })();
+
+        // Refresh the orders list from backend and re-render table
+        await loadOrdersFromBackend();
+        if (typeof applyFilters === 'function') applyFilters();
         
       } catch (error) {
         console.error('Refund submission error:', error);
@@ -2618,19 +2766,178 @@ async function loadOrdersFromBackend() {
     })();
 
 
+    // Temporary debugging function to check what's stored
+    function debugInvoiceData() {
+      console.log('🔍 DEBUG: window.uploadedInvoices:', window.uploadedInvoices);
+      console.log('🔍 DEBUG: window.currentOrderData:', window.currentOrderData);
+      console.log('🔍 DEBUG: All elements with previewImg:', document.querySelectorAll('[id^="previewImg_"]'));
+      console.log('🔍 DEBUG: All elements with invoicePreview:', document.querySelectorAll('[id^="invoicePreview_"]'));
+    }
+
+    // Test function to manually add invoice data
+    function testAddInvoiceData() {
+      console.log('🔍 DEBUG: Adding test invoice data...');
+      
+      // Initialize the object if it doesn't exist
+      if (!window.uploadedInvoices) {
+        window.uploadedInvoices = {};
+      }
+      
+      // Add test data for Wayne Dudley
+      const testOrderId = 'test-order-123';
+      const supplierName = 'Wayne Dudley';
+      
+      if (!window.uploadedInvoices[testOrderId]) {
+        window.uploadedInvoices[testOrderId] = {};
+      }
+      
+      window.uploadedInvoices[testOrderId][supplierName] = {
+        fileName: 'test-invoice.jpg',
+        fileSize: 50000,
+        uploadDate: new Date().toISOString(),
+        supplierName: supplierName,
+        orderId: testOrderId,
+        imageData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQAAtQDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAUGBAcBAgMI/8QAUxAAAQQBAwEDBwgIAgUJCAMBAAECAwQFBhESIRMUMQciQVFVYZMVFhcyVHGU0SMzQlKBkdLhCKEkQ2JywTQ3U3N1gpKxsxg1NkSDosLwJSZ0Y//Z'
+      };
+      
+      console.log('🔍 DEBUG: Test invoice data added successfully');
+    }
+
     // Function to handle supplier invoice button click
     function viewSupplierInvoice(invoiceNumber, supplierName) {
+      console.log('🔍 DEBUG: viewSupplierInvoice called with:', { invoiceNumber, supplierName });
+      
+      // Call debug function to see what's available
+      debugInvoiceData();
+      
       // Check if there's an uploaded invoice for this supplier
       const supplierKey = supplierName.replace(/\s+/g, '_');
       const previewImg = document.getElementById(`previewImg_${supplierKey}`);
       
-      if (previewImg && previewImg.src && previewImg.src !== '') {
-        // Show uploaded invoice
-        viewFullInvoice(supplierKey);
+      console.log('🔍 DEBUG: Looking for preview image:', `previewImg_${supplierKey}`);
+      console.log('🔍 DEBUG: Preview image element:', previewImg);
+      console.log('🔍 DEBUG: Preview image src:', previewImg ? previewImg.src : 'not found');
+      
+      if (previewImg && previewImg.src && previewImg.src !== '' && previewImg.src !== 'about:blank') {
+        console.log('🔍 DEBUG: Found uploaded invoice image, showing in modal');
+        // Show uploaded invoice in modal
+        showInvoiceModal(previewImg.src, supplierName, invoiceNumber);
       } else {
-        // Show system-generated invoice
-        alert(`Invoice: ${invoiceNumber}\nSupplier: ${supplierName}\n\nThis would open the invoice details for this supplier.`);
+        console.log('🔍 DEBUG: No uploaded image found, checking window.uploadedInvoices');
+        
+        // Check if there's an uploaded invoice in window.uploadedInvoices
+        if (window.uploadedInvoices) {
+          console.log('🔍 DEBUG: window.uploadedInvoices exists:', window.uploadedInvoices);
+          
+          // Find the order ID that contains this supplier's invoice
+          const orderId = Object.keys(window.uploadedInvoices).find(id => 
+            window.uploadedInvoices[id] && window.uploadedInvoices[id][supplierName]
+          );
+          
+          if (orderId && window.uploadedInvoices[orderId][supplierName]) {
+            const invoiceData = window.uploadedInvoices[orderId][supplierName];
+            console.log('🔍 DEBUG: Found uploaded invoice data:', invoiceData);
+            
+            if (invoiceData.imageData) {
+              console.log('🔍 DEBUG: Found image data, showing in modal');
+              showInvoiceModal(invoiceData.imageData, supplierName, invoiceNumber);
+              return;
+            }
+          }
+        }
+        
+        console.log('🔍 DEBUG: No uploaded invoice found, checking database data');
+        // Check if there's a stored supplier invoice in the database
+        const orderData = window.currentOrderData;
+        console.log('🔍 DEBUG: Current order data:', orderData);
+        
+        if (orderData && orderData.materials) {
+          console.log('🔍 DEBUG: Order materials:', orderData.materials);
+          // Look for supplier invoice in materials data
+          const supplierMaterial = orderData.materials.find(material => 
+            material.supplier === supplierName
+          );
+          console.log('🔍 DEBUG: Found supplier material:', supplierMaterial);
+          
+          if (supplierMaterial && supplierMaterial.supplier_invoice && supplierMaterial.supplier_invoice.trim() !== '') {
+            console.log('🔍 DEBUG: Found supplier invoice in materials data');
+            // Show supplier invoice from materials
+            showInvoiceModal(supplierMaterial.supplier_invoice, supplierName, invoiceNumber);
+            return;
+          }
+        }
+        
+        // Check if there's a stored supplier invoice in the main order data
+        if (orderData && orderData.invoice && orderData.invoice.trim() !== '') {
+          console.log('🔍 DEBUG: Found supplier invoice in main order data');
+          // Show stored supplier invoice
+          showInvoiceModal(orderData.invoice, supplierName, invoiceNumber);
+        } else {
+          console.log('🔍 DEBUG: No invoice found, showing placeholder');
+          // Show system-generated invoice placeholder
+          showInvoiceModal(null, supplierName, invoiceNumber);
+        }
       }
+    }
+
+    // Function to show invoice in modal
+    function showInvoiceModal(invoiceSrc, supplierName, invoiceNumber) {
+      const modal = document.getElementById('invoiceModal');
+      const modalLabel = document.getElementById('invoiceModalLabel');
+      const invoiceViewer = document.getElementById('invoiceViewer');
+      const invoiceFrame = document.getElementById('invoiceFrame');
+      
+      // Update modal title with more details
+      modalLabel.innerHTML = `
+        <i class="fas fa-file-invoice"></i> 
+        ${supplierName} - Invoice ${invoiceNumber}
+        <small class="text-muted ms-2">(${new Date().toLocaleDateString()})</small>
+      `;
+      
+      if (invoiceSrc) {
+        // Check if it's a data URL (base64) or a file path
+        if (invoiceSrc.startsWith('data:')) {
+          // It's a base64 image, display directly
+          invoiceViewer.innerHTML = `
+            <div class="text-center p-4">
+              <div class="mb-3">
+                <h6 class="text-muted">Supplier Invoice</h6>
+                <p class="text-muted mb-0">Supplier: <strong>${supplierName}</strong></p>
+                <p class="text-muted mb-0">Invoice: <strong>${invoiceNumber}</strong></p>
+              </div>
+              <img src="${invoiceSrc}" alt="Supplier Invoice" class="img-fluid border rounded shadow" style="max-height: calc(100vh - 250px);">
+            </div>
+          `;
+        } else {
+          // It's a file path, use iframe
+          invoiceFrame.src = invoiceSrc;
+          invoiceViewer.innerHTML = `
+            <div class="mb-3 text-center">
+              <h6 class="text-muted">Supplier Invoice</h6>
+              <p class="text-muted mb-0">Supplier: <strong>${supplierName}</strong></p>
+              <p class="text-muted mb-0">Invoice: <strong>${invoiceNumber}</strong></p>
+            </div>
+            <iframe id="invoiceFrame" class="w-100 h-100 border rounded" frameborder="0"></iframe>
+          `;
+        }
+      } else {
+        // No invoice available
+        invoiceViewer.innerHTML = `
+          <div class="text-center p-5">
+            <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Invoice Available</h5>
+            <div class="alert alert-info">
+              <p class="mb-2"><strong>Supplier:</strong> ${supplierName}</p>
+              <p class="mb-2"><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+              <p class="mb-0">The supplier has not uploaded an invoice yet.</p>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Show the modal
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
     }
     // Function to handle invoice image upload for manual orders
     function handleInvoiceUpload(input, supplierName, orderId) {
@@ -3099,16 +3406,9 @@ async function loadOrdersFromBackend() {
       tbody.innerHTML = '';
 
       const statusHtml = (status) => {
-        switch (status) {
-          case 'Pending': return '<span class="status-badge status-pending">Pending</span>';
-          case 'Approved': return '<span class="status-badge status-approved">Approved</span>';
-          case 'In Transit': return '<span class="status-badge status-in-transit">In Transit</span>';
-          case 'Delivered': return '<span class="status-badge status-delivered">Delivered</span>';
-          case 'Completed': return '<span class="status-badge status-completed">Completed</span>';
-          case 'Received': return '<span class="status-badge status-received">Received</span>';
-          case 'Rejected': return '<span class="status-badge status-rejected">Rejected</span>';
-          default: return `<span class="status-badge status-pending">${status || 'Pending'}</span>`;
-        }
+        // Convert status to lowercase and replace spaces with hyphens for CSS class
+        const statusClass = status ? status.toLowerCase().replace(/\s+/g, '-') : 'pending';
+        return `<span class="status-badge status-${statusClass}">${status || 'Pending'}</span>`;
       };
 
       rows.forEach((o) => {
@@ -3141,11 +3441,6 @@ async function loadOrdersFromBackend() {
           total = `₱${t.toFixed(2)}`;
         }
 
-        // Global override: when Out for Delivery (or later) and invoice_amount exists, show that
-        if ((String(o.status) === 'Out for Delivery' || String(o.status) === 'Received' || String(o.status) === 'Partially Delivered')
-            && o.invoice_amount != null && !isNaN(Number(o.invoice_amount))) {
-          total = `₱${Number(o.invoice_amount).toFixed(2)}`;
-        }
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${o.id ?? o.purchase_id ?? ''}</td>
@@ -3210,6 +3505,12 @@ async function loadOrdersFromBackend() {
     function calculateOrderTotal(order) {
       if (!order.materials || !order.materials.length) {
         return '₱0.00';
+      }
+      
+      // Use invoice_amount for Registered orders when Out for Delivery (or later)
+      if ((String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered')
+          && order.invoice_amount != null && !isNaN(Number(order.invoice_amount))) {
+        return `₱${Number(order.invoice_amount).toFixed(2)}`;
       }
       
       let total = 0;
@@ -3284,6 +3585,9 @@ async function loadOrdersFromBackend() {
         });
       }
 
+      // Store order data globally for invoice viewing
+      window.currentOrderData = order;
+
       // Update modal content
       document.getElementById('modalOrderId').textContent = order.id;
       
@@ -3294,35 +3598,9 @@ async function loadOrdersFromBackend() {
       document.getElementById('modalRequestApproveDate').textContent = order.requestApproveDate || '-';
       
       // Update status with appropriate badge
-      let statusBadge;
-      switch(order.status) {
-        case 'Pending':
-          statusBadge = '<span class="status-badge status-pending">Pending</span>';
-          break;
-        case 'Approved':
-          statusBadge = '<span class="status-badge status-approved">Approved</span>';
-          break;
-        case 'In Transit':
-          statusBadge = '<span class="status-badge status-in-transit">In Transit</span>';
-          break;
-        case 'Delivered':
-          statusBadge = '<span class="status-badge status-delivered">Delivered</span>';
-          break;
-        case 'Completed':
-          statusBadge = '<span class="status-badge status-completed">Completed</span>';
-          break;
-        case 'Received':
-          statusBadge = '<span class="status-badge status-received">Received</span>';
-          break;
-        case 'Rejected':
-          statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
-          break;
-        case 'Cancelled':
-          statusBadge = '<span class="status-badge bg-danger">Cancelled</span>';
-          break;
-        default:
-          statusBadge = '<span class="status-badge status-pending">Pending</span>';
-      }
+      // Convert status to lowercase and replace spaces with hyphens for CSS class
+      const statusClass = order.status ? order.status.toLowerCase().replace(/\s+/g, '-') : 'pending';
+      const statusBadge = `<span class="status-badge status-${statusClass}">${order.status || 'Pending'}</span>`;
       document.getElementById('modalStatus').innerHTML = statusBadge;
 
 
@@ -3414,23 +3692,26 @@ async function loadOrdersFromBackend() {
         let discount = 0;
         
         if (order.orderType === 'Registered') {
-          if (supplierStatus === 'Approved' || supplierStatus === 'In Transit' || supplierStatus === 'Delivered') {
-            // Fixed delivery cost based on order size
+          if (supplierStatus === 'Approved' || supplierStatus === 'In Transit' || supplierStatus === 'Delivered' || supplierStatus === 'Out for Delivery') {
+            // Use actual delivery cost and discount from database
+            deliveryCost = Number(order.delivery_cost || 0);
+            const discountValue = Number(order.discount || 0);
+            // If discount is less than 100, treat it as percentage; otherwise treat as fixed amount
+            discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
+          }
+        } else {
+          // For manual orders, calculate based on subtotal and order status
+          if (order.status === 'Completed' || order.status === 'In Transit' || order.status === 'Delivered' || 
+              order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered') {
             if (subtotal < 10000) {
-              deliveryCost = 500; // Small orders
-            } else if (subtotal < 50000) {
-              deliveryCost = 1000; // Medium orders
+              deliveryCost = 500;
+              discount = 200;
+            } else if (subtotal < 20000) {
+              deliveryCost = 800;
+              discount = 500;
             } else {
-              deliveryCost = 2000; // Large orders
-            }
-            
-            // Fixed discount based on order size (optional)
-            if (subtotal < 10000) {
-              discount = 200; // Small discount
-            } else if (subtotal < 50000) {
-              discount = 500; // Medium discount
-            } else {
-              discount = 1000; // Large discount
+              deliveryCost = 1000;
+              discount = 1000;
             }
           }
         }
@@ -3442,6 +3723,7 @@ async function loadOrdersFromBackend() {
       // Update total label and value based on order type
       const totalLabel = order.orderType === 'Manual' ? 'Estimated Total' : 'Total';
       document.getElementById('modalTotalLabel').textContent = totalLabel;
+      
       // Prefer approved invoice_amount for Registered orders when Out for Delivery (or later)
       if ((String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered')
           && order.invoice_amount != null && !isNaN(Number(order.invoice_amount))) {
@@ -3450,15 +3732,68 @@ async function loadOrdersFromBackend() {
       document.getElementById('modalTotal').textContent = `₱${grandTotal.toLocaleString()}`;
       }
 
+      // COMPREHENSIVE DEBUG - Show all calculation details
+      console.log('🔍 FINAL DEBUG - Order Calculations:', {
+        orderId: order.id,
+        orderType: order.orderType,
+        status: order.status,
+        invoice_amount: order.invoice_amount,
+        delivery_cost: order.delivery_cost,
+        discount: order.discount,
+        calculatedGrandTotal: grandTotal,
+        finalDisplayTotal: document.getElementById('modalTotal').textContent
+      });
+
       // Show supplier-entered delivery cost and discount (from purchases)
       const metaContainer = document.getElementById('orderMetaInfo');
       if (metaContainer) {
-        const del = (order.delivery_cost != null) ? Number(order.delivery_cost) : 0;
-        const disc = (order.discount != null) ? Number(order.discount) : 0;
+        // Calculate total delivery cost and discount from all suppliers
+        let totalDeliveryCost = 0;
+        let totalDiscount = 0;
+        
+        Object.keys(supplierGroups).forEach(supplier => {
+          const materials = supplierGroups[supplier];
+          const supplierStatus = materials[0]?.supplierStatus || 'Pending';
+          
+        // Calculate subtotal for this supplier
+        const subtotal = materials.reduce((total, material) => {
+          const pricePerUnit = parseFloat(material.pricePerUnit || 0);
+          const quantity = parseFloat(material.quantity || 0);
+          return total + (pricePerUnit * quantity);
+        }, 0);
+        
+        if (order.orderType === 'Registered') {
+          if (supplierStatus === 'Approved' || supplierStatus === 'In Transit' || supplierStatus === 'Delivered' || supplierStatus === 'Out for Delivery') {
+            // Use actual delivery cost and discount from database
+            const deliveryCost = Number(order.delivery_cost || 0);
+            const discountValue = Number(order.discount || 0);
+            // If discount is less than 100, treat it as percentage; otherwise treat as fixed amount
+            const discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
+            totalDeliveryCost += deliveryCost;
+            totalDiscount += discount;
+          }
+        } else {
+          // For manual orders, calculate based on subtotal and order status
+          if (order.status === 'Completed' || order.status === 'In Transit' || order.status === 'Delivered' || 
+              order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered') {
+            if (subtotal < 10000) {
+              totalDeliveryCost += 500;
+              totalDiscount += 200;
+            } else if (subtotal < 20000) {
+              totalDeliveryCost += 800;
+              totalDiscount += 500;
+            } else {
+              totalDeliveryCost += 1000;
+              totalDiscount += 1000;
+            }
+          }
+        }
+        });
+        
         metaContainer.innerHTML = `
           <div class="row g-2">
-            <div class="col-auto"><span class="badge bg-secondary">Delivery Cost: ₱${del.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-            <div class="col-auto"><span class="badge bg-secondary">Discount: ${disc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</span></div>
+            <div class="col-auto"><span class="badge bg-secondary">Delivery Cost: ₱${totalDeliveryCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+            <div class="col-auto"><span class="badge bg-secondary">Discount: ₱${totalDiscount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
           </div>
         `;
       }
@@ -3681,6 +4016,7 @@ async function loadOrdersFromBackend() {
         // Display materials grouped by supplier with collapsible sections (same structure as viewOrderDetails)
         Object.keys(supplierGroups).forEach((supplier, index) => {
           const materials = supplierGroups[supplier];
+          console.log('🔍 MAIN SUPPLIER LOOP:', supplier, 'Index:', index, 'Materials:', materials.length);
           
           // Create supplier section container
           const supplierSectionDiv = document.createElement('div');
@@ -3941,25 +4277,12 @@ async function loadOrdersFromBackend() {
             let discount = 0;
             
             if (order.orderType === 'Registered') {
-              // For registered orders, show static values based on supplier status
-              if (supplierStatus === 'Approved' || supplierStatus === 'In Transit' || supplierStatus === 'Delivered') {
-                // Fixed delivery cost based on order size
-                if (subtotal < 10000) {
-                  deliveryCost = 500; // Small orders
-                } else if (subtotal < 50000) {
-                  deliveryCost = 1000; // Medium orders
-                } else {
-                  deliveryCost = 2000; // Large orders
-                }
-                
-                // Fixed discount based on order size (optional)
-                if (subtotal < 10000) {
-                  discount = 200; // Small discount
-                } else if (subtotal < 50000) {
-                  discount = 500; // Medium discount
-                } else {
-                  discount = 1000; // Large discount
-                }
+              // For registered orders, use actual delivery cost and discount from database
+              if (supplierStatus === 'Approved' || supplierStatus === 'In Transit' || supplierStatus === 'Delivered' || supplierStatus === 'Out for Delivery') {
+                deliveryCost = Number(order.delivery_cost || 0);
+                const discountValue = Number(order.discount || 0);
+                // If discount is less than 100, treat it as percentage; otherwise treat as fixed amount
+                discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
               }
               // For rejected status, no delivery cost or discount (only subtotal and total)
             } else {
@@ -4054,7 +4377,7 @@ async function loadOrdersFromBackend() {
                           <input type="file" id="invoiceUpload_${supplierKey}" class="d-none" accept="image/*" onchange="${isCompleted ? '' : 'handleInvoiceUpload(this, \'' + supplier + '\', \'' + order.id + '\')'}" style="display: ${supplierStatus === 'Completed' ? 'none' : 'inline-block'};">
                           <div id="invoicePreview_${supplierKey}" class="mt-2" style="display: none;">
                             <div class="invoice-preview-card">
-                              <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="viewFullInvoice('${supplierKey}')">
+                              <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="showInvoiceModal(this.src, '${supplier}', '${supplier}')">
                               <div class="invoice-info">
                                 <div class="file-info">
                                   <small class="text-muted">
@@ -4073,6 +4396,11 @@ async function loadOrdersFromBackend() {
                                     <i class="fas fa-clock me-1"></i>
                                     <span id="uploadDate_${supplierKey}"></span>
                                   </small>
+                                </div>
+                                <div class="mt-2">
+                                  <button class="btn btn-sm btn-outline-primary" onclick="showInvoiceModal(document.getElementById('previewImg_${supplierKey}').src, '${supplier}', '${supplier}')">
+                                    <i class="fas fa-eye me-1"></i>View Full Invoice
+                                  </button>
                                 </div>
                               </div>
                               <div class="mt-2">
@@ -4112,16 +4440,29 @@ async function loadOrdersFromBackend() {
                         </div>
                         <div class="d-flex justify-content-between mb-1">
                           <span>Delivery Cost:</span>
-                          <span>₱${Number(order.delivery_cost || 0).toFixed(2)}</span>
+                          <span>₱${(() => {
+                            const cost = Number(order.delivery_cost || 0);
+                            console.log('🔍 FORCE DEBUG - Order delivery_cost:', order.delivery_cost, 'Parsed:', cost);
+                            return cost.toFixed(2);
+                          })()}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-1">
                           <span>Discount:</span>
-                          <span class="text-success">-₱${((Number(order.discount || 0) / 100) * subtotal).toFixed(2)}</span>
+                          <span class="text-success">-₱${(() => {
+                            const discountValue = Number(order.discount || 0);
+                            const discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
+                            console.log('🔍 FORCE DEBUG - Order discount:', order.discount, 'Parsed:', discountValue, 'Calculated:', discount);
+                            return discount.toFixed(2);
+                          })()}</span>
                         </div>
                         <hr class="my-2">
                         <div class="d-flex justify-content-between">
                           <strong>Total:</strong>
-                          <strong>${(String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered') && order.invoice_amount != null && !isNaN(Number(order.invoice_amount)) ? `₱${Number(order.invoice_amount).toFixed(2)}` : `₱${(subtotal + Number(order.delivery_cost || 0) - ((Number(order.discount || 0) / 100) * subtotal)).toFixed(2)}`}</strong>
+                          <strong>${(String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered') && order.invoice_amount != null && !isNaN(Number(order.invoice_amount)) ? `₱${Number(order.invoice_amount).toFixed(2)}` : `₱${(() => {
+                            const discountValue = Number(order.discount || 0);
+                            const discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
+                            return (subtotal + Number(order.delivery_cost || 0) - discount).toFixed(2);
+                          })()}`}</strong>
                         </div>
                       </div>
                     </div>
@@ -4283,6 +4624,7 @@ async function loadOrdersFromBackend() {
         // Display materials grouped by supplier with collapsible sections (same structure as viewOrderDetails)
         Object.keys(supplierGroups).forEach((supplier, index) => {
           const materials = supplierGroups[supplier];
+          console.log('🔍 MAIN SUPPLIER LOOP:', supplier, 'Index:', index, 'Materials:', materials.length);
           
           // Create supplier section container
           const supplierSectionDiv = document.createElement('div');
@@ -4597,13 +4939,36 @@ async function loadOrdersFromBackend() {
               console.log(`Order manualOrderData:`, order.manualOrderData);
               
               const subtotalValue = isRejected ? '0.00' : (preservedValues.subtotal || savedValues.subtotal || '0.00');
-              const deliveryCostValue = isRejected ? '0.00' : (preservedValues.deliveryCost || savedValues.deliveryCost || '0.00');
-              const discountValue = isRejected ? '0.00' : (preservedValues.discount || savedValues.discount || '0.00');
+              // For Registered orders, use order.delivery_cost and order.discount; for Manual orders, use preserved/saved values
+              const deliveryCostValue = isRejected ? '0.00' : (order.orderType === 'Registered' ? (order.delivery_cost || '0.00') : (preservedValues.deliveryCost || savedValues.deliveryCost || '0.00'));
+              const discountValue = isRejected ? '0.00' : (order.orderType === 'Registered' ? (order.discount || '0.00') : (preservedValues.discount || savedValues.discount || '0.00'));
               
-              // Calculate total from preserved values
-              const totalValue = (parseFloat(subtotalValue) + parseFloat(deliveryCostValue) - parseFloat(discountValue)).toFixed(2);
+              // Calculate total based on status - use invoice_amount for Out for Delivery, calculate for others
+              let totalValue;
+              if (String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered') {
+                // Use invoice_amount for Out for Delivery status
+                totalValue = order.invoice_amount ? Number(order.invoice_amount).toFixed(2) : '0.00';
+              } else {
+                // Calculate from components for other statuses
+                totalValue = (parseFloat(subtotalValue) + parseFloat(deliveryCostValue) - parseFloat(discountValue)).toFixed(2);
+              }
               
-              if (isDelivered || isItemVerificationCompleted) {
+              // DEBUG: Check all status conditions
+              console.log('🔍 STATUS DEBUG:', {
+                orderStatus: order.status,
+                supplierStatus: supplierStatus,
+                isDelivered: isDelivered,
+                isItemVerificationCompleted: isItemVerificationCompleted,
+                condition1: isDelivered,
+                condition2: isItemVerificationCompleted,
+                condition3: supplierStatus === 'Out for Delivery',
+                condition4: supplierStatus === 'Received',
+                condition5: supplierStatus === 'Partially Delivered',
+                finalCondition: isDelivered || isItemVerificationCompleted || supplierStatus === 'Out for Delivery' || supplierStatus === 'Received' || supplierStatus === 'Partially Delivered'
+              });
+              
+              if (isDelivered || isItemVerificationCompleted || supplierStatus === 'Out for Delivery' || supplierStatus === 'Received' || supplierStatus === 'Partially Delivered') {
+                console.log('🔍 RENDERING COST BREAKDOWN - Condition met!');
                 // Show plain text values for delivered suppliers
               supplierTotalDiv.innerHTML = `
                 <div class="supplier-total">
@@ -4616,20 +4981,31 @@ async function loadOrdersFromBackend() {
                           </div>
                           <div class="d-flex justify-content-between mb-1">
                           <span>Delivery Cost:</span>
-                            <span>₱${Number(order.delivery_cost || deliveryCostValue || 0).toFixed(2)}</span>
+                            <span>₱${(() => {
+                              const cost = Number(order.delivery_cost || 0);
+                              console.log('🔍 FORCE DEBUG 2 - Order delivery_cost:', order.delivery_cost, 'Parsed:', cost);
+                              return cost.toFixed(2);
+                            })()}</span>
                           </div>
                           <div class="d-flex justify-content-between mb-1">
                           <span>Discount:</span>
                             <span class="text-success">-₱${(() => {
-                              const discPct = Number(order.discount != null ? order.discount : 0);
+                              const discountValue = Number(order.discount || 0);
                               const sub = parseFloat(subtotalValue) || 0;
-                              return (sub * (isNaN(discPct) ? 0 : discPct / 100)).toFixed(2);
+                              const discount = discountValue < 100 ? (discountValue / 100) * sub : discountValue;
+                              console.log('🔍 FORCE DEBUG 2 - Order discount:', order.discount, 'Parsed:', discountValue, 'Calculated:', discount);
+                              return discount.toFixed(2);
                             })()}</span>
                         </div>
                         <hr class="my-2">
                         <div class="d-flex justify-content-between">
                           <strong>Total:</strong>
-                            <strong>${(String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered') && order.invoice_amount != null && !isNaN(Number(order.invoice_amount)) ? `₱${Number(order.invoice_amount).toFixed(2)}` : `₱${( (parseFloat(subtotalValue)||0) + Number(order.delivery_cost || deliveryCostValue || 0) - ((Number(order.discount || 0)/100) * (parseFloat(subtotalValue)||0)) ).toFixed(2)}`}</strong>
+                            <strong>${(String(order.status) === 'Out for Delivery' || String(order.status) === 'Received' || String(order.status) === 'Partially Delivered') && order.invoice_amount != null && !isNaN(Number(order.invoice_amount)) ? `₱${Number(order.invoice_amount).toFixed(2)}` : `₱${(() => {
+                              const discountValue = Number(order.discount || 0);
+                              const sub = parseFloat(subtotalValue) || 0;
+                              const discount = discountValue < 100 ? (discountValue / 100) * sub : discountValue;
+                              return (sub + Number(order.delivery_cost || deliveryCostValue || 0) - discount).toFixed(2);
+                            })()}`}</strong>
                         </div>
                       </div>
                     </div>
@@ -4643,7 +5019,7 @@ async function loadOrdersFromBackend() {
                           <input type="file" id="invoiceUpload_${supplierKey}" class="d-none" accept="image/*" onchange="${isCompleted ? '' : 'handleInvoiceUpload(this, \'' + supplier + '\', \'' + order.id + '\')'}" style="display: ${supplierStatus === 'Completed' ? 'none' : 'inline-block'};">
                           <div id="invoicePreview_${supplierKey}" class="mt-2" style="display: none;">
                             <div class="invoice-preview-card">
-                              <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="viewFullInvoice('${supplierKey}')">
+                              <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="showInvoiceModal(this.src, '${supplier}', '${supplier}')">
                               <div class="invoice-info">
                                 <div class="file-info">
                                   <small class="text-muted">
@@ -4662,6 +5038,11 @@ async function loadOrdersFromBackend() {
                                     <i class="fas fa-clock me-1"></i>
                                     <span id="uploadDate_${supplierKey}"></span>
                                   </small>
+                                </div>
+                                <div class="mt-2">
+                                  <button class="btn btn-sm btn-outline-primary" onclick="showInvoiceModal(document.getElementById('previewImg_${supplierKey}').src, '${supplier}', '${supplier}')">
+                                    <i class="fas fa-eye me-1"></i>View Full Invoice
+                                  </button>
                                 </div>
                               </div>
                               <div class="mt-2">
@@ -4730,7 +5111,7 @@ async function loadOrdersFromBackend() {
                             <input type="file" id="invoiceUpload_${supplierKey}" class="d-none" accept="image/*" onchange="${isCompleted ? '' : 'handleInvoiceUpload(this, \'' + supplier + '\', \'' + order.id + '\')'}" style="display: ${supplierStatus === 'Completed' ? 'none' : 'inline-block'};">
                             <div id="invoicePreview_${supplierKey}" class="mt-2" style="display: none;">
                               <div class="invoice-preview-card">
-                                <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="viewFullInvoice('${supplierKey}')">
+                                <img id="previewImg_${supplierKey}" src="" alt="Invoice Preview" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px;" onclick="showInvoiceModal(this.src, '${supplier}', '${supplier}')">
                                 <div class="invoice-info">
                                   <div class="file-info">
                                     <small class="text-muted">
@@ -4902,17 +5283,54 @@ async function loadOrdersFromBackend() {
     }
 
     function printInvoice() {
-      const invoiceFrame = document.getElementById('invoiceFrame');
-      if (invoiceFrame.contentWindow) {
-        invoiceFrame.contentWindow.print();
+      const invoiceViewer = document.getElementById('invoiceViewer');
+      const img = invoiceViewer.querySelector('img');
+      const iframe = invoiceViewer.querySelector('iframe');
+      
+      if (img) {
+        // Print image directly
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print Invoice</title>
+              <style>
+                body { margin: 0; padding: 20px; text-align: center; }
+                img { max-width: 100%; height: auto; }
+              </style>
+            </head>
+            <body>
+              <img src="${img.src}" alt="Supplier Invoice">
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      } else if (iframe) {
+        // Print iframe content
+        iframe.contentWindow.print();
       }
     }
 
     function downloadInvoice() {
-      if (currentInvoiceFile) {
+      const invoiceViewer = document.getElementById('invoiceViewer');
+      const img = invoiceViewer.querySelector('img');
+      const iframe = invoiceViewer.querySelector('iframe');
+      
+      if (img) {
+        // Download image
         const link = document.createElement('a');
-        link.href = `/invoices/${currentInvoiceFile}`;
-        link.download = currentInvoiceFile;
+        link.href = img.src;
+        link.download = `invoice_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (iframe) {
+        // Download iframe content (if it's a PDF)
+        const link = document.createElement('a');
+        link.href = iframe.src;
+        link.download = `invoice_${Date.now()}.pdf`;
+        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

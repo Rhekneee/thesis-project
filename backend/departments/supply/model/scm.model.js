@@ -1292,6 +1292,40 @@ const SCMModel = {
             console.error('Error in getMaterialsForSupplier:', error);
             throw new Error('Failed to fetch supplier materials');
         }
+    },
+
+    // Set proof picture for purchase and mark as Received
+    setPurchaseOrderProof: async (orderId, proofPicture) => {
+        try {
+            // First check if the purchase exists
+            const [orderCheck] = await db.query(
+                'SELECT purchase_id, status FROM purchases WHERE purchase_id = ?',
+                [orderId]
+            );
+            
+            if (!orderCheck || orderCheck.length === 0) {
+                return { success: false, error: 'Purchase not found' };
+            }
+
+            // Update the purchase with proof picture and mark as Received
+            const [result] = await db.query(
+                `UPDATE purchases 
+                 SET 
+                     proof_picture = ?,
+                     status = 'Received'
+                 WHERE purchase_id = ?`,
+                [proofPicture, orderId]
+            );
+
+            if (result.affectedRows === 0) {
+                return { success: false, error: 'Failed to update purchase' };
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error in setPurchaseOrderProof:', error);
+            throw new Error('Failed to save proof picture');
+        }
     }
 };
 

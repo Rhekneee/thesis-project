@@ -14,8 +14,21 @@
         #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
         .table { width: 100%; margin-top: 30px; }
         .po-status { padding: 5px 10px; border-radius: 15px; font-size: 0.9em; font-weight: bold; }
-        .status-to-deliver { background-color: #ffc107; color: #000; }
+        
+        /* Purchase Order Status Colors */
+        .status-pending { background-color: #6c757d; color: #fff; }
+        .status-processed { background-color: #17a2b8; color: #fff; }
+        .status-out-for-delivery { background-color: #fd7e14; color: #fff; }
+        .status-partially-delivered { background-color: #ffc107; color: #000; }
         .status-received { background-color: #28a745; color: #fff; }
+        .status-return-pending { background-color: #e83e8c; color: #fff; }
+        .status-returned { background-color: #dc3545; color: #fff; }
+        .status-refunded { background-color: #6f42c1; color: #fff; }
+        .status-backordered { background-color: #20c997; color: #fff; }
+        .status-cancelled { background-color: #343a40; color: #fff; }
+        
+        /* Legacy status colors for backward compatibility */
+        .status-to-deliver { background-color: #ffc107; color: #000; }
         .status-paid { background-color: #0d6efd; color: #fff; }
         .action-buttons { display: flex; gap: 5px; }
         .action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
@@ -1282,7 +1295,7 @@
                             '<span class="text-muted">No invoice</span>'
                         }
                     </td>
-                    <td><span class="po-status status-${po.status}">${po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span></td>
+                    <td><span class="po-status status-${po.status.toLowerCase().replace(/\s+/g, '-')}">${po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span></td>
                     <td>
                         <div class="action-buttons">
                             ${po.status === 'Returned' ? 
@@ -1369,7 +1382,7 @@
             document.getElementById('modalSupplier').textContent = po.supplier;
             document.getElementById('modalReceivedDate').textContent = po.receivedDate || 'Not yet received';
             document.getElementById('modalStatus').textContent = po.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-            document.getElementById('modalStatus').className = 'po-status status-' + po.status;
+            document.getElementById('modalStatus').className = 'po-status status-' + po.status.toLowerCase().replace(/\s+/g, '-');
             document.getElementById('modalTotalAmount').textContent = '₱' + po.totalAmount.toLocaleString();
 
             // Load invoice PDF if available
@@ -1544,8 +1557,8 @@
         // Uncomment the line below if you want to see an alert popup
         // alert('Finance Purchase Order page loaded - check console for debug logs');
 
-        // Approve purchase estimation function - declare early
-        async function approvePurchaseEstimation(purchaseId) {
+        // Approve purchase estimation function - declare early and make globally accessible
+        window.approvePurchaseEstimation = async function(purchaseId) {
             try {
                 console.log('🔍 DEBUG: Approving purchase estimation with ID:', purchaseId);
                 const res = await fetch(`/finance/purchases/${purchaseId}/approve-estimation`, { 
@@ -1564,10 +1577,10 @@
                 console.error('🔍 DEBUG: Approval error:', err);
                 showAlert('error', err.message || 'Failed to approve estimation');
             }
-        }
+        };
 
-        // Fetch purchase order estimations
-        async function fetchPurchaseOrderEstimations() {
+        // Fetch purchase order estimations - make globally accessible
+        window.fetchPurchaseOrderEstimations = async function() {
             try {
                 console.log('🔍 DEBUG: Fetching pending estimations from /finance/purchases/pending-estimations');
                 const response = await fetch('/finance/purchases/pending-estimations');
@@ -1589,7 +1602,7 @@
                 console.error('🔍 DEBUG: Error fetching estimations:', error);
                 showAlert('error', 'Failed to fetch purchase order estimations');
             }
-        }
+        };
 
         // Render estimations table
         function renderEstimations() {
@@ -1927,8 +1940,8 @@
             }
         }, 1000);
 
-        // Update the showAlert function to use modals
-        function showAlert(type, message) {
+        // Update the showAlert function to use modals - make globally accessible
+        window.showAlert = function(type, message) {
             if (type === 'success') {
                 document.getElementById('successMessage').textContent = message;
                 const successModal = new bootstrap.Modal(document.getElementById('successModal'));
@@ -1938,7 +1951,7 @@
                 const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
                 errorModal.show();
             }
-        }
+        };
 
         // Payment Audit List Variables
         let paymentAuditList = [];
