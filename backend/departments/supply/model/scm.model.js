@@ -852,6 +852,51 @@ const SCMModel = {
         }
     },
 
+    // Supplier-submitted material: create as Inactive (await SCM confirmation)
+    createMaterialFromSupplier: async (materialData) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            let brandId = null;
+            // Always create/link a brand. If brand_name missing/brandless, use material name as brand.
+            const targetBrandName = (materialData.brand_name && String(materialData.brand_name).trim())
+                ? String(materialData.brand_name).trim()
+                : String(materialData.name).trim();
+            const [rows] = await connection.query(`SELECT brand_id FROM brands WHERE name = ?`, [targetBrandName]);
+            if (rows && rows.length) {
+                brandId = rows[0].brand_id;
+            } else {
+                const [ins] = await connection.query(`INSERT INTO brands (name) VALUES (?)`, [targetBrandName]);
+                brandId = ins.insertId;
+            }
+
+            const matSql = `
+                INSERT INTO materials (
+                    supplier_id, brand_id, name, variant, type, description, category, unit, price, effective_date, price_validity, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Inactive')
+            `;
+            const matVals = [
+                materialData.supplier_id,
+                brandId,
+                materialData.name,
+                materialData.variant || null,
+                materialData.type || null,
+                materialData.description || null,
+                materialData.category || 'General',
+                materialData.unit || null,
+                materialData.price
+            ];
+            const [matIns] = await connection.query(matSql, matVals);
+            await connection.commit();
+            return { material_id: matIns.insertId, brand_id: brandId };
+        } catch (err) {
+            await connection.rollback();
+            throw err;
+        } finally {
+            connection.release();
+        }
+    },
+
     // Products: get for a supplier (their own)
     getProductsForSupplier: async (supplierId) => {
         try {
@@ -865,6 +910,55 @@ const SCMModel = {
             // If products table does not exist (legacy environments), return empty list gracefully
             if (err && (err.code === 'ER_NO_SUCH_TABLE' || /doesn't exist/i.test(String(err.message)))) {
                 return [];
+            }
+            throw err;
+        }
+    },
+
+    // Products: create pending product submitted by supplier
+    createProduct: async ({ supplier_id, name, description = null, size = null, unit = null, price, effective_date = null, price_validity = null }) => {
+        try {
+            const sql = `
+                INSERT INTO products (supplier_id, name, description, size, unit, price, effective_date, price_validity, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+            `;
+            const values = [
+                supplier_id,
+                name,
+                description,
+                size,
+                unit,
+                Number(price),
+                effective_date || new Date(),
+                price_validity || null
+            ];
+            const [ins] = await db.query(sql, values);
+            return ins.insertId;
+        } catch (err) {
+            // Auto-create products table if missing (best-effort)
+            const msg = String(err && (err.code || err.message || ''));
+            if (msg.includes('ER_NO_SUCH_TABLE') || /doesn't exist/i.test(msg)) {
+                await db.query(`
+                    CREATE TABLE IF NOT EXISTS products (
+                        product_id INT AUTO_INCREMENT PRIMARY KEY,
+                        supplier_id INT NOT NULL,
+                        name VARCHAR(255) NOT NULL,
+                        description VARCHAR(512) NULL,
+                        size VARCHAR(128) NULL,
+                        unit VARCHAR(32) NULL,
+                        price DECIMAL(12,2) NOT NULL,
+                        effective_date DATETIME NULL,
+                        price_validity DATE NULL,
+                        status ENUM('Pending','Active','Inactive') DEFAULT 'Pending',
+                        INDEX (supplier_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                `);
+                const [ins2] = await db.query(
+                    `INSERT INTO products (supplier_id, name, description, size, unit, price, effective_date, price_validity, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+                    [supplier_id, name, description, size, unit, Number(price), new Date(), null]
+                );
+                return ins2.insertId;
             }
             throw err;
         }
@@ -961,6 +1055,35 @@ const SCMModel = {
         return rows;
     },
 
+    // Get all inactive materials (awaiting SCM confirmation)
+    getInactiveMaterials: async () => {
+        const [rows] = await db.query(`
+            SELECT 
+                m.material_id,
+                m.supplier_id,
+                sa.supplier_name,
+                m.brand_id,
+                b.name AS brand_name,
+                m.name,
+                m.variant,
+                m.type,
+                m.description,
+                m.category,
+                m.unit,
+                m.price,
+                m.quantity,
+                m.effective_date,
+                m.price_validity,
+                m.status
+            FROM materials m
+            LEFT JOIN brands b ON m.brand_id = b.brand_id
+            LEFT JOIN supplier_account sa ON m.supplier_id = sa.supplier_id
+            WHERE m.status = 'Inactive'
+            ORDER BY sa.supplier_name ASC, m.name ASC
+        `);
+        return rows;
+    },
+
     // ===== Purchases (PR/PO flow) =====
     // Find all suppliers that offer the same item (by exact material name, optional brand filter)
     getSuppliersForItem: async ({ name, brand_name = null }) => {
@@ -988,6 +1111,32 @@ const SCMModel = {
         `;
         const [rows] = await db.query(sql, vals);
         return rows;
+    },
+
+    // Materials: update status (SCM approve/reject -> Active/Inactive)
+    updateMaterialStatus: async (materialId, status) => {
+        const allowed = ['Active', 'Inactive'];
+        if (!allowed.includes(status)) {
+            return { success: false, error: 'Invalid status' };
+        }
+        let result;
+        if (status === 'Active') {
+            [result] = await db.query(
+                `UPDATE materials 
+                 SET status = 'Active', price_validity = DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                 WHERE material_id = ?`,
+                [materialId]
+            );
+        } else {
+            [result] = await db.query(
+                `UPDATE materials SET status = ? WHERE material_id = ?`,
+                [status, materialId]
+            );
+        }
+        if (result.affectedRows === 0) {
+            return { success: false, error: 'Material not found' };
+        }
+        return { success: true };
     },
 
     // Create a purchase row
@@ -1056,6 +1205,18 @@ const SCMModel = {
         try {
             await connection.beginTransaction();
 
+            // Fetch current purchase to detect status transition and collect material linkage
+            const [currentRows] = await connection.query(
+                `SELECT material_id, quantity, quantity_received, status FROM purchases WHERE purchase_id = ?`,
+                [purchaseId]
+            );
+            if (!currentRows || currentRows.length === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Purchase not found' };
+            }
+            const currentPurchase = currentRows[0];
+            const wasReceived = String(currentPurchase.status) === 'Received';
+
             // Build dynamic update for purchases (status + optional delivery_cost/discount)
             const updates = ['status = ?'];
             const vals = [newStatus];
@@ -1073,6 +1234,19 @@ const SCMModel = {
             if (upd.affectedRows === 0) {
                 await connection.rollback();
                 return { success: false, error: 'Purchase not found' };
+            }
+
+            // If transitioning to Received for the first time, increment materials.quantity
+            if (!wasReceived && newStatus === 'Received' && currentPurchase.material_id) {
+                const qtyToAdd = Number.isFinite(Number(currentPurchase.quantity_received)) && Number(currentPurchase.quantity_received) > 0
+                    ? Number(currentPurchase.quantity_received)
+                    : Number(currentPurchase.quantity) || 0;
+                if (qtyToAdd > 0) {
+                    await connection.query(
+                        `UPDATE materials SET quantity = COALESCE(quantity, 0) + ? WHERE material_id = ?`,
+                        [qtyToAdd, currentPurchase.material_id]
+                    );
+                }
             }
 
             // Get pr_id to update purchase_requests if applicable
@@ -1214,6 +1388,7 @@ const SCMModel = {
                 p.total_price,
                 p.delivery_cost,
                 p.discount,
+                p.remarks,
                 p.supplier_invoice,
                 p.invoice_date,
                 p.invoice_amount,
@@ -1297,15 +1472,16 @@ const SCMModel = {
     // Set proof picture for purchase and mark as Received
     setPurchaseOrderProof: async (orderId, proofPicture) => {
         try {
-            // First check if the purchase exists
+            // First check if the purchase exists and capture linkage/quantities
             const [orderCheck] = await db.query(
-                'SELECT purchase_id, status FROM purchases WHERE purchase_id = ?',
+                'SELECT purchase_id, status, material_id, quantity, quantity_received FROM purchases WHERE purchase_id = ?',
                 [orderId]
             );
             
             if (!orderCheck || orderCheck.length === 0) {
                 return { success: false, error: 'Purchase not found' };
             }
+            const prevStatus = String(orderCheck[0].status);
 
             // Update the purchase with proof picture and mark as Received
             const [result] = await db.query(
@@ -1319,6 +1495,19 @@ const SCMModel = {
 
             if (result.affectedRows === 0) {
                 return { success: false, error: 'Failed to update purchase' };
+            }
+
+            // If first time becoming Received, increment material stock
+            if (prevStatus !== 'Received' && orderCheck[0].material_id) {
+                const qtyToAdd = Number.isFinite(Number(orderCheck[0].quantity_received)) && Number(orderCheck[0].quantity_received) > 0
+                    ? Number(orderCheck[0].quantity_received)
+                    : Number(orderCheck[0].quantity) || 0;
+                if (qtyToAdd > 0) {
+                    await db.query(
+                        `UPDATE materials SET quantity = COALESCE(quantity, 0) + ? WHERE material_id = ?`,
+                        [qtyToAdd, orderCheck[0].material_id]
+                    );
+                }
             }
 
             return { success: true };

@@ -392,6 +392,40 @@ const sendManualSupplierWelcome = async (to, supplierName) => {
     }
 };
 
+// Email for purchase estimation rejection (finance -> supplier)
+const sendPurchaseEstimationRejection = async ({ to, supplierName, purchaseId, materialName, quantity, unit, remarks }) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: `Purchase Estimation Rejected – Ref #${purchaseId}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
+                    <h2 style="color: #e74c3c;">Purchase Estimation Rejected</h2>
+                    <p>Dear ${supplierName || 'Supplier'},</p>
+                    <p>Your submitted estimation for the following order has been <strong>rejected</strong> by Finance:</p>
+                    <div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;margin:12px 0;">
+                        <p style="margin:6px 0;"><strong>Purchase ID:</strong> ${purchaseId}</p>
+                        <p style="margin:6px 0;"><strong>Material:</strong> ${materialName || '-'}</p>
+                        <p style="margin:6px 0;"><strong>Quantity:</strong> ${quantity || '-'} ${unit || ''}</p>
+                    </div>
+                    <p><strong>Remarks from Finance:</strong></p>
+                    <div style="white-space: pre-wrap; background:#fff7ed; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:4px; color:#7c2d12;">${(remarks || '').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                    <p style="margin-top:16px;">You may revise your estimation and resubmit if applicable. For questions, kindly reply to this email.</p>
+                    <br>
+                    <p>Best regards,<br>Finance Department<br>MDB Construction</p>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Estimation rejection email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending estimation rejection email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
@@ -399,5 +433,6 @@ module.exports = {
     sendSupplierAccountNotification,
     sendEmployeeAccountNotification,
     sendDeveloperApprovalNotification,
-    sendManualSupplierWelcome
+    sendManualSupplierWelcome,
+    sendPurchaseEstimationRejection
 }; 

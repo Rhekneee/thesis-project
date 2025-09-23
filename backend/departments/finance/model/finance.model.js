@@ -1026,25 +1026,46 @@ class FinanceModel {
     // Update purchase estimation status (approve/reject with delivery cost and discount)
     static async updatePurchaseEstimation(purchaseId, status, remarks = null, delivery_cost = null, discount = null) {
         try {
-            // Only save delivery_cost/discount when approving (status = 'Processed')
-            if (status === 'Processed' && (delivery_cost !== null || discount !== null)) {
-                await db.query(
+            let result;
+            if (status === 'Processed') {
+                // Approve: persist costs and set status Processed
+                if (delivery_cost !== null || discount !== null) {
+                    await db.query(
+                        `UPDATE purchases SET 
+                            delivery_cost = ?,
+                            discount = ?
+                         WHERE purchase_id = ? AND status = 'Pending'`,
+                        [delivery_cost || 0, discount || 0, purchaseId]
+                    );
+                }
+                [result] = await db.query(
                     `UPDATE purchases SET 
-                        delivery_cost = ?,
-                        discount = ?
+                        status = 'Processed',
+                        remarks = ?
                      WHERE purchase_id = ? AND status = 'Pending'`,
-                    [delivery_cost || 0, discount || 0, purchaseId]
+                    [remarks, purchaseId]
+                );
+            } else if (status === 'Cancelled') {
+                // Reject: revert to Pending and clear costs/discount
+                [result] = await db.query(
+                    `UPDATE purchases SET 
+                        status = 'Pending',
+                        remarks = ?,
+                        delivery_cost = NULL,
+                        discount = NULL
+                     WHERE purchase_id = ?`,
+                    [remarks, purchaseId]
+                );
+            } else {
+                // Fallback generic update (keep current behavior when needed)
+                [result] = await db.query(
+                    `UPDATE purchases SET 
+                        status = ?,
+                        remarks = ?
+                     WHERE purchase_id = ?`,
+                    [status, remarks, purchaseId]
                 );
             }
-
-            // Update status and remarks
-            const [result] = await db.query(
-                `UPDATE purchases SET 
-                    status = ?,
-                    remarks = ?
-                 WHERE purchase_id = ? AND status = 'Pending'`,
-                [status, remarks, purchaseId]
-            );
 
             if (result.affectedRows === 0) {
                 return { 
@@ -1055,7 +1076,9 @@ class FinanceModel {
 
             return {
                 success: true,
-                message: `Purchase estimation ${status.toLowerCase()} successfully`
+                message: status === 'Cancelled' 
+                    ? 'Purchase estimation rejected; reverted to Pending and cleared delivery cost/discount'
+                    : `Purchase estimation ${status.toLowerCase()} successfully`
             };
         } catch (error) {
             console.error('Error in updatePurchaseEstimation:', error);
@@ -1508,6 +1531,7 @@ class FinanceModel {
                 p.pr_id,
                 p.supplier_id,
                 sa.supplier_name,
+                sa.contact_email,
                 p.material_id,
                 m.name AS material_name,
                 p.variant,

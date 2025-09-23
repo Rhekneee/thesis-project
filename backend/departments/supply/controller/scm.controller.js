@@ -940,6 +940,8 @@ const SCMController = {
         }
     },
 
+    
+
     getPendingProducts: async (req, res) => {
         try {
             if (!req.session?.user) {
@@ -980,6 +982,29 @@ const SCMController = {
         } catch (error) {
             console.error('Error in updateProductStatus:', error);
             res.status(500).json({ error: 'Failed to update product status' });
+        }
+    },
+    // Materials: update status (SCM approve/reject)
+    updateMaterialStatus: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const allowed = (user.role_name === 'logistics') || [1, 26].includes(user.role_id);
+            if (!allowed) {
+                return res.status(403).json({ error: 'Forbidden: SCM review access required' });
+            }
+            const { materialId } = req.params;
+            const { status } = req.body; // 'Active' or 'Inactive'
+            const result = await SCMModel.updateMaterialStatus(materialId, status);
+            if (!result.success) {
+                return res.status(400).json({ error: result.error });
+            }
+            res.json({ success: true, status });
+        } catch (error) {
+            console.error('Error in updateMaterialStatus:', error);
+            res.status(500).json({ error: 'Failed to update material status' });
         }
     },
 
@@ -1046,6 +1071,53 @@ const SCMController = {
         }
     },
 
+    // Supplier submits a material → create in materials as Inactive; brand ensured/linked
+    createSupplierMaterial: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isSupplierRole = user.role_id === 27 || (user.role_name && user.role_name.toLowerCase() === 'supplier');
+            if (!isSupplierRole && !user.is_supplier) {
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+            const supplierId = user.supplier_id;
+            if (!supplierId) {
+                return res.status(400).json({ error: 'Missing supplier_id in session' });
+            }
+
+            const { brand_name, name, variant, type, description, category, unit, price } = req.body;
+            if (!name || !unit || !price) {
+                return res.status(400).json({ error: 'name, unit, price are required' });
+            }
+            const priceNum = parseFloat(price);
+            if (isNaN(priceNum) || priceNum <= 0) {
+                return res.status(400).json({ error: 'Invalid price' });
+            }
+
+            // Ensure non-null type: infer from presence of brand_name if not provided
+            const resolvedType = (type && String(type).trim()) ? String(type).trim() : ((brand_name && String(brand_name).trim()) ? 'Branded' : 'Brandless');
+
+            const result = await SCMModel.createMaterialFromSupplier({
+                supplier_id: supplierId,
+                brand_name: (brand_name || '').trim() || null,
+                name: String(name).trim(),
+                variant: (variant || '').trim() || null,
+                type: resolvedType,
+                description: (description || '').trim() || null,
+                category: (category || '').trim() || 'General',
+                unit: String(unit).trim(),
+                price: priceNum
+            });
+
+            return res.status(201).json({ success: true, status: 'Inactive', material_id: result.material_id, brand_id: result.brand_id });
+        } catch (error) {
+            console.error('Error in createSupplierMaterial:', error);
+            return res.status(500).json({ error: 'Failed to submit material' });
+        }
+    },
+
     getAllMaterials: async (req, res) => {
         try {
             if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
@@ -1057,6 +1129,20 @@ const SCMController = {
         } catch (e) {
             console.error('Error in getAllMaterials:', e);
             res.status(500).json({ error: 'Failed to fetch materials' });
+        }
+    },
+    // Get all inactive materials (SCM/logistics review)
+    getInactiveMaterials: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden: SCM review access required' });
+            const rows = await SCMModel.getInactiveMaterials();
+            res.json(rows);
+        } catch (e) {
+            console.error('Error in getInactiveMaterials:', e);
+            res.status(500).json({ error: 'Failed to fetch inactive materials' });
         }
     },
 
