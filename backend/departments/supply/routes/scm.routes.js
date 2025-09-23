@@ -18,6 +18,10 @@ router.post('/purchase_requests', logisticsAuth, SCMController.addPurchaseReques
 
 // Get all purchase requests (logistics role only)
 router.get('/purchase_requests', logisticsAuth, SCMController.getAllPurchaseRequests);
+// Detailed PR rows for manual page
+router.get('/purchase-requests/detailed', logisticsAuth, SCMController.listDetailedPurchaseRequests);
+// Set delivery cost and discount for manual PR (logistics)
+router.post('/purchase-requests/:prId/manual/delivery', logisticsAuth, SCMController.setManualDeliveryAndDiscount);
 
 // Add purchase order (logistics role only)
 router.post('/purchase_orders', logisticsAuth, SCMController.createPurchaseOrder);
@@ -76,6 +80,9 @@ router.get('/materials/inactive', SCMController.getInactiveMaterials);
 router.put('/materials/:materialId/status', SCMController.updateMaterialStatus);
 // Materials (SCM admin can view by supplier)
 router.get('/materials/supplier/:supplierId', logisticsAuth, SCMController.getSupplierMaterials);
+
+// Purchases: list received purchases for a supplier (logistics/dev or own supplier)
+router.get('/purchases/received', SCMController.getSupplierReceivedPurchases);
 
 // Purchases (PR/PO flow)
 router.get('/purchases/suppliers-for-item', SCMController.getSuppliersForItem); // query: name, brand_name?

@@ -1959,6 +1959,9 @@
         </div>
         <div class="modal-body">
           <div class="container-fluid">
+            <div id="manualFinanceHint" class="alert alert-info d-none" role="alert">
+              <i class="fas fa-info-circle me-2"></i>Enter Subtotal, Delivery Cost and Discount, then submit to finance for approval.
+            </div>
             <!-- Order Header Section -->
             <div class="row mb-4">
               <div class="col-12">
@@ -2067,6 +2070,9 @@
           <button type="button" class="btn btn-danger" id="refundOrderBtn" onclick="openRefundModal()">
             <i class="fas fa-rotate-left"></i> Refund
           </button>
+          <button type="button" class="btn btn-outline-info" id="submitToFinanceBtn" onclick="submitFinanceForManual()" style="display: none;">
+            <i class="fas fa-paper-plane"></i> Submit to Finance (Delivery/Discount)
+          </button>
           <button type="button" class="btn btn-primary" id="markAsCompletedBtn" onclick="markAsCompletedFromModal()" style="display: none;">
             <i class="fas fa-check-circle"></i> Mark as Completed
           </button>
@@ -2106,6 +2112,35 @@
           </button>
           <button type="button" class="btn btn-danger" id="confirmMarkCompleted">
             <i class="fas fa-check-circle me-1"></i>Yes, Mark as Received
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal for Submit to Finance (Delivery/Discount) -->
+  <div class="modal fade" id="financeSubmitConfirmModal" tabindex="-1" aria-labelledby="financeSubmitConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-dark">
+          <h5 class="modal-title" id="financeSubmitConfirmLabel">
+            <i class="fas fa-paper-plane me-2"></i>Confirm Submit to Finance
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>You are about to submit the following for Finance approval:</p>
+          <ul class="mb-0">
+            <li>Delivery Cost: <strong id="confirmFinanceDelivery">₱0.00</strong></li>
+            <li>Discount: <strong id="confirmFinanceDiscount">0.00%</strong></li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-info" id="confirmFinanceSubmitBtn">
+            <i class="fas fa-paper-plane me-1"></i>Submit
           </button>
         </div>
       </div>
@@ -2462,13 +2497,13 @@ const state = {
 // Load purchases from backend and transform to existing UI format
 async function loadOrdersFromBackend() {
   try {
-    console.log('[UI] Fetching /scm/orders ...');
+    
     const res = await fetch('/scm/orders');
     if (!res.ok) throw new Error('Failed to load purchases');
     const rows = await res.json();
-    console.log('[UI] /scm/orders response count:', Array.isArray(rows) ? rows.length : 'not array');
+    
     if (Array.isArray(rows) && rows.length) {
-      try { console.log('[UI] Sample row:', rows[0]); } catch(_) {}
+      
     }
     // Group rows by purchase_id to gather orders and their materials
     const byId = new Map();
@@ -2476,9 +2511,10 @@ async function loadOrdersFromBackend() {
       if (!r) continue;
       const key = String(r.purchase_id);
       if (!byId.has(key)) {
+        const computedType = (String(r.supplier_type || r.orderType || r.order_type || '').toLowerCase() === 'manual') ? 'Manual' : 'Registered';
         byId.set(key, {
           id: key,
-          orderType: 'Registered',
+          orderType: computedType,
           requestApproveDate: r.created_date,
           orderApproveDate: r.created_date,
           deliverDate: r.created_date,
@@ -2487,10 +2523,12 @@ async function loadOrdersFromBackend() {
           invoice_amount: (r.invoice_amount != null ? r.invoice_amount : null),
           delivery_cost: (r.delivery_cost != null ? Number(r.delivery_cost) : 0),
           discount: (r.discount != null ? Number(r.discount) : 0),
+          pr_id: r.pr_id || null,
           materials: []
         });
       }
       const order = byId.get(key);
+      if (!order.pr_id && r.pr_id) { order.pr_id = r.pr_id; }
       // Keep latest invoice_amount if present
       if (r.invoice_amount != null && !isNaN(Number(r.invoice_amount))) {
         order.invoice_amount = Number(r.invoice_amount);
@@ -2509,6 +2547,7 @@ async function loadOrdersFromBackend() {
         unit: r.unit,
         packaging: r.variant || '',
         pricePerUnit: `₱${Number(r.unit_price || 0).toFixed(2)}`,
+        total_price: (r.total_price != null && !isNaN(Number(r.total_price))) ? Number(r.total_price) : 0,
         attributes: { size: r.variant || '-' },
         supplierStatus: r.status
       });
@@ -2516,9 +2555,10 @@ async function loadOrdersFromBackend() {
       order.status = r.status || order.status;
     }
     orders = Array.from(byId.values());
-    console.log('[UI] Aggregated orders count:', orders.length);
+    try { window.orders = orders; } catch(_) {}
+    
   } catch (e) {
-    console.error('Failed to load orders from backend', e);
+    
     orders = [];
   }
 }
@@ -2540,10 +2580,11 @@ async function loadOrdersFromBackend() {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
       
-      // Flat single-entry guard: require Out for Delivery or later
-      const canComplete = (order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered');
+      // Allow completion if (manual && Processed) OR Out for Delivery / Received / Partially Delivered
+      const isManual = String(order.orderType || '').toLowerCase() === 'manual';
+      const canComplete = (isManual && order.status === 'Processed') || (order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered');
       if (!canComplete) {
-        showNotification('Cannot mark order as completed. Status must be Out for Delivery (or later).', 'danger');
+        showNotification('Cannot mark order as completed. For manual orders, status must be Processed; otherwise Out for Delivery (or later).', 'danger');
         return;
       }
 
@@ -2768,15 +2809,12 @@ async function loadOrdersFromBackend() {
 
     // Temporary debugging function to check what's stored
     function debugInvoiceData() {
-      console.log('🔍 DEBUG: window.uploadedInvoices:', window.uploadedInvoices);
-      console.log('🔍 DEBUG: window.currentOrderData:', window.currentOrderData);
-      console.log('🔍 DEBUG: All elements with previewImg:', document.querySelectorAll('[id^="previewImg_"]'));
-      console.log('🔍 DEBUG: All elements with invoicePreview:', document.querySelectorAll('[id^="invoicePreview_"]'));
+      
     }
 
     // Test function to manually add invoice data
     function testAddInvoiceData() {
-      console.log('🔍 DEBUG: Adding test invoice data...');
+      
       
       // Initialize the object if it doesn't exist
       if (!window.uploadedInvoices) {
@@ -2800,12 +2838,12 @@ async function loadOrdersFromBackend() {
         imageData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQAAtQDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAUGBAcBAgMI/8QAUxAAAQQBAwEDBwgIAgUJCAMBAAECAwQFBhESIRMUMQciQVFVYZMVFhcyVHGU0SMzQlKBkdLhCKEkQ2JywTQ3U3N1gpKxsxg1NkSDosLwJSZ0Y//Z'
       };
       
-      console.log('🔍 DEBUG: Test invoice data added successfully');
+      
     }
 
     // Function to handle supplier invoice button click
     function viewSupplierInvoice(invoiceNumber, supplierName) {
-      console.log('🔍 DEBUG: viewSupplierInvoice called with:', { invoiceNumber, supplierName });
+      
       
       // Call debug function to see what's available
       debugInvoiceData();
@@ -2814,20 +2852,18 @@ async function loadOrdersFromBackend() {
       const supplierKey = supplierName.replace(/\s+/g, '_');
       const previewImg = document.getElementById(`previewImg_${supplierKey}`);
       
-      console.log('🔍 DEBUG: Looking for preview image:', `previewImg_${supplierKey}`);
-      console.log('🔍 DEBUG: Preview image element:', previewImg);
-      console.log('🔍 DEBUG: Preview image src:', previewImg ? previewImg.src : 'not found');
+      
       
       if (previewImg && previewImg.src && previewImg.src !== '' && previewImg.src !== 'about:blank') {
-        console.log('🔍 DEBUG: Found uploaded invoice image, showing in modal');
+        
         // Show uploaded invoice in modal
         showInvoiceModal(previewImg.src, supplierName, invoiceNumber);
       } else {
-        console.log('🔍 DEBUG: No uploaded image found, checking window.uploadedInvoices');
+        
         
         // Check if there's an uploaded invoice in window.uploadedInvoices
         if (window.uploadedInvoices) {
-          console.log('🔍 DEBUG: window.uploadedInvoices exists:', window.uploadedInvoices);
+          
           
           // Find the order ID that contains this supplier's invoice
           const orderId = Object.keys(window.uploadedInvoices).find(id => 
@@ -2836,31 +2872,31 @@ async function loadOrdersFromBackend() {
           
           if (orderId && window.uploadedInvoices[orderId][supplierName]) {
             const invoiceData = window.uploadedInvoices[orderId][supplierName];
-            console.log('🔍 DEBUG: Found uploaded invoice data:', invoiceData);
+            
             
             if (invoiceData.imageData) {
-              console.log('🔍 DEBUG: Found image data, showing in modal');
+              
               showInvoiceModal(invoiceData.imageData, supplierName, invoiceNumber);
               return;
             }
           }
         }
         
-        console.log('🔍 DEBUG: No uploaded invoice found, checking database data');
+        
         // Check if there's a stored supplier invoice in the database
         const orderData = window.currentOrderData;
-        console.log('🔍 DEBUG: Current order data:', orderData);
+        
         
         if (orderData && orderData.materials) {
-          console.log('🔍 DEBUG: Order materials:', orderData.materials);
+          
           // Look for supplier invoice in materials data
           const supplierMaterial = orderData.materials.find(material => 
             material.supplier === supplierName
           );
-          console.log('🔍 DEBUG: Found supplier material:', supplierMaterial);
+          
           
           if (supplierMaterial && supplierMaterial.supplier_invoice && supplierMaterial.supplier_invoice.trim() !== '') {
-            console.log('🔍 DEBUG: Found supplier invoice in materials data');
+            
             // Show supplier invoice from materials
             showInvoiceModal(supplierMaterial.supplier_invoice, supplierName, invoiceNumber);
             return;
@@ -2869,11 +2905,11 @@ async function loadOrdersFromBackend() {
         
         // Check if there's a stored supplier invoice in the main order data
         if (orderData && orderData.invoice && orderData.invoice.trim() !== '') {
-          console.log('🔍 DEBUG: Found supplier invoice in main order data');
+          
           // Show stored supplier invoice
           showInvoiceModal(orderData.invoice, supplierName, invoiceNumber);
         } else {
-          console.log('🔍 DEBUG: No invoice found, showing placeholder');
+          
           // Show system-generated invoice placeholder
           showInvoiceModal(null, supplierName, invoiceNumber);
         }
@@ -3144,14 +3180,14 @@ async function loadOrdersFromBackend() {
         if (order && order.materials) {
           const supplierMaterial = order.materials.find(m => m.supplier === supplierName);
           if (supplierMaterial && supplierMaterial.supplierStatus === 'Completed') {
-            console.log('Supplier is completed, blocking removal (safety check)');
+            
             showNotification('Cannot remove invoice for completed supplier. Invoice is locked.', 'warning');
             return;
           }
         }
       }
       
-      console.log('Proceeding with invoice removal');
+      
       
       const previewDiv = document.getElementById(`invoicePreview_${supplierKey}`);
       const input = document.getElementById(`invoiceUpload_${supplierKey}`);
@@ -3226,10 +3262,11 @@ async function loadOrdersFromBackend() {
       // Get values and convert to numbers
       const subtotal = parseFloat(subtotalInput.value) || 0;
       const deliveryCost = parseFloat(deliveryCostInput.value) || 0;
-      const discount = parseFloat(discountInput.value) || 0;
+      const discountPercent = parseFloat(discountInput.value) || 0;
 
-      // Calculate total: Subtotal + Delivery Cost - Discount
-      const total = subtotal + deliveryCost - discount;
+      // Calculate total: Subtotal + Delivery Cost - (Discount % of Subtotal)
+      const discountAmount = (discountPercent / 100) * subtotal;
+      const total = subtotal + deliveryCost - discountAmount;
 
       // Update total display
       totalElement.textContent = `₱${total.toFixed(2)}`;
@@ -3249,14 +3286,14 @@ async function loadOrdersFromBackend() {
         deliveryCostInput.classList.remove('is-invalid');
       }
 
-      if (discount < 0) {
+      if (discountPercent < 0) {
         discountInput.classList.add('is-invalid');
         discountInput.value = '0.00';
       } else {
         discountInput.classList.remove('is-invalid');
       }
 
-      console.log(`Manual total calculated for ${supplierKey}: ₱${total.toFixed(2)}`);
+      
 
       // Update grand total
       updateGrandTotal();
@@ -3279,7 +3316,7 @@ async function loadOrdersFromBackend() {
       });
 
       grandTotalElement.textContent = `₱${grandTotal.toFixed(2)}`;
-      console.log(`Grand total calculated: ₱${grandTotal.toFixed(2)}`);
+      
     }
 
     // Function to update grand total (called when individual totals change)
@@ -3562,7 +3599,7 @@ async function loadOrdersFromBackend() {
       
       // First check if there are globally stored input values (from item check modal)
       if (window.preservedInputValues && Object.keys(window.preservedInputValues).length > 0) {
-        console.log('Using preserved input values:', window.preservedInputValues);
+        
         inputValues = { ...window.preservedInputValues };
         // Clear the global values after using them
         window.preservedInputValues = {};
@@ -3596,6 +3633,122 @@ async function loadOrdersFromBackend() {
       document.getElementById('modalOrderType').textContent = orderTypeText;
       
       document.getElementById('modalRequestApproveDate').textContent = order.requestApproveDate || '-';
+  // Show 'Submit to Finance' button only for Manual + Pending status
+  const submitBtn = document.getElementById('submitToFinanceBtn');
+  if (submitBtn) {
+    const isManual = String(order.orderType || order.order_type || '').toLowerCase() === 'manual';
+    const isPending = String(order.status || '').toLowerCase() === 'pending';
+    submitBtn.style.display = (isManual && isPending) ? 'inline-block' : 'none';
+    submitBtn.setAttribute('data-order-id', order.id);
+  }
+
+  // Ensure global handler exists for the footer button onclick
+  if (!window.submitFinanceForManual) {
+    window.submitFinanceForManual = async function() {
+      try {
+        try { console.log('[SubmitFinance] Handler invoked'); } catch(_) {}
+        const btn = document.getElementById('submitToFinanceBtn');
+        const modalRef = document.getElementById('orderDetailsModal');
+        let orderId = (btn && btn.getAttribute('data-order-id')) || (modalRef && modalRef.getAttribute('data-order-id'));
+        try { console.log('[SubmitFinance] Raw refs', { hasBtn: !!btn, btnDataId: btn && btn.getAttribute('data-order-id'), modalDataId: modalRef && modalRef.getAttribute('data-order-id') }); } catch(_) {}
+        if (!orderId) {
+          const idEl = document.getElementById('modalOrderId');
+          if (idEl && idEl.textContent) orderId = String(idEl.textContent).trim();
+          try { console.log('[SubmitFinance] Fallback modalOrderId text', { text: document.getElementById('modalOrderId')?.textContent }); } catch(_) {}
+        }
+        if (!orderId) {
+          try { console.warn('[SubmitFinance] Missing orderId; aborting'); } catch(_) {}
+          return;
+        }
+        const order = (window.orders || []).find(o => String(o.id) === String(orderId));
+        try { console.log('[SubmitFinance] Resolved orderId', orderId, 'found:', !!order); } catch(_) {}
+        if (!order) return;
+        try { console.log('[SubmitFinance] Clicked for order', orderId, { type: order.orderType, status: order.status, pr_id: order.pr_id }); } catch(_) {}
+        try { console.log('[SubmitFinance] Condition check', { isManual: String(order.orderType||'').toLowerCase()==='manual', isPending: String(order.status||'').toLowerCase()==='pending' }); } catch(_) {}
+        if (String(order.orderType || '').toLowerCase() !== 'manual' || String(order.status || '').toLowerCase() !== 'pending') {
+          showNotification('This action is only available for Manual orders in Pending status.', 'danger');
+          return;
+        }
+        if (!order.pr_id) {
+          showNotification('Cannot submit: missing PR reference for this order.', 'danger');
+          return;
+        }
+
+        const suppliers = [...new Set((order.materials || []).map(m => m.supplier))];
+        let totalDelivery = 0;
+        let totalDiscount = 0;
+        try { console.log('[SubmitFinance] Suppliers', suppliers); } catch(_) {}
+        suppliers.forEach(supplier => {
+          const supplierKey = String(supplier || '').replace(/\s+/g, '_');
+          const delInput = document.getElementById(`deliveryCost_${supplierKey}`);
+          const discInput = document.getElementById(`discount_${supplierKey}`);
+          try { console.log('[SubmitFinance] Inputs', supplier, { deliveryEl: !!delInput, discountEl: !!discInput, deliveryVal: delInput?.value, discountVal: discInput?.value }); } catch(_) {}
+          const dVal = delInput ? Number(delInput.value || 0) : 0;
+          const cVal = discInput ? Number(discInput.value || 0) : 0;
+          if (!isNaN(dVal)) totalDelivery += dVal;
+          if (!isNaN(cVal)) totalDiscount += cVal;
+        });
+        try { console.log('[SubmitFinance] Aggregated totals', { delivery_cost: totalDelivery, discount_percent: totalDiscount }); } catch(_) {}
+
+        // Show confirmation modal instead of native confirm
+        const deliveryEl = document.getElementById('confirmFinanceDelivery');
+        const discountEl = document.getElementById('confirmFinanceDiscount');
+        if (deliveryEl) deliveryEl.textContent = `₱${totalDelivery.toFixed(2)}`;
+        if (discountEl) discountEl.textContent = `${totalDiscount.toFixed(2)}%`;
+        const modalEl = document.getElementById('financeSubmitConfirmModal');
+        const confirmBtn = document.getElementById('confirmFinanceSubmitBtn');
+        // Fallback to native confirm if modal or bootstrap isn't available
+        if (!modalEl || typeof bootstrap === 'undefined' || !confirmBtn) {
+          const ok = confirm(`Submit Delivery Cost ₱${totalDelivery.toFixed(2)} and Discount ${totalDiscount.toFixed(2)}% to Finance for approval?`);
+          if (!ok) return;
+          try { console.log('[SubmitFinance] Confirmed via native dialog'); } catch(_) {}
+          const resp = await fetch(`/scm/purchases/${order.id}/status`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: order.status, delivery_cost: totalDelivery, discount: totalDiscount })
+          });
+          try { console.log('[SubmitFinance] POST response (native) ok:', resp.ok); } catch(_) {}
+          if (!resp.ok) {
+            const t = await resp.text().catch(() => '');
+            showNotification('Failed to submit delivery/discount: ' + t, 'danger');
+            return;
+          }
+          const hint = document.getElementById('manualFinanceHint');
+          if (hint) hint.classList.add('d-none');
+          showNotification('Submitted to Finance for approval.', 'success');
+          return;
+        }
+
+        // Use Bootstrap modal flow
+        try { console.log('[SubmitFinance] Showing Bootstrap confirmation modal'); } catch(_) {}
+        const modal = new bootstrap.Modal(modalEl);
+        // Clear previous handler to avoid duplicates
+        confirmBtn.onclick = null;
+        confirmBtn.onclick = async () => {
+          try {
+            modal.hide();
+            try { console.log('[SubmitFinance] Confirm button clicked (modal)'); } catch(_) {}
+          const resp = await fetch(`/scm/purchases/${order.id}/status`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: order.status, delivery_cost: totalDelivery, discount: totalDiscount })
+            });
+            try { console.log('[SubmitFinance] POST response (modal) ok:', resp.ok); } catch(_) {}
+            if (!resp.ok) {
+              const t = await resp.text().catch(() => '');
+              showNotification('Failed to submit delivery/discount: ' + t, 'danger');
+              return;
+            }
+            const hint = document.getElementById('manualFinanceHint');
+            if (hint) hint.classList.add('d-none');
+            showNotification('Submitted to Finance for approval.', 'success');
+          } catch (_) {}
+        };
+        modal.show();
+        return;
+      } catch (e) {
+        showNotification('Unexpected error while submitting to Finance.', 'danger');
+      }
+    }
+  }
       
       // Update status with appropriate badge
       // Convert status to lowercase and replace spaces with hyphens for CSS class
@@ -3608,8 +3761,11 @@ async function loadOrdersFromBackend() {
       const markAsCompletedBtn = document.getElementById('markAsCompletedBtn');
       const refundBtn = document.getElementById('refundOrderBtn');
       
-      // Hide buttons if status is "Received" (order is already completed)
-      if (order.status === 'Received') {
+      // Hide actions for Cancelled; only Close remains
+      if (order.status === 'Cancelled') {
+        if (markAsCompletedBtn) markAsCompletedBtn.style.display = 'none';
+        if (refundBtn) refundBtn.style.display = 'none';
+      } else if (order.status === 'Received') {
         markAsCompletedBtn.style.display = 'none';
         refundBtn.style.display = 'none';
       } else {
@@ -3618,8 +3774,9 @@ async function loadOrdersFromBackend() {
         refundBtn.style.display = 'inline-block';
         markAsCompletedBtn.setAttribute('data-order-id', order.id);
         
-        // Flat single-entry logic: enable if order status is Out for Delivery or later
-        const canComplete = (order.status === 'Out for Delivery' || order.status === 'Partially Delivered');
+        // Enable if (manual && Processed) OR Out for Delivery / Partially Delivered
+        const isManual = String(order.orderType || '').toLowerCase() === 'manual';
+        const canComplete = (isManual && order.status === 'Processed') || (order.status === 'Out for Delivery' || order.status === 'Partially Delivered');
         
         if (canComplete) {
           markAsCompletedBtn.disabled = false;
@@ -3636,10 +3793,12 @@ async function loadOrdersFromBackend() {
         }
       }
 
-      // Toggle proof section visibility for Out for Delivery or later
+      // Toggle proof section visibility: show for Manual+Processed or Out for Delivery / Received / Partially Delivered
       const proofSection = document.getElementById('proofSection');
       if (proofSection) {
-        if (order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered') {
+        const showProof = (String(order.orderType || '').toLowerCase() === 'manual' && order.status === 'Processed') ||
+                         (order.status === 'Out for Delivery' || order.status === 'Received' || order.status === 'Partially Delivered');
+        if (showProof) {
           proofSection.style.display = '';
         } else {
           proofSection.style.display = 'none';
@@ -3733,16 +3892,7 @@ async function loadOrdersFromBackend() {
       }
 
       // COMPREHENSIVE DEBUG - Show all calculation details
-      console.log('🔍 FINAL DEBUG - Order Calculations:', {
-        orderId: order.id,
-        orderType: order.orderType,
-        status: order.status,
-        invoice_amount: order.invoice_amount,
-        delivery_cost: order.delivery_cost,
-        discount: order.discount,
-        calculatedGrandTotal: grandTotal,
-        finalDisplayTotal: document.getElementById('modalTotal').textContent
-      });
+      
 
       // Show supplier-entered delivery cost and discount (from purchases)
       const metaContainer = document.getElementById('orderMetaInfo');
@@ -3862,10 +4012,18 @@ async function loadOrdersFromBackend() {
       if (!orderDetailsModal.classList.contains('show')) {
         modal.show();
       }
+  
+  // If we just exposed the Submit to Finance button, ensure inputs are editable and visible
+  const submitBtn2 = document.getElementById('submitToFinanceBtn');
+  if (submitBtn2 && submitBtn2.style.display !== 'none') {
+    // Show inline banner at top of modal
+    const hint = document.getElementById('manualFinanceHint');
+    if (hint) hint.classList.remove('d-none');
+  }
       
       // Add event listener to save data when modal is closed
       const saveDataOnClose = () => {
-        console.log('Modal is closing, saving data for order:', order.id);
+      
         // Save manual order input values
         saveManualOrderInputValues(order.id);
         
@@ -3876,6 +4034,61 @@ async function loadOrdersFromBackend() {
             if (!order.itemChecks) {
               order.itemChecks = {};
             }
+
+// Collect delivery/discount for Manual + Pending and submit to Finance for approval
+async function submitFinanceForManual() {
+  try {
+    const btn = document.getElementById('submitToFinanceBtn');
+    const orderId = btn.getAttribute('data-order-id');
+    if (!orderId) return;
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    if (String(order.orderType || '').toLowerCase() !== 'manual' || String(order.status || '').toLowerCase() !== 'pending') {
+      showNotification('This action is only available for Manual orders in Pending status.', 'danger');
+      return;
+    }
+    if (!order.pr_id) {
+      showNotification('Cannot submit: missing PR reference for this order.', 'danger');
+      return;
+    }
+
+    // Aggregate across suppliers shown in the modal
+    const suppliers = [...new Set((order.materials || []).map(m => m.supplier))];
+    let totalDelivery = 0;
+    let totalDiscount = 0;
+    suppliers.forEach(supplier => {
+      const supplierKey = String(supplier || '').replace(/\s+/g, '_');
+      const delInput = document.getElementById(`deliveryCost_${supplierKey}`);
+      const discInput = document.getElementById(`discount_${supplierKey}`);
+      const dVal = delInput ? Number(delInput.value || 0) : 0;
+      const cVal = discInput ? Number(discInput.value || 0) : 0;
+      if (!isNaN(dVal)) totalDelivery += dVal;
+      if (!isNaN(cVal)) totalDiscount += cVal;
+    });
+
+    // Confirm submission
+    const confirmation = confirm(`Submit Delivery Cost ₱${totalDelivery.toFixed(2)} and Discount ₱${totalDiscount.toFixed(2)} to Finance for approval?`);
+    if (!confirmation) return;
+
+    const resp = await fetch(`/scm/purchase-requests/${order.pr_id}/manual/delivery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delivery_cost: totalDelivery, discount: totalDiscount })
+    });
+    if (!resp.ok) {
+      const t = await resp.text().catch(() => '');
+      showNotification('Failed to submit delivery/discount: ' + t, 'danger');
+      return;
+    }
+    // Hide the inline banner after successful submission
+    const hint = document.getElementById('manualFinanceHint');
+    if (hint) hint.classList.add('d-none');
+    showNotification('Submitted to Finance for approval.', 'success');
+  } catch (e) {
+    console.error('submitFinanceForManual error', e);
+    showNotification('Unexpected error while submitting to Finance.', 'danger');
+  }
+}
             order.itemChecks[currentItemCheckSupplier] = {
               checkDate: new Date().toISOString(),
               checkedBy: 'Current User',
@@ -3888,7 +4101,7 @@ async function loadOrdersFromBackend() {
                 checkDate: new Date().toISOString()
               }))
             };
-            console.log('Saved pending item check data on modal close');
+            
           }
         }
       };
@@ -3901,11 +4114,11 @@ async function loadOrdersFromBackend() {
       
       // If preserving expanded state, restore it after modal is shown
       if (preserveExpandedState && Object.keys(expandedSections).length > 0) {
-        console.log('Restoring expanded sections:', expandedSections);
+        
         setTimeout(() => {
           Object.keys(supplierGroups).forEach((supplier, index) => {
             if (expandedSections[supplier] || (targetSupplier && supplier === targetSupplier)) {
-              console.log(`Restoring supplier section: ${supplier} (index: ${index})`);
+              
               const collapseElement = document.getElementById(`supplierCollapse${index}`);
               const headerElement = document.querySelector(`[data-supplier-index="${index}"]`);
               
@@ -3919,7 +4132,7 @@ async function loadOrdersFromBackend() {
                     icon.style.transform = 'rotate(180deg)';
                   }
                 }
-                console.log(`Successfully restored supplier section: ${supplier}`);
+                
               }
             }
           });
@@ -4016,7 +4229,7 @@ async function loadOrdersFromBackend() {
         // Display materials grouped by supplier with collapsible sections (same structure as viewOrderDetails)
         Object.keys(supplierGroups).forEach((supplier, index) => {
           const materials = supplierGroups[supplier];
-          console.log('🔍 MAIN SUPPLIER LOOP:', supplier, 'Index:', index, 'Materials:', materials.length);
+          
           
           // Create supplier section container
           const supplierSectionDiv = document.createElement('div');
@@ -4070,8 +4283,8 @@ async function loadOrdersFromBackend() {
           }
           
           if (order.orderType === 'Registered') {
-            // Registered orders - show "Mark as Delivered" button only for "In Transit" status
-            if (supplierStatus === 'In Transit') {
+            // Registered orders - show "Mark as Delivered" only when purchase status is Processed
+            if (String(order.status) === 'Processed') {
               updateButton = `
                 <button class="btn btn-sm btn-outline-info ms-2" onclick="showImageUploadModal('${order.id}', '${supplier}')">
                   <i class="fas fa-truck me-1"></i>Mark as Delivered
@@ -4095,9 +4308,7 @@ async function loadOrdersFromBackend() {
             if (supplierStatus === 'Pending') {
               updateButton = `
                 <div class="btn-group" role="group">
-                  <button class="btn btn-sm btn-outline-info ms-2" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')">
-                    <i class="fas fa-truck me-1"></i>Mark as Delivered
-                  </button>
+                  ${String(order.status) === 'Processed' ? `<button class=\"btn btn-sm btn-outline-info ms-2\" onclick=\"updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')\"><i class=\"fas fa-truck me-1\"></i>Mark as Delivered</button>` : ''}
                   <button class="btn btn-sm btn-outline-danger ms-1" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Rejected')">
                     <i class="fas fa-times me-1"></i>Mark as Rejected
                   </button>
@@ -4105,9 +4316,7 @@ async function loadOrdersFromBackend() {
               `;
             } else if (supplierStatus === 'In Transit') {
               updateButton = `
-                <button class="btn btn-sm btn-outline-info ms-2" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')">
-                  <i class="fas fa-truck me-1"></i>Mark as Delivered
-                </button>
+                ${String(order.status) === 'Processed' ? `<button class=\"btn btn-sm btn-outline-info ms-2\" onclick=\"updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')\"><i class=\"fas fa-truck me-1\"></i>Mark as Delivered</button>` : ''}
               `;
             } else if (supplierStatus === 'Delivered') {
               updateButton = `
@@ -4155,23 +4364,23 @@ async function loadOrdersFromBackend() {
           
           // Add custom click handler instead of Bootstrap collapse
           supplierHeaderDiv.addEventListener('click', function(e) {
-            console.log('Supplier header clicked', e.target);
+            
             
             // Don't handle clicks on buttons or other interactive elements
             if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[onclick]')) {
-              console.log('Click on button/interactive element - ignoring');
+              
               return; // Let the button handle the click
             }
             
             // Don't toggle if item check modal is open
             if (window.itemCheckModalOpen) {
-              console.log('Item check modal is open - preventing toggle');
+              
               e.preventDefault();
               e.stopPropagation();
               return false;
             }
             
-            console.log('Toggling supplier section');
+            
             const targetId = `supplierCollapse${index}`;
             const targetElement = document.getElementById(targetId);
             const isExpanded = targetElement.classList.contains('show');
@@ -4180,12 +4389,12 @@ async function loadOrdersFromBackend() {
               targetElement.classList.remove('show');
               this.setAttribute('aria-expanded', 'false');
               this.querySelector('.collapse-icon').style.transform = 'rotate(0deg)';
-              console.log('Collapsed supplier section');
+              
             } else {
               targetElement.classList.add('show');
               this.setAttribute('aria-expanded', 'true');
               this.querySelector('.collapse-icon').style.transform = 'rotate(180deg)';
-              console.log('Expanded supplier section');
+              
             }
           });
           
@@ -4442,7 +4651,7 @@ async function loadOrdersFromBackend() {
                           <span>Delivery Cost:</span>
                           <span>₱${(() => {
                             const cost = Number(order.delivery_cost || 0);
-                            console.log('🔍 FORCE DEBUG - Order delivery_cost:', order.delivery_cost, 'Parsed:', cost);
+                            
                             return cost.toFixed(2);
                           })()}</span>
                         </div>
@@ -4451,7 +4660,7 @@ async function loadOrdersFromBackend() {
                           <span class="text-success">-₱${(() => {
                             const discountValue = Number(order.discount || 0);
                             const discount = discountValue < 100 ? (discountValue / 100) * subtotal : discountValue;
-                            console.log('🔍 FORCE DEBUG - Order discount:', order.discount, 'Parsed:', discountValue, 'Calculated:', discount);
+                            
                             return discount.toFixed(2);
                           })()}</span>
                         </div>
@@ -4624,7 +4833,7 @@ async function loadOrdersFromBackend() {
         // Display materials grouped by supplier with collapsible sections (same structure as viewOrderDetails)
         Object.keys(supplierGroups).forEach((supplier, index) => {
           const materials = supplierGroups[supplier];
-          console.log('🔍 MAIN SUPPLIER LOOP:', supplier, 'Index:', index, 'Materials:', materials.length);
+          
           
           // Create supplier section container
           const supplierSectionDiv = document.createElement('div');
@@ -4699,24 +4908,18 @@ async function loadOrdersFromBackend() {
               `;
             }
           } else {
-            // Manual orders - show buttons based on status
+            // Manual orders - hide action buttons unless overall purchase is Processed
             if (supplierStatus === 'Pending') {
-              updateButton = `
+              updateButton = String(order.status) === 'Processed' ? `
                 <div class="btn-group" role="group">
-                  <button class="btn btn-sm btn-outline-info ms-2" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')">
-                    <i class="fas fa-truck me-1"></i>Mark as Delivered
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger ms-1" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Rejected')">
-                    <i class="fas fa-times me-1"></i>Mark as Rejected
-                  </button>
+                  <button class=\"btn btn-sm btn-outline-info ms-2\" onclick=\"updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')\"><i class=\"fas fa-truck me-1\"></i>Mark as Delivered</button>
+                  <button class=\"btn btn-sm btn-outline-danger ms-1\" onclick=\"updateSupplierStatus('${order.id}', '${supplier}', 'Rejected')\"><i class=\"fas fa-times me-1\"></i>Mark as Rejected</button>
                 </div>
-              `;
+              ` : '';
             } else if (supplierStatus === 'In Transit') {
-              updateButton = `
-                <button class="btn btn-sm btn-outline-info ms-2" onclick="updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')">
-                  <i class="fas fa-truck me-1"></i>Mark as Delivered
-                </button>
-              `;
+              updateButton = String(order.status) === 'Processed' ? `
+                <button class=\"btn btn-sm btn-outline-info ms-2\" onclick=\"updateSupplierStatus('${order.id}', '${supplier}', 'Delivered')\"><i class=\"fas fa-truck me-1\"></i>Mark as Delivered</button>
+              ` : '';
             } else if (supplierStatus === 'Delivered') {
               updateButton = `
                 <button class="btn btn-sm btn-outline-success ms-2" onclick="showItemCheckModal('${order.id}', '${supplier}')" title="Check all items for this delivery">
@@ -4763,23 +4966,23 @@ async function loadOrdersFromBackend() {
           
           // Add custom click handler instead of Bootstrap collapse
           supplierHeaderDiv.addEventListener('click', function(e) {
-            console.log('Supplier header clicked', e.target);
+            
             
             // Don't handle clicks on buttons or other interactive elements
             if (e.target.closest('button') || e.target.closest('a') || e.target.closest('[onclick]')) {
-              console.log('Click on button/interactive element - ignoring');
+              
               return; // Let the button handle the click
             }
             
             // Don't toggle if item check modal is open
             if (window.itemCheckModalOpen) {
-              console.log('Item check modal is open - preventing toggle');
+              
               e.preventDefault();
               e.stopPropagation();
               return false;
             }
             
-            console.log('Toggling supplier section');
+            
             const targetId = `supplierCollapse${index}`;
             const targetElement = document.getElementById(targetId);
             const isExpanded = targetElement.classList.contains('show');
@@ -4788,12 +4991,12 @@ async function loadOrdersFromBackend() {
               targetElement.classList.remove('show');
               this.setAttribute('aria-expanded', 'false');
               this.querySelector('.collapse-icon').style.transform = 'rotate(0deg)';
-              console.log('Collapsed supplier section');
+              
             } else {
               targetElement.classList.add('show');
               this.setAttribute('aria-expanded', 'true');
               this.querySelector('.collapse-icon').style.transform = 'rotate(180deg)';
-              console.log('Expanded supplier section');
+              
             }
           });
 
@@ -4937,8 +5140,13 @@ async function loadOrdersFromBackend() {
               
               console.log(`Supplier: ${supplier}, Input values:`, inputValues, 'Preserved values:', preservedValues, 'Saved values:', savedValues);
               console.log(`Order manualOrderData:`, order.manualOrderData);
-              
-              const subtotalValue = isRejected ? '0.00' : (preservedValues.subtotal || savedValues.subtotal || '0.00');
+              // Subtotal for Manual orders = sum of purchases.total_price per supplier (readonly)
+              const isManualOrder = String(order.orderType || order.order_type || '').toLowerCase() === 'manual';
+              const manualSubtotal = isManualOrder ? ((order.materials || [])
+                .filter(m => (m.supplier || '') === supplier)
+                .reduce((acc, m) => acc + (Number(m.total_price || 0)), 0)) : 0;
+              const subtotalValue = isRejected ? '0.00' : (isManualOrder ? manualSubtotal.toFixed(2) : (preservedValues.subtotal || savedValues.subtotal || '0.00'));
+              const subtotalAttr = isManualOrder ? 'readonly' : readonlyAttr;
               // For Registered orders, use order.delivery_cost and order.discount; for Manual orders, use preserved/saved values
               const deliveryCostValue = isRejected ? '0.00' : (order.orderType === 'Registered' ? (order.delivery_cost || '0.00') : (preservedValues.deliveryCost || savedValues.deliveryCost || '0.00'));
               const discountValue = isRejected ? '0.00' : (order.orderType === 'Registered' ? (order.discount || '0.00') : (preservedValues.discount || savedValues.discount || '0.00'));
@@ -4954,21 +5162,10 @@ async function loadOrdersFromBackend() {
               }
               
               // DEBUG: Check all status conditions
-              console.log('🔍 STATUS DEBUG:', {
-                orderStatus: order.status,
-                supplierStatus: supplierStatus,
-                isDelivered: isDelivered,
-                isItemVerificationCompleted: isItemVerificationCompleted,
-                condition1: isDelivered,
-                condition2: isItemVerificationCompleted,
-                condition3: supplierStatus === 'Out for Delivery',
-                condition4: supplierStatus === 'Received',
-                condition5: supplierStatus === 'Partially Delivered',
-                finalCondition: isDelivered || isItemVerificationCompleted || supplierStatus === 'Out for Delivery' || supplierStatus === 'Received' || supplierStatus === 'Partially Delivered'
-              });
+              
               
               if (isDelivered || isItemVerificationCompleted || supplierStatus === 'Out for Delivery' || supplierStatus === 'Received' || supplierStatus === 'Partially Delivered') {
-                console.log('🔍 RENDERING COST BREAKDOWN - Condition met!');
+                
                 // Show plain text values for delivered suppliers
               supplierTotalDiv.innerHTML = `
                 <div class="supplier-total">
@@ -5072,7 +5269,7 @@ async function loadOrdersFromBackend() {
                             <div class="input-group" style="width: 150px;">
                               <span class="input-group-text">₱</span>
                               <input type="number" id="subtotal_${supplierKey}" class="${inputClass}" 
-                                     value="${subtotalValue}" step="0.01" min="0" ${readonlyAttr}
+                                     value="${subtotalValue}" step="0.01" min="0" ${subtotalAttr}
                                      onclick="${isCompleted ? '' : 'clearInput(this)'}" onchange="${isCompleted ? '' : 'calculateManualTotal(\'' + supplierKey + '\'); saveManualOrderInputValues(\'' + order.id + '\')'}">
                         </div>
                           </div>
@@ -5500,7 +5697,7 @@ async function loadOrdersFromBackend() {
           }
         }
 
-        console.log('Modal backdrop cleanup completed');
+        
       }, 150);
     }
     // Workaround for side_top.js errors - ensure notification dropdown exists
@@ -6495,11 +6692,11 @@ async function loadOrdersFromBackend() {
       window.itemCheckModalOpen = true;
       
       // Simply store the current state - no need for complex overrides
-      console.log('Stored expanded sections for preservation:', expandedSections);
+      
       
       // Add a CSS class to prevent collapse during item check
       document.body.classList.add('item-check-modal-open');
-      console.log('Added item-check-modal-open class, body classes:', document.body.className);
+      
       
       // Small delay to ensure changes take effect before modal opens
       setTimeout(() => {
@@ -6556,7 +6753,7 @@ async function loadOrdersFromBackend() {
       const removeClassOnClose = () => {
         document.body.classList.remove('item-check-modal-open');
         window.itemCheckModalOpen = false;
-        console.log('Failsafe: Removed item-check-modal-open class and reset flag on modal close');
+        
         
         // Clean up modal backdrop
         cleanupModalBackdrop();

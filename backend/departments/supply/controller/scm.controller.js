@@ -13,6 +13,42 @@ const SCMController = {
         }
     },
 
+    // Return detailed PR rows for manual page table
+    listDetailedPurchaseRequests: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+            const rows = await SCMModel.listDetailedPurchaseRequests();
+            res.json({ success: true, rows });
+        } catch (e) {
+            console.error('Error in listDetailedPurchaseRequests:', e);
+            res.status(500).json({ success: false, error: 'Failed to fetch purchase requests' });
+        }
+    },
+
+    // Logistics submits delivery cost and discount for manual PR after finance approval
+    setManualDeliveryAndDiscount: async (req, res) => {
+        try {
+            if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
+            const u = req.session.user;
+            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+            const { prId } = req.params;
+            const { delivery_cost, discount } = req.body;
+            const dc = Number(delivery_cost) || 0;
+            const dis = Number(discount) || 0;
+            // Update purchases rows linked to this PR (manual flow stores adjustments here)
+            const result = await SCMModel.updatePurchaseStatus(Number(prId), 'Processed', { delivery_cost: dc, discount: dis });
+            if (!result.success) return res.status(404).json({ error: result.error || 'Update failed' });
+            return res.json({ success: true });
+        } catch (e) {
+            console.error('Error in setManualDeliveryAndDiscount:', e);
+            res.status(500).json({ error: 'Failed to save delivery/discount' });
+        }
+    },
+
     addSupplier: async (req, res) => {
         try {
             const {
@@ -354,7 +390,18 @@ const SCMController = {
             }
 
             // Get all orders
-            let orders = await SCMModel.getAllPurchaseOrders();
+            // Prefer purchases-based listing when present
+            let orders = await SCMModel.listPurchases();
+            try {
+                console.log('🔎 [Orders] listPurchases count:', Array.isArray(orders) ? orders.length : 'not array');
+                if (Array.isArray(orders) && orders.length) {
+                    console.log('🔎 [Orders] sample row:', {
+                        purchase_id: orders[0].purchase_id,
+                        supplier_name: orders[0].supplier_name,
+                        supplier_type: orders[0].supplier_type
+                    });
+                }
+            } catch (_) {}
             
             // If user is a supplier, filter orders for their supplier_id
             if (req.session.user.role_id === 27) { // 27 is supplier role
@@ -365,7 +412,20 @@ const SCMController = {
                 orders = orders.filter(order => Number(order.supplier_id) === Number(supplierId));
             }
 
-            res.json(orders);
+            // Tag order type based on supplier_account.supplier_type
+            const stamped = (orders || []).map(o => {
+                const type = (String(o.supplier_type||'').toLowerCase()==='manual') ? 'Manual' : 'Registered';
+                try {
+                    console.log('🔎 [Orders] map', {
+                        purchase_id: o.purchase_id,
+                        supplier_name: o.supplier_name,
+                        supplier_type: o.supplier_type,
+                        computed_type: type
+                    });
+                } catch (_) {}
+                return { ...o, order_type: type, orderType: type };
+            });
+            res.json(stamped);
         } catch (error) {
             console.error('Error in getAllPurchaseOrders:', error);
             res.status(500).json({ error: 'Failed to fetch purchase orders' });
@@ -1213,24 +1273,32 @@ const SCMController = {
     // Aggregate orders based on purchases, grouped by purchase_id with materials array
     listOrders: async (_req, res) => {
         try {
-            console.log('🔎 [SCM] GET /scm/orders called');
             // Return purchases rows first (matches current frontend grouping by purchase_id)
             const rows = await SCMModel.listPurchases();
-            console.log('🔎 [SCM] purchases rows:', Array.isArray(rows) ? rows.length : 'not array');
             if (Array.isArray(rows) && rows.length) {
-                try {
-                    console.log('🔎 [SCM] purchases sample:', rows[0]);
-                } catch (_) {}
-                return res.json(rows);
+                // Stamp orderType from supplier_type; targeted debug if missing
+                const stamped = rows.map(r => {
+                    const st = String(r.supplier_type || '').toLowerCase();
+                    const type = st === 'manual' ? 'Manual' : 'Registered';
+                    if (!st) {
+                        console.log('🔎 OrderType DEBUG (missing supplier_type):', {
+                            purchase_id: r.purchase_id,
+                            supplier_id: r.supplier_id,
+                            supplier_name: r.supplier_name,
+                            assumed_type: type
+                        });
+                    }
+                    return { ...r, orderType: type, order_type: type };
+                });
+                return res.json(stamped);
             }
 
             // Fallback: map purchase_order rows to a minimal aggregated structure
             const poRows = await SCMModel.getAllPurchaseOrders();
-            console.log('🔎 [SCM] purchase_order rows:', Array.isArray(poRows) ? poRows.length : 'not array');
             if (Array.isArray(poRows) && poRows.length) {
                 const orders = poRows.map(r => ({
                     id: String(r.po_id),
-                    orderType: 'Registered',
+                    orderType: (String(r.supplier_type||'').toLowerCase()==='manual') ? 'Manual' : 'Registered',
                     requestApproveDate: r.order_date || r.created_at,
                     orderApproveDate: r.order_date || r.created_at,
                     deliverDate: r.order_date || r.created_at,
@@ -1247,14 +1315,10 @@ const SCMController = {
                         supplierStatus: r.status
                     }]
                 }));
-                try {
-                    console.log('🔎 [SCM] orders (from PO) sample:', orders[0]);
-                } catch (_) {}
                 return res.json(orders);
             }
 
             // Nothing found
-            console.log('🔎 [SCM] No rows found in purchases or purchase_order');
             res.json([]);
         } catch (e) {
             console.error('Error in listOrders:', e);
@@ -1320,16 +1384,30 @@ const SCMController = {
 
             // Validate each material
             for (const material of materials) {
-                if (!material.supplier_id || !material.material_id || !material.quantity || !material.unit_price) {
+                if ((!material.supplier_id && !material.supplier_name) || (!material.material_id && !material.material_name) || !material.quantity || !material.unit_price) {
                     return res.status(400).json({ 
-                        error: 'Each material must have supplier_id, material_id, quantity, and unit_price' 
+                        error: 'Each material must have supplier (id or name), material (id or name), quantity, and unit_price' 
                     });
                 }
             }
 
+            // If supplier_name is provided (Others/custom), ensure/create manual supplier and set supplier_id
+            const enriched = [];
+            for (const m of materials) {
+                let supplierId = m.supplier_id;
+                if (!supplierId && m.supplier_name) {
+                    try {
+                        supplierId = await SCMModel.ensureManualSupplierByName(m.supplier_name);
+                    } catch (e) {
+                        return res.status(400).json({ error: 'Failed to ensure supplier', details: e.message });
+                    }
+                }
+                enriched.push({ ...m, supplier_id: supplierId });
+            }
+
             const results = await SCMModel.createBulkPurchaseRequests({
                 requested_by: u.id,
-                materials: materials,
+                materials: enriched,
                 request_date: requestDate || new Date()
             });
 
@@ -1456,6 +1534,35 @@ const SCMController = {
         } catch (error) {
             console.error('Error in getSupplierMaterials:', error);
             res.status(500).json({ error: 'Failed to fetch supplier materials' });
+        }
+    },
+
+    // List purchases with status 'Received' for a supplier
+    getSupplierReceivedPurchases: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            const user = req.session.user;
+            const isLogisticsOrDev = (user.role_name === 'logistics') || [1,26].includes(user.role_id);
+            const isSupplierRole = user.role_id === 27 || user.is_supplier;
+            const supplierId = req.query.supplierId || (isSupplierRole ? user.supplier_id : null);
+            if (!supplierId) {
+                return res.status(400).json({ error: 'supplierId is required' });
+            }
+            // Suppliers can only fetch their own
+            if (isSupplierRole && Number(supplierId) !== Number(user.supplier_id)) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+            // Logistics/developer can fetch any supplier
+            if (!isSupplierRole && !isLogisticsOrDev) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+            const rows = await SCMModel.getSupplierReceivedPurchases(Number(supplierId));
+            return res.json({ success: true, purchases: rows });
+        } catch (e) {
+            console.error('Error in getSupplierReceivedPurchases:', e);
+            return res.status(500).json({ error: 'Failed to fetch received purchases' });
         }
     },
 
