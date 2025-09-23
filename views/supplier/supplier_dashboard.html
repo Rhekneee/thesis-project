@@ -1110,6 +1110,7 @@
             invoice_amount: order.invoice_amount,
             quantity_received: order.quantity_received,
             quantity_returned: order.quantity_returned,
+            remarks: order.remarks || '',
             issueReports: [] // Initialize empty for now
           }));
           
@@ -1566,17 +1567,15 @@
             <div class="cost-breakdown">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span>Subtotal:</span>
-                <div class="fw-bold text-dark">
-                  ₱${editableSubtotal.toFixed(2)}
-            </div>
-          </div>
+                <div class="fw-bold text-dark">₱${editableSubtotal.toFixed(2)}</div>
+              </div>
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span>Delivery Cost:</span>
                 <div class="input-group" style="width: 150px;">
                   <span class="input-group-text">₱</span>
                   <input type="number" id="deliveryCostInput" class="form-control form-control-sm" value="${Number(invoice.deliveryCost || 0).toFixed(2)}" step="0.01" min="0" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''}>
-            </div>
-        </div>
+                </div>
+              </div>
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span>Discount (%):</span>
                 <div class="input-group" style="width: 150px;">
@@ -1591,6 +1590,13 @@
               </div>
             </div>
           </div>
+          ${((invoice.remarks || '').trim()) ? `
+          <div class="col-md-6">
+            <div class="p-3" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px; height:100%;">
+              <div class="d-flex align-items-center mb-2"><i class="fas fa-comment-dots text-muted me-2"></i><strong>Remarks</strong></div>
+              <div style="white-space: pre-wrap; color:#495057;">${invoice.remarks}</div>
+            </div>
+          </div>` : ''}
           ${uploadSection}
         `;
         materialsContainer.appendChild(summaryDiv);

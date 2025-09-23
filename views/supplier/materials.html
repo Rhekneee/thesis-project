@@ -600,7 +600,9 @@
           </select>
           <span class="text-muted small">entries</span>
         </div>
-        
+        <button type="button" class="action-btn" onclick="openAddPriceModal()" title="Add Material">
+          <i class="fas fa-plus"></i> Add Material
+        </button>
       </div>
     </div>
 
@@ -645,20 +647,49 @@
           <form>
             
             <div class="form-group mb-3">
-              <label for="materialSearch" class="form-label">Material Name</label>
-              <input type="text" class="form-control" id="materialSearch" placeholder="Enter Material" autocomplete="off" required>
+              <label for="materialSearch" class="form-label">Item Name</label>
+              <input type="text" class="form-control" id="materialSearch" placeholder="Enter item name" autocomplete="off" required>
             </div>
+
             <div class="form-group mb-3">
-              <label for="addDescription" class="form-label">Category</label>
-              <input type="text" class="form-control" id="addDescription" placeholder="Enter Category" required>
+              <label class="form-label">Brand Type <span class="text-danger">*</span></label>
+              <select id="supplierBrandType" class="form-select" required>
+                <option value="Branded">Branded</option>
+                <option value="Brandless">Brandless</option>
+              </select>
+              <small class="form-text text-muted">Select Brandless for generic items (e.g., Plywood, Cement)</small>
             </div>
+
             <div class="form-group mb-3">
-              <label for="addSize" class="form-label">Size</label>
-              <input type="text" class="form-control" id="addSize" placeholder="Enter Size" required>
+              <label class="form-label">Brand Name <span id="supplierBrandReqStar" class="text-danger" style="display:none;">*</span></label>
+              <input type="text" class="form-control" id="supplierBrandName" placeholder="e.g., Boysen (leave blank if Brandless)">
             </div>
+
+            <div class="form-group mb-3">
+              <label for="addSize" class="form-label">Variant</label>
+              <input type="text" class="form-control" id="addSize" placeholder="e.g., 1L, 16L, 50kg (optional)">
+            </div>
+
             <div class="form-group mb-3">
               <label for="addUnit" class="form-label">Unit</label>
-              <input type="text" class="form-control" id="addUnit" placeholder="Enter Unit" required>
+              <input type="text" class="form-control" id="addUnit" placeholder="Enter Unit (e.g., L, pcs, kg)" required>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="categorySelect" class="form-label">Category</label>
+              <select id="categorySelect" class="form-select" required>
+                <option value="Construction">Construction</option>
+                <option value="Equipment">Equipment</option>
+                <option value="Office Supplies">Office Supplies</option>
+              </select>
+              <small class="form-text text-muted">Defaults from your supplier type; you may adjust</small>
+            </div>
+
+            
+
+            <div class="form-group mb-3">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-control" id="supplierDescription" placeholder="Short description (optional)">
             </div>
             
             <div class="form-group mb-3">
@@ -1009,15 +1040,40 @@
       const priceEl = document.getElementById('priceValue');
       const materialSearch = document.getElementById('materialSearch');
       const notesEl = document.getElementById('priceNotes');
-      const descEl = document.getElementById('addDescription');
+      const categorySel = document.getElementById('categorySelect');
       const sizeEl = document.getElementById('addSize');
       const unitEl = document.getElementById('addUnit');
+      const brandTypeEl = document.getElementById('supplierBrandType');
+      const brandNameEl = document.getElementById('supplierBrandName');
+      const brandReqStar = document.getElementById('supplierBrandReqStar');
+      const descTextEl = document.getElementById('supplierDescription');
+      // Auto-fill category from supplier session type (Registered/Manual -> map to Construction/Equipment/etc.)
+      try {
+        fetch('/scm/supplier/check-session')
+          .then(r => r.json())
+          .then(u => {
+            const type = (u && u.role_name && u.role_name.toLowerCase() === 'supplier') ? 'Registered' : 'Manual';
+            if (categorySel) categorySel.value = (type === 'Registered') ? 'Construction' : 'Equipment';
+          })
+          .catch(() => { if (categorySel && !categorySel.value) categorySel.value = 'Construction'; });
+      } catch (_) { if (categorySel && !categorySel.value) categorySel.value = 'Construction'; }
+
+      // Brand requirement toggle
+      function syncBrandRequirement() {
+        const branded = brandTypeEl && brandTypeEl.value === 'Branded';
+        if (brandNameEl) brandNameEl.required = branded;
+        if (brandReqStar) brandReqStar.style.display = branded ? '' : 'none';
+      }
+      if (brandTypeEl) {
+        brandTypeEl.addEventListener('change', syncBrandRequirement);
+        syncBrandRequirement();
+      }
       
       if (materialSel) materialSel.value = '';
       if (materialSearch) materialSearch.value = '';
       if (priceEl) priceEl.value = '';
       if (notesEl) notesEl.value = '';
-      if (descEl) descEl.value = '';
+      if (descTextEl) descTextEl.value = '';
       if (sizeEl) sizeEl.value = '';
       if (unitEl) unitEl.value = '';
       
@@ -1041,18 +1097,29 @@
       const hiddenMaterial = document.getElementById('materialSelect');
       const priceString = (document.getElementById('priceValue')?.value || '').trim();
       const notes = (document.getElementById('priceNotes')?.value || '').trim();
-      const descEl = document.getElementById('addDescription');
+      const categorySel = document.getElementById('categorySelect');
       const sizeEl = document.getElementById('addSize');
       const unitEl = document.getElementById('addUnit');
+      const brandTypeEl = document.getElementById('supplierBrandType');
+      const brandNameEl = document.getElementById('supplierBrandName');
+      const descTextEl = document.getElementById('supplierDescription');
       
       // Get material from search input if hidden field is empty (typed manually)
       const material = (materialSearch.value || '').trim();
-      const description = (descEl?.value || '').trim();
+      const category = (categorySel?.value || '').trim();
+      const brandType = (brandTypeEl?.value || 'Brandless');
+      const brandName = (brandNameEl?.value || '').trim();
+      const descriptionText = (descTextEl?.value || '').trim();
       const sizeTyped = (sizeEl?.value || '').trim();
       const unitTyped = (unitEl?.value || '').trim();
       
-      if (!material || !description || !sizeTyped || !unitTyped || !priceString) {
-        alert('Please provide all required fields: material name, category, size, unit, and price.');
+      // Validate requireds
+      if (!material || !unitTyped || !priceString) {
+        alert('Please provide required fields: item name, unit, and price.');
+        return;
+      }
+      if (brandType === 'Branded' && !brandName) {
+        alert('Brand Name is required for Branded items.');
         return;
       }
 
@@ -1063,15 +1130,18 @@
       }
 
       try {
+        // Fold brand + category into description for now (backend stores description)
         const body = {
+          brand_name: brandType === 'Branded' ? brandName : '',
           name: material,
-          category: description,
-          size: sizeTyped,
+          variant: sizeTyped,
+          type: brandType,
+          description: descriptionText,
+          category: category,
           unit: unitTyped,
-          price: priceNum,
-          effective_date: new Date().toISOString().split('T')[0]
+          price: priceNum
         };
-        const res = await fetch('/scm/products', {
+        const res = await fetch('/scm/materials/supplier', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -1083,21 +1153,21 @@
       }
         // Push returned/pending record into table
       const priceRecord = {
-          id: data.product_id || Date.now(),
+          id: data.material_id || Date.now(),
           material: material,
           materialName: material,
-          category: description,
+          category: category,
           size: sizeTyped,
           unit: unitTyped,
         price: priceNum,
-          effectiveDate: body.effective_date,
-        status: 'Pending',
-        description: description,
+          effectiveDate: new Date().toISOString(),
+          status: 'Inactive',
+          description: descriptionText,
         notes: notes || null,
         createdAt: new Date().toISOString()
       };
       state.records.push(priceRecord);
-        showNotification(`Item "${material}" submitted for approval.`, 'success');
+        showNotification(`Material "${material}" submitted. Status: Inactive (awaiting SCM confirmation).`, 'success');
       const modal = bootstrap.Modal.getInstance(document.getElementById('addPriceModal'));
       if (modal) modal.hide();
       applyFilters();

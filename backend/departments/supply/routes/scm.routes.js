@@ -61,6 +61,8 @@ router.post('/purchase_orders/:orderId/proof', express.json({ limit: '50mb' }), 
 router.post('/products', SCMController.createMaterial);          // compatibility: delegate to materials creation (logistics-only)
 router.get('/products/my', SCMController.getMyProducts);         // supplier lists own
 router.get('/materials/my', SCMController.getMyMaterials);       // supplier lists own materials (materials table)
+// Supplier-submitted material (materials table), defaults to Inactive; requires SCM confirmation
+router.post('/materials/supplier', SCMController.createSupplierMaterial);
 
 // Products (SCM review)
 router.get('/products/pending', SCMController.getPendingProducts);           // SCM lists pending
@@ -69,6 +71,9 @@ router.put('/products/:productId/status', SCMController.updateProductStatus); //
 // Materials (SCM create)
 router.post('/materials', SCMController.createMaterial);
 router.get('/materials', SCMController.getAllMaterials);
+// Materials (SCM review inactive list and update status)
+router.get('/materials/inactive', SCMController.getInactiveMaterials);
+router.put('/materials/:materialId/status', SCMController.updateMaterialStatus);
 // Materials (SCM admin can view by supplier)
 router.get('/materials/supplier/:supplierId', logisticsAuth, SCMController.getSupplierMaterials);
 
