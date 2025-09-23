@@ -51,17 +51,7 @@ app.use(session({
     name: 'sessionId'
 }));
 
-// Add session debug middleware
-app.use((req, res, next) => {
-    console.log('🔍 Session Debug:', {
-        sessionID: req.sessionID,
-        hasSession: !!req.session,
-        hasUser: !!req.session?.user,
-        cookie: req.session?.cookie,
-        path: req.path
-    });
-    next();
-});
+// Session debug middleware removed
 
 // Add session error handling
 app.use((err, req, res, next) => {

@@ -9,63 +9,151 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <script src="/js/side_top.js"></script>
-    <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/public/js/side_top.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
+        :root {
+            --brand-start: #0d6efd;
+            --brand-end: #6610f2;
+            --muted: #6c757d;
+        }
+
+        body {
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
         #content {
             margin-left: 0;
             transition: margin-left 0.3s;
-            padding: 20px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-top: 56px;
         }
+
+        .page-hero {
+            background: linear-gradient(120deg, var(--brand-start), var(--brand-end));
+            color: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.25);
+            margin-bottom: 24px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+        }
+
+        .toolbar .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-table {
+            border-radius: 12px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        table thead th {
+            background: #f8f9fb;
+            font-weight: 600;
+            vertical-align: middle;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable .sort-icon {
+            opacity: 0.5;
+            margin-left: 6px;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .sortable.active .sort-icon {
+            opacity: 1;
+            color: var(--brand-start);
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 0.9rem 0.75rem;
+        }
+
+        /* Keep column headers and cells on one line; allow horizontal scroll */
+        .table thead th,
+        .table tbody td {
+            white-space: nowrap;
+        }
+
+        /* Ensure table can expand horizontally for better header presentation */
+        #projectsTable {
+            min-width: 1200px;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .summary-card {
+            border-left: 4px solid var(--brand-start);
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+        }
+
         .search-container {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 15px;
             flex-wrap: wrap;
-            gap: 10px;
         }
+
         .search-container .form-select,
         .search-container .form-control {
-            width: auto;
-        }
-        .search-container label {
-            margin-bottom: 0;
-        }
-        #filterDropdown {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 30px 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 20px;
             min-width: 150px;
         }
-        #filterDropdown:hover {
-            background-color: #0056b3;
+
+        .search-container label {
+            margin-bottom: 0;
+            font-weight: 500;
         }
-        #filterDropdown option {
-            background-color: white;
-            color: black;
-            padding: 10px;
-        }
+
         .entries-per-page {
             display: flex;
             align-items: center;
             margin-left: auto;
             gap: 10px;
         }
-        .table {
-            width: 100%;
-            margin-top: 30px;
-        }
+
         #entriesMessage {
             margin-top: 20px;
             display: flex;
@@ -74,10 +162,12 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+
         .sort-icon {
             margin-left: 5px;
             cursor: pointer;
         }
+
         .sort-icon:hover {
             color: #007bff;
         }
@@ -256,6 +346,84 @@
             border-radius: 5px;
             font-weight: 500;
         }
+
+        /* Enhanced Success Modal Styles */
+        #successModal .modal-content {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+            animation: successModalSlideIn 0.4s ease-out;
+        }
+
+        #successModal .modal-dialog {
+            animation: successModalFadeIn 0.3s ease-out;
+        }
+
+        #successModal .fas.fa-check-circle {
+            animation: successIconPulse 0.6s ease-out;
+            filter: drop-shadow(0 4px 8px rgba(40, 167, 69, 0.3));
+        }
+
+        #successModal h5 {
+            color: #28a745;
+            font-weight: 600;
+            animation: successTextSlideUp 0.5s ease-out 0.2s both;
+        }
+
+        @keyframes successModalSlideIn {
+            0% {
+                transform: scale(0.8) translateY(-20px);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes successModalFadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes successIconPulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes successTextSlideUp {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Ensure proper z-index for success modal */
+        #successModal {
+            z-index: 1060;
+        }
+
+        #successModal .modal-backdrop {
+            z-index: 1059;
+        }
         
         .project-image-container {
             position: relative;
@@ -285,25 +453,108 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .progress-form, .division-table {
-            background: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
-            padding: 20px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
         }
         .division-img {
             width: 60px;
             height: 60px;
             object-fit: cover;
-            border-radius: 5px;
+            border-radius: 8px;
             background: #222;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .container-fluid {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        .chart-container {
+            min-height: 300px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+
+        .project-img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #222;
+            display: block;
+            margin: 0 auto 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .view-btn {
+            background: linear-gradient(45deg, #0d6efd, #0b5ed7);
+        }
+
+        .view-btn:hover {
+            background: linear-gradient(45deg, #0b5ed7, #0a58ca);
+        }
+
+        .edit-btn {
+            background: linear-gradient(45deg, #198754, #157347);
+        }
+
+        .edit-btn:hover {
+            background: linear-gradient(45deg, #157347, #146c43);
+        }
+
+        @media (max-width: 992px) {
+            .table-responsive {
+                border-radius: 12px;
+            }
+        }
+
+        @media print {
+            body { background: #fff; }
+            #sidebar, .topbar, .toolbar, .page-hero .btn, .no-print { display: none !important; }
+            #content { margin: 0; padding: 0; max-width: 100%; }
+            .page-hero { color: #000; background: #fff; box-shadow: none; border: none; }
+            .data-table { box-shadow: none; }
+            table thead th { position: static; }
         }
     </style>
 </head>
@@ -330,26 +581,6 @@
                             <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
                                 <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Notification Dropdown -->
-                    <div class="notification-dropdown" id="notificationDropdown">
-                        <div class="notification-header">
-                            <span>Notifications</span>
-                            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-                        </div>
-                        <div class="notification-item">
-                            <div class="notification-title">New Leave Request</div>
-                            <div class="notification-time">5 minutes ago</div>
-                        </div>
-                        <div class="notification-item">
-                            <div class="notification-title">Payroll Processed</div>
-                            <div class="notification-time">1 hour ago</div>
-                        </div>
-                        <div class="notification-item">
-                                <span class="profile-name">John Doe</span>
-                                <span class="profile-position">HR Manager</span>
                             </div>
                         </div>
                         
@@ -370,7 +601,6 @@
                             <div class="notification-item">
                                 <div class="notification-title">New Employee Added</div>
                                 <div class="notification-time">2 hours ago</div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -420,56 +650,79 @@
         
        <!-- Main content area -->
        <div id="content">
-        <!-- Button to toggle sidebar with icon -->
-        <button class="btn" id="sidebar-toggle" title="Toggle Sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
+            <div class="page-hero mb-4 d-flex align-items-center justify-content-between gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-chart-line me-2"></i>Project Progress</h2>
+                    <p class="mb-0 opacity-75">Track and manage construction project progress across all divisions</p>
+                </div>
+            </div>
 
-        <h2>Project Progress</h2>
-
-        <div class="search-container">
-            <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
-            <select id="filterDropdown" class="form-select" title="Filter projects by status">
+            <div class="row g-3 mb-3 no-print">
+                <div class="col-12 col-md-8">
+                    <div class="glass-card p-3 h-100">
+                        <div class="toolbar d-flex flex-wrap align-items-center gap-2">
+                            <div class="input-group" style="max-width: 420px;">
+                                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name, developer, or location...">
+                            </div>
+                            <select id="filterDropdown" class="form-select" style="max-width: 200px;" title="Filter projects by status">
                 <option value="all">All Projects</option>
                 <option value="ongoing">Ongoing</option>
                 <option value="finished">Finished</option>
             </select>
-            <div class="entries-per-page">
-                <label for="entriesPerPage">Entries per page:</label>
-                <select id="entriesPerPage" class="form-select" title="Select number of entries to display per page">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="entriesPerPage" class="text-muted small mb-0">Show</label>
+                                <select id="entriesPerPage" class="form-select form-select-sm" style="width: auto;" title="Select number of entries to display per page">
                     <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="all">All</option>
                 </select>
+                                <span class="text-muted small">entries</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="glass-card p-3 summary-card h-100 d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-muted small">Total Projects</div>
+                            <div class="fs-5 fw-bold" id="summaryProjects">0</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-muted small">Avg Progress</div>
+                            <div class="fs-5 fw-bold" id="summaryProgress">0%</div>
+                        </div>
+                    </div>
             </div>
         </div>
 
         <!-- Project Table -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-striped" id="projectsTable">
+            <div class="data-table table-responsive">
+                <table class="table mb-0 align-middle" id="projectsTable">
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-key="id">ID <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable" data-key="name">Project Name <i class="fas fa-sort-alpha-up sort-icon"></i></th>
                             <th>Image</th>
-                            <th onclick="sortTable(2)">Developer <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(3)">Foreman <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(4)">Location <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(7)">Progress <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
+                            <th class="sortable" data-key="developer">Developer <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="foreman">Foreman <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="location">Location <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="status">Status <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable text-center" data-key="progress">Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="projectsList"></tbody>
                 </table>
             </div>
-        </div>
-
-        <div id="entriesMessage">
-            <span id="showingEntries"></span>
-            <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="entriesMessage" class="text-muted small"></div>
+                <nav aria-label="Table pagination">
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
         </div>
 
         <!-- Update Progress Content -->
@@ -491,13 +744,6 @@
                                 <span id="updateProjectStatus" class="badge mt-2"></span>
                             </div>
                             <div class="project-meta">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        <i class="fas fa-clock text-warning me-2"></i>
-                                        <strong>Deadline:</strong>
-                                    </div>
-                                    <span id="updateDeadline"></span>
-                                </div>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
                                         <i class="fas fa-map-marker-alt text-danger me-2"></i>
@@ -549,10 +795,10 @@
                         </div>
                         <div class="col-md-3">
                             <label for="progressInput" class="form-label">Progress:</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="progressInput" min="0" max="100" required>
-                                <span class="input-group-text">%</span>
-                            </div>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="progressInput" min="0" max="100" required>
+                            <span class="input-group-text">%</span>
+                        </div>
                         </div>
                         <div class="col-md-3">
                             <label for="progressImage" class="form-label">Image:</label>
@@ -575,15 +821,80 @@
                     <thead class="table-light">
                         <tr>
                             <th>Image</th>
-                            <th>Division</th>
-                            <th>Progress</th>
-                            <th>Date Updated</th>
+                            <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="addedProgress">Added Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable" data-key="totalProgress">Total Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable" data-key="dateUpdated">Date Updated <i class="fas fa-sort-alpha-up sort-icon"></i></th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="divisionProgressBody">
                         <!-- Sample rows will be inserted by JS -->
                     </tbody>
+                </table>
+            </div>
+
+            <!-- Daily Logs Section -->
+            <div class="division-table" id="dailyLogsSection">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Daily Logs</h5>
+                </div>
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-key="date">Date <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="description">Description <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable" data-key="materials">Materials Used <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="materialsCount">Count <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="totalMaterialCost">Total Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyLogsBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Weekly Summary Section -->
+            <div class="division-table" id="weeklySummarySection">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Weekly Summary</h5>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="openStageBillingBtn">
+                            <i class="fas fa-layer-group me-2"></i>Generate Stage Billing
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="generateBillingBtn">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Generate Billing Summary
+                        </button>
+                    </div>
+                </div>
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-key="week">Week (Mon - Sun) <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="combinedProgress">Combined Progress % <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="totalMaterialCost">Total Material Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="weeklySummaryBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Requested Materials Section -->
+            <div class="division-table" id="requestedMaterialsSection">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Requested Materials</h5>
+                </div>
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-key="material">Material <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="requestedQty">Requested Qty <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="remainingQty">Remaining Qty <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="unitPrice">Unit Price <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestedMaterialsBody"></tbody>
                 </table>
             </div>
         </div>
@@ -620,10 +931,6 @@
                             <div class="project-info-item">
                                 <span class="meta-label"><i class="fas fa-map-marker-alt"></i> Location:</span>
                                 <span id="modalLocation" class="meta-value"></span>
-                            </div>
-                            <div class="project-info-item">
-                                <span class="meta-label"><i class="fas fa-calendar-alt"></i> Deadline:</span>
-                                <span id="modalDeadline" class="meta-value"></span>
                             </div>
                             <div class="progress-section">
                                 <span class="meta-label"><i class="fas fa-tasks"></i> Progress:</span>
@@ -669,6 +976,141 @@
         </div>
     </div>
 </div>
+
+<!-- Add Daily Log Modal -->
+<div class="modal fade" id="dailyLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list me-2"></i>Add Daily Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dailyLogForm">
+                    <!-- Division Indicator -->
+                    <div class="alert alert-info mb-3" id="divisionIndicator">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Division:</strong> <span id="currentDivisionDisplay">Loading...</span>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="logDate" class="form-label">Date</label>
+                            <input type="date" id="logDate" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="logDescription" class="form-label">Description of work done</label>
+                            <textarea id="logDescription" class="form-control" rows="3" placeholder="Describe today's work..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Materials Used</h6>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="addMaterialRowBtn">
+                                <i class="fas fa-plus me-2"></i>Add Material
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Material Name</th>
+                                        <th style="width: 140px;" class="text-end">Quantity</th>
+                                        <th style="width: 180px;" class="text-end">Price</th>
+                                        <th style="width: 60px;" class="text-center">Remove</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materialsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveDailyLogBtn"><i class="fas fa-save me-2"></i>Save Log</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Stage Billing Modal -->
+<div class="modal fade" id="stageBillingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-layer-group me-2"></i>Generate Stage Billing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="billingDivisionSelect" class="form-label">Stage / Division</label>
+                        <select id="billingDivisionSelect" class="form-select">
+                            <option value="Foundation">Foundation</option>
+                            <option value="Structural">Structural</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Finishing">Finishing</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="stageBillingContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="printStageBillingBtn"><i class="fas fa-print me-2"></i>Print / PDF</button>
+                <button type="button" class="btn btn-outline-primary" id="emailStageBillingBtn"><i class="fas fa-paper-plane me-2"></i>Send to Client</button>
+                <button type="button" class="btn btn-primary" id="generateStageBillingBtn"><i class="fas fa-file-invoice me-2"></i>Generate</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- View Materials Modal -->
+<div class="modal fade" id="viewMaterialsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-boxes me-2"></i>Materials Used</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Material</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewMaterialsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Billing Summary Modal -->
+<div class="modal fade" id="billingSummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-invoice-dollar me-2"></i>Billing Summary Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="billingSummaryContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+    </div>
 
 <!-- Success Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
@@ -757,13 +1199,19 @@
             developer: 'John Smith',
             foreman: 'Michael Brown',
             location: 'Manila',
-            deadline: '2024-12-31',
             status: 'On Going',
             progress: 0,
             image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
             submissionDate: '2024-01-01',
             manufacturingCost: 30000000,
-            divisionProgress: []
+            divisionProgress: [],
+            // Daily logs will be synced to backend later
+            dailyLogs: [],
+            requestedMaterials: [
+                { id: 'c1', name: 'Cement (bag)', unitPrice: 260, requestedQty: 500, remainingQty: 500 },
+                { id: 's1', name: 'Steel Rebar (kg)', unitPrice: 75, requestedQty: 2000, remainingQty: 2000 },
+                { id: 'g1', name: 'Gravel (m³)', unitPrice: 1200, requestedQty: 50, remainingQty: 50 }
+            ]
         },
         {
             id: 2,
@@ -771,13 +1219,17 @@
             developer: 'Maria Garcia',
             foreman: 'David Wilson',
             location: 'Makati',
-            deadline: '2025-06-30',
             status: 'Finished',
             progress: 100,
             image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
             submissionDate: '2024-02-01',
             manufacturingCost: 45000000,
-            divisionProgress: []
+            divisionProgress: [],
+            dailyLogs: [],
+            requestedMaterials: [
+                { id: 'c2', name: 'Concrete Mix (m³)', unitPrice: 4800, requestedQty: 120, remainingQty: 120 },
+                { id: 'w2', name: 'Wiring (roll)', unitPrice: 1500, requestedQty: 80, remainingQty: 80 }
+            ]
         },
         {
             id: 3,
@@ -785,59 +1237,109 @@
             developer: 'Robert Johnson',
             foreman: 'James Anderson',
             location: 'Quezon City',
-            deadline: '2025-08-20',
             status: 'On Going',
             progress: 0,
             image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D',
             submissionDate: '2024-03-01',
             manufacturingCost: 60000000,
-            divisionProgress: []
+            divisionProgress: [],
+            dailyLogs: [],
+            requestedMaterials: [
+                { id: 'p3', name: 'Paint (gallon)', unitPrice: 950, requestedQty: 300, remainingQty: 300 },
+                { id: 't3', name: 'Tiles (box)', unitPrice: 780, requestedQty: 200, remainingQty: 200 }
+            ]
         }
     ];
 
     // Global variables
     let currentPage = 1;
-    let itemsPerPage = 5;
-    let currentSortColumn = 0;
-    let currentSortDirection = 'asc';
+    let itemsPerPage = 10;
     let filteredProjects = [...projects];
     let currentProjectId = null;
     let divisionProgress = [];
     let progressChart;
     let currentEditIndex = null;
     let editProgressModal = null;
+    let dailyLogModal = null;
+    let currentDailyLogs = [];
+        let stageBillingModal = null;
+        let pendingLogDivision = null; // capture division for the next daily log
+        // Pending progress data to commit only after daily log is saved
+        let pendingProgressData = null;
+        // Track whether daily log was saved to allow closing the modal
+        window.dailyLogSaved = false;
+
+    // State management like construction payroll
+    const state = {
+        records: [...projects],
+        filtered: [],
+        sort: { key: '', dir: 'asc' },
+        pageSize: 10,
+        currentPage: 1
+    };
 
     // Initialize the page
     document.addEventListener('DOMContentLoaded', function() {
         initializeSidebar();
         initializeEventListeners();
-        renderTable();
+        applySort(); // Use the new sorting system
+        enhanceStaticTables();
         editProgressModal = new bootstrap.Modal(document.getElementById('editProgressModal'));
+        dailyLogModal = new bootstrap.Modal(document.getElementById('dailyLogModal'), { backdrop: 'static', keyboard: false });
+        stageBillingModal = new bootstrap.Modal(document.getElementById('stageBillingModal'));
     });
 
     // Initialize sidebar
     function initializeSidebar() {
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const sidebar = document.getElementById('sidebar');
-        const content = document.getElementById('content');
-
-        sidebarToggle.addEventListener('click', function() {
-            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                sidebar.style.display = 'block';
-                content.style.marginLeft = '300px';
-            } else {
-                sidebar.style.display = 'none';
-                content.style.marginLeft = '0';
-            }
+        // Initialize Bootstrap collapse instances
+        const collapseElements = document.querySelectorAll('.collapse');
+        collapseElements.forEach(element => {
+            new bootstrap.Collapse(element, {
+                toggle: false
+            });
         });
 
-        // Handle submenu toggles
+        // Handle submenu toggles with Bootstrap collapse events
         document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(element => {
             element.addEventListener('click', function(e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('data-bs-target'));
-                target.classList.toggle('show');
+                e.stopPropagation();
+                
+                const targetId = this.getAttribute('data-bs-target');
+                const target = document.querySelector(targetId);
+                
+                if (target) {
+                    // Get Bootstrap collapse instance
+                    const bsCollapse = bootstrap.Collapse.getInstance(target);
+                    
+                    if (bsCollapse) {
+                        // Close other open dropdowns first
+                        document.querySelectorAll('.collapse.show').forEach(openTarget => {
+                            if (openTarget !== target) {
+                                const openBsCollapse = bootstrap.Collapse.getInstance(openTarget);
+                                if (openBsCollapse) {
+                                    openBsCollapse.hide();
+                                }
+                            }
+                        });
+                        
+                        // Toggle current dropdown
+                        bsCollapse.toggle();
+                    }
+                }
             });
+        });
+
+        // Handle clicking outside dropdowns to close them
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#sidebar .nav-item')) {
+                document.querySelectorAll('.collapse.show').forEach(target => {
+                    const bsCollapse = bootstrap.Collapse.getInstance(target);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    }
+                });
+            }
         });
     }
 
@@ -846,94 +1348,287 @@
         document.getElementById('searchBar').addEventListener('input', filterProjects);
         document.getElementById('filterDropdown').addEventListener('change', filterProjects);
         document.getElementById('entriesPerPage').addEventListener('change', function() {
-            itemsPerPage = parseInt(this.value);
-            currentPage = 1;
-            renderTable();
+            const value = this.value;
+            state.pageSize = value === 'all' ? 'all' : Number(value);
+            state.currentPage = 1;
+            applySort();
         });
+
+        // Table header click for sorting
+        document.querySelector('thead').addEventListener('click', handleHeaderClick);
+
+        // Pagination event listener
+        document.getElementById('paginationControls').addEventListener('click', (e) => {
+            const a = e.target.closest('a.page-link');
+            if (!a) return;
+            e.preventDefault();
+            const target = Number(a.dataset.page);
+            if (isNaN(target)) return;
+            state.currentPage = target;
+            applySort();
+        });
+
+                // Daily Log buttons removed; modal is triggered after adding progress
+
+        // Daily Log modal actions
+        document.getElementById('addMaterialRowBtn').addEventListener('click', addMaterialRow);
+        document.getElementById('saveDailyLogBtn').addEventListener('click', saveDailyLogFromModal);
+
+        // Billing summary
+        document.getElementById('generateBillingBtn').addEventListener('click', openBillingSummaryModal);
+
+        // Stage billing
+        document.getElementById('openStageBillingBtn').addEventListener('click', () => {
+            if (!currentProjectId) { showWarningMessage('Please select a project first.'); return; }
+            document.getElementById('stageBillingContent').innerHTML = '';
+            stageBillingModal.show();
+        });
+        document.getElementById('generateStageBillingBtn').addEventListener('click', generateStageBilling);
+        document.getElementById('printStageBillingBtn').addEventListener('click', () => window.print());
+        document.getElementById('emailStageBillingBtn').addEventListener('click', emailStageBilling);
     }
 
     // Filter projects based on search and filter criteria
     function filterProjects() {
-        const searchValue = document.getElementById('searchBar').value.toLowerCase();
+        const searchValue = document.getElementById('searchBar').value.trim().toLowerCase();
         const filterValue = document.getElementById('filterDropdown').value;
 
-        filteredProjects = projects.filter(project => {
-            const matchesSearch = 
-                project.name.toLowerCase().includes(searchValue) ||
-                project.developer.toLowerCase().includes(searchValue) ||
-                project.foreman.toLowerCase().includes(searchValue) ||
-                project.location.toLowerCase().includes(searchValue);
-
-            const matchesFilter = filterValue === 'all' || 
-                (filterValue === 'ongoing' && project.status === 'On Going') ||
-                (filterValue === 'finished' && project.status === 'Finished');
-
-            return matchesSearch && matchesFilter;
-        });
-
-        currentPage = 1;
-        renderTable();
+        state.currentPage = 1; // reset page on new filter/search
+        let rows = [...state.records];
+        
+        if (searchValue) {
+            rows = rows.filter(r => (
+                `${r.name} ${r.developer} ${r.foreman} ${r.location}`.toLowerCase().includes(searchValue)
+            ));
+        }
+        
+        if (filterValue !== 'all') {
+            if (filterValue === 'ongoing') {
+                rows = rows.filter(r => r.status === 'On Going');
+            } else if (filterValue === 'finished') {
+                rows = rows.filter(r => r.status === 'Finished');
+            }
+        }
+        
+        state.filtered = rows;
+        applySort();
     }
 
-    // Sort table
-    function sortTable(columnIndex) {
-        if (currentSortColumn === columnIndex) {
-            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    function applySort() {
+        const { key, dir } = state.sort;
+        let rows = [...(state.filtered.length ? state.filtered : state.records)];
+        
+        if (key) {
+            rows.sort((a, b) => {
+                const av = a[key];
+                const bv = b[key];
+                
+                if (key === 'deadline') {
+                    return;
+                }
+                
+                if (typeof av === 'number' || typeof bv === 'number') {
+                    return dir === 'asc' ? (av - bv) : (bv - av);
+                }
+                
+                return dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+            });
+        }
+        
+        highlightSortHeader();
+        // Update summary for the full filtered set
+        updateSummary(rows);
+        // Paginate
+        const total = rows.length;
+        const { pagedRows, start, end, pages } = paginate(rows, state.pageSize, state.currentPage);
+        renderTable(pagedRows);
+        renderPagination(state.currentPage, pages);
+        updateEntriesMessage(start, end, total);
+    }
+
+    function paginate(rows, pageSize, currentPage) {
+        if (pageSize === 'all' || pageSize === 0 || pageSize === null) {
+            return { pagedRows: rows, start: rows.length ? 1 : 0, end: rows.length, pages: 1 };
+        }
+        const size = Number(pageSize) || 10;
+        const pages = Math.max(1, Math.ceil(rows.length / size));
+        const page = Math.min(Math.max(1, currentPage), pages);
+        const startIndex = (page - 1) * size;
+        const endIndex = Math.min(startIndex + size, rows.length);
+        const pagedRows = rows.slice(startIndex, endIndex);
+        return { pagedRows, start: rows.length ? startIndex + 1 : 0, end: endIndex, pages };
+    }
+
+    function highlightSortHeader() {
+        document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('active'));
+        if (!state.sort.key) return;
+        const th = document.querySelector(`th.sortable[data-key="${state.sort.key}"]`);
+        if (th) {
+            th.classList.add('active');
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                const isNum = ['id', 'progress'].includes(state.sort.key);
+                const up = isNum ? 'fa-sort-numeric-up' : 'fa-sort-alpha-up';
+                const down = isNum ? 'fa-sort-numeric-down' : 'fa-sort-alpha-down';
+                icon.classList.remove('fa-sort-alpha-up','fa-sort-alpha-down','fa-sort-numeric-up','fa-sort-numeric-down');
+                icon.classList.add(state.sort.dir === 'asc' ? up : down);
+            }
+        }
+    }
+
+    function handleHeaderClick(e) {
+        const th = e.target.closest('th.sortable');
+        if (!th) return;
+        const key = th.dataset.key;
+        if (state.sort.key === key) {
+            state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
         } else {
-            currentSortColumn = columnIndex;
-            currentSortDirection = 'asc';
+            state.sort.key = key;
+            state.sort.dir = 'asc';
+        }
+        applySort();
+    }
+
+    // Enhance non-project tables with search and sortable headers
+    function enhanceStaticTables() {
+        const candidates = Array.from(document.querySelectorAll('.division-table > table.table.table-bordered.align-middle'));
+        candidates.forEach((table) => initializeTableSearchAndSort(table));
+    }
+
+    function initializeTableSearchAndSort(table) {
+        if (!table || !table.tHead || !table.tBodies.length) return;
+
+        const parent = table.closest('.division-table') || table.parentElement;
+        if (parent && !parent.querySelector('[data-enhanced-search]')) {
+            const searchRow = document.createElement('div');
+            searchRow.className = 'd-flex justify-content-end mb-2';
+            searchRow.innerHTML = '<input type="text" class="form-control form-control-sm" style="max-width:280px" placeholder="Search..." data-enhanced-search="true">';
+            parent.insertBefore(searchRow, table);
+            const input = searchRow.querySelector('input');
+            input.addEventListener('input', () => filterTableRows(table, input.value));
         }
 
-        filteredProjects.sort((a, b) => {
-            let valueA = a[getColumnKey(columnIndex)];
-            let valueB = b[getColumnKey(columnIndex)];
-
-            if (columnIndex === 4) { // Deadline column
-                valueA = new Date(valueA);
-                valueB = new Date(valueB);
+        const headers = Array.from(table.tHead.rows[0].cells);
+        headers.forEach((th, colIdx) => {
+            if (th.classList.contains('text-center') || th.textContent.trim() === 'Image') return;
+            th.style.cursor = 'pointer';
+            // Ensure a visible icon exists on load, selecting a sensible default style
+            let icon = th.querySelector('i.sort-icon');
+            if (!icon) {
+                icon = document.createElement('i');
+                const type = detectColumnType(table, colIdx);
+                icon.className = (type === 'numeric' ? 'fas fa-sort-numeric-up' : 'fas fa-sort-alpha-up') + ' sort-icon ms-1';
+                th.appendChild(icon);
             }
-
-            if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
-            if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
-            return 0;
+            let dir = 0; // 0 none, 1 asc, -1 desc
+            th.addEventListener('click', () => {
+                dir = dir === 1 ? -1 : 1;
+                headers.forEach(h => {
+                    const i = h.querySelector('i.sort-icon');
+                    if (i) {
+                        const idx = Array.from(h.parentElement.children).indexOf(h);
+                        const type = detectColumnType(table, idx);
+                        i.className = (type === 'numeric' ? 'fas fa-sort-numeric-up' : 'fas fa-sort-alpha-up') + ' sort-icon ms-1';
+                    }
+                });
+                const currentIcon = th.querySelector('i.sort-icon');
+                if (currentIcon) {
+                    const type = detectColumnType(table, colIdx);
+                    currentIcon.className = (dir === 1
+                        ? (type === 'numeric' ? 'fas fa-sort-numeric-up' : 'fas fa-sort-alpha-up')
+                        : (type === 'numeric' ? 'fas fa-sort-numeric-down' : 'fas fa-sort-alpha-down')) + ' sort-icon ms-1';
+                }
+                sortTableRows(table, colIdx, dir);
+            });
         });
-
-        renderTable();
     }
 
-    // Get column key based on index
-    function getColumnKey(index) {
-        const keys = ['id', 'name', 'developer', 'foreman', 'location', 'deadline', 'status', 'progress'];
-        return keys[index];
+    // Determine column type ('numeric' or 'alpha') by scanning sample cells
+    function detectColumnType(table, columnIndex) {
+        const tbody = table.tBodies[0];
+        if (!tbody) return 'alpha';
+        let numericCount = 0;
+        let alphaCount = 0;
+        const maxScan = Math.min(15, tbody.rows.length);
+        for (let i = 0; i < maxScan; i++) {
+            const cell = tbody.rows[i]?.cells[columnIndex];
+            if (!cell) continue;
+            const text = getCellPlainText(cell);
+            if (!text) continue;
+            const cleaned = text.replace(/[,\s]/g, '');
+            const numeric = cleaned.replace(/[^0-9.\-%]/g, '');
+            const isNumeric = numeric && !isNaN(Number(numeric.replace('%','')));
+            if (isNumeric) numericCount++; else alphaCount++;
+        }
+        if (numericCount === 0 && alphaCount === 0) return 'alpha';
+        return numericCount >= alphaCount ? 'numeric' : 'alpha';
+    }
+
+    function getCellPlainText(td) {
+        return (td && (td.innerText || td.textContent) || '').trim();
+    }
+
+    function toComparableValue(value) {
+        const numeric = value.replace(/[^0-9.\-]/g, '');
+        if (numeric && !isNaN(Number(numeric))) return Number(numeric);
+        const date = Date.parse(value);
+        if (!isNaN(date)) return date;
+        return value.toLowerCase();
+    }
+
+    function sortTableRows(table, columnIndex, direction) {
+        const tbody = table.tBodies[0];
+        if (!tbody) return;
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+            const av = toComparableValue(getCellPlainText(a.cells[columnIndex]));
+            const bv = toComparableValue(getCellPlainText(b.cells[columnIndex]));
+            if (av < bv) return -1 * direction;
+            if (av > bv) return 1 * direction;
+            return 0;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    function filterTableRows(table, query) {
+        const q = String(query || '').toLowerCase();
+        const tbody = table.tBodies[0];
+        if (!tbody) return;
+        Array.from(tbody.rows).forEach(row => {
+            const text = Array.from(row.cells).map(c => getCellPlainText(c).toLowerCase()).join(' ');
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
     }
 
     // Render table with pagination
-    function renderTable() {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredProjects.length);
-        const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
-
+    function renderTable(rows = null) {
         const tbody = document.getElementById('projectsList');
         tbody.innerHTML = '';
 
-        paginatedProjects.forEach(project => {
+        if (!rows || !rows.length) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="9" class="text-center py-5 text-muted">
+                <i class="fas fa-folder-open me-2"></i>No projects found.
+            </td>`;
+            tbody.appendChild(tr);
+        } else {
+            rows.forEach(project => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${project.id}</td>
-                <td>${project.name}</td>
-                <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
+                    <td class="fw-semibold">${project.name}</td>
+                    <td><img src="${project.image}" alt="Project Image" style="width:50px;height:50px;object-fit:cover;border-radius:8px;box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></td>
                 <td>${project.developer}</td>
                 <td>${project.foreman}</td>
                 <td>${project.location}</td>
-                <td>${project.deadline}</td>
-                <td><span class="badge bg-${getStatusColor(project.status)}">${project.status}</span></td>
-                <td>
+                    <td><span class="badge bg-${getStatusColor(project.status)} status-badge">${project.status}</span></td>
+                    <td class="text-center">
                     <div class="progress-bar">
                         <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
                     </div>
-                    <small class="text-muted">${project.progress}%</small>
+                        <small class="text-muted fw-semibold">${project.progress}%</small>
                 </td>
-                <td>
+                    <td class="text-center">
                     <div class="action-buttons">
                         <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
                             <i class="fas fa-eye"></i>
@@ -946,9 +1641,7 @@
             `;
             tbody.appendChild(row);
         });
-
-        updatePagination();
-        updateEntriesMessage();
+        }
     }
 
     // Get status color
@@ -960,53 +1653,48 @@
         }
     }
 
-    // Update pagination controls
-    function updatePagination() {
-        const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-        const paginationControls = document.getElementById('paginationControls');
-        paginationControls.innerHTML = '';
-
-        // Previous button
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
-        paginationControls.appendChild(prevLi);
-
-        // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
+    function renderPagination(currentPage, totalPages) {
+        const ul = document.getElementById('paginationControls');
+        ul.innerHTML = '';
+        if (totalPages <= 1) return;
+        const addItem = (label, page, disabled = false, active = false) => {
             const li = document.createElement('li');
-            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
-            paginationControls.appendChild(li);
-        }
-
-        // Next button
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
-        paginationControls.appendChild(nextLi);
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.dataset.page = page;
+            a.textContent = label;
+            li.appendChild(a);
+            ul.appendChild(li);
+        };
+        addItem('Prev', String(currentPage - 1), currentPage === 1, false);
+        // show up to 5 pages window
+        const windowSize = 5;
+        let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+        let end = Math.min(totalPages, start + windowSize - 1);
+        start = Math.max(1, Math.min(start, end - windowSize + 1));
+        for (let p = start; p <= end; p++) addItem(String(p), String(p), false, p === currentPage);
+        addItem('Next', String(currentPage + 1), currentPage === totalPages, false);
     }
 
-    // Change page
-    function changePage(newPage) {
-        const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-        if (newPage >= 1 && newPage <= totalPages) {
-            currentPage = newPage;
-            renderTable();
-        }
+    function updateEntriesMessage(start, end, total) {
+        const msg = document.getElementById('entriesMessage');
+        msg.textContent = total ? `Showing ${start} to ${end} of ${total} entries` : 'No entries to show';
     }
 
-    // Update entries message
-    function updateEntriesMessage() {
-        const startIndex = (currentPage - 1) * itemsPerPage + 1;
-        const endIndex = Math.min(startIndex + itemsPerPage - 1, filteredProjects.length);
-        const message = `Showing ${startIndex} to ${endIndex} of ${filteredProjects.length} entries`;
-        document.getElementById('showingEntries').textContent = message;
+    // Update summary statistics
+    function updateSummary(rows) {
+        const totalProjects = rows.length;
+        const avgProgress = totalProjects > 0 ? Math.round(rows.reduce((sum, project) => sum + project.progress, 0) / totalProjects) : 0;
+        
+        document.getElementById('summaryProjects').textContent = totalProjects;
+        document.getElementById('summaryProgress').textContent = `${avgProgress}%`;
     }
 
     // View project details
     function viewProject(projectId) {
-        const project = projects.find(p => p.id === projectId);
+        const project = state.records.find(p => p.id === projectId);
         if (!project) return;
 
         // Update modal content
@@ -1015,7 +1703,6 @@
         document.getElementById('modalDeveloper').textContent = project.developer;
         document.getElementById('modalForeman').textContent = project.foreman;
         document.getElementById('modalLocation').textContent = project.location;
-        document.getElementById('modalDeadline').textContent = project.deadline;
         
         const statusBadge = document.getElementById('modalStatus');
         statusBadge.textContent = project.status;
@@ -1076,7 +1763,7 @@
     function loadDivisionProgress() {
         if (!currentProjectId) return;
         
-        const project = projects.find(p => p.id === currentProjectId);
+        const project = state.records.find(p => p.id === currentProjectId);
         if (!project) return;
 
         // Use the project's stored division progress
@@ -1085,24 +1772,43 @@
         updateChart();
     }
 
+    // Load daily logs for current project
+    function loadDailyLogs() {
+        if (!currentProjectId) return;
+        const project = state.records.find(p => p.id === currentProjectId);
+        if (!project) return;
+        currentDailyLogs = [...(project.dailyLogs || [])];
+        renderDailyLogsTable();
+        renderWeeklySummaries();
+        renderRequestedMaterialsTable();
+    }
+
     // Render division table
     function renderDivisionTable() {
         const tbody = document.getElementById('divisionProgressBody');
         tbody.innerHTML = '';
-        
+        // Track cumulative per division
+        const order = getDivisionsOrder();
+        const cumulativeByDivision = Object.fromEntries(order.map(d => [d, 0]));
+
         divisionProgress.forEach((division, index) => {
             const row = document.createElement('tr');
+            const added = Math.max(0, Math.min(100, Number(division.progress) || 0));
+            const beforeTotal = Number(cumulativeByDivision[division.division] || 0);
+            const total = division.type === 'rework' ? beforeTotal : Math.min(100, beforeTotal + added);
+            cumulativeByDivision[division.division] = total;
             row.innerHTML = `
                 <td>
                     <img src="${division.img}" class="division-img" alt="Division Image" 
                         style="cursor: pointer;" onclick="previewImage('${division.img}')">
                 </td>
                 <td>${division.division}</td>
+                <td><small class="text-muted fw-semibold">${added}%${division.type === 'rework' ? ' (rework)' : ''}</small></td>
                 <td>
                     <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: ${division.progress}%"></div>
+                        <div class="progress-bar-fill" style="width: ${total}%"></div>
                     </div>
-                    <small class="text-muted">${division.progress}%</small>
+                    <small class="text-muted">${total}%</small>
                 </td>
                 <td>${division.date}</td>
                 <td>
@@ -1119,27 +1825,43 @@
     function updateChart() {
         const progressData = [0, 0, 0, 0, 0, 0];
         const divisions = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
-        
-        divisionProgress.forEach(division => {
-            const index = divisions.indexOf(division.division);
-            if (index !== -1) {
-                progressData[index] = division.progress;
+
+        // Build cumulative progress per division (sum of entries, capped at 100%)
+        const cumulativeProgressByDivision = Object.fromEntries(divisions.map(d => [d, 0]));
+        divisionProgress.forEach(entry => {
+            const idx = divisions.indexOf(entry.division);
+            if (idx !== -1) {
+                const value = Math.max(0, Math.min(100, Number(entry.progress) || 0));
+                const current = Number(cumulativeProgressByDivision[entry.division] || 0);
+                // Rework entries do not increase total beyond 100
+                if (entry.type === 'rework') {
+                    cumulativeProgressByDivision[entry.division] = Math.min(100, current);
+                } else {
+                    cumulativeProgressByDivision[entry.division] = Math.min(100, current + value);
+                }
             }
         });
 
-        // Calculate total progress
-        progressData[5] = Math.round(progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5);
+        divisions.forEach((d, i) => {
+            progressData[i] = cumulativeProgressByDivision[d];
+        });
+
+        // Calculate total progress as average of cumulative per-division progress
+        const totalAvg = progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+        progressData[5] = Math.round(totalAvg);
         
         // Update total progress display
-        document.getElementById('updateTotalProgress').textContent = `${progressData[5]}%`;
+        const totalLabel = document.getElementById('updateTotalProgress');
+        if (totalLabel) totalLabel.textContent = `${progressData[5]}%`;
 
         // Update progress in the main table
         if (currentProjectId) {
-            const project = projects.find(p => p.id === currentProjectId);
+            const project = state.records.find(p => p.id === currentProjectId);
             if (project) {
                 project.progress = progressData[5];
                 project.divisionProgress = [...divisionProgress];
-                renderTable();
+                // Refresh the main table using the new sorting system
+                applySort();
             }
         }
 
@@ -1147,9 +1869,71 @@
         progressChart.update();
     }
 
+    // Division gating helpers
+    function getDivisionsOrder() {
+        return ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+    }
+
+    function getUnlockedDivisionIndex() {
+        const order = getDivisionsOrder();
+        // Determine cumulative progress per division (sum of entries, capped at 100)
+        const cumulative = Object.fromEntries(order.map(d => [d, 0]));
+        divisionProgress.forEach(entry => {
+            if (order.includes(entry.division)) {
+                const value = Math.max(0, Math.min(100, Number(entry.progress) || 0));
+                const current = Number(cumulative[entry.division] || 0);
+                cumulative[entry.division] = Math.min(100, current + value);
+            }
+        });
+        // First division that is not yet 100%
+        for (let i = 0; i < order.length; i++) {
+            if ((cumulative[order[i]] || 0) < 100) return i;
+        }
+        // All complete; unlock all (return last index to disable none)
+        return order.length - 1;
+    }
+
+    // Allow rework entries on completed divisions without increasing total beyond 100.
+    // Rework entries will be tagged and shown but won't affect gating or total once division is 100.
+    function addReworkEntry(division, progress, imgUrl, date) {
+        const entry = { img: imgUrl, division, progress: Math.max(0, Number(progress) || 0), date, type: 'rework' };
+        divisionProgress.push(entry);
+        renderDivisionTable();
+        updateChart();
+        updateDivisionSelectOptions();
+    }
+
+    function updateDivisionSelectOptions() {
+        const order = getDivisionsOrder();
+        const unlockedIndex = getUnlockedDivisionIndex();
+
+        const mainSelect = document.getElementById('divisionSelect');
+        if (mainSelect) {
+            Array.from(mainSelect.options).forEach(opt => {
+                const idx = order.indexOf(opt.value);
+                if (idx === -1) return; // skip placeholder
+                opt.disabled = idx > unlockedIndex;
+            });
+            // If currently selected is disabled, snap to unlocked division
+            const currentIdx = order.indexOf(mainSelect.value);
+            if (currentIdx === -1 || currentIdx > unlockedIndex) {
+                mainSelect.value = order[unlockedIndex];
+            }
+        }
+
+        const editSelect = document.getElementById('editDivisionSelect');
+        if (editSelect) {
+            Array.from(editSelect.options).forEach(opt => {
+                const idx = order.indexOf(opt.value);
+                if (idx === -1) return;
+                opt.disabled = idx > unlockedIndex;
+            });
+        }
+    }
+
     // Update project button click handler
     function updateProject(projectId) {
-        const project = projects.find(p => p.id === projectId);
+        const project = state.records.find(p => p.id === projectId);
         if (!project) return;
 
         currentProjectId = projectId;
@@ -1161,7 +1945,6 @@
         const statusBadge = document.getElementById('updateProjectStatus');
         statusBadge.textContent = project.status;
         statusBadge.className = `badge bg-${getStatusColor(project.status)}`;
-        document.getElementById('updateDeadline').textContent = project.deadline;
         document.getElementById('updateLocation').textContent = project.location;
         document.getElementById('updateForeman').textContent = project.foreman;
         document.getElementById('updateTotalProgress').textContent = `${project.progress}%`;
@@ -1180,13 +1963,19 @@
 
         // Load division progress
         loadDivisionProgress();
+
+        // Load daily logs
+        loadDailyLogs();
+
+        // Update division selection gating
+        updateDivisionSelectOptions();
     }
 
     // Initialize form handlers
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('newProgressForm');
         const progressInput = document.getElementById('progressInput');
-        let pendingProgressData = null;
+        // use global pendingProgressData declared above
 
         // Validate progress input
         progressInput.addEventListener('input', function() {
@@ -1201,6 +1990,18 @@
             
             const division = document.getElementById('divisionSelect').value;
             const progress = parseInt(progressInput.value);
+            // Enforce division gating
+            const order = getDivisionsOrder();
+            const selectedIndex = order.indexOf(division);
+            const unlockedIndex = getUnlockedDivisionIndex();
+            if (selectedIndex === -1) {
+                showWarningMessage('Please select a valid division.');
+                return;
+            }
+            if (selectedIndex > unlockedIndex) {
+                showWarningMessage(`You must complete ${order[unlockedIndex]} before updating ${division}.`);
+                return;
+            }
             const date = new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
@@ -1221,6 +2022,8 @@
 
             // Store the progress data for later use
             pendingProgressData = { img: imgUrl, division, progress, date };
+            // Set default division for the immediate daily log to the selected division
+            pendingLogDivision = division;
 
             // Show confirmation modal
             document.getElementById('confirmProgressMessage').textContent = 
@@ -1233,29 +2036,12 @@
         // Handle confirmation button click
         document.getElementById('confirmAddProgressBtn').addEventListener('click', function() {
             if (pendingProgressData) {
-                // Add new progress
-                divisionProgress.push(pendingProgressData);
-                renderDivisionTable();
-                updateChart();
-
-                // Show success message
-                document.getElementById('successMessage').textContent = 
-                    `Successfully added ${pendingProgressData.progress}% progress for ${pendingProgressData.division}`;
-                
-                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                successModal.show();
-
-                // Reset form and close confirmation modal
-                form.reset();
+                // Do NOT add progress yet. Require daily log first.
+                // Close confirmation modal
                 bootstrap.Modal.getInstance(document.getElementById('confirmProgressModal')).hide();
 
-                // Clear pending data
-                pendingProgressData = null;
-
-                // Auto-hide success message after 2 seconds
-                setTimeout(() => {
-                    successModal.hide();
-                }, 2000);
+                // Open daily log modal with the stored division; defer success until saved
+                openDailyLogModal(pendingProgressData.division);
             }
         });
     });
@@ -1279,6 +2065,9 @@
         document.getElementById('editProgressInput').value = division.progress;
         document.getElementById('currentProgressImage').src = division.img;
         document.getElementById('editProgressImage').value = ''; // Reset file input
+
+        // Apply gating to edit select as well
+        updateDivisionSelectOptions();
 
         // Show modal
         editProgressModal.show();
@@ -1315,6 +2104,18 @@
 
             const division = document.getElementById('editDivisionSelect').value;
             const progress = parseInt(document.getElementById('editProgressInput').value);
+            // Enforce division gating on edit
+            const order = getDivisionsOrder();
+            const selectedIndex = order.indexOf(division);
+            const unlockedIndex = getUnlockedDivisionIndex();
+            if (selectedIndex === -1) {
+                showWarningMessage('Please select a valid division.');
+                return;
+            }
+            if (selectedIndex > unlockedIndex) {
+                showWarningMessage(`You must complete ${order[unlockedIndex]} before updating ${division}.`);
+                return;
+            }
             const file = document.getElementById('editProgressImage').files[0];
             let imgUrl = divisionProgress[currentEditIndex].img;
 
@@ -1342,35 +2143,73 @@
             // Update the UI
             renderDivisionTable();
             updateChart();
+            updateDivisionSelectOptions();
 
             // Show success message
-            document.getElementById('successMessage').textContent = 
-                `Successfully updated progress for ${division}`;
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
+            showSuccessMessage(`Successfully updated progress for ${division}`);
 
             // Close edit modal
             editProgressModal.hide();
 
             // Reset current edit index
             currentEditIndex = null;
-
-            // Auto-hide success message
-            setTimeout(() => {
-                successModal.hide();
-            }, 2000);
         });
     });
 
-    // Function to show success message
+    // Centralized modal manager to prevent overlapping
+    let currentSuccessModal = null;
+    let successModalTimeout = null;
+
+    // Function to show success message with proper management
     function showSuccessMessage(message) {
+        // Clear any existing timeout
+        if (successModalTimeout) {
+            clearTimeout(successModalTimeout);
+            successModalTimeout = null;
+        }
+
+        // Hide any existing modal first
+        if (currentSuccessModal) {
+            currentSuccessModal.hide();
+            currentSuccessModal = null;
+        }
+
+        // Set the message
         document.getElementById('successMessage').textContent = message;
-        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-        successModal.show();
-        setTimeout(() => {
-            successModal.hide();
-        }, 2000);
+        
+        // Create new modal instance
+        currentSuccessModal = new bootstrap.Modal(document.getElementById('successModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+        
+        // Show the modal
+        currentSuccessModal.show();
+        
+        // Auto-hide after 3 seconds
+        successModalTimeout = setTimeout(() => {
+            if (currentSuccessModal) {
+                currentSuccessModal.hide();
+                currentSuccessModal = null;
+            }
+            successModalTimeout = null;
+        }, 3000);
     }
+
+    // Cleanup function for modal management
+    function cleanupSuccessModal() {
+        if (successModalTimeout) {
+            clearTimeout(successModalTimeout);
+            successModalTimeout = null;
+        }
+        if (currentSuccessModal) {
+            currentSuccessModal.hide();
+            currentSuccessModal = null;
+        }
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', cleanupSuccessModal);
 
     // Function to show warning message
     function showWarningMessage(message) {
@@ -1401,6 +2240,7 @@
         confirmationModal.show();
     }
 
+
     // Update the addProgress function to use the new confirmation dialog
     function addProgress() {
         const project = document.getElementById('projectSelect').value;
@@ -1422,6 +2262,459 @@
             updateProgressTable();
         });
     }
+
+    /* ===================== DAILY LOGS & WEEKLY SUMMARY (Frontend-only state) ===================== */
+    // Open modal and reset form
+    function openDailyLogModal(division = null) {
+        if (!currentProjectId) {
+            showWarningMessage('Please select a project to add a daily log.');
+            return;
+        }
+        
+        // Get current division - use parameter first, then fallback to form elements
+        let currentDivision = division;
+        
+        if (!currentDivision) {
+            const editDivisionSelect = document.getElementById('editDivisionSelect');
+            const mainDivisionSelect = document.getElementById('divisionSelect');
+            
+            if (editDivisionSelect && editDivisionSelect.value) {
+                currentDivision = editDivisionSelect.value;
+            } else if (mainDivisionSelect && mainDivisionSelect.value) {
+                currentDivision = mainDivisionSelect.value;
+            }
+        }
+        
+        // Update division display
+        const divisionDisplay = document.getElementById('currentDivisionDisplay');
+        if (divisionDisplay) {
+            if (currentDivision) {
+                divisionDisplay.textContent = currentDivision;
+                divisionDisplay.className = 'text-success fw-bold';
+            } else {
+                divisionDisplay.textContent = 'Please select a division first';
+                divisionDisplay.className = 'text-warning fw-bold';
+            }
+        }
+        
+        // Store the division for later use in save function
+        window.currentDailyLogDivision = currentDivision;
+        
+        document.getElementById('dailyLogForm').reset();
+        document.getElementById('materialsBody').innerHTML = '';
+        // Add one blank material row by default
+        addMaterialRow();
+        // Pre-fill date with today
+        const today = new Date().toISOString().slice(0,10);
+        const dateEl = document.getElementById('logDate');
+        if (dateEl) dateEl.value = today;
+        // Prevent closing without saving
+        window.dailyLogSaved = false;
+        // Disable the modal close button and cancel until saved
+        const closeBtn = document.querySelector('#dailyLogModal .btn-close');
+        const cancelBtn = document.querySelector('#dailyLogModal .btn.btn-secondary');
+        if (closeBtn) closeBtn.style.pointerEvents = 'none';
+        if (closeBtn) closeBtn.style.opacity = '0.5';
+        if (cancelBtn) cancelBtn.disabled = true;
+
+        dailyLogModal.show();
+    }
+
+    // Clean up stored division when modal is closed
+    document.getElementById('dailyLogModal').addEventListener('hide.bs.modal', function (e) {
+        // Block hide if not saved
+        if (!window.dailyLogSaved) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
+        return true;
+    });
+
+    document.getElementById('dailyLogModal').addEventListener('hidden.bs.modal', function() {
+        window.currentDailyLogDivision = null;
+    });
+
+    // Add a new material row (select from requested materials)
+    function addMaterialRow() {
+        const tbody = document.getElementById('materialsBody');
+        const tr = document.createElement('tr');
+        const project = state.records.find(p => p.id === currentProjectId);
+        const options = (project?.requestedMaterials || [])
+            .filter(m => Number(m.remainingQty) > 0)
+            .map(m => `<option value="${m.id}" data-price="${m.unitPrice}" data-remaining="${m.remainingQty}">${escapeHtml(m.name)} (rem: ${m.remainingQty})</option>`) 
+            .join('');
+        tr.innerHTML = `
+            <td>
+                <select class="form-select material-select" required>
+                    <option value="" selected disabled>Select material</option>
+                    ${options}
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control text-end material-qty" placeholder="0" min="0" step="any" required>
+            </td>
+            <td>
+                <div class="input-group">
+                    <span class="input-group-text">₱</span>
+                    <input type="number" class="form-control text-end material-price" placeholder="0.00" min="0" step="0.01" required readonly>
+                </div>
+            </td>
+            <td class="text-end align-middle material-subtotal">₱0.00</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>`;
+        // bind change events for select and qty to auto-fill price and subtotal
+        tr.querySelector('.material-select').addEventListener('change', function() {
+            const price = Number(this.selectedOptions[0]?.dataset.price || 0);
+            const remaining = Number(this.selectedOptions[0]?.dataset.remaining || 0);
+            const priceInput = tr.querySelector('.material-price');
+            const qtyInput = tr.querySelector('.material-qty');
+            priceInput.value = price.toFixed(2);
+            qtyInput.max = String(remaining);
+            updateRowSubtotal();
+        });
+        tr.querySelector('.material-qty').addEventListener('input', updateRowSubtotal);
+        function updateRowSubtotal() {
+            const qty = Number(tr.querySelector('.material-qty').value || 0);
+            const price = Number(tr.querySelector('.material-price').value || 0);
+            const subtotal = qty * price;
+            tr.querySelector('.material-subtotal').textContent = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(subtotal);
+        }
+        tbody.appendChild(tr);
+    }
+
+    // Save daily log from modal
+    function saveDailyLogFromModal() {
+        const dateInput = document.getElementById('logDate');
+        const descInput = document.getElementById('logDescription');
+        if (!dateInput.value || !descInput.value) {
+            showWarningMessage('Please fill in the date and description.');
+            return;
+        }
+
+        const materialRows = Array.from(document.querySelectorAll('#materialsBody tr'));
+        const project = state.records.find(p => p.id === currentProjectId);
+        const materials = materialRows.map(row => {
+            const sel = row.querySelector('.material-select');
+            const qtyEl = row.querySelector('.material-qty');
+            const priceEl = row.querySelector('.material-price');
+            const matId = sel?.value;
+            if (!matId) return null;
+            const mat = (project?.requestedMaterials || []).find(m => m.id === matId);
+            const qty = Number(qtyEl.value || 0);
+            return {
+                materialId: matId,
+                name: mat?.name || '',
+                quantity: qty,
+                unitPrice: Number(priceEl.value || mat?.unitPrice || 0),
+                subtotal: qty * Number(priceEl.value || mat?.unitPrice || 0)
+            };
+        }).filter(Boolean);
+
+        // Require at least one material with quantity > 0
+        if (!materials.length || !materials.some(m => Number(m.quantity) > 0)) {
+            showWarningMessage('Please add at least one material with quantity greater than 0.');
+            return;
+        }
+
+        // Compute total cost
+        const totalCost = materials.reduce((sum, m) => sum + (m.subtotal || 0), 0);
+
+        // Get the division from the stored value
+        const currentDivision = window.currentDailyLogDivision;
+        
+        // If no division found, show error
+        if (!currentDivision) {
+            showWarningMessage('Please select a division before adding a daily log.');
+            return;
+        }
+
+        const newLog = {
+            date: dateInput.value, // ISO yyyy-mm-dd
+            division: currentDivision,
+            description: descInput.value.trim(),
+            materials,
+            totalCost
+        };
+
+        // Validation and persist; also decrement remaining quantities
+        if (!project) return;
+        // Validate remaining quantities
+        for (const it of materials) {
+            if (Number(it.quantity) <= 0) { showWarningMessage('Material quantities must be greater than 0.'); return; }
+            const rm = project.requestedMaterials.find(m => m.id === it.materialId);
+            if (!rm) { showWarningMessage('Selected material not found in requested list.'); return; }
+            if (it.quantity > rm.remainingQty) { showWarningMessage(`Insufficient remaining for ${rm.name}.`); return; }
+        }
+        // Deduct remaining quantities
+        materials.forEach(it => {
+            const rm = project.requestedMaterials.find(m => m.id === it.materialId);
+            if (rm) rm.remainingQty = Math.max(0, Number(rm.remainingQty) - Number(it.quantity || 0));
+        });
+        project.dailyLogs = project.dailyLogs || [];
+        project.dailyLogs.push(newLog);
+
+        // Now commit the pending progress entry atomically with this daily log
+        if (pendingProgressData) {
+            divisionProgress.push({ ...pendingProgressData, type: 'progress' });
+            pendingProgressData = null;
+            renderDivisionTable();
+            updateChart();
+            updateDivisionSelectOptions();
+        }
+
+        // Reload local cache and UI
+        loadDailyLogs();
+
+        // Allow modal to close and show success
+        window.dailyLogSaved = true;
+        const closeBtn = document.querySelector('#dailyLogModal .btn-close');
+        const cancelBtn = document.querySelector('#dailyLogModal .btn.btn-secondary');
+        if (closeBtn) { closeBtn.style.pointerEvents = ''; closeBtn.style.opacity = ''; }
+        if (cancelBtn) cancelBtn.disabled = false;
+        dailyLogModal.hide();
+        showSuccessMessage('Progress and daily log saved.');
+    }
+
+    // Render daily logs table
+    function renderDailyLogsTable() {
+        const tbody = document.getElementById('dailyLogsBody');
+        tbody.innerHTML = '';
+        if (!currentDailyLogs.length) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No daily logs yet.</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        // Sort logs by date ascending
+        const rows = [...currentDailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+        rows.forEach((log, idx) => {
+            const tr = document.createElement('tr');
+            const materialsCount = log.materials?.length || 0;
+            
+            // Format materials list for display
+            let materialsDisplay = '-';
+            if (log.materials && log.materials.length > 0) {
+                const materialsList = log.materials.map(m => 
+                    `${escapeHtml(m.name)} (${m.quantity}${m.quantity > 1 ? ' units' : ' unit'})`
+                ).join(', ');
+                materialsDisplay = materialsList.length > 50 ? 
+                    materialsList.substring(0, 50) + '...' : 
+                    materialsList;
+            }
+            
+            tr.innerHTML = `
+                <td>${formatDateNice(log.date)}</td>
+                <td>${escapeHtml(log.division || '-')}</td>
+                <td>${escapeHtml(log.description)}</td>
+                <td title="${log.materials ? log.materials.map(m => `${m.name} (${m.quantity})`).join(', ') : 'No materials'}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${materialsDisplay}</td>
+                <td class="text-end">${materialsCount}</td>
+                <td class="text-end">${formatter.format(log.totalCost || 0)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewMaterials(${idx})"><i class="fas fa-eye"></i> View</button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function viewMaterials(index) {
+        const log = currentDailyLogs[index];
+        if (!log) return;
+        const tbody = document.getElementById('viewMaterialsBody');
+        tbody.innerHTML = '';
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        (log.materials || []).forEach(m => {
+            const tr = document.createElement('tr');
+            const subtotal = (m.quantity || 0) * (m.price || m.unitPrice || 0);
+            tr.innerHTML = `
+                <td>${escapeHtml(m.name)}</td>
+                <td class="text-end">${Number(m.quantity || 0)}</td>
+                <td class="text-end">${formatter.format(Number(m.price || m.unitPrice || 0))}</td>
+                <td class="text-end">${formatter.format(subtotal)}</td>`;
+            tbody.appendChild(tr);
+        });
+        new bootstrap.Modal(document.getElementById('viewMaterialsModal')).show();
+    }
+
+    // Render weekly summaries
+    function renderWeeklySummaries() {
+        const tbody = document.getElementById('weeklySummaryBody');
+        tbody.innerHTML = '';
+        const summaries = calculateWeeklySummaries();
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        if (!summaries.length) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="3" class="text-center text-muted py-4">No weekly summaries yet.</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+        summaries.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDateNice(s.weekStart)} - ${formatDateNice(s.weekEnd)}</td>
+                <td class="text-end">${s.combinedProgress}%</td>
+                <td class="text-end">${formatter.format(s.totalCost)}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Group logs by calendar week (Mon-Sun) and compute aggregates
+    function calculateWeeklySummaries() {
+        // Materials cost derived from daily logs
+        const groups = new Map();
+        (currentDailyLogs || []).forEach(log => {
+            const d = new Date(log.date);
+            const start = getWeekStartMonday(d);
+            const key = start.toISOString().slice(0,10);
+            if (!groups.has(key)) {
+                const end = new Date(start);
+                end.setDate(start.getDate() + 6);
+                groups.set(key, { weekStart: key, weekEnd: end.toISOString().slice(0,10), logs: [], totalCost: 0 });
+            }
+            const g = groups.get(key);
+            g.logs.push(log);
+            g.totalCost += Number(log.totalCost || 0);
+        });
+
+        // Combined progress % derived from divisionProgress entries within the same week
+        const project = state.records.find(p => p.id === currentProjectId);
+        const divs = project ? (project.divisionProgress || []) : [];
+        const result = [];
+        groups.forEach((g, key) => {
+            // Filter division updates within week window
+            const start = new Date(g.weekStart);
+            const end = new Date(g.weekEnd);
+            // Average division progress values in this week
+            const values = divs
+                .filter(dp => {
+                    // dp.date is in format like 'Month Day, Year' per earlier code
+                    const dpDate = new Date(dp.date);
+                    return dpDate >= start && dpDate <= end;
+                })
+                .map(dp => Number(dp.progress || 0));
+            const combined = values.length ? Math.round(values.reduce((a,b)=>a+b,0) / values.length) : (project ? Number(project.progress || 0) : 0);
+            result.push({
+                weekStart: g.weekStart,
+                weekEnd: g.weekEnd,
+                totalCost: Math.round(g.totalCost * 100) / 100,
+                combinedProgress: combined
+            });
+        });
+
+        // Sort by week start ascending
+        result.sort((a,b) => new Date(a.weekStart) - new Date(b.weekStart));
+        return result;
+    }
+
+    function getWeekStartMonday(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = (day === 0 ? -6 : 1) - day; // Monday as start; Sunday -> previous Monday
+        const start = new Date(d);
+        start.setDate(d.getDate() + diff);
+        start.setHours(0,0,0,0);
+        return start;
+    }
+
+    function formatDateNice(iso) {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+    }
+
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    // Billing summary modal content
+    function openBillingSummaryModal() {
+        const summaries = calculateWeeklySummaries();
+        const container = document.getElementById('billingSummaryContent');
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        if (!summaries.length) {
+            container.innerHTML = '<p class="text-muted mb-0">No weekly summaries available.</p>';
+        } else {
+            const total = summaries.reduce((s, w) => s + Number(w.totalCost || 0), 0);
+            let html = '<div class="table-responsive">';
+            html += '<table class="table table-bordered align-middle mb-3">';
+            html += '<thead class="table-light"><tr><th>Week</th><th class="text-end">Combined Progress %</th><th class="text-end">Total Material Cost</th></tr></thead><tbody>';
+            summaries.forEach(w => {
+                html += `<tr><td>${formatDateNice(w.weekStart)} - ${formatDateNice(w.weekEnd)}</td><td class="text-end">${w.combinedProgress}%</td><td class="text-end">${formatter.format(w.totalCost)}</td></tr>`;
+            });
+            html += `</tbody><tfoot><tr><th class="text-end" colspan="2">Grand Total</th><th class="text-end">${formatter.format(total)}</th></tr></tfoot></table>`;
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        new bootstrap.Modal(document.getElementById('billingSummaryModal')).show();
+    }
+
+    // Render requested materials table
+    function renderRequestedMaterialsTable() {
+        const tbody = document.getElementById('requestedMaterialsBody');
+        tbody.innerHTML = '';
+        const project = state.records.find(p => p.id === currentProjectId);
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        (project?.requestedMaterials || []).forEach(m => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${escapeHtml(m.name)}</td>
+                <td class="text-end">${Number(m.requestedQty)}</td>
+                <td class="text-end">${Number(m.remainingQty)}</td>
+                <td class="text-end">${formatter.format(Number(m.unitPrice || 0))}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Generate stage billing content
+    function generateStageBilling() {
+        const division = document.getElementById('billingDivisionSelect').value;
+        const project = state.records.find(p => p.id === currentProjectId);
+        if (!project) return;
+        const logs = (project.dailyLogs || []).filter(l => (l.division || '') === division);
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        let totalCost = 0;
+        logs.forEach(l => totalCost += Number(l.totalCost || 0));
+        let html = '';
+        html += `<div class="mb-3"><strong>Project:</strong> ${escapeHtml(project.name)} | <strong>Stage:</strong> ${escapeHtml(division)}</div>`;
+        if (!logs.length) {
+            html += '<p class="text-muted mb-0">No daily logs for this stage.</p>';
+        } else {
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-bordered align-middle mb-3">';
+            html += '<thead class="table-light"><tr><th>Date</th><th>Description</th><th class="text-end">Materials</th><th class="text-end">Cost</th></tr></thead><tbody>';
+            logs.forEach(l => {
+                html += `<tr><td>${formatDateNice(l.date)}</td><td>${escapeHtml(l.description)}</td><td class="text-end">${(l.materials||[]).length}</td><td class="text-end">${formatter.format(Number(l.totalCost||0))}</td></tr>`;
+                if ((l.materials||[]).length) {
+                    html += '<tr><td colspan="4" class="p-0"><table class="table table-sm mb-0"><thead class="table-light"><tr><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead><tbody>';
+                    (l.materials||[]).forEach(m => {
+                        html += `<tr><td>${escapeHtml(m.name)}</td><td class="text-end">${Number(m.quantity||0)}</td><td class="text-end">${formatter.format(Number(m.unitPrice||0))}</td><td class="text-end">${formatter.format(Number(m.subtotal||0))}</td></tr>`;
+                    });
+                    html += '</tbody></table></td></tr>';
+                }
+            });
+            html += `</tbody><tfoot><tr><th colspan="3" class="text-end">Stage Total</th><th class="text-end">${formatter.format(totalCost)}</th></tr></tfoot></table>`;
+            html += '</div>';
+        }
+        document.getElementById('stageBillingContent').innerHTML = html;
+    }
+
+    function emailStageBilling() {
+        const division = document.getElementById('billingDivisionSelect').value;
+        const project = state.records.find(p => p.id === currentProjectId);
+        if (!project) return;
+        const subject = encodeURIComponent(`Billing Summary - ${project.name} - ${division}`);
+        const body = encodeURIComponent(`Dear Client,\n\nPlease find the billing summary for stage: ${division} of project: ${project.name}.\n\nYou can review and print the summary directly from the application.\n\nRegards,\n${project.developer}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
 </script>
 </body>
 </html>
+
+
+
+
+
