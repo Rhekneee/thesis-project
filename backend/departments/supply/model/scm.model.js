@@ -31,6 +31,71 @@ const SCMModel = {
         return rows;
     },
 
+    // Detailed PR rows (new schema): supplier + material joins
+    listDetailedPurchaseRequests: async () => {
+        const sql = `
+            SELECT 
+                pr.pr_id,
+                pr.created_date,
+                pr.status,
+                pr.quantity_requested,
+                pr.unit,
+                pr.unit_price,
+                (pr.quantity_requested * pr.unit_price) AS total_price,
+                pr.variant,
+                pr.supplier_id,
+                pr.material_id,
+                sa.supplier_name,
+                m.name AS material_name,
+                m.category AS material_category
+            FROM purchase_requests pr
+            LEFT JOIN supplier_account sa ON pr.supplier_id = sa.supplier_id
+            LEFT JOIN materials m ON pr.material_id = m.material_id
+            WHERE pr.supplier_id IS NOT NULL 
+              AND pr.material_id IS NOT NULL
+              AND COALESCE(sa.supplier_type,'manual') = 'manual'
+            ORDER BY pr.created_date DESC, pr.pr_id DESC
+        `;
+        try {
+            const [rows] = await db.query(sql);
+            return rows.map(r => ({
+                pr_id: r.pr_id,
+                created_date: r.created_date,
+                status: r.status,
+                quantity_requested: Number(r.quantity_requested || 0),
+                unit: r.unit,
+                unit_price: Number(r.unit_price || 0),
+                total_price: Number(r.total_price || 0),
+                variant: r.variant,
+                supplier_name: r.supplier_name || '',
+                material_name: r.material_name || '',
+                material_category: r.material_category || ''
+            }));
+        } catch (e) {
+            console.error('Error in listDetailedPurchaseRequests:', e);
+            throw e;
+        }
+    },
+
+    // Ensure a manual supplier exists by name; create if missing
+    ensureManualSupplierByName: async (supplierName) => {
+        const name = String(supplierName || '').trim();
+        if (!name) throw new Error('supplier_name is required');
+        // Try find existing by exact name
+        const [found] = await db.query(
+            `SELECT supplier_id FROM supplier_account WHERE supplier_name = ? LIMIT 1`,
+            [name]
+        );
+        if (found && found.length) return found[0].supplier_id;
+        // Insert minimal manual supplier record
+        const [ins] = await db.query(
+            `INSERT INTO supplier_account (supplier_name, status, supplier_type, created_at, updated_at)
+             VALUES (?, 'active', 'manual', NOW(), NOW())`,
+            [name]
+        );
+        return ins.insertId;
+    },
+
     // Add a new supplier and return the inserted supplier_id
     addSupplier: async (supplierData) => {
         const connection = await db.getConnection();
@@ -341,6 +406,7 @@ const SCMModel = {
                 po.pr_id,
                 po.supplier_id,
                 sa.supplier_name,
+                sa.supplier_type,
                 DATE_FORMAT(po.order_date, '%Y-%m-%d %H:%i:%s') as order_date,
                 po.status,
                 po.material_type,
@@ -557,6 +623,7 @@ const SCMModel = {
                 p.pr_id,
                 p.supplier_id,
                 sa.supplier_name,
+                sa.supplier_type,
                 p.material_id,
                 m.name AS material_name,
                 p.variant,
@@ -1169,6 +1236,7 @@ const SCMModel = {
                 p.pr_id,
                 p.supplier_id,
                 sa.supplier_name,
+                sa.supplier_type,
                 p.material_id,
                 m.name AS material_name,
                 p.variant,
@@ -1188,10 +1256,6 @@ const SCMModel = {
         `;
         try {
             const [rows] = await db.query(sql);
-            try {
-                console.log('🔎 [Model] listPurchases count:', rows?.length || 0);
-                if (rows && rows.length) console.log('🔎 [Model] listPurchases sample:', rows[0]);
-            } catch (_) {}
             return rows;
         } catch (err) {
             console.error('💥 [Model] listPurchases query failed:', err);
@@ -1261,6 +1325,7 @@ const SCMModel = {
                 let prStatus = null;
                 if (newStatus === 'Out for Delivery') prStatus = 'Converted to PO';
                 if (newStatus === 'Cancelled') prStatus = 'Cancelled';
+                if (newStatus === 'Received') prStatus = 'Completed';
                 // Finance statuses are handled elsewhere
                 if (prStatus) {
                     await connection.query(
@@ -1345,8 +1410,8 @@ const SCMModel = {
                 `;
                 const vals = [
                     data.requested_by,
-                    material.supplier_id,
-                    material.material_id,
+                    material.supplier_id || null,
+                    material.material_id || null,
                     material.variant || null,
                     parseFloat(material.quantity),
                     material.unit || null,
@@ -1469,12 +1534,56 @@ const SCMModel = {
         }
     },
 
+    // List purchases with status 'Received' for a supplier
+    getSupplierReceivedPurchases: async (supplierId) => {
+        const sql = `
+            SELECT 
+                p.purchase_id,
+                p.pr_id,
+                p.supplier_id,
+                sa.supplier_name,
+                p.material_id,
+                m.name AS material_name,
+                m.category AS material_category,
+                p.variant,
+                p.quantity,
+                p.unit,
+                p.unit_price,
+                p.total_price,
+                p.delivery_cost,
+                p.discount,
+                p.invoice_amount,
+                DATE_FORMAT(p.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                p.status
+            FROM purchases p
+            LEFT JOIN supplier_account sa ON sa.supplier_id = p.supplier_id
+            LEFT JOIN materials m ON m.material_id = p.material_id
+            WHERE p.supplier_id = ? AND p.status = 'Received'
+            ORDER BY p.created_date DESC
+        `;
+        try {
+            const [rows] = await db.query(sql, [supplierId]);
+            return rows.map(row => ({
+                ...row,
+                quantity: parseFloat(row.quantity),
+                unit_price: parseFloat(row.unit_price),
+                total_price: parseFloat(row.total_price),
+                delivery_cost: parseFloat(row.delivery_cost || 0),
+                discount: parseFloat(row.discount || 0),
+                invoice_amount: parseFloat(row.invoice_amount || 0)
+            }));
+        } catch (err) {
+            console.error('Error in getSupplierReceivedPurchases:', err);
+            throw err;
+        }
+    },
+
     // Set proof picture for purchase and mark as Received
     setPurchaseOrderProof: async (orderId, proofPicture) => {
         try {
             // First check if the purchase exists and capture linkage/quantities
             const [orderCheck] = await db.query(
-                'SELECT purchase_id, status, material_id, quantity, quantity_received FROM purchases WHERE purchase_id = ?',
+                'SELECT purchase_id, status, pr_id, material_id, quantity, quantity_received FROM purchases WHERE purchase_id = ?',
                 [orderId]
             );
             
@@ -1508,6 +1617,12 @@ const SCMModel = {
                         [qtyToAdd, orderCheck[0].material_id]
                     );
                 }
+            }
+
+            // Sync purchase_requests: when Received, mark Completed
+            const prId = orderCheck[0].pr_id || null;
+            if (prevStatus !== 'Received' && prId) {
+                await db.query(`UPDATE purchase_requests SET status = 'Completed' WHERE pr_id = ?`, [prId]);
             }
 
             return { success: true };
