@@ -1,4 +1,5 @@
 const FinanceModel = require('../model/finance.model');
+const { sendPurchaseEstimationRejection } = require('../../../utils/emailService');
 const crypto = require('crypto');
 const Notifications = require('../../../models/notification.model');
 
@@ -464,6 +465,27 @@ exports.updatePurchaseEstimation = async (req, res) => {
         );
 
         if (result.success) {
+            // Send email to supplier when cancelled with remarks (best-effort)
+            if (status === 'Cancelled') {
+                try {
+                    const all = await FinanceModel.getAllPurchaseOrders();
+                    const rec = Array.isArray(all) ? all.find(r => String(r.purchase_id) === String(purchaseId)) : null;
+                    const email = rec && (rec.supplier_email || rec.contact_email);
+                    if (email) {
+                        await sendPurchaseEstimationRejection({
+                            to: email,
+                            supplierName: rec.supplier_name,
+                            purchaseId: rec.purchase_id,
+                            materialName: rec.material_name,
+                            quantity: rec.quantity,
+                            unit: rec.unit,
+                            remarks: remarks || ''
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Email send failed for estimation rejection:', err?.message || err);
+                }
+            }
             res.json({
                 success: true,
                 message: `Purchase estimation ${status.toLowerCase()} successfully. ${status === 'Processed' ? 'Waiting for delivery and receipt.' : ''}`,

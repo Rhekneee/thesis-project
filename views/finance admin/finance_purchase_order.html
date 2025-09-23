@@ -477,6 +477,31 @@
                         <tbody id="estimationList"></tbody>
                     </table>
                 </div>
+                
+                <!-- Reject Estimation Modal -->
+                <div class="modal fade" id="rejectEstimationModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-times-circle me-2 text-danger"></i>Reject Estimation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Remarks (required)</label>
+                                    <textarea id="rejectRemarks" class="form-control" rows="4" placeholder="Explain the reason for rejection..."></textarea>
+                                </div>
+                                <div class="text-muted small">These remarks will be recorded and sent to the supplier via email notification.</div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" id="confirmRejectBtn" class="btn btn-danger">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit Rejection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="estimationPagination" class="d-flex justify-content-between align-items-center mt-3">
                     <span id="estimationEntriesInfo"></span>
                     <nav><ul class="pagination mb-0" id="estimationPaginationControls"></ul></nav>
@@ -1650,9 +1675,14 @@
                     <td>${discountPct ? discountPct.toFixed(2) : '0.00'}%</td>
                     <td>₱${finalTotal.toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-success btn-sm" onclick="approvePurchaseEstimation(${estimation.purchase_id})">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
+                        <div class="btn-group">
+                          <button class="btn btn-success btn-sm" onclick="approvePurchaseEstimation(${estimation.purchase_id})">
+                              <i class="fas fa-check"></i> Approve
+                          </button>
+                          <button class="btn btn-danger btn-sm" onclick="openRejectEstimationModal(${estimation.purchase_id}, '${(estimation.supplier_name||'').replace(/'/g, "\'")}')">
+                              <i class="fas fa-times"></i> Reject
+                          </button>
+                        </div>
                     </td>
                 `;
                 estimationList.appendChild(row);
@@ -1661,6 +1691,46 @@
             updateEstimationPagination();
             updateEstimationEntriesInfo();
         }
+
+        // Open Reject modal (global)
+        window.openRejectEstimationModal = function(purchaseId, supplierName) {
+            try {
+                window.currentEstimationId = purchaseId;
+                const txt = document.getElementById('rejectRemarks');
+                if (txt) txt.value = '';
+                const modalEl = document.getElementById('rejectEstimationModal');
+                if (!modalEl) return;
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            } catch (_) {}
+        };
+
+        // Confirm Reject handler
+        (function wireRejectHandler(){
+            const btn = document.getElementById('confirmRejectBtn');
+            if (!btn) return;
+            btn.addEventListener('click', async () => {
+                const remarks = (document.getElementById('rejectRemarks')?.value || '').trim();
+                if (!remarks) { showAlert('error', 'Remarks are required to reject an estimation.'); return; }
+                const id = window.currentEstimationId;
+                if (!id) { showAlert('error', 'Missing estimation id'); return; }
+                try {
+                    const res = await fetch(`/finance/purchases/${id}/estimation`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Cancelled', remarks })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Failed to reject estimation');
+                    // Hide modal
+                    try { bootstrap.Modal.getInstance(document.getElementById('rejectEstimationModal'))?.hide(); } catch(_) {}
+                    showAlert('success', 'Estimation rejected and supplier will be notified via email.');
+                    await fetchPurchaseOrderEstimations();
+                } catch (e) {
+                    showAlert('error', e.message || 'Failed to reject estimation');
+                }
+            });
+        })();
 
         // Update estimation pagination
         function updateEstimationPagination() {

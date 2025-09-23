@@ -6,7 +6,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
     <script src="/js/side_top.js"></script>
 
@@ -196,10 +196,21 @@
     }
 
     async function fetchPending() {
-      const res = await fetch('/scm/products/pending');
-      if (!res.ok) throw new Error('Failed to load pending products');
+      const res = await fetch('/scm/materials/inactive');
+      if (!res.ok) throw new Error('Failed to load inactive materials');
       const data = await res.json();
-      state.pending = Array.isArray(data) ? data : [];
+      // normalize to match UI expectations
+      state.pending = (Array.isArray(data) ? data : []).map(r => ({
+        product_id: r.material_id, // reuse key name for selection logic
+        supplier_id: r.supplier_id,
+        supplier_name: r.supplier_name,
+        name: r.name,
+        size: r.variant || null,
+        unit: r.unit || null,
+        price: r.price,
+        effective_date: r.effective_date,
+        status: r.status
+      }));
       state.grouped = bySupplier(state.pending);
       renderSuppliers();
     }
@@ -221,7 +232,7 @@
         tr.innerHTML = `
           <td><input type="checkbox" class="supplier-checkbox" data-id="${g.supplier_id}"></td>
           <td>${g.supplier_name}</td>
-          <td><span class="badge bg-warning text-dark">${g.items.length} pending</span></td>
+          <td><span class="badge bg-warning text-dark">${g.items.length} inactive</span></td>
           <td>${formatDate(latest?.effective_date)}</td>
           <td>
             <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${g.supplier_id}">
@@ -276,7 +287,7 @@
     async function bulkUpdate(productIds, status) {
       // sequentially update to keep it simple
       for (const id of productIds) {
-        await fetch(`/scm/products/${id}/status`, {
+        await fetch(`/scm/materials/${id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
