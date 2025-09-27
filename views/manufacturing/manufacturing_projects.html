@@ -152,6 +152,14 @@
             color: white;
         }
 
+        .contract-btn {
+            background-color: #6f42c1;
+        }
+
+        .contract-btn:hover {
+            background-color: #5a32a3;
+        }
+
         .view-btn {
             background-color: #0d6efd;
         }
@@ -307,6 +315,121 @@
             white-space: pre-line;
             min-height: 100px;
         }
+
+        .blueprint-files-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .blueprint-file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .blueprint-file-item:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .blueprint-file-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #007bff;
+            color: white;
+            border-radius: 8px;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .blueprint-file-info {
+            flex: 1;
+        }
+
+        .blueprint-file-name {
+            font-weight: 500;
+            color: #212529;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        .blueprint-file-date {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .blueprint-file-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .blueprint-download-btn {
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .blueprint-download-btn:hover {
+            background-color: #218838;
+        }
+
+        .no-blueprints {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .no-supply-materials {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .supply-materials-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .supply-material-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .supply-material-info {
+            flex: 1;
+        }
+
+        .supply-material-name {
+            font-weight: 500;
+            color: #212529;
+        }
+
+        .supply-material-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
     </style>
 </head>
 
@@ -433,10 +556,10 @@
                 <!-- Filter Dropdown -->
                 <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
                     <option value="all">All Projects</option>
-                    <option value="new">New</option>
                     <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
+                    <option value="approved_by_mfg">Approved by Manufacturing</option>
+                    <option value="developer_approved">Developer Approved</option>
+                    <option value="contract_generated">Contract Generated</option>
                 </select>
               
                 <div id="entriesPerPageContainer" class="entries-per-page">
@@ -455,13 +578,11 @@
                     <tr>
                         <th onclick="sortTable('all', 0)">ID <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('all', 1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Image</th>
                         <th onclick="sortTable('all', 2)">Developer <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('all', 3)">Location <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('all', 4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('all', 5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('all', 6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('all', 7)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('all', 5)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('all', 6)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -474,13 +595,11 @@
                     <tr>
                         <th onclick="sortTable('pending', 0)">ID <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('pending', 1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Image</th>
                         <th onclick="sortTable('pending', 2)">Developer <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('pending', 3)">Location <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('pending', 4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('pending', 5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('pending', 6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('pending', 7)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('pending', 5)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('pending', 6)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -493,13 +612,11 @@
                     <tr>
                         <th onclick="sortTable('inProgress', 0)">ID <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('inProgress', 1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Image</th>
                         <th onclick="sortTable('inProgress', 2)">Developer <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('inProgress', 3)">Location <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('inProgress', 4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('inProgress', 5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('inProgress', 6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('inProgress', 7)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('inProgress', 5)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('inProgress', 6)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -512,13 +629,11 @@
                     <tr>
                         <th onclick="sortTable('completed', 0)">ID <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('completed', 1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                        <th>Image</th>
                         <th onclick="sortTable('completed', 2)">Developer <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('completed', 3)">Location <i class="fas fa-sort sort-icon"></i></th>
                         <th onclick="sortTable('completed', 4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('completed', 5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('completed', 6)">Status <i class="fas fa-sort sort-icon"></i></th>
-                        <th onclick="sortTable('completed', 7)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('completed', 5)">Status <i class="fas fa-sort sort-icon"></i></th>
+                        <th onclick="sortTable('completed', 6)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -528,6 +643,191 @@
             <div id="entriesMessage">
                 <span id="showingEntries"></span>
                 <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            </div>
+            
+            <!-- Inline Project Details (replaces eye modal) -->
+            <div id="projectDetailsInline" class="card border-0 shadow-sm mt-4" style="display: none;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Project Details
+                        </h6>
+                        <div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="hideInlineDetails()">
+                                <i class="fas fa-times me-2"></i>Close
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" id="approveInlineBtn" style="display:none;" onclick="approveProject()">
+                                <i class="fas fa-check me-2"></i>Approve
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Project Information -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Project Name</label>
+                                        <p id="inlineProjectName" class="form-control-plaintext fw-bold"></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Developer</label>
+                                        <p id="inlineProjectDeveloper" class="form-control-plaintext fw-bold"></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Location</label>
+                                        <p id="inlineProjectLocation" class="form-control-plaintext fw-bold"></p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Status</label>
+                                        <p id="inlineProjectStatus" class="form-control-plaintext fw-bold"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Timeline -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-calendar-alt me-2 text-primary"></i>Timeline
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Submission Date</label>
+                                                <p id="inlineProjectSubmissionDate" class="form-control-plaintext fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="detail-item">
+                                                <label class="form-label text-muted mb-1">Deadline</label>
+                                                <p class="form-control-plaintext fw-bold">N/A</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Blueprints -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-file-alt me-2 text-primary"></i>Blueprint Files
+                                    </h6>
+                                    <div id="inlineBlueprints" class="blueprint-files-container"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Supply Materials -->
+                    <div id="inlineSupplySection" class="card border-0 shadow-sm mt-4" style="display: none;">
+                        <div class="card-body p-4">
+                            <h6 class="card-title mb-4">
+                                <i class="fas fa-tools me-2 text-primary"></i>Supply Materials
+                            </h6>
+                            <div id="inlineSupplyContainer" class="supply-materials-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Manpower (Possible manpower needed) -->
+                    <div id="inlineLaborSection" class="card border-0 shadow-sm mt-4">
+                        <div class="card-body p-4">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-user-hard-hat me-2 text-primary"></i>Manpower (possible manpower needed)
+                            </h6>
+                            <div class="row g-2 align-items-end mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">Worker Type</label>
+                                    <select class="form-select" id="workerTypeSelect">
+                                        <option value="">Select worker type...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Manpower per Unit</label>
+                                    <input type="number" class="form-control" id="laborManpowerInput" placeholder="0" min="0" step="1">
+                                </div>
+                                
+                                <div class="col-md-2 d-grid">
+                                    <button type="button" class="btn btn-primary" onclick="addLaborRowView()">
+                                        <i class="fas fa-plus me-1"></i>Add
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped" id="laborTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Task Name</th>
+                                            <th class="text-end">Manpower/Unit</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="laborTbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final Estimated Cost (for the whole project) -->
+                    <div id="inlineFinalEstimationSection" class="card border-0 shadow-sm mt-4">
+                        <div class="card-body p-4">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-calculator me-2 text-primary"></i>Final Estimated Cost (Whole Project)
+                            </h6>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="form-label">Estimated Cost (₱)</label>
+                                    <input type="text" class="form-control" id="finalEstimatedCostInput" placeholder="0.00" oninput="formatCurrency(this)">
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Note: This is a frontend-only input for planning; not saved to backend.</small>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="button" class="btn btn-primary" onclick="submitLaborBatch()">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Details -->
+                    <div id="inlineCostSection" class="card border-0 shadow-sm mt-4" style="display: none;">
+                        <div class="card-body p-4">
+                            <h6 class="card-title mb-4">
+                                <i class="fas fa-money-bill-wave me-2 text-primary"></i>Cost Details
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Manufacturing Cost</label>
+                                        <p id="inlineProjectCost" class="form-control-plaintext fw-bold"></p>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="detail-item">
+                                        <label class="form-label text-muted mb-1">Cost Breakdown</label>
+                                        <div id="inlineProjectCostBreakdown" class="form-control-plaintext fw-bold bg-light p-3 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -590,24 +890,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-4">
-                        <!-- Project Image Section -->
-                        <div class="col-md-5">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h6 class="card-title mb-3">
-                                        <i class="fas fa-image me-2 text-primary"></i>Project Image
-                                    </h6>
-                                    <div class="image-container text-center">
-                                        <img id="viewProjectImage" src="#" alt="Project Image" class="img-fluid rounded" style="max-height: 300px; object-fit: cover;">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Project Details Section -->
-                        <div class="col-md-7">
-                            <div class="card border-0 shadow-sm">
+                    <!-- Project Information Section -->
+                    <div class="card border-0 shadow-sm mb-4">
                                 <div class="card-body p-4">
                                     <h6 class="card-title mb-4">
                                         <i class="fas fa-info-circle me-2 text-primary"></i>Project Information
@@ -641,31 +925,61 @@
                                 </div>
                             </div>
 
+                    <div class="row g-4">
                             <!-- Timeline Section -->
-                            <div class="card border-0 shadow-sm mt-4">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body p-4">
                                     <h6 class="card-title mb-4">
                                         <i class="fas fa-calendar-alt me-2 text-primary"></i>Timeline
                                     </h6>
                                     <div class="row g-3">
-                                        <div class="col-md-6">
+                                        <div class="col-12">
                                             <div class="detail-item">
                                                 <label class="form-label text-muted mb-1">Submission Date</label>
                                                 <p id="viewProjectSubmissionDate" class="form-control-plaintext fw-bold"></p>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-12">
                                             <div class="detail-item">
                                                 <label class="form-label text-muted mb-1">Deadline</label>
                                                 <p id="viewProjectDeadline" class="form-control-plaintext fw-bold"></p>
+                                            </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Cost Section -->
-                            <div class="card border-0 shadow-sm mt-4">
+                        <!-- Blueprint Files Section -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-file-alt me-2 text-primary"></i>Blueprint Files
+                                    </h6>
+                                    <div id="blueprintFilesContainer" class="blueprint-files-container">
+                                        <!-- Blueprint files will be displayed here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Supply Materials Section (shown for approved_by_mfg status) -->
+                    <div id="supplyMaterialsSection" class="card border-0 shadow-sm mt-4" style="display: none;">
+                        <div class="card-body p-4">
+                            <h6 class="card-title mb-4">
+                                <i class="fas fa-tools me-2 text-primary"></i>Supply Materials
+                            </h6>
+                            <div id="supplyMaterialsContainer" class="supply-materials-list">
+                                <!-- Supply materials will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Section (Hidden by default, shown only for developer_approved status) -->
+                    <div id="costSection" class="card border-0 shadow-sm mt-4" style="display: none;">
                                 <div class="card-body p-4">
                                     <h6 class="card-title mb-4">
                                         <i class="fas fa-money-bill-wave me-2 text-primary"></i>Cost Details
@@ -681,8 +995,6 @@
                                             <div class="detail-item">
                                                 <label class="form-label text-muted mb-1">Cost Breakdown</label>
                                                 <div id="viewProjectCostBreakdown" class="form-control-plaintext fw-bold bg-light p-3 rounded"></div>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -692,6 +1004,9 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-success" id="approveProjectBtn" onclick="approveProject()">
+                        <i class="fas fa-check me-2"></i>Approve
                     </button>
                 </div>
             </div>
@@ -705,86 +1020,57 @@
     <script src="/js/side_top.js"></script>
     <script>
 
-        // Sample data for projects (this would come from the developer's submissions)
-        let projects = [
-            {
-                id: 1,
-                name: 'Residential Complex A',
-                developer: 'John Smith',
-                location: 'Manila',
-                submissionDate: '2024-03-15',
-                deadline: '2024-12-31',
-                status: 'new',
-                manufacturingCost: null,
-                costBreakdown: '',
-                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D'
-            },
-            {
-                id: 2,
-                name: 'Commercial Building B',
-                developer: 'Maria Garcia',
-                location: 'Makati',
-                submissionDate: '2024-03-10',
-                deadline: '2025-06-30',
-                status: 'pending',
-                manufacturingCost: 4500000,
-                costBreakdown: 'Materials: ₱2,500,000\nLabor: ₱1,500,000\nEquipment: ₱500,000',
-                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww'
-            },
-            {
-                id: 3,
-                name: 'Office Tower C',
-                developer: 'Robert Johnson',
-                location: 'Quezon City',
-                submissionDate: '2024-03-18',
-                deadline: '2025-08-20',
-                status: 'approved',
-                manufacturingCost: 6800000,
-                costBreakdown: 'Materials: ₱3,800,000\nLabor: ₱2,200,000\nEquipment: ₱800,000',
-                image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D'
-            },
-            {
-                id: 4,
-                name: 'Retail Complex D',
-                developer: 'Sarah Lee',
-                location: 'Pasig',
-                submissionDate: '2024-03-22',
-                deadline: '2025-09-05',
-                status: 'rejected',
-                manufacturingCost: 5200000,
-                costBreakdown: 'Materials: ₱2,800,000\nLabor: ₱1,800,000\nEquipment: ₱600,000',
-                image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmV0YWlsJTIwY29tcGxleHxlbnwwfHwwfHx8MA%3D%3D'
-            },
-            {
-                id: 5,
-                name: 'Luxury Condominium E',
-                developer: 'Michael Chen',
-                location: 'Bonifacio Global City',
-                submissionDate: '2024-03-25',
-                deadline: '2025-10-15',
-                status: 'new',
-                manufacturingCost: null,
-                costBreakdown: '',
-                image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bHV4dXJ5JTIwaG91c2V8ZW58MHx8MHx8fDA%3D'
-            },
-            {
-                id: 6,
-                name: 'Industrial Park F',
-                developer: 'David Wilson',
-                location: 'Laguna',
-                submissionDate: '2024-03-28',
-                deadline: '2025-11-30',
-                status: 'pending',
-                manufacturingCost: 7500000,
-                costBreakdown: 'Materials: ₱4,200,000\nLabor: ₱2,300,000\nEquipment: ₱1,000,000',
-                image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW5kdXN0cmlhbCUyMGFyZWF8ZW58MHx8MHx8fDA%3D'
-            }
-        ];
+        // API URL for manufacturing endpoints
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000/manufacturing'
+            : `${window.location.origin}/manufacturing`;
+
+        // Global projects array to store fetched data
+        let projects = [];
+        let currentProjectId = null; // Store current project ID for approve action
 
         let currentPage = 1;
         let itemsPerPage = 5;
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
+
+        // Function to fetch proposals from API
+        async function fetchProposals() {
+            try {
+                const response = await fetch(`${API_URL}/projects`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Transform API data to match expected format
+                    projects = data.projects.map(project => ({
+                        id: project.proposal_id,
+                        name: project.project_name,
+                        developer: project.developer_company || 'Unknown Developer',
+                        location: project.location,
+                        submissionDate: project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A',
+                        deadline: 'N/A', // No deadline in proposals table
+                        status: project.status,
+                        manufacturingCost: project.estimated_cost || null,
+                        costBreakdown: '', // No cost breakdown in proposals table
+                        image: 'https://via.placeholder.com/300x200?text=No+Image', // No image in proposals table
+                        blocks: project.blocks,
+                        description: project.description
+                    }));
+                    
+                    console.log('Fetched proposals:', projects);
+                    showTable('all'); // Show all projects by default
+                } else {
+                    console.error('Failed to fetch proposals:', data.error);
+                    projects = [];
+                }
+            } catch (error) {
+                console.error('Error fetching proposals:', error);
+                projects = [];
+            }
+        }
 
         // Function to filter projects based on search input
         function filterProjects() {
@@ -794,13 +1080,7 @@
 
             // First apply status filter
             if (currentFilter !== 'all') {
-                const statusMap = {
-                    'new': 'new',
-                    'pending': 'pending',
-                    'approved': 'approved',
-                    'rejected': 'rejected'
-                };
-                filteredProjects = projects.filter(p => p.status === statusMap[currentFilter]);
+                filteredProjects = projects.filter(p => p.status === currentFilter);
             }
 
             // Then apply search filter
@@ -833,10 +1113,10 @@
                 targetList = document.getElementById('allProjectsList');
             } else {
                 const statusMap = {
-                    'new': { table: 'pendingTable', list: 'pendingList', status: 'new' },
                     'pending': { table: 'pendingTable', list: 'pendingList', status: 'pending' },
-                    'approved': { table: 'completedTable', list: 'completedList', status: 'approved' },
-                    'rejected': { table: 'completedTable', list: 'completedList', status: 'rejected' }
+                    'approved_by_mfg': { table: 'completedTable', list: 'completedList', status: 'approved_by_mfg' },
+                    'developer_approved': { table: 'completedTable', list: 'completedList', status: 'developer_approved' },
+                    'contract_generated': { table: 'completedTable', list: 'completedList', status: 'contract_generated' }
                 };
                 
                 const config = statusMap[status];
@@ -869,21 +1149,24 @@
                 row.innerHTML = `
                     <td>${p.id}</td>
                     <td>${p.name}</td>
-                    <td><img src="${p.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
                     <td>${p.developer}</td>
                     <td>${p.location}</td>
                     <td>${p.submissionDate}</td>
-                    <td>${p.deadline}</td>
                     <td><span class="project-status status-${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></td>
                     <td>${p.manufacturingCost ? `₱${p.manufacturingCost.toLocaleString()}` : 'Not assigned'}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn view-btn" onclick="viewProject(${p.id})" title="View Details">
+                            <button class="action-btn view-btn" onclick="showInlineDetails(${p.id})" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            ${p.status === 'new' ? `
-                                <button class="action-btn approve-btn" onclick="assignPrice(${p.id})" title="Assign Price">
-                                    <i class="fas fa-dollar-sign"></i>
+                            ${p.status === 'pending' ? `
+                                <button class="action-btn approve-btn" onclick="approveProject(${p.id})" title="Approve Project">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            ` : ''}
+                            ${p.status === 'developer_approved' ? `
+                                <button class="action-btn contract-btn" onclick="generateContract(${p.id})" title="Generate Contract">
+                                    <i class="fas fa-file-contract"></i>
                                 </button>
                             ` : ''}
                         </div>
@@ -923,13 +1206,7 @@
             
             // Apply status filter
             if (currentFilter !== 'all') {
-                const statusMap = {
-                    'new': 'new',
-                    'pending': 'pending',
-                    'approved': 'approved',
-                    'rejected': 'rejected'
-                };
-                filteredProjects = projects.filter(p => p.status === statusMap[currentFilter]);
+                filteredProjects = projects.filter(p => p.status === currentFilter);
             }
 
             // Apply search filter if there's a search value
@@ -1035,7 +1312,7 @@
 
         // Function to sort the table by column index
         function sortTable(tableName, columnIndex) {
-            const columnNames = ['id', 'name', 'developer', 'location', 'submissionDate', 'deadline', 'status'];
+            const columnNames = ['id', 'name', 'developer', 'location', 'submissionDate', 'status', 'manufacturingCost'];
             const columnName = columnNames[columnIndex];
 
             // Update sort state
@@ -1048,16 +1325,10 @@
 
             // Get current filtered projects based on status
             let projectsToSort = projects;
-            const statusMap = {
-                'new': 'new',
-                'pending': 'pending',
-                'approved': 'approved',
-                'rejected': 'rejected'
-            };
 
             // Apply status filter first
             if (tableName !== 'all') {
-                projectsToSort = projects.filter(p => p.status === statusMap[tableName]);
+                projectsToSort = projects.filter(p => p.status === tableName);
             }
 
             // Then apply search filter if there's a search value
@@ -1083,7 +1354,7 @@
                 let valueB = b[columnName];
 
                 // Handle date comparison
-                if (columnName === 'deadline') {
+                if (columnName === 'submissionDate') {
                     valueA = new Date(valueA);
                     valueB = new Date(valueB);
                 }
@@ -1122,8 +1393,10 @@
             showTable(selectedValue);
         }
 
-        // Initialize the table to show "All Projects" by default
-        showTable('all');
+        // Initialize the page by fetching proposals
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchProposals();
+        });
 
         // Add event listener for search input
         document.getElementById('searchBar').addEventListener('input', filterProjects);
@@ -1163,11 +1436,9 @@
                 row.innerHTML = `
                     <td>${project.id}</td>
                     <td>${project.name}</td>
-                    <td><img src="${project.image}" alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
                     <td>${project.developer}</td>
                     <td>${project.location}</td>
                     <td>${project.submissionDate}</td>
-                    <td>${project.deadline}</td>
                     <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
                     <td>${project.manufacturingCost ? `₱${project.manufacturingCost.toLocaleString()}` : 'Not assigned'}</td>
                     <td>
@@ -1175,11 +1446,6 @@
                             <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            ${project.status === 'new' ? `
-                                <button class="action-btn approve-btn" onclick="assignPrice(${project.id})" title="Assign Price">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </button>
-                            ` : ''}
                         </div>
                     </td>
                 `;
@@ -1192,7 +1458,7 @@
         // Function to assign price to a project
         function assignPrice(id) {
             const project = projects.find(p => p.id === id);
-            if (project && project.status === 'new') {
+            if (project && project.status === 'pending') {
                 document.getElementById('projectId').value = project.id;
                 document.getElementById('projectName').value = project.name;
                 document.getElementById('developer').value = project.developer;
@@ -1202,7 +1468,7 @@
                 const modal = new bootstrap.Modal(document.getElementById('assignPriceModal'));
                 modal.show();
             } else {
-                showWarningMessage('Only new projects can be assigned a price!');
+                showWarningMessage('Only pending projects can be assigned a price!');
             }
         }
 
@@ -1218,12 +1484,12 @@
             }
 
             const project = projects.find(p => p.id === projectId);
-            if (project && project.status === 'new') {
+            if (project && project.status === 'pending') {
                 project.manufacturingCost = manufacturingCost;
                 project.costBreakdown = costBreakdown;
-                project.status = 'pending'; // Set status to pending for developer review
+                project.status = 'approved_by_mfg'; // Set status to approved by manufacturing
                 
-                showSuccessMessage('Manufacturing cost assigned successfully! Project is now pending developer review.');
+                showSuccessMessage('Manufacturing cost assigned successfully! Project is now approved by manufacturing.');
                 
                 setTimeout(() => {
                     $('#assignPriceModal').modal('hide');
@@ -1235,21 +1501,666 @@
         });
 
         // Function to view project details
-        function viewProject(id) {
-            const project = projects.find(p => p.id === id);
-            if (project) {
-                document.getElementById('viewProjectImage').src = project.image;
-                document.getElementById('viewProjectName').textContent = project.name;
-                document.getElementById('viewProjectDeveloper').textContent = project.developer;
+        async function viewProject(id) {
+            try {
+                // Fetch detailed project information including blueprint files
+                const response = await fetch(`${API_URL}/projects/${id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    const project = data.project;
+                    
+                    // Store current project ID for approve action
+                    currentProjectId = project.proposal_id;
+                    
+                    // Update project details
+                    document.getElementById('viewProjectName').textContent = project.project_name;
+                    document.getElementById('viewProjectDeveloper').textContent = project.developer_company || 'Unknown Developer';
                 document.getElementById('viewProjectLocation').textContent = project.location;
-                document.getElementById('viewProjectSubmissionDate').textContent = project.submissionDate;
-                document.getElementById('viewProjectDeadline').textContent = project.deadline;
+                    document.getElementById('viewProjectSubmissionDate').textContent = project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A';
+                    document.getElementById('viewProjectDeadline').textContent = 'N/A';
                 document.getElementById('viewProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
-                document.getElementById('viewProjectCost').textContent = project.manufacturingCost ? `₱${project.manufacturingCost.toLocaleString()}` : 'Not assigned';
-                document.getElementById('viewProjectCostBreakdown').textContent = project.costBreakdown || 'No breakdown provided';
+                    document.getElementById('viewProjectCost').textContent = project.estimated_cost ? `₱${parseFloat(project.estimated_cost).toLocaleString()}` : 'Not assigned';
+                    document.getElementById('viewProjectCostBreakdown').textContent = 'No breakdown provided';
+                    
+                    // Show/hide supply materials section based on status
+                    const supplyMaterialsSection = document.getElementById('supplyMaterialsSection');
+                    if (project.status === 'approved_by_mfg' && project.supply_materials && project.supply_materials.length > 0) {
+                        supplyMaterialsSection.style.display = 'block';
+                        displaySupplyMaterials(project.supply_materials);
+                    } else {
+                        supplyMaterialsSection.style.display = 'none';
+                    }
+                    
+                    // Show/hide cost section based on status
+                    const costSection = document.getElementById('costSection');
+                    if (project.status === 'developer_approved') {
+                        costSection.style.display = 'block';
+                    } else {
+                        costSection.style.display = 'none';
+                    }
+                    
+                    // Show/hide approve button based on status
+                    const approveBtn = document.getElementById('approveProjectBtn');
+                    if (project.status === 'pending') {
+                        approveBtn.style.display = 'inline-block';
+                    } else {
+                        approveBtn.style.display = 'none';
+                    }
+                    
+                    // Display blueprint files
+                    displayBlueprintFiles(project.blueprint_files || []);
                 
                 const viewModal = new bootstrap.Modal(document.getElementById('viewProjectModal'));
                 viewModal.show();
+                } else {
+                    console.error('Failed to fetch project details:', data.error);
+                    alert('Failed to load project details. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error fetching project details:', error);
+                alert('Failed to load project details. Please try again.');
+            }
+        }
+
+        // Inline view (replaces modal)
+        async function showInlineDetails(id) {
+            try {
+                const response = await fetch(`${API_URL}/projects/${id}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to fetch project');
+
+                const project = data.project;
+                currentProjectId = project.proposal_id;
+                window.currentViewedDeveloperId = project.developer_id;
+
+                // Fill info
+                document.getElementById('inlineProjectName').textContent = project.project_name;
+                document.getElementById('inlineProjectDeveloper').textContent = project.developer_company || 'Unknown Developer';
+                document.getElementById('inlineProjectLocation').textContent = project.location;
+                document.getElementById('inlineProjectSubmissionDate').textContent = project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A';
+                document.getElementById('inlineProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
+
+                // Approve button visibility
+                const approveBtn = document.getElementById('approveInlineBtn');
+                approveBtn.style.display = project.status === 'pending' ? 'inline-block' : 'none';
+
+                // Blueprints
+                const bp = project.blueprint_files || [];
+                const bpContainer = document.getElementById('inlineBlueprints');
+                if (!bp.length) {
+                    bpContainer.innerHTML = `<div class="no-blueprints"><i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i><p>No blueprint files uploaded</p></div>`;
+                } else {
+                    bpContainer.innerHTML = bp.map(file => {
+                        const ext = String(file.file_name || '').split('.').pop().toLowerCase();
+                        const icon = (function(e){switch(e){case 'pdf':return 'fas fa-file-pdf';case 'dwg':return 'fas fa-drafting-compass';case 'jpg':case 'jpeg':case 'png':case 'gif':return 'fas fa-file-image';default:return 'fas fa-file';}})(ext);
+                        const up = new Date(file.uploaded_at).toLocaleDateString();
+                        return `
+                            <div class="blueprint-file-item">
+                                <div class="blueprint-file-icon"><i class="${icon}"></i></div>
+                                <div class="blueprint-file-info">
+                                    <div class="blueprint-file-name">${file.file_name}</div>
+                                    <div class="blueprint-file-date">Uploaded: ${up}</div>
+                                </div>
+                                <div class="blueprint-file-actions">
+                                    <button class="blueprint-download-btn" onclick="downloadBlueprint('${file.file_path}', '${file.file_name}')" title="Download"><i class="fas fa-download"></i></button>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+
+                // Supply materials
+                const supplySection = document.getElementById('inlineSupplySection');
+                if (project.status === 'approved_by_mfg' && project.supply_materials && project.supply_materials.length) {
+                    supplySection.style.display = 'block';
+                    const container = document.getElementById('inlineSupplyContainer');
+                    container.innerHTML = project.supply_materials.map(m => `
+                        <div class="supply-material-item">
+                            <div class="supply-material-info">
+                                <div class="supply-material-name">${m.material_name}</div>
+                                <div class="supply-material-details">Quantity: ${m.quantity} ${m.unit || 'units'}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    supplySection.style.display = 'none';
+                }
+
+                // Populate worker types for dropdown
+                try {
+                    const wtResp = await fetch(`${API_URL}/worker-types`);
+                    if (wtResp.ok) {
+                        const wtData = await wtResp.json();
+                        if (wtData.success) {
+                            const sel = document.getElementById('workerTypeSelect');
+                            sel.innerHTML = '<option value="">Select worker type...</option>' +
+                                (wtData.worker_types || []).map(w => `<option value="${w.worker_type_id}">${w.name}</option>`).join('');
+                        }
+                    }
+                } catch (e) { console.warn('Failed to load worker types'); }
+
+                // Render existing labor rows if provided
+                if (project.labor && Array.isArray(project.labor)) {
+                    const tbody = document.getElementById('laborTbody');
+                    tbody.innerHTML = project.labor.map(l => `
+                        <tr>
+                            <td>${l.worker_type_name || ''}</td>
+                            <td class="text-end">${l.manpower_per_unit}</td>
+                            <td>${l.unit_description || ''}</td>
+                            <td><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Cost section
+                const cost = document.getElementById('inlineCostSection');
+                if (project.status === 'developer_approved') {
+                    cost.style.display = 'block';
+                    document.getElementById('inlineProjectCost').textContent = project.estimated_cost ? `₱${parseFloat(project.estimated_cost).toLocaleString()}` : 'Not assigned';
+                    document.getElementById('inlineProjectCostBreakdown').textContent = 'No breakdown provided';
+                } else {
+                    cost.style.display = 'none';
+                }
+
+                // Show inline details
+                document.getElementById('projectDetailsInline').style.display = 'block';
+                document.getElementById('projectDetailsInline').scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                console.error(err);
+                alert('Failed to load project details.');
+            }
+        }
+
+        function hideInlineDetails() {
+            document.getElementById('projectDetailsInline').style.display = 'none';
+        }
+
+        // Generate contract function
+        async function generateContract(projectId) {
+            try {
+                // Fetch project details
+                const response = await fetch(`${API_URL}/projects/${projectId}`);
+                if (!response.ok) throw new Error('Failed to fetch project details');
+                
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to get project data');
+                
+                const project = data.project;
+                
+                // Create contract content
+                const contractContent = createContractContent(project);
+                
+                // Open contract in new window for printing
+                const contractWindow = window.open('', '_blank');
+                contractWindow.document.write(contractContent);
+                contractWindow.document.close();
+                
+                // Save contract to database
+                await saveContract(projectId, project.developer_id);
+                
+            } catch (error) {
+                console.error('Error generating contract:', error);
+                alert('Failed to generate contract. Please try again.');
+            }
+        }
+
+        // Create contract content
+        function createContractContent(project) {
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + 76); // 76 calendar days
+            
+            const startDateStr = startDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            const endDateStr = endDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Notice to Proceed - ${project.project_name}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .contract-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; }
+                        .section { margin-bottom: 20px; }
+                        .section-title { font-weight: bold; margin-bottom: 10px; }
+                        .table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        .table th { background-color: #f2f2f2; }
+                        .signature-section { margin-top: 40px; }
+                        .signature-box { display: inline-block; width: 200px; margin: 20px; text-align: center; }
+                        .signature-line { border-bottom: 1px solid #000; height: 40px; margin-bottom: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>NOTICE TO PROCEED</h2>
+                        <p>Date: ${currentDate}</p>
+                    </div>
+
+                    <p><strong>${project.developer_company || 'DEVELOPER NAME'}</strong></p>
+
+                    <p>We are pleased to serve in your favor this NOTICE TO PROCEED with the undertaking of the HOUSING CONSTRUCTION - ${project.blocks} UNITS tabulated below for ${project.project_name} located at ${project.location} with scope of works as follows:</p>
+
+                    <div class="section">
+                        <div class="section-title">A. Scope of Works</div>
+                        <ol>
+                            <li>General Preliminaries</li>
+                            <li>Layout & Earthworks (Excavation, Levelling, Spreading, hauling of excess soil, gravel bedding, Cleaning and clearing including hauling of debris)</li>
+                            <li>Concreting Works including rebars installation</li>
+                            <li>Masonry Works (CHB Laying inc rebars installation, tool joint, plastering, tiling works)</li>
+                            <li>Carpentry Works</li>
+                            <li>Roofing and Roof Framing System</li>
+                            <li>Metal Works (Stair and Metal/Partition Frames replacement to railings)</li>
+                            <li>Doors & Jambs Installation</li>
+                            <li>Electrical Works, excluding CSEP, Lineside & Loadside</li>
+                            <li>Plumbing & Sanitary Works including plumbing fixtures, septic tank and catch basin excluding water meter</li>
+                            <li>Painting Works</li>
+                        </ol>
+                        <p>The scope of work also includes, but not limited to handling, storage, preparatory work, installation work and any other related work required to protect the Project and to make the equipment and facilities of the Project completely operational, according to the requirements of the plans, drawings, technical specifications and other related Contract Documents.</p>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">B. Number of Units and Contract Amount:</div>
+                        <table class="table">
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Location</th>
+                                <th>Number of Blocks</th>
+                                <th>Contract Amount</th>
+                            </tr>
+                            <tr>
+                                <td>${project.project_name}</td>
+                                <td>${project.location}</td>
+                                <td>${project.blocks}</td>
+                                <td>${project.estimated_cost ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(project.estimated_cost) : 'To be determined'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">C. List of Owner Supplied Materials:</div>
+                        ${project.supply_materials && project.supply_materials.length > 0 ? `
+                            <table class="table">
+                                <tr>
+                                    <th>Material Name</th>
+                                    <th>Unit</th>
+                                    <th>Quantity</th>
+                                </tr>
+                                ${project.supply_materials.map(material => `
+                                    <tr>
+                                        <td>${material.material_name}</td>
+                                        <td>${material.unit || '-'}</td>
+                                        <td>${material.quantity}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No owner supplied materials specified.</p>'}
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">D. Number of Manpower loading per unit:</div>
+                        ${project.labor && project.labor.length > 0 ? `
+                            <table class="table">
+                                <tr>
+                                    <th>Worker Type</th>
+                                    <th>Manpower per Unit</th>
+                                </tr>
+                                ${project.labor.map(labor => `
+                                    <tr>
+                                        <td>${labor.worker_type_name}</td>
+                                        <td>${labor.manpower_per_unit}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No manpower details specified.</p>'}
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">E. Terms of Payment</div>
+                        <p>Progress billing based on the milestone of work accomplishment. Release of 10% retention will be two months after acceptance of Certificate of Completion (C.O.C.)</p>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">F. Construction Schedule</div>
+                        <p>The construction will commence on ${startDateStr} and to be finished on ${endDateStr}. This notice authorized you to commence with the work upon receipt of this notice and shall be completed within Seventy-six (76) calendar days. You are requested to mobilize immediately with the deployment of materials, manpower, and equipment required for the undertaking.</p>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">H. Liquidated Damages</div>
+                        <p>Amount Equivalent to 1/10 of 1% of the Contract Price for any unperformed works for each day of delay including weekends and holidays but not more than ten percent (10%) of the Contract Price. If taken over, all billings and retentions due to Contractor will be forfeited in favor of the Company.</p>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">I. Backcharges and Penalties</div>
+                        <p>Upon confirmation of this NTP, contractor agrees to the maximum guaranteed quantities of OSM. The cost of additional quantities of OSM and equipment, including utilities consumption and construction penalties shall be charged to the Contractor by deducting the amount from the Contractor's progress billing.</p>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Manufacturing Representative</p>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Developer Representative</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+
+        // Save contract to database
+        async function saveContract(proposalId, developerId) {
+            try {
+                const response = await fetch(`${API_URL}/contracts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        proposal_id: proposalId,
+                        developer_id: developerId,
+                        contract_date: new Date().toISOString().split('T')[0],
+                        status: 'Draft'
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to save contract');
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Contract generated and saved successfully!');
+                }
+            } catch (error) {
+                console.error('Error saving contract:', error);
+                // Don't show error to user as contract was still generated
+            }
+        }
+
+        // In-memory buffer for labor entries before submission
+        const pendingLabor = [];
+
+        // Add labor row locally only (buffer, no POST yet)
+        function addLaborRowView() {
+            const manpower = parseInt(document.getElementById('laborManpowerInput').value || '');
+            if (isNaN(manpower) || manpower < 0) { alert('Enter a valid manpower per unit.'); return; }
+            if (!currentProjectId) { alert('No project selected.'); return; }
+
+            const workerTypeSelect = document.getElementById('workerTypeSelect');
+            const workerTypeId = workerTypeSelect.value;
+            if (!workerTypeId) { alert('Please select a worker type.'); return; }
+
+            // Save to buffer
+            pendingLabor.push({
+                worker_type_id: parseInt(workerTypeId, 10),
+                worker_type_name: workerTypeSelect.selectedOptions[0].text,
+                manpower_per_unit: manpower
+            });
+
+            // Render to table
+            const tbody = document.getElementById('laborTbody');
+            const tr = document.createElement('tr');
+            const idx = pendingLabor.length - 1;
+            tr.setAttribute('data-buffer-index', String(idx));
+            tr.innerHTML = `
+                <td>${workerTypeSelect.selectedOptions[0].text}</td>
+                <td class=\"text-end\">${manpower}</td>
+                <td>
+                    <button class=\"btn btn-sm btn-danger\" onclick=\"removePendingLaborRow(this)\"><i class=\"fas fa-trash\"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            workerTypeSelect.value = '';
+            document.getElementById('laborManpowerInput').value = '';
+        }
+
+        function removePendingLaborRow(btn) {
+            const tr = btn.closest('tr');
+            const idxAttr = tr?.getAttribute('data-buffer-index');
+            if (idxAttr !== null && idxAttr !== undefined) {
+                const idx = parseInt(idxAttr, 10);
+                if (!isNaN(idx) && pendingLabor[idx]) {
+                    pendingLabor[idx] = null; // mark removed; keep indices stable
+                }
+            }
+            if (tr) tr.remove();
+        }
+
+        // Format currency input with thousand separators
+        function formatCurrency(input) {
+            // Remove all non-numeric characters except decimal point
+            let value = input.value.replace(/[^\d.]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Format with thousand separators
+            if (value) {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                    // Format with thousand separators
+                    const formatted = numValue.toLocaleString('en-US', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2
+                    });
+                    input.value = formatted;
+                }
+            }
+        }
+
+        // Get numeric value from formatted currency input
+        function getNumericValue(formattedValue) {
+            return parseFloat(formattedValue.replace(/,/g, '')) || 0;
+        }
+
+        async function submitLaborBatch() {
+            try {
+                if (!currentProjectId) { alert('No project selected.'); return; }
+                const items = pendingLabor.filter(Boolean);
+                if (!items.length) { alert('No labor entries to submit.'); return; }
+
+                // Get final estimated cost (convert from formatted string to number)
+                const finalCost = getNumericValue(document.getElementById('finalEstimatedCostInput').value);
+                if (finalCost <= 0) { alert('Please enter a valid estimated cost.'); return; }
+
+                // Determine developer id
+                let developerId = window.currentViewedDeveloperId;
+                if (!developerId) {
+                    const sessionResp = await fetch('/crm/developer/check-session', { credentials: 'include' });
+                    if (!sessionResp.ok) throw new Error('Session error');
+                    const session = await sessionResp.json();
+                    developerId = session.id;
+                    if (!developerId) throw new Error('No developer id');
+                }
+
+                // Submit labor entries sequentially
+                for (const it of items) {
+                    const resp = await fetch(`${API_URL}/projects/${currentProjectId}/labor`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            developer_id: developerId,
+                            worker_type_id: it.worker_type_id,
+                            manpower_per_unit: it.manpower_per_unit,
+                            unit_description: null
+                        })
+                    });
+                    if (!resp.ok) throw new Error('Failed to add a labor entry');
+                }
+
+                // Update estimated cost in proposals table
+                const costResp = await fetch(`${API_URL}/projects/${currentProjectId}/manufacturing-cost`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manufacturing_cost: finalCost
+                    })
+                });
+                if (!costResp.ok) throw new Error('Failed to update estimated cost');
+
+                // Clear buffer and notify
+                for (let i = 0; i < pendingLabor.length; i++) pendingLabor[i] = null;
+                alert('Labor entries and estimated cost submitted successfully.');
+                // Reload the page to show updated cost
+                window.location.reload();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to submit labor entries and estimated cost.');
+            }
+        }
+
+        // Function to display blueprint files
+        function displayBlueprintFiles(blueprintFiles) {
+            const container = document.getElementById('blueprintFilesContainer');
+            
+            if (!blueprintFiles || blueprintFiles.length === 0) {
+                container.innerHTML = `
+                    <div class="no-blueprints">
+                        <i class="fas fa-file-alt" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p>No blueprint files uploaded</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = blueprintFiles.map(file => {
+                const fileExtension = file.file_name.split('.').pop().toLowerCase();
+                const iconClass = getFileIcon(fileExtension);
+                const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+                
+                return `
+                    <div class="blueprint-file-item">
+                        <div class="blueprint-file-icon">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="blueprint-file-info">
+                            <div class="blueprint-file-name">${file.file_name}</div>
+                            <div class="blueprint-file-date">Uploaded: ${uploadDate}</div>
+                        </div>
+                        <div class="blueprint-file-actions">
+                            <button class="blueprint-download-btn" onclick="downloadBlueprint('${file.file_path}', '${file.file_name}')" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Function to get appropriate icon for file type
+        function getFileIcon(extension) {
+            switch (extension) {
+                case 'pdf':
+                    return 'fas fa-file-pdf';
+                case 'dwg':
+                    return 'fas fa-drafting-compass';
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                    return 'fas fa-file-image';
+                default:
+                    return 'fas fa-file';
+            }
+        }
+
+        // Function to download blueprint file
+        function downloadBlueprint(filePath, fileName) {
+            // Create a temporary link to download the file
+            const link = document.createElement('a');
+            link.href = `/uploads/projects/${fileName}`; // Adjust path as needed
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Function to display supply materials
+        function displaySupplyMaterials(supplyMaterials) {
+            const container = document.getElementById('supplyMaterialsContainer');
+            
+            if (!supplyMaterials || supplyMaterials.length === 0) {
+                container.innerHTML = `
+                    <div class="no-supply-materials">
+                        <i class="fas fa-tools" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p>No supply materials specified</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = supplyMaterials.map(material => `
+                <div class="supply-material-item">
+                    <div class="supply-material-info">
+                        <div class="supply-material-name">${material.material_name}</div>
+                        <div class="supply-material-details">Quantity: ${material.quantity} ${material.unit || 'units'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Function to approve project
+        async function approveProject() {
+            if (!currentProjectId) {
+                alert('No project selected for approval.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to approve this project?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/projects/${currentProjectId}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'approved_by_mfg' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Project approved successfully!');
+                    
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('viewProjectModal'));
+                    modal.hide();
+                    
+                    // Refresh the projects list
+                    await fetchProposals();
+                } else {
+                    alert('Failed to approve project: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error approving project:', error);
+                alert('Failed to approve project. Please try again.');
             }
         }
     </script>

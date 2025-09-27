@@ -132,6 +132,22 @@
             background-color: #157347;
         }
 
+        .contract-btn {
+            background-color: #6f42c1;
+        }
+
+        .contract-btn:hover {
+            background-color: #5a32a3;
+        }
+
+        .sign-btn {
+            background-color: #28a745;
+        }
+
+        .sign-btn:hover {
+            background-color: #218838;
+        }
+
         /* Modal Styles */
         .modal-content {
             border: none;
@@ -619,44 +635,87 @@
         </div>
     </div>
 
+    <!-- Contract View Modal -->
+    <div class="modal fade" id="contractViewModal" tabindex="-1" aria-labelledby="contractViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="contractViewModalLabel">Contract Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="contractContent">
+                        <!-- Contract content will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="openManufacturingSignModal(currentContractId)">
+                        <i class="fas fa-signature me-2"></i>Sign Contract
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manufacturing Contract Signing Modal -->
+    <div class="modal fade" id="manufacturingSignModal" tabindex="-1" aria-labelledby="manufacturingSignModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manufacturingSignModalLabel">Manufacturing Signature</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="manufacturingSignForm">
+                        <div class="mb-3">
+                            <label class="form-label">Draw Manufacturing Signature</label>
+                            <div class="signature-pad-container" style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 10px; background-color: #f8f9fa; text-align: center;">
+                                <canvas id="manufacturingSignaturePad" width="600" height="200" style="border: 1px solid #ced4da; border-radius: 4px; background-color: white; cursor: crosshair; max-width: 100%; height: auto;"></canvas>
+                                <div class="signature-controls mt-2" style="display: flex; gap: 10px; justify-content: center;">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearManufacturingSignature()">
+                                        <i class="fas fa-eraser me-1"></i>Clear
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-info" onclick="undoManufacturingSignature()">
+                                        <i class="fas fa-undo me-1"></i>Undo
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-text">Please draw the manufacturing representative's signature</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="agreeManufacturingTerms" required>
+                                <label class="form-check-label" for="agreeManufacturingTerms">
+                                    I confirm this contract is ready to become active
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="submitManufacturingSignature()">
+                        <i class="fas fa-check me-2"></i>Activate Contract
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/side_top.js"></script>
 
     <script>
-        // Sample data for approved projects
-        let approvedProjects = [
-            {
-                id: 1,
-                name: 'Residential Complex A',
-                developer: 'John Smith',
-                location: 'Manila',
-                approvalDate: '2024-03-20',
-                manufacturingCost: 4500000,
-                status: 'unassigned',
-                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
-                assignedForeman: null
-            },
-            {
-                id: 2,
-                name: 'Commercial Building B',
-                developer: 'Maria Garcia',
-                location: 'Makati',
-                approvalDate: '2024-03-15',
-                manufacturingCost: 6800000,
-                status: 'assigned',
-                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
-                assignedForeman: {
-                    id: 1,
-                    name: 'Michael Johnson',
-                    contact: '+63 912 345 6789',
-                    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
-                    projectsCompleted: 15,
-                    currentProjects: 1
-                }
-            }
-        ];
+        // API URL for manufacturing endpoints
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000/manufacturing'
+            : `${window.location.origin}/manufacturing`;
+
+        // Global approved projects array to store fetched data
+        let approvedProjects = [];
 
         // Sample data for available foremen
         let availableForemen = [
@@ -696,8 +755,43 @@
         let selectedForemanId = null;
         let currentProjectId = null;
 
-
-        
+        // Function to fetch approved contracts
+        async function fetchApprovedContracts() {
+            try {
+                const response = await fetch(`${API_URL}/contracts`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Filter for approved contracts and transform to approved projects format
+                    approvedProjects = data.contracts
+                        .filter(contract => contract.status === 'Approved')
+                        .map(contract => ({
+                            id: contract.contract_id,
+                            name: contract.project_name || 'N/A',
+                            developer: contract.developer_company || 'N/A',
+                            location: contract.location || 'N/A',
+                            approvalDate: contract.contract_date ? new Date(contract.contract_date).toLocaleDateString() : 'N/A',
+                            manufacturingCost: contract.estimated_cost || 0,
+                            status: 'unassigned', // Default status for approved contracts
+                            image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
+                            assignedForeman: null,
+                            contractId: contract.contract_id
+                        }));
+                    
+                    console.log('Fetched approved contracts:', approvedProjects);
+                    renderProjects(); // Show all approved contracts by default
+                } else {
+                    console.error('Failed to fetch approved contracts:', data.error);
+                    approvedProjects = [];
+                }
+            } catch (error) {
+                console.error('Error fetching approved contracts:', error);
+                approvedProjects = [];
+            }
+        }
 
         // Function to render projects
         function renderProjects(filteredProjects = null) {
@@ -733,6 +827,9 @@
                         <div class="action-buttons">
                             <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
                                 <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn contract-btn" onclick="viewContract(${project.contractId})" title="View Contract">
+                                <i class="fas fa-file-contract"></i>
                             </button>
                             ${project.status === 'unassigned' ? `
                                 <button class="action-btn assign-btn" onclick="assignForeman(${project.id})" title="Assign Foreman">
@@ -985,8 +1082,370 @@
         // Add event listener for search input
         document.getElementById('searchBar').addEventListener('input', handleFilterChange);
 
-        // Initialize the table
-        renderProjects();
+        // Contract viewing and signing functionality
+        let currentContractId = null;
+
+        // View contract details
+        async function viewContract(contractId) {
+            try {
+                const response = await fetch(`${API_URL}/contracts/${contractId}`);
+                if (!response.ok) throw new Error('Failed to fetch contract');
+                
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to get contract data');
+                
+                const contract = data.contract;
+                currentContractId = contractId;
+                
+                // Generate contract content
+                const contractContent = generateContractContent(contract);
+                document.getElementById('contractContent').innerHTML = contractContent;
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('contractViewModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error viewing contract:', error);
+                alert('Failed to load contract details. Please try again.');
+            }
+        }
+
+        // Generate contract content for viewing
+        function generateContractContent(contract) {
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + 76); // 76 calendar days
+            
+            const startDateStr = startDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            const endDateStr = endDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            return `
+                <div class="contract-document">
+                    <div class="text-center mb-4">
+                        <h2>NOTICE TO PROCEED</h2>
+                        <p><strong>Date:</strong> ${currentDate}</p>
+                    </div>
+
+                    <p><strong>${contract.developer_company || 'DEVELOPER NAME'}</strong></p>
+
+                    <p>We are pleased to serve in your favor this NOTICE TO PROCEED with the undertaking of the HOUSING CONSTRUCTION - ${contract.blocks || 'N/A'} UNITS tabulated below for ${contract.project_name || 'N/A'} located at ${contract.location || 'N/A'} with scope of works as follows:</p>
+
+                    <div class="mb-4">
+                        <h5>A. Scope of Works</h5>
+                        <ol>
+                            <li>General Preliminaries</li>
+                            <li>Layout & Earthworks (Excavation, Levelling, Spreading, hauling of excess soil, gravel bedding, Cleaning and clearing including hauling of debris)</li>
+                            <li>Concreting Works including rebars installation</li>
+                            <li>Masonry Works (CHB Laying inc rebars installation, tool joint, plastering, tiling works)</li>
+                            <li>Carpentry Works</li>
+                            <li>Roofing and Roof Framing System</li>
+                            <li>Metal Works (Stair and Metal/Partition Frames replacement to railings)</li>
+                            <li>Doors & Jambs Installation</li>
+                            <li>Electrical Works, excluding CSEP, Lineside & Loadside</li>
+                            <li>Plumbing & Sanitary Works including plumbing fixtures, septic tank and catch basin excluding water meter</li>
+                            <li>Painting Works</li>
+                        </ol>
+                        <p>The scope of work also includes, but not limited to handling, storage, preparatory work, installation work and any other related work required to protect the Project and to make the equipment and facilities of the Project completely operational, according to the requirements of the plans, drawings, technical specifications and other related Contract Documents.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>B. Number of Units and Contract Amount:</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Location</th>
+                                <th>Number of Blocks</th>
+                                <th>Contract Amount</th>
+                            </tr>
+                            <tr>
+                                <td>${contract.project_name || 'N/A'}</td>
+                                <td>${contract.location || 'N/A'}</td>
+                                <td>${contract.blocks || 'N/A'}</td>
+                                <td>${contract.estimated_cost ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(contract.estimated_cost) : 'To be determined'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>C. List of Owner Supplied Materials:</h5>
+                        ${contract.supply_materials && contract.supply_materials.length > 0 ? `
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Material Name</th>
+                                    <th>Unit</th>
+                                    <th>Quantity</th>
+                                </tr>
+                                ${contract.supply_materials.map(material => `
+                                    <tr>
+                                        <td>${material.material_name}</td>
+                                        <td>${material.unit || '-'}</td>
+                                        <td>${material.quantity}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No owner supplied materials specified.</p>'}
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>D. Number of Manpower loading per unit:</h5>
+                        ${contract.labor && contract.labor.length > 0 ? `
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Worker Type</th>
+                                    <th>Manpower per Unit</th>
+                                </tr>
+                                ${contract.labor.map(labor => `
+                                    <tr>
+                                        <td>${labor.worker_type_name}</td>
+                                        <td>${labor.manpower_per_unit}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No manpower details specified.</p>'}
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>E. Terms of Payment</h5>
+                        <p>Progress billing based on the milestone of work accomplishment. Release of 10% retention will be two months after acceptance of Certificate of Completion (C.O.C.)</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>F. Construction Schedule</h5>
+                        <p>The construction will commence on ${startDateStr} and to be finished on ${endDateStr}. This notice authorized you to commence with the work upon receipt of this notice and shall be completed within Seventy-six (76) calendar days. You are requested to mobilize immediately with the deployment of materials, manpower, and equipment required for the undertaking.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>H. Liquidated Damages</h5>
+                        <p>Amount Equivalent to 1/10 of 1% of the Contract Price for any unperformed works for each day of delay including weekends and holidays but not more than ten percent (10%) of the Contract Price. If taken over, all billings and retentions due to Contractor will be forfeited in favor of the Company.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>I. Backcharges and Penalties</h5>
+                        <p>Upon confirmation of this NTP, contractor agrees to the maximum guaranteed quantities of OSM. The cost of additional quantities of OSM and equipment, including utilities consumption and construction penalties shall be charged to the Contractor by deducting the amount from the Contractor's progress billing.</p>
+                    </div>
+
+                    <div class="row mt-5">
+                        <div class="col-md-6 text-center">
+                            <div class="signature-box">
+                                <div class="signature-line mb-2" style="border-bottom: 1px solid #000; height: 40px;"></div>
+                                <p>Manufacturing Representative</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="signature-box">
+                                ${contract.developer_signature ? 
+                                    (() => {
+                                        const signaturePath = contract.developer_signature;
+                                        let fileName = signaturePath;
+                                        if (signaturePath.includes('/') || signaturePath.includes('\\')) {
+                                            fileName = signaturePath.split(/[/\\]/).pop();
+                                        }
+                                        const imageUrl = `/uploads/signatures/${fileName}`;
+                                        return `<img src="${imageUrl}" alt="Developer Signature" class="mb-2" style="max-width: 200px; max-height: 80px; border: 1px solid #ddd; border-radius: 4px; background-color: white;"><div class="signature-line mb-2" style="border-bottom: 1px solid #000; height: 40px; display:none;"></div>`;
+                                    })() : 
+                                    '<div class="signature-line mb-2" style="border-bottom: 1px solid #000; height: 40px;"></div>'
+                                }
+                                <p>Developer Representative</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Manufacturing signature functions
+        function openManufacturingSignModal(contractId) {
+            currentContractId = contractId;
+            // Clear the manufacturing signature pad
+            clearManufacturingSignature();
+            // Uncheck the agreement checkbox
+            document.getElementById('agreeManufacturingTerms').checked = false;
+            
+            // Close the contract modal first
+            const contractModal = bootstrap.Modal.getInstance(document.getElementById('contractViewModal'));
+            if (contractModal) {
+                contractModal.hide();
+            }
+            
+            // Show the signature modal
+            const modal = new bootstrap.Modal(document.getElementById('manufacturingSignModal'));
+            modal.show();
+        }
+
+        // Clear manufacturing signature
+        function clearManufacturingSignature() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Undo manufacturing signature
+        function undoManufacturingSignature() {
+            clearManufacturingSignature();
+        }
+
+        // Get manufacturing signature as data URL
+        function getManufacturingSignatureDataURL() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            return canvas.toDataURL('image/png');
+        }
+
+        // Check if manufacturing signature exists
+        function hasManufacturingSignature() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] !== 0) { // Check alpha channel
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Submit manufacturing signature
+        async function submitManufacturingSignature() {
+            try {
+                const agreeTerms = document.getElementById('agreeManufacturingTerms').checked;
+                
+                if (!hasManufacturingSignature()) {
+                    alert('Please draw the manufacturing signature first');
+                    return;
+                }
+                
+                if (!agreeTerms) {
+                    alert('Please confirm the contract is ready to become active');
+                    return;
+                }
+                
+                // Get signature as base64 data URL
+                const signatureDataURL = getManufacturingSignatureDataURL();
+                
+                // Convert data URL to blob
+                const response = await fetch(signatureDataURL);
+                const blob = await response.blob();
+                
+                const formData = new FormData();
+                formData.append('signature', blob, 'manufacturing_signature.png');
+                formData.append('contract_id', currentContractId);
+                
+                const signResponse = await fetch(`${API_URL}/contracts/manufacturing-sign`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!signResponse.ok) throw new Error('Failed to submit manufacturing signature');
+                
+                const data = await signResponse.json();
+                if (data.success) {
+                    alert('Contract activated successfully!');
+                    
+                    // Close modals
+                    const signModal = bootstrap.Modal.getInstance(document.getElementById('manufacturingSignModal'));
+                    signModal.hide();
+                    
+                    // Refresh contracts list
+                    await fetchApprovedContracts();
+                } else {
+                    alert('Failed to activate contract: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Error activating contract:', error);
+                alert('Failed to activate contract. Please try again.');
+            }
+        }
+
+        // Initialize the page by fetching approved contracts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize manufacturing signature pad
+            const manufacturingCanvas = document.getElementById('manufacturingSignaturePad');
+            if (manufacturingCanvas) {
+                initializeSignaturePad(manufacturingCanvas);
+            }
+
+            function initializeSignaturePad(canvas) {
+                const ctx = canvas.getContext('2d');
+                
+                // Set up drawing properties
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+
+                // Mouse events
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', handleTouch);
+                canvas.addEventListener('touchmove', handleTouch);
+                canvas.addEventListener('touchend', stopDrawing);
+
+                function startDrawing(e) {
+                    isDrawing = true;
+                    const rect = canvas.getBoundingClientRect();
+                    lastX = e.clientX - rect.left;
+                    lastY = e.clientY - rect.top;
+                }
+
+                function draw(e) {
+                    if (!isDrawing) return;
+                    
+                    const rect = canvas.getBoundingClientRect();
+                    const currentX = e.clientX - rect.left;
+                    const currentY = e.clientY - rect.top;
+
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+
+                    lastX = currentX;
+                    lastY = currentY;
+                }
+
+                function stopDrawing() {
+                    isDrawing = false;
+                }
+
+                function handleTouch(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                                   e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                }
+            }
+
+            fetchApprovedContracts();
+        });
     </script>
 </body>
 </html>

@@ -744,21 +744,14 @@ const CRMController = {
     getDeveloperById: async (req, res) => {
         try {
             const { id } = req.params;
-            console.log('🔍 DEBUG: Fetching developer details for ID:', id);
-
-            // Use CRMModel instead of direct db query
             const developer = await CRMModel.getDeveloperById(id);
-            console.log('🔍 DEBUG: Developer query result:', developer ? 'Found' : 'Not found');
 
             if (!developer) {
-                console.log('❌ DEBUG: No developer found with ID:', id);
                 return res.status(404).json({ 
                     success: false,
                     error: "Developer not found" 
                 });
             }
-
-            console.log('✅ DEBUG: Developer found:', developer);
 
             // Return developer profile
             res.json({
