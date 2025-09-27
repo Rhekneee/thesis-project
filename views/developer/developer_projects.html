@@ -139,6 +139,11 @@
             color: #000;
         }
 
+        .status-contract-generated {
+            background-color: #6f42c1;
+            color: #fff;
+        }
+
         .action-buttons {
             display: flex;
             gap: 5px;
@@ -151,6 +156,27 @@
             cursor: pointer;
             transition: background-color 0.3s;
             color: white;
+        }
+
+        .sign-btn {
+            background-color: #28a745;
+        }
+
+        .sign-btn:hover {
+            background-color: #218838;
+        }
+
+        .contract-btn {
+            background-color: #6f42c1;
+        }
+
+        .contract-btn:hover {
+            background-color: #5a2d91;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 40px;
         }
 
         .view-btn {
@@ -573,6 +599,43 @@
                 opacity: 0;
             }
         }
+
+        /* Signature Pad Styles */
+        .signature-pad-container {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .signature-canvas {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+            cursor: crosshair;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .signature-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .signature-canvas:active {
+            cursor: crosshair;
+        }
+
+        /* Signature in contract display */
+        .signature-display {
+            max-width: 200px;
+            max-height: 80px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
     </style>
 </head>
 
@@ -664,6 +727,9 @@
         <li class="nav-item">
             <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
         </li>
+        <li class="nav-item">
+            <a href="#" onclick="showContractsSection()"><i class="fas fa-file-contract"></i> <span>Contracts</span></a>
+        </li>
 
         
     </ul>
@@ -692,6 +758,7 @@
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
                     <option value="in-progress">In Progress</option>
+                    <option value="contract_generated">Contract Generated</option>
                 </select>
                 <div id="entriesPerPageContainer" class="entries-per-page">
                     <label for="entriesPerPageSelect">Entries per page:</label>
@@ -711,11 +778,10 @@
                             <tr>
                                 <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                                <th>Image</th>
-                                <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(4)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(5)">Deadline <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(2)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(3)">Submission Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(4)"> Estimation Cost <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(5)">Status <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -729,6 +795,330 @@
                 <nav aria-label="Project pagination">
                     <ul class="pagination mb-0" id="paginationControls"></ul>
                 </nav>
+            </div>
+
+            <!-- Contracts Section -->
+            <div id="contractsSection" class="main-content" style="display: none;">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h2>My Contracts</h2>
+                                <button class="btn btn-primary" onclick="showProjectsSection()">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Projects
+                                </button>
+                            </div>
+
+                            <!-- Contract Status Filter -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <select id="contractFilterDropdown" class="form-select" onchange="handleContractFilterChange()">
+                                        <option value="all">All Contracts</option>
+                                        <option value="Draft">Draft</option>
+                                        <option value="Approved">Approved</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Contracts Table -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0" id="contractsTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Project Name</th>
+                                                    <th>Developer</th>
+                                                    <th>Location</th>
+                                                    <th>Contract Status</th>
+                                                    <th>Contract Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="contractsList">
+                                                <!-- Contracts will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- No contracts message -->
+                            <div id="noContractsMessage" class="text-center py-5" style="display: none;">
+                                <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No contracts found</h5>
+                                <p class="text-muted">You don't have any contracts yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract View Modal -->
+            <div class="modal fade" id="contractViewModal" tabindex="-1" aria-labelledby="contractViewModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="contractViewModalLabel">Contract Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="contractContent">
+                                <!-- Contract content will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-success" id="signContractBtn" onclick="signContract()" style="display: none;">
+                                <i class="fas fa-signature me-2"></i>Sign Contract
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract Signing Modal -->
+            <div class="modal fade" id="contractSignModal" tabindex="-1" aria-labelledby="contractSignModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="contractSignModalLabel">Sign Contract</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="contractSignForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Draw Your Signature</label>
+                                    <div class="signature-pad-container">
+                                        <canvas id="signaturePad" width="600" height="200" class="signature-canvas"></canvas>
+                                        <div class="signature-controls mt-2">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearSignature()">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-info" onclick="undoSignature()">
+                                                <i class="fas fa-undo me-1"></i>Undo
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Please draw your signature in the box above</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                                        <label class="form-check-label" for="agreeTerms">
+                                            I agree to the terms and conditions of this contract
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="submitContractSignature()">
+                                <i class="fas fa-check me-2"></i>Submit Signature
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manufacturing Contract Signing Modal -->
+            <div class="modal fade" id="manufacturingSignModal" tabindex="-1" aria-labelledby="manufacturingSignModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="manufacturingSignModalLabel">Manufacturing Signature</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="manufacturingSignForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Draw Manufacturing Signature</label>
+                                    <div class="signature-pad-container">
+                                        <canvas id="manufacturingSignaturePad" width="600" height="200" class="signature-canvas"></canvas>
+                                        <div class="signature-controls mt-2">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="clearManufacturingSignature()">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-info" onclick="undoManufacturingSignature()">
+                                                <i class="fas fa-undo me-1"></i>Undo
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Please draw the manufacturing representative's signature</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="agreeManufacturingTerms" required>
+                                        <label class="form-check-label" for="agreeManufacturingTerms">
+                                            I confirm this contract is ready to become active
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="submitManufacturingSignature()">
+                                <i class="fas fa-check me-2"></i>Activate Contract
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inline Project Details (like manufacturing) -->
+            <div id="projectDetailsInline" class="card border-0 shadow-sm mt-4" style="display: none;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Project Details
+                        </h4>
+                        <button class="btn btn-secondary" onclick="hideInlineDetails()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Project Information -->
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-building me-2 text-primary"></i>Project Information
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Project Name</label>
+                                                <p id="inlineProjectName" class="info-value fw-bold"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Location</label>
+                                                <p id="inlineProjectLocation" class="info-value"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Submission Date</label>
+                                                <p id="inlineProjectSubmissionDate" class="info-value"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Status</label>
+                                                <p id="inlineProjectStatus" class="info-value"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Number of Blocks</label>
+                                                <p id="inlineProjectBlocks" class="info-value"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Description</label>
+                                                <p id="inlineProjectDescription" class="info-value"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Owners Supply Section (only for approved_by_mfg) -->
+                        <div id="ownersSupplySection" class="col-12" style="display: none;">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-boxes me-2 text-primary"></i>Owners Supply
+                                    </h6>
+                                    <!-- Input row -->
+                                    <div class="row g-2 align-items-end mb-3">
+                                        <div class="col-md-5">
+                                            <label class="form-label">Material Name</label>
+                                            <input type="text" class="form-control" id="supplyNameInput" placeholder="e.g., Steel Bar">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Unit</label>
+                                            <input type="text" class="form-control" id="supplyUnitInput" placeholder="e.g., pcs, kg">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Quantity</label>
+                                            <input type="number" class="form-control" id="supplyQtyInput" min="1" placeholder="0">
+                                        </div>
+                                        <div class="col-md-2 d-grid">
+                                            <button type="button" class="btn btn-success" onclick="addSupplyRowView()">
+                                                <i class="fas fa-plus me-1"></i>Add
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Table -->
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped" id="ownersSupplyTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Unit</th>
+                                                    <th>Quantity</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="ownersSupplyTbody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manufacturing Labor and Cost Section -->
+                        <div id="manufacturingLaborSection" class="col-12" style="display: none;">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-users me-2 text-primary"></i>Manufacturing Labor & Cost
+                                    </h6>
+                                    
+                                    <!-- Labor Table -->
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-sm table-striped" id="manufacturingLaborTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Worker Type</th>
+                                                    <th class="text-end">Manpower per Unit</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="manufacturingLaborTbody"></tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Final Estimated Cost -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-group">
+                                                <label class="form-label text-muted">Final Estimated Cost (Whole Project)</label>
+                                                <p id="inlineFinalEstimatedCost" class="info-value fw-bold text-success"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-primary" id="submitOwnersSupplyBtn" style="display:none;" onclick="submitOwnersSupply()">
+                            <i class="fas fa-paper-plane me-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -755,24 +1145,36 @@
                                     <label for="projectLocation" class="form-label">Location</label>
                                     <input type="text" class="form-control" id="projectLocation" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="projectDeadline" class="form-label">Deadline</label>
-                                    <input type="date" class="form-control" id="projectDeadline" required>
-                                    <small class="text-muted">Please select a current or future date</small>
-                                </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="projectImage" class="form-label">Project Image</label>
-                                    <input type="file" class="form-control" id="projectImage" accept="image/*" onchange="previewImage(event)">
-                                    <div class="image-preview-container">
-                                        <img id="imagePreview" src="#" alt="Image Preview">
+                                    <label for="projectBlocks" class="form-label">Number of Blocks</label>
+                                    <input type="number" class="form-control" id="projectBlocks" min="1" required>
+                                    <small class="text-muted">Enter the number of blocks/units in the project</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="projectDescription" class="form-label">Project Description</label>
+                                    <textarea class="form-control" id="projectDescription" rows="4" required placeholder="Describe the project details..."></textarea>
                                     </div>
                                 </div>
+                        </div>
+                        
+                        <!-- Blueprint Upload Section -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-file-alt me-2"></i>Blueprint Documents
+                                </h5>
                                 <div class="mb-3">
-                                    <label for="projectDocuments" class="form-label">Project Documents</label>
-                                    <input type="file" class="form-control" id="projectDocuments" multiple>
-                                    <small class="text-muted">You can select multiple files</small>
+                                    <label for="projectBlueprints" class="form-label">Upload Blueprint Files</label>
+                                    <input type="file" class="form-control" id="projectBlueprints" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png">
+                                    <small class="text-muted">You can upload multiple blueprint files (PDF, DWG, JPG, PNG)</small>
                                 </div>
                             </div>
                         </div>
@@ -813,27 +1215,41 @@
                                     <label for="editProjectLocation" class="form-label">Location</label>
                                     <input type="text" class="form-control" id="editProjectLocation" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="editProjectDeadline" class="form-label">Deadline</label>
-                                    <input type="date" class="form-control" id="editProjectDeadline" required>
-                                    <small class="text-muted">Please select a current or future date</small>
-                                </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="editProjectImage" class="form-label">Project Image</label>
-                                    <input type="file" class="form-control" id="editProjectImage" accept="image/*" onchange="previewEditImage(event)">
-                                    <div class="image-preview-container">
-                                        <img id="editImagePreview" src="#" alt="Image Preview">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editProjectDocuments" class="form-label">Project Documents</label>
-                                    <input type="file" class="form-control" id="editProjectDocuments" multiple>
-                                    <small class="text-muted">You can select multiple files</small>
+                                    <label for="editProjectBlocks" class="form-label">Number of Blocks</label>
+                                    <input type="number" class="form-control" id="editProjectBlocks" min="1" required>
+                                    <small class="text-muted">Enter the number of blocks/units in the project</small>
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="editProjectDescription" class="form-label">Project Description</label>
+                                    <textarea class="form-control" id="editProjectDescription" rows="4" required placeholder="Describe the project details..."></textarea>
+                                    </div>
+                                </div>
+                        </div>
+                        
+                        <!-- Blueprint Upload Section -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-file-alt me-2"></i>Blueprint Documents
+                                </h5>
+                                <div class="mb-3">
+                                    <label for="editProjectBlueprints" class="form-label">Upload Blueprint Files</label>
+                                    <input type="file" class="form-control" id="editProjectBlueprints" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png">
+                                    <small class="text-muted">You can upload multiple blueprint files (PDF, DWG, JPG, PNG)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -861,12 +1277,7 @@
                 <div class="modal-body">
                     <div class="project-details-container">
                         <div class="row">
-                            <div class="col-md-5">
-                                <div class="project-image-container">
-                                    <img id="viewProjectImage" src="#" alt="Project Image" class="project-detail-image">
-                                </div>
-                            </div>
-                            <div class="col-md-7">
+                            <div class="col-12">
                                 <div class="project-info-container">
                                     <div class="info-group">
                                         <label>Project Name</label>
@@ -881,12 +1292,47 @@
                                         <p id="viewProjectSubmissionDate" class="info-value"></p>
                                     </div>
                                     <div class="info-group">
-                                        <label>Deadline</label>
-                                        <p id="viewProjectDeadline" class="info-value"></p>
-                                    </div>
-                                    <div class="info-group">
                                         <label>Status</label>
                                         <p id="viewProjectStatus" class="info-value status-badge"></p>
+                                    </div>
+                                    <!-- Owners Supply Section (only for approved_by_mfg) -->
+                                    <div id="ownersSupplySection" class="info-group" style="display: none;">
+                                        <label>Owners Supply</label>
+                                        <!-- Input row -->
+                                        <div class="row g-2 align-items-end mb-3">
+                                            <div class="col-md-5">
+                                                <label class="form-label">Material Name</label>
+                                                <input type="text" class="form-control" id="supplyNameInput" placeholder="e.g., Steel Bar">
+                                </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Unit</label>
+                                                <input type="text" class="form-control" id="supplyUnitInput" placeholder="e.g., pcs, kg">
+                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Quantity</label>
+                                                <input type="number" class="form-control" id="supplyQtyInput" min="1" placeholder="0">
+                                            </div>
+                                            <div class="col-md-2 d-grid">
+                                                <button type="button" class="btn btn-success" onclick="addSupplyRowView()">
+                                                    <i class="fas fa-plus me-1"></i>Add
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Table -->
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped" id="ownersSupplyTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Name</th>
+                                                        <th>Unit</th>
+                                                        <th>Quantity</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ownersSupplyTbody"></tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -896,6 +1342,9 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitOwnersSupplyBtn" style="display:none;" onclick="submitOwnersSupply()">
+                        <i class="fas fa-paper-plane me-2"></i>Submit
                     </button>
                 </div>
             </div>
@@ -1035,7 +1484,7 @@
                     if (projectsToShow.length === 0) {
                         projectsList.innerHTML = `
                             <tr>
-                                <td colspan="8" class="text-center">No projects found</td>
+                                <td colspan="7" class="text-center">No projects found</td>
                             </tr>
                         `;
                 return;
@@ -1043,26 +1492,37 @@
 
                     projectsToShow.forEach(project => {
                 const row = document.createElement('tr');
+                const estimatedCost = project.estimated_cost ? 
+                    new Intl.NumberFormat('en-PH', { 
+                        style: 'currency', 
+                        currency: 'PHP' 
+                    }).format(project.estimated_cost) : '-';
+                
                 row.innerHTML = `
-                            <td>${project.project_id}</td>
+                            <td>${project.proposal_id}</td>
                             <td>${project.project_name}</td>
-                            <td><img src="${project.project_image ? `/uploads/projects/${project.project_image}` : 'https://via.placeholder.com/60x60?text=No+Image'}" 
-                                    alt="Project Image" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"></td>
                         <td>${project.location}</td>
-                            <td>${project.submission_date}</td>
-                        <td>${project.deadline}</td>
+                            <td>${project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A'}</td>
+                            <td>${estimatedCost}</td>
                         <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
                         <td>
                             <div class="action-buttons">
-                                    <button class="action-btn view-btn" onclick="viewProject(${project.project_id})" title="View Project">
+                                        <button class="action-btn view-btn" onclick="viewProject(${project.proposal_id})" title="View Project">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                    ${project.estimated_cost && project.status !== 'contract_generated' ? `
+                                            <button class="action-btn approve-btn" onclick="approveProject(${project.proposal_id})" title="Approve Project">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                        ` : ''}
                                     ${project.status === 'pending' ? `
-                                        <button class="action-btn send-btn" onclick="sendProject(${project.project_id})" title="Send to Manufacturing">
+                                            <button class="action-btn send-btn" onclick="sendProject(${project.proposal_id})" title="Send to Manufacturing">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
-                                        <button class="action-btn edit-btn" onclick="editProject(${project.project_id})" title="Edit Project">
-                                    <i class="fas fa-edit"></i>
+                                    ` : ''}
+                                    ${project.status === 'contract_generated' ? `
+                                            <button class="action-btn contract-btn" onclick="viewContractForProject(${project.proposal_id})" title="See Contract">
+                                    <i class="fas fa-file-contract"></i>
                                 </button>
                                     ` : ''}
                             </div>
@@ -1076,7 +1536,7 @@
                 const projectsList = document.getElementById('projectsList');
                 projectsList.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center text-danger">
+                        <td colspan="7" class="text-center text-danger">
                             Error loading projects. Please try again later.
                         </td>
                     </tr>
@@ -1088,8 +1548,9 @@
         document.getElementById('submitProjectBtn').addEventListener('click', async function() {
             const name = document.getElementById('projectName').value;
             const location = document.getElementById('projectLocation').value;
-            const deadline = document.getElementById('projectDeadline').value;
-            const imageFile = document.getElementById('projectImage').files[0];
+            const blocks = document.getElementById('projectBlocks').value;
+            const description = document.getElementById('projectDescription').value;
+            const blueprintFiles = document.getElementById('projectBlueprints').files;
             
             const developerId = await getCurrentDeveloperId();
             if (!developerId) {
@@ -1097,25 +1558,28 @@
                 return;
             }
 
-            if (!name || !location || !deadline) {
+            // Validate required fields
+            if (!name || !location || !blocks || !description) {
                 alert('Please fill in all required fields');
                 return;
             }
 
-            const today = new Date();
-            const deadlineDate = new Date(deadline);
-            if (deadlineDate < today) {
-                alert('Deadline must be a future date');
+            // Validate blocks is a positive number
+            if (parseInt(blocks) < 1) {
+                alert('Number of blocks must be at least 1');
                 return;
             }
 
             const formData = new FormData();
             formData.append('project_name', name);
             formData.append('location', location);
-            formData.append('deadline', deadline);
+            formData.append('blocks', blocks);
+            formData.append('description', description);
             formData.append('developer_id', developerId);
-                    if (imageFile) {
-                formData.append('project_image', imageFile);
+
+            // Add blueprint files
+            for (let i = 0; i < blueprintFiles.length; i++) {
+                formData.append('blueprint_files', blueprintFiles[i]);
             }
 
             try {
@@ -1130,22 +1594,21 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Project submitted successfully!');
+                    alert('Project proposal submitted successfully!');
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
                     modal.hide();
                     document.getElementById('addProjectForm').reset();
-                    document.getElementById('imagePreview').style.display = 'none';
                     await fetchAndDisplayProjects();
             } else {
-                    alert('Failed to submit project: ' + (data.error || 'Unknown error'));
+                    alert('Failed to submit project proposal: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error submitting project:', error);
-                alert('Failed to submit project. Please try again.');
+                alert('Failed to submit project proposal. Please try again.');
             }
         });
 
-        // Project view function
+        // Project view function - inline details like manufacturing
         async function viewProject(id) {
             try {
                 const response = await fetch(`${API_URL}/projects/${id}`);
@@ -1154,22 +1617,78 @@
                 const data = await response.json();
                 if (data.success) {
                     const project = data.project;
-                    document.getElementById('viewProjectImage').src = project.project_image 
-                        ? `/uploads/projects/${project.project_image}` 
-                        : 'https://via.placeholder.com/300x200?text=No+Image';
-                    document.getElementById('viewProjectName').textContent = project.project_name;
-                    document.getElementById('viewProjectLocation').textContent = project.location;
-                    document.getElementById('viewProjectSubmissionDate').textContent = project.submission_date;
-                    document.getElementById('viewProjectDeadline').textContent = project.deadline;
-                    document.getElementById('viewProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
-                    document.getElementById('viewProjectStatus').className = `info-value status-badge ${project.status}`;
+                    // cache current viewed project id
+                    window.currentViewedProjectId = project.proposal_id;
                     
-                    const viewModal = new bootstrap.Modal(document.getElementById('viewProjectModal'));
-                    viewModal.show();
+                    // Populate inline details
+                    document.getElementById('inlineProjectName').textContent = project.project_name;
+                    document.getElementById('inlineProjectLocation').textContent = project.location;
+                    document.getElementById('inlineProjectSubmissionDate').textContent = project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A';
+                    document.getElementById('inlineProjectStatus').textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
+                    document.getElementById('inlineProjectStatus').className = `badge bg-${getStatusColor(project.status)}`;
+                    
+                    // Show blocks and description
+                    document.getElementById('inlineProjectBlocks').textContent = project.blocks || 'N/A';
+                    document.getElementById('inlineProjectDescription').textContent = project.description || 'No description provided';
+                    
+                    // Owners supply visibility and submit button logic
+                    const ownersSupplySection = document.getElementById('ownersSupplySection');
+                    const submitOwnersSupplyBtn = document.getElementById('submitOwnersSupplyBtn');
+                    if (project.status === 'approved_by_mfg') {
+                        ownersSupplySection.style.display = 'block';
+                        submitOwnersSupplyBtn.style.display = 'inline-block';
+                        renderOwnersSupplyTable(project.supply_materials || []);
+                    } else {
+                        ownersSupplySection.style.display = 'none';
+                        submitOwnersSupplyBtn.style.display = 'none';
+                    }
+
+                    // Manufacturing labor and cost section
+                    const manufacturingLaborSection = document.getElementById('manufacturingLaborSection');
+                    if (project.labor && project.labor.length > 0) {
+                        manufacturingLaborSection.style.display = 'block';
+                        renderManufacturingLaborTable(project.labor);
+                    } else {
+                        manufacturingLaborSection.style.display = 'none';
+                    }
+
+                    // Show final estimated cost if available
+                    if (project.estimated_cost) {
+                        document.getElementById('inlineFinalEstimatedCost').textContent = 
+                            new Intl.NumberFormat('en-PH', { 
+                                style: 'currency', 
+                                currency: 'PHP' 
+                            }).format(project.estimated_cost);
+                    } else {
+                        document.getElementById('inlineFinalEstimatedCost').textContent = '-';
+                    }
+                    
+                    // Show inline details and scroll to it
+                    const inlineDetails = document.getElementById('projectDetailsInline');
+                    inlineDetails.style.display = 'block';
+                    inlineDetails.scrollIntoView({ behavior: 'smooth' });
                 }
             } catch (error) {
                 console.error('Error viewing project:', error);
                 alert('Failed to load project details. Please try again.');
+            }
+        }
+
+        // Hide inline details
+        function hideInlineDetails() {
+            document.getElementById('projectDetailsInline').style.display = 'none';
+        }
+
+        // Get status color for badges
+        function getStatusColor(status) {
+            switch (status) {
+                case 'pending': return 'warning';
+                case 'approved_by_mfg': return 'success';
+                case 'developer_approved': return 'info';
+                case 'contract_generated': return 'primary';
+                case 'in_progress': return 'info';
+                case 'rejected': return 'danger';
+                default: return 'secondary';
             }
         }
 
@@ -1195,6 +1714,30 @@
             }
         }
 
+        // Project approve function
+        async function approveProject(id) {
+            if (!confirm('Are you sure you want to approve this project?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/projects/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'developer_approved' })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Project approved successfully!');
+                    await fetchAndDisplayProjects();
+                }
+            } catch (error) {
+                console.error('Error approving project:', error);
+                alert('Failed to approve project. Please try again.');
+            }
+        }
+
         // Project edit function
         async function editProject(id) {
             try {
@@ -1204,20 +1747,26 @@
                 const data = await response.json();
                 if (data.success) {
                     const project = data.project;
-                    if (project.status === 'pending') {
-                        document.getElementById('editProjectId').value = project.project_id;
+                    if (project.status === 'pending' || project.status === 'approved_by_mfg') {
+                        document.getElementById('editProjectId').value = project.proposal_id;
                         document.getElementById('editProjectName').value = project.project_name;
                         document.getElementById('editProjectLocation').value = project.location;
-                        document.getElementById('editProjectDeadline').value = project.deadline;
-                        document.getElementById('editImagePreview').src = project.project_image 
-                            ? `/uploads/projects/${project.project_image}` 
-                            : 'https://via.placeholder.com/300x200?text=No+Image';
-                        document.getElementById('editImagePreview').style.display = 'block';
+                        document.getElementById('editProjectBlocks').value = project.blocks || '';
+                        document.getElementById('editProjectDescription').value = project.description || '';
+                        
+                        // Show/hide supply materials section based on status
+                        const editSupplyMaterialsSection = document.getElementById('editSupplyMaterialsSection');
+                        if (project.status === 'approved_by_mfg') {
+                            editSupplyMaterialsSection.style.display = 'block';
+                            loadSupplyMaterialsForEdit(project.supply_materials || []);
+                        } else {
+                            editSupplyMaterialsSection.style.display = 'none';
+                        }
                         
                         const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
                         editModal.show();
             } else {
-                        alert('Only pending projects can be edited.');
+                        alert('Only pending or approved projects can be edited.');
                     }
                 }
             } catch (error) {
@@ -1229,8 +1778,6 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             fetchAndDisplayProjects();
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('projectDeadline').min = today;
         });
 
         // Handle filter change
@@ -1244,20 +1791,799 @@
             fetchAndDisplayProjects();
         }
 
-        // Preview image before upload
-        function previewImage(event) {
-            const preview = document.getElementById('imagePreview');
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
+        // Function to display supply materials in view modal
+        function renderOwnersSupplyTable(supplyMaterials) {
+            const tbody = document.getElementById('ownersSupplyTbody');
+            tbody.innerHTML = '';
+            if (!supplyMaterials || supplyMaterials.length === 0) return;
+            supplyMaterials.forEach(material => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${material.material_name}</td>
+                    <td>${material.unit || ''}</td>
+                    <td>${material.quantity}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSupply('${material.supply_id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Add a row to the owners supply input table (not persisted yet)
+        function addSupplyRowView() {
+            const name = document.getElementById('supplyNameInput').value.trim();
+            const unit = document.getElementById('supplyUnitInput').value.trim();
+            const qty = parseInt(document.getElementById('supplyQtyInput').value, 10);
+            if (!name || !qty || qty < 1) { alert('Enter name and a valid quantity'); return; }
+            const tbody = document.getElementById('ownersSupplyTbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td data-name>${name}</td>
+                <td data-unit>${unit}</td>
+                <td data-qty>${qty}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            document.getElementById('supplyNameInput').value = '';
+            document.getElementById('supplyUnitInput').value = '';
+            document.getElementById('supplyQtyInput').value = '';
+        }
+
+        // Function to add a new supply material row
+        function addSupplyMaterialRow(material = null) {
+            const container = document.getElementById('supplyMaterialsContainer');
+            const rowId = 'supply-material-' + Date.now();
+            
+            const row = document.createElement('div');
+            row.className = 'supply-material-row';
+            row.id = rowId;
+            
+            row.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">Material Name</label>
+                    <input type="text" class="form-control" name="material_name" value="${material ? material.material_name : ''}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit</label>
+                    <input type="text" class="form-control" name="unit" value="${material ? material.unit : ''}" placeholder="e.g., kg, pieces, meters">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-control" name="quantity" value="${material ? material.quantity : ''}" min="1" required>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn-remove" onclick="removeSupplyMaterialRow('${rowId}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(row);
+        }
+
+        // Function to remove a supply material row
+        function removeSupplyMaterialRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
             }
         }
+
+        // Submit owners supply (create rows)
+        async function submitOwnersSupply() {
+            try {
+                const developerId = await getCurrentDeveloperId();
+                if (!developerId) { alert('Session expired. Please log in again.'); return; }
+                // current project id is in the view modal context: fetch it from the last loaded project title group by reading from table? We'll reuse the last loaded id by caching
+                const tbody = document.getElementById('ownersSupplyTbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                if (rows.length === 0) { alert('Add at least one material.'); return; }
+
+                // Determine project id from the most recent viewed project by parsing hidden data attribute we set
+                const projectId = window.currentViewedProjectId;
+                if (!projectId) { alert('No project selected.'); return; }
+
+                for (const tr of rows) {
+                    const name = tr.querySelector('td[data-name]').textContent.trim();
+                    const unit = tr.querySelector('td[data-unit]').textContent.trim();
+                    const qty = parseInt(tr.querySelector('td[data-qty]').textContent.trim(), 10);
+                    const resp = await fetch(`${API_URL}/projects/${projectId}/supply-materials`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ material_name: name, unit, quantity: qty, developer_id: developerId })
+                    });
+                    if (!resp.ok) throw new Error('Failed to submit material');
+                }
+                alert('Owners supply submitted successfully.');
+                // Refresh details
+                await viewProject(projectId);
+            } catch (e) {
+                console.error(e);
+                alert('Failed to submit owners supply.');
+            }
+        }
+
+        // Delete an existing supply material
+        async function deleteSupply(supplyId) {
+            if (!confirm('Delete this material?')) return;
+            try {
+                const resp = await fetch(`${API_URL}/supply-materials/${supplyId}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Failed');
+                // Re-render current project
+                if (window.currentViewedProjectId) await viewProject(window.currentViewedProjectId);
+            } catch (e) {
+                console.error(e);
+                alert('Failed to delete material');
+            }
+        }
+
+        // Function to render manufacturing labor table
+        function renderManufacturingLaborTable(laborData) {
+            const tbody = document.getElementById('manufacturingLaborTbody');
+            tbody.innerHTML = '';
+            
+            if (!laborData || laborData.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="2" class="text-center text-muted">No labor data available</td>
+                `;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            laborData.forEach(labor => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${labor.worker_type_name || 'N/A'}</td>
+                    <td class="text-end">${labor.manpower_per_unit || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Contract management functions
+        let currentContractId = null;
+
+        // Signature Pad functionality
+        let signaturePad = null;
+        let signatureData = null;
+
+        // Initialize signature pad when modal opens
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize developer signature pad
+            const canvas = document.getElementById('signaturePad');
+            if (canvas) {
+                initializeSignaturePad(canvas);
+            }
+
+            // Initialize manufacturing signature pad
+            const manufacturingCanvas = document.getElementById('manufacturingSignaturePad');
+            if (manufacturingCanvas) {
+                initializeSignaturePad(manufacturingCanvas);
+            }
+
+            function initializeSignaturePad(canvas) {
+                const ctx = canvas.getContext('2d');
+                
+                // Set up drawing properties
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+
+                // Mouse events
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', handleTouch);
+                canvas.addEventListener('touchmove', handleTouch);
+                canvas.addEventListener('touchend', stopDrawing);
+
+                function startDrawing(e) {
+                    isDrawing = true;
+                    const rect = canvas.getBoundingClientRect();
+                    lastX = e.clientX - rect.left;
+                    lastY = e.clientY - rect.top;
+                }
+
+                function draw(e) {
+                    if (!isDrawing) return;
+                    
+                    const rect = canvas.getBoundingClientRect();
+                    const currentX = e.clientX - rect.left;
+                    const currentY = e.clientY - rect.top;
+
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+
+                    lastX = currentX;
+                    lastY = currentY;
+                }
+
+                function stopDrawing() {
+                    isDrawing = false;
+                }
+
+                function handleTouch(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                                   e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                }
+            }
+        });
+
+        // Clear signature
+        function clearSignature() {
+            const canvas = document.getElementById('signaturePad');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            signatureData = null;
+        }
+
+        // Undo signature (clear and redraw)
+        function undoSignature() {
+            clearSignature();
+        }
+
+        // Get signature as data URL
+        function getSignatureDataURL() {
+            const canvas = document.getElementById('signaturePad');
+            return canvas.toDataURL('image/png');
+        }
+
+        // Check if signature exists
+        function hasSignature() {
+            const canvas = document.getElementById('signaturePad');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] !== 0) { // Check alpha channel
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Show contracts section
+        function showContractsSection() {
+            document.getElementById('projectsSection').style.display = 'none';
+            document.getElementById('contractsSection').style.display = 'block';
+            fetchAndDisplayContracts();
+        }
+
+        // Show projects section
+        function showProjectsSection() {
+            document.getElementById('contractsSection').style.display = 'none';
+            document.getElementById('projectsSection').style.display = 'block';
+        }
+
+        // Fetch and display contracts
+        async function fetchAndDisplayContracts(filter = 'all') {
+            try {
+                const developerId = await getCurrentDeveloperId();
+                const response = await fetch(`/crm/manufacturing/contracts/developer/${developerId}`);
+                
+                if (!response.ok) throw new Error('Failed to fetch contracts');
+                
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to get contracts data');
+                
+                let contracts = data.contracts || [];
+                
+                // Apply filter
+                if (filter !== 'all') {
+                    contracts = contracts.filter(contract => contract.status === filter);
+                }
+                
+                displayContracts(contracts);
+                
+            } catch (error) {
+                console.error('Error fetching contracts:', error);
+                alert('Failed to load contracts. Please try again.');
+            }
+        }
+
+        // Display contracts in table
+        function displayContracts(contracts) {
+            const contractsList = document.getElementById('contractsList');
+            const noContractsMessage = document.getElementById('noContractsMessage');
+            
+            contractsList.innerHTML = '';
+            
+            if (contracts.length === 0) {
+                noContractsMessage.style.display = 'block';
+                return;
+            }
+            
+            noContractsMessage.style.display = 'none';
+            
+            contracts.forEach(contract => {
+                const row = document.createElement('tr');
+                const statusClass = getContractStatusClass(contract.status);
+                
+                row.innerHTML = `
+                    <td>${contract.project_name || 'N/A'}</td>
+                    <td>${contract.developer_company || 'N/A'}</td>
+                    <td>${contract.location || 'N/A'}</td>
+                    <td><span class="badge ${statusClass}">${contract.status}</span></td>
+                    <td>${contract.contract_date ? new Date(contract.contract_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn contract-btn" onclick="viewContract(${contract.contract_id})" title="View Contract">
+                                <i class="fas fa-file-contract"></i>
+                            </button>
+                            ${contract.status === 'Approved' ? `
+                                <button class="action-btn sign-btn" onclick="openManufacturingSignModal(${contract.contract_id})" title="Manufacturing Sign">
+                                    <i class="fas fa-signature"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                contractsList.appendChild(row);
+            });
+        }
+
+        // Get contract status CSS class
+        function getContractStatusClass(status) {
+            switch (status) {
+                case 'Draft': return 'bg-secondary';
+                case 'Approved': return 'bg-success';
+                case 'Active': return 'bg-primary';
+                case 'Completed': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // View contract details
+        async function viewContract(contractId) {
+            try {
+                const response = await fetch(`${API_URL}/contracts/${contractId}`);
+                if (!response.ok) throw new Error('Failed to fetch contract');
+                
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to get contract data');
+                
+                const contract = data.contract;
+                currentContractId = contractId;
+                
+                // Generate contract content (similar to manufacturing side)
+                const contractContent = generateContractContent(contract);
+                
+                document.getElementById('contractContent').innerHTML = contractContent;
+                
+                // Show/hide sign button based on status
+                const signBtn = document.getElementById('signContractBtn');
+                if (contract.status === 'Draft') {
+                    signBtn.style.display = 'inline-block';
+                    signBtn.innerHTML = '<i class="fas fa-signature me-2"></i>Sign Contract';
+                } else {
+                    signBtn.style.display = 'none';
+                }
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('contractViewModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error viewing contract:', error);
+                alert('Failed to load contract details. Please try again.');
+            }
+        }
+
+        // Generate contract content for viewing
+        function generateContractContent(contract) {
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + 76); // 76 calendar days
+            
+            const startDateStr = startDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            const endDateStr = endDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            return `
+                <div class="contract-document">
+                    <div class="text-center mb-4">
+                        <h2>NOTICE TO PROCEED</h2>
+                        <p><strong>Date:</strong> ${currentDate}</p>
+                    </div>
+
+                    <p><strong>${contract.developer_company || 'DEVELOPER NAME'}</strong></p>
+
+                    <p>We are pleased to serve in your favor this NOTICE TO PROCEED with the undertaking of the HOUSING CONSTRUCTION - ${contract.blocks || 'N/A'} UNITS tabulated below for ${contract.project_name || 'N/A'} located at ${contract.location || 'N/A'} with scope of works as follows:</p>
+
+                    <div class="mb-4">
+                        <h5>A. Scope of Works</h5>
+                        <ol>
+                            <li>General Preliminaries</li>
+                            <li>Layout & Earthworks (Excavation, Levelling, Spreading, hauling of excess soil, gravel bedding, Cleaning and clearing including hauling of debris)</li>
+                            <li>Concreting Works including rebars installation</li>
+                            <li>Masonry Works (CHB Laying inc rebars installation, tool joint, plastering, tiling works)</li>
+                            <li>Carpentry Works</li>
+                            <li>Roofing and Roof Framing System</li>
+                            <li>Metal Works (Stair and Metal/Partition Frames replacement to railings)</li>
+                            <li>Doors & Jambs Installation</li>
+                            <li>Electrical Works, excluding CSEP, Lineside & Loadside</li>
+                            <li>Plumbing & Sanitary Works including plumbing fixtures, septic tank and catch basin excluding water meter</li>
+                            <li>Painting Works</li>
+                        </ol>
+                        <p>The scope of work also includes, but not limited to handling, storage, preparatory work, installation work and any other related work required to protect the Project and to make the equipment and facilities of the Project completely operational, according to the requirements of the plans, drawings, technical specifications and other related Contract Documents.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>B. Number of Units and Contract Amount:</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Location</th>
+                                <th>Number of Blocks</th>
+                                <th>Contract Amount</th>
+                            </tr>
+                            <tr>
+                                <td>${contract.project_name || 'N/A'}</td>
+                                <td>${contract.location || 'N/A'}</td>
+                                <td>${contract.blocks || 'N/A'}</td>
+                                <td>${contract.estimated_cost ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(contract.estimated_cost) : 'To be determined'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>C. List of Owner Supplied Materials:</h5>
+                        ${contract.supply_materials && contract.supply_materials.length > 0 ? `
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Material Name</th>
+                                    <th>Unit</th>
+                                    <th>Quantity</th>
+                                </tr>
+                                ${contract.supply_materials.map(material => `
+                                    <tr>
+                                        <td>${material.material_name}</td>
+                                        <td>${material.unit || '-'}</td>
+                                        <td>${material.quantity}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No owner supplied materials specified.</p>'}
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>D. Number of Manpower loading per unit:</h5>
+                        ${contract.labor && contract.labor.length > 0 ? `
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Worker Type</th>
+                                    <th>Manpower per Unit</th>
+                                </tr>
+                                ${contract.labor.map(labor => `
+                                    <tr>
+                                        <td>${labor.worker_type_name}</td>
+                                        <td>${labor.manpower_per_unit}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        ` : '<p>No manpower details specified.</p>'}
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>E. Terms of Payment</h5>
+                        <p>Progress billing based on the milestone of work accomplishment. Release of 10% retention will be two months after acceptance of Certificate of Completion (C.O.C.)</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>F. Construction Schedule</h5>
+                        <p>The construction will commence on ${startDateStr} and to be finished on ${endDateStr}. This notice authorized you to commence with the work upon receipt of this notice and shall be completed within Seventy-six (76) calendar days. You are requested to mobilize immediately with the deployment of materials, manpower, and equipment required for the undertaking.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>H. Liquidated Damages</h5>
+                        <p>Amount Equivalent to 1/10 of 1% of the Contract Price for any unperformed works for each day of delay including weekends and holidays but not more than ten percent (10%) of the Contract Price. If taken over, all billings and retentions due to Contractor will be forfeited in favor of the Company.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>I. Backcharges and Penalties</h5>
+                        <p>Upon confirmation of this NTP, contractor agrees to the maximum guaranteed quantities of OSM. The cost of additional quantities of OSM and equipment, including utilities consumption and construction penalties shall be charged to the Contractor by deducting the amount from the Contractor's progress billing.</p>
+                    </div>
+
+                    <div class="row mt-5">
+                        <div class="col-md-6 text-center">
+                            <div class="signature-box">
+                                <div class="signature-line mb-2"></div>
+                                <p>Manufacturing Representative</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div class="signature-box">
+                                ${contract.developer_signature ? 
+                                    (() => {
+                                        const signaturePath = contract.developer_signature;
+                                        console.log('🔍 DEBUG: Original signature path:', signaturePath);
+                                        
+                                        // Handle both new format (filename only) and old format (full path with \ or /)
+                                        let fileName = signaturePath;
+                                        if (signaturePath.includes('/') || signaturePath.includes('\\')) {
+                                            // Extract filename from path (handle both Windows \ and Unix /)
+                                            fileName = signaturePath.split(/[/\\]/).pop();
+                                            console.log('🔍 DEBUG: Extracted filename:', fileName);
+                                        } else {
+                                            console.log('🔍 DEBUG: Using path as filename:', fileName);
+                                        }
+                                        
+                                        const imageUrl = `/uploads/signatures/${fileName}`;
+                                        console.log('🔍 DEBUG: Final image URL:', imageUrl);
+                                        
+                                        // Test if the image loads
+                                        const testImg = new Image();
+                                        testImg.onload = function() {
+                                            console.log('✅ DEBUG: Signature image loaded successfully:', imageUrl);
+                                        };
+                                        testImg.onerror = function() {
+                                            console.error('❌ DEBUG: Signature image failed to load:', imageUrl);
+                                            console.error('❌ DEBUG: Check if file exists at:', imageUrl);
+                                        };
+                                        testImg.src = imageUrl;
+                                        
+                                        return `<img src="${imageUrl}" alt="Developer Signature" class="signature-display mb-2" onerror="console.error('❌ Image failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';"><div class="signature-line mb-2" style="display:none;"></div>`;
+                                    })() : 
+                                    '<div class="signature-line mb-2"></div>'
+                                }
+                                <p>Developer Representative</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Open sign modal
+        function openSignModal(contractId) {
+            currentContractId = contractId;
+            // Clear the signature pad
+            clearSignature();
+            // Uncheck the agreement checkbox
+            document.getElementById('agreeTerms').checked = false;
+            const modal = new bootstrap.Modal(document.getElementById('contractSignModal'));
+            modal.show();
+        }
+
+        // Sign contract
+        function signContract() {
+            if (currentContractId) {
+                openSignModal(currentContractId);
+            }
+        }
+
+        // Submit contract signature
+        async function submitContractSignature() {
+            try {
+                const agreeTerms = document.getElementById('agreeTerms').checked;
+                
+                if (!hasSignature()) {
+                    alert('Please draw your signature first');
+                    return;
+                }
+                
+                if (!agreeTerms) {
+                    alert('Please agree to the terms and conditions');
+                    return;
+                }
+                
+                // Get signature as base64 data URL
+                const signatureDataURL = getSignatureDataURL();
+                
+                // Convert data URL to blob
+                const response = await fetch(signatureDataURL);
+                const blob = await response.blob();
+                
+                const formData = new FormData();
+                formData.append('signature', blob, 'signature.png');
+                formData.append('contract_id', currentContractId);
+                
+                const signResponse = await fetch(`${API_URL}/contracts/sign`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!signResponse.ok) throw new Error('Failed to submit signature');
+                
+                const data = await signResponse.json();
+                if (data.success) {
+                    alert('Contract signed successfully!');
+                    
+                    // Close modals
+                    const signModal = bootstrap.Modal.getInstance(document.getElementById('contractSignModal'));
+                    signModal.hide();
+                    
+                    const viewModal = bootstrap.Modal.getInstance(document.getElementById('contractViewModal'));
+                    viewModal.hide();
+                    
+                    // Refresh contracts list
+                    await fetchAndDisplayContracts();
+                } else {
+                    alert('Failed to sign contract: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Error signing contract:', error);
+                alert('Failed to sign contract. Please try again.');
+            }
+        }
+
+        // Handle contract filter change
+        function handleContractFilterChange() {
+            const filter = document.getElementById('contractFilterDropdown').value;
+            fetchAndDisplayContracts(filter);
+        }
+
+        // View contract for a specific project
+        async function viewContractForProject(projectId) {
+            try {
+                // First, get the developer ID
+                const developerId = await getCurrentDeveloperId();
+                if (!developerId) {
+                    alert('Unable to get developer ID. Please refresh the page and try again.');
+                    return;
+                }
+
+                // Fetch contracts for this developer
+                const response = await fetch(`${API_URL}/contracts/developer/${developerId}`);
+                if (!response.ok) throw new Error('Failed to fetch contracts');
+                
+                const data = await response.json();
+                if (!data.success) throw new Error('Failed to get contracts data');
+                
+                // Find the contract for this project
+                const contract = data.contracts.find(c => c.proposal_id == projectId);
+                if (!contract) {
+                    alert('No contract found for this project.');
+                    return;
+                }
+                
+                // View the contract
+                await viewContract(contract.contract_id);
+                
+            } catch (error) {
+                console.error('Error viewing contract for project:', error);
+                alert('Failed to load contract. Please try again.');
+            }
+        }
+
+        // Manufacturing signature functions
+        function openManufacturingSignModal(contractId) {
+            currentContractId = contractId;
+            // Clear the manufacturing signature pad
+            clearManufacturingSignature();
+            // Uncheck the agreement checkbox
+            document.getElementById('agreeManufacturingTerms').checked = false;
+            const modal = new bootstrap.Modal(document.getElementById('manufacturingSignModal'));
+            modal.show();
+        }
+
+        // Clear manufacturing signature
+        function clearManufacturingSignature() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Undo manufacturing signature
+        function undoManufacturingSignature() {
+            clearManufacturingSignature();
+        }
+
+        // Get manufacturing signature as data URL
+        function getManufacturingSignatureDataURL() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            return canvas.toDataURL('image/png');
+        }
+
+        // Check if manufacturing signature exists
+        function hasManufacturingSignature() {
+            const canvas = document.getElementById('manufacturingSignaturePad');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] !== 0) { // Check alpha channel
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Submit manufacturing signature
+        async function submitManufacturingSignature() {
+            try {
+                const agreeTerms = document.getElementById('agreeManufacturingTerms').checked;
+                
+                if (!hasManufacturingSignature()) {
+                    alert('Please draw the manufacturing signature first');
+                    return;
+                }
+                
+                if (!agreeTerms) {
+                    alert('Please confirm the contract is ready to become active');
+                    return;
+                }
+                
+                // Get signature as base64 data URL
+                const signatureDataURL = getManufacturingSignatureDataURL();
+                
+                // Convert data URL to blob
+                const response = await fetch(signatureDataURL);
+                const blob = await response.blob();
+                
+                const formData = new FormData();
+                formData.append('signature', blob, 'manufacturing_signature.png');
+                formData.append('contract_id', currentContractId);
+                
+                const signResponse = await fetch(`${API_URL}/contracts/manufacturing-sign`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!signResponse.ok) throw new Error('Failed to submit manufacturing signature');
+                
+                const data = await signResponse.json();
+                if (data.success) {
+                    alert('Contract activated successfully!');
+                    
+                    // Close modals
+                    const signModal = bootstrap.Modal.getInstance(document.getElementById('manufacturingSignModal'));
+                    signModal.hide();
+                    
+                    // Refresh contracts list
+                    await fetchAndDisplayContracts();
+                } else {
+                    alert('Failed to activate contract: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Error activating contract:', error);
+                alert('Failed to activate contract. Please try again.');
+            }
+        }
+
     </script>
+    
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
       
 </body>
 </html>
