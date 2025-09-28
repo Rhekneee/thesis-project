@@ -105,6 +105,22 @@ router.get('/purchases/supplier', SCMController.getSupplierPurchaseOrders);
 // Submit refund request (Supplier only)
 router.post('/purchases/:purchaseId/refund', express.json({ limit: '50mb' }), SCMController.submitRefundRequest);
 
+// ===== Owners Supply Management Routes =====
+// Get all owners supply materials for checklist (logistics only)
+router.get('/owners-supply', logisticsAuth, SCMController.getAllOwnersSupplyMaterials);
+
+// Update owners supply delivery status (logistics only)
+router.put('/owners-supply/:supplyId/delivery', logisticsAuth, SCMController.updateOwnersSupplyDelivery);
+
+// Get owners supply materials by project (logistics, general_foreman, developer)
+router.get('/owners-supply/project/:proposalId', SCMController.getOwnersSupplyByProject);
+
+// Manufacturing material requests routes
+router.get('/manufacturing-requests', logisticsAuth, SCMController.getManufacturingRequests);
+router.get('/employees', logisticsAuth, SCMController.getEmployees);
+router.post('/material-release', logisticsAuth, SCMController.handleMaterialRelease);
+router.put('/manufacturing-requests/status', logisticsAuth, SCMController.updateManufacturingRequestStatus);
+
 // Supplier-specific routes for profile management
 router.get('/supplier/check-session', (req, res) => {
     console.log('🔍 Supplier check-session called');

@@ -744,7 +744,7 @@
                     </div>
 
                     <!-- Manpower (Possible manpower needed) -->
-                    <div id="inlineLaborSection" class="card border-0 shadow-sm mt-4">
+                    <div id="inlineLaborSection" class="card border-0 shadow-sm mt-4" style="display: none;">
                         <div class="card-body p-4">
                             <h6 class="card-title mb-3">
                                 <i class="fas fa-user-hard-hat me-2 text-primary"></i>Manpower (possible manpower needed)
@@ -783,7 +783,7 @@
                     </div>
 
                     <!-- Final Estimated Cost (for the whole project) -->
-                    <div id="inlineFinalEstimationSection" class="card border-0 shadow-sm mt-4">
+                    <div id="inlineFinalEstimationSection" class="card border-0 shadow-sm mt-4" style="display: none;">
                         <div class="card-body p-4">
                             <h6 class="card-title mb-3">
                                 <i class="fas fa-calculator me-2 text-primary"></i>Final Estimated Cost (Whole Project)
@@ -1159,11 +1159,6 @@
                             <button class="action-btn view-btn" onclick="showInlineDetails(${p.id})" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            ${p.status === 'pending' ? `
-                                <button class="action-btn approve-btn" onclick="approveProject(${p.id})" title="Approve Project">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            ` : ''}
                             ${p.status === 'developer_approved' ? `
                                 <button class="action-btn contract-btn" onclick="generateContract(${p.id})" title="Generate Contract">
                                     <i class="fas fa-file-contract"></i>
@@ -1666,6 +1661,19 @@
                     cost.style.display = 'none';
                 }
 
+                // Show/hide manpower and final estimation sections based on supply materials
+                const laborSection = document.getElementById('inlineLaborSection');
+                const finalEstimationSection = document.getElementById('inlineFinalEstimationSection');
+                
+                // Show sections if developer has inputted supply materials (status is approved_by_mfg or later)
+                if (project.status === 'approved_by_mfg' || project.status === 'developer_approved' || project.status === 'contract_generated') {
+                    laborSection.style.display = 'block';
+                    finalEstimationSection.style.display = 'block';
+                } else {
+                    laborSection.style.display = 'none';
+                    finalEstimationSection.style.display = 'none';
+                }
+
                 // Show inline details
                 document.getElementById('projectDetailsInline').style.display = 'block';
                 document.getElementById('projectDetailsInline').scrollIntoView({ behavior: 'smooth' });
@@ -2149,9 +2157,20 @@
                 if (data.success) {
                     alert('Project approved successfully!');
                     
-                    // Close the modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('viewProjectModal'));
+                    // Close modal if it exists
+                    const modalElement = document.getElementById('viewProjectModal');
+                    if (modalElement) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
                     modal.hide();
+                        }
+                    }
+                    
+                    // Hide inline details if visible
+                    const inlineDetails = document.getElementById('projectDetailsInline');
+                    if (inlineDetails && inlineDetails.style.display !== 'none') {
+                        hideInlineDetails();
+                    }
                     
                     // Refresh the projects list
                     await fetchProposals();

@@ -1630,6 +1630,403 @@ const SCMModel = {
             console.error('Error in setPurchaseOrderProof:', error);
             throw new Error('Failed to save proof picture');
         }
+    },
+
+    // ===== Owners Supply Management =====
+    // Get all owners supply materials with delivery status
+    getAllOwnersSupplyMaterials: async () => {
+        const query = `
+            SELECT 
+                os.supply_id,
+                os.material_id,
+                os.proposal_id,
+                os.developer_id,
+                os.material_name,
+                os.unit,
+                os.quantity,
+                os.quantity_used,
+                os.quantity_remaining,
+                os.is_delivered,
+                os.delivered_date,
+                os.status,
+                os.material_status,
+                p.project_name,
+                p.location,
+                u.username as developer_name
+            FROM owners_supply os
+            LEFT JOIN proposals p ON os.proposal_id = p.proposal_id
+            LEFT JOIN users u ON os.developer_id = u.id
+            ORDER BY os.supply_id DESC
+        `;
+        try {
+            const [rows] = await db.query(query);
+            return rows.map(row => ({
+                ...row,
+                quantity: parseFloat(row.quantity || 0),
+                quantity_used: parseFloat(row.quantity_used || 0),
+                quantity_remaining: parseFloat(row.quantity_remaining || 0),
+                is_delivered: Boolean(row.is_delivered),
+                material_status: Boolean(row.material_status)
+            }));
+        } catch (error) {
+            console.error('Error in getAllOwnersSupplyMaterials:', error);
+            throw new Error('Failed to fetch owners supply materials');
+        }
+    },
+
+    // Update owners supply delivery status
+    updateOwnersSupplyDelivery: async (supplyId, deliveryData) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const { is_delivered, delivered_date, status, quantity_used, quantity_remaining } = deliveryData;
+            
+            // Calculate remaining quantity if not provided
+            let finalQuantityRemaining = quantity_remaining;
+            if (quantity_used !== undefined && !quantity_remaining) {
+                const [currentSupply] = await connection.query(
+                    'SELECT quantity FROM owners_supply WHERE supply_id = ?',
+                    [supplyId]
+                );
+                if (currentSupply && currentSupply.length > 0) {
+                    finalQuantityRemaining = currentSupply[0].quantity - (quantity_used || 0);
+                }
+            }
+
+            const query = `
+                UPDATE owners_supply 
+                SET 
+                    is_delivered = ?,
+                    delivered_date = ?,
+                    status = ?,
+                    quantity_used = ?,
+                    quantity_remaining = ?,
+                    material_status = 1
+                WHERE supply_id = ?
+            `;
+            
+            const values = [
+                is_delivered ? 1 : 0,
+                delivered_date || null,
+                status || 'Pending',
+                quantity_used || 0,
+                finalQuantityRemaining || 0,
+                supplyId
+            ];
+
+            const [result] = await connection.query(query, values);
+            
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Supply material not found' };
+            }
+
+            // Get updated supply material
+            const [updatedSupply] = await connection.query(`
+                SELECT 
+                    os.supply_id,
+                    os.material_id,
+                    os.proposal_id,
+                    os.developer_id,
+                    os.material_name,
+                    os.unit,
+                    os.quantity,
+                    os.quantity_used,
+                    os.quantity_remaining,
+                    os.is_delivered,
+                    os.delivered_date,
+                    os.status,
+                    os.material_status,
+                    p.project_name,
+                    p.location,
+                    u.username as developer_name
+                FROM owners_supply os
+                LEFT JOIN proposals p ON os.proposal_id = p.proposal_id
+                LEFT JOIN users u ON os.developer_id = u.id
+                WHERE os.supply_id = ?
+            `, [supplyId]);
+
+            await connection.commit();
+
+            return { 
+                success: true, 
+                supply: updatedSupply[0] ? {
+                    ...updatedSupply[0],
+                    quantity: parseFloat(updatedSupply[0].quantity || 0),
+                    quantity_used: parseFloat(updatedSupply[0].quantity_used || 0),
+                    quantity_remaining: parseFloat(updatedSupply[0].quantity_remaining || 0),
+                    is_delivered: Boolean(updatedSupply[0].is_delivered),
+                    material_status: Boolean(updatedSupply[0].material_status)
+                } : null
+            };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error in updateOwnersSupplyDelivery:', error);
+            throw new Error('Failed to update owners supply delivery status');
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get owners supply materials by project
+    getOwnersSupplyByProject: async (proposalId) => {
+        const query = `
+            SELECT 
+                os.supply_id,
+                os.material_id,
+                os.proposal_id,
+                os.developer_id,
+                os.material_name,
+                os.unit,
+                os.quantity,
+                os.quantity_used,
+                os.quantity_remaining,
+                os.is_delivered,
+                os.delivered_date,
+                os.status,
+                os.material_status,
+                p.project_name,
+                p.location,
+                u.username as developer_name
+            FROM owners_supply os
+            LEFT JOIN proposals p ON os.proposal_id = p.proposal_id
+            LEFT JOIN users u ON os.developer_id = u.id
+            WHERE os.proposal_id = ?
+            ORDER BY os.supply_id ASC
+        `;
+        try {
+            const [rows] = await db.query(query, [proposalId]);
+            return rows.map(row => ({
+                ...row,
+                quantity: parseFloat(row.quantity || 0),
+                quantity_used: parseFloat(row.quantity_used || 0),
+                quantity_remaining: parseFloat(row.quantity_remaining || 0),
+                is_delivered: Boolean(row.is_delivered),
+                material_status: Boolean(row.material_status)
+            }));
+        } catch (error) {
+            console.error('Error in getOwnersSupplyByProject:', error);
+            throw new Error('Failed to fetch project supply materials');
+        }
+    },
+
+    // Get manufacturing material requests
+    getManufacturingRequests: async () => {
+        const query = `
+            SELECT 
+                rm.request_no,
+                rm.project_id,
+                rm.requested_by,
+                rm.department_id,
+                rm.source_type,
+                rm.purpose,
+                rm.status,
+                rm.requested_at,
+                rm.approved_by,
+                rm.approved_at,
+                p.project_name,
+                e.full_name as requested_by_name,
+                d.name as department_name
+            FROM request_material rm
+            LEFT JOIN projects p ON rm.project_id = p.id
+            LEFT JOIN employees e ON rm.requested_by = e.employee_id
+            LEFT JOIN departments d ON rm.department_id = d.id
+            WHERE rm.department_id = 3
+            ORDER BY rm.requested_at DESC
+        `;
+        try {
+            const [rows] = await db.query(query);
+            
+            // Group materials by request_no
+            const requestMap = new Map();
+            
+            for (const row of rows) {
+                const requestNo = row.request_no;
+                
+                if (!requestMap.has(requestNo)) {
+                    requestMap.set(requestNo, {
+                        request_no: requestNo,
+                        project_id: row.project_id,
+                        project_name: row.project_name,
+                        requested_by: row.requested_by,
+                        requested_by_name: row.requested_by_name,
+                        department_id: row.department_id,
+                        department_name: row.department_name,
+                        source_type: row.source_type,
+                        purpose: row.purpose,
+                        status: row.status,
+                        requested_at: row.requested_at,
+                        approved_by: row.approved_by,
+                        approved_at: row.approved_at,
+                        materials: []
+                    });
+                }
+                
+                // Get materials for this request
+                const materialQuery = `
+                    SELECT 
+                        rm.material_id,
+                        rm.owner_supply_id,
+                        rm.quantity,
+                        rm.unit,
+                        rm.source_type,
+                        CASE 
+                            WHEN rm.source_type = 'owner_supply' THEN os.material_name
+                            WHEN rm.source_type = 'company_supply' THEN m.name
+                            ELSE 'Unknown Material'
+                        END as material_name
+                    FROM request_material rm
+                    LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
+                    LEFT JOIN materials m ON rm.material_id = m.material_id
+                    WHERE rm.request_no = ?
+                `;
+                
+                const [materials] = await db.query(materialQuery, [requestNo]);
+                requestMap.get(requestNo).materials = materials;
+            }
+            
+            return Array.from(requestMap.values());
+        } catch (error) {
+            console.error('Error in getManufacturingRequests:', error);
+            throw new Error('Failed to fetch manufacturing requests');
+        }
+    },
+
+    // Get employees for driver selection
+    getEmployees: async () => {
+        const query = `
+            SELECT 
+                employee_id,
+                full_name,
+                employment_status,
+                role_id
+            FROM employees
+            WHERE employment_status = 'active' AND is_deleted = 0
+            ORDER BY full_name
+        `;
+        try {
+            const [rows] = await db.query(query);
+            return rows;
+        } catch (error) {
+            console.error('Error in getEmployees:', error);
+            throw new Error('Failed to fetch employees');
+        }
+    },
+
+    // Create material release
+    createMaterialRelease: async (releaseData) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes, released_by } = releaseData;
+
+            // Get the request materials
+            const [requestMaterials] = await connection.query(`
+                SELECT * FROM request_material WHERE request_no = ?
+            `, [request_no]);
+
+            console.log('Found request materials:', requestMaterials.length, 'for request_no:', request_no);
+
+            if (requestMaterials.length === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Request not found' };
+            }
+
+            // Create material release records
+            const releasePromises = requestMaterials.map(material => {
+                const releaseQuery = `
+                    INSERT INTO material_releases (
+                        material_id,
+                        request_id,
+                        project_id,
+                        status,
+                        source_type,
+                        driver_id,
+                        vehicle_info,
+                        external_driver_name,
+                        external_vehicle_details,
+                        courier_service,
+                        released_at
+                    ) VALUES (?, ?, ?, 'released', ?, ?, ?, ?, ?, ?, NOW())
+                `;
+
+                return connection.query(releaseQuery, [
+                    material.material_id,
+                    material.id,
+                    material.project_id,
+                    material.source_type,
+                    delivery_type === 'internal' ? driver_id : null,
+                    delivery_type === 'internal' ? vehicle_info : null,
+                    delivery_type === 'external' ? external_driver_name : null,
+                    delivery_type === 'external' ? external_vehicle_details : null,
+                    delivery_type === 'courier' ? courier_service : null
+                ]);
+            });
+
+            await Promise.all(releasePromises);
+
+            // Update quantity_used in owners_supply table for owner_supply materials
+            for (const material of requestMaterials) {
+                if (material.source_type === 'owner_supply' && material.owner_supply_id) {
+                    await connection.query(`
+                        UPDATE owners_supply 
+                        SET quantity_used = COALESCE(quantity_used, 0) + ?,
+                            quantity_remaining = quantity - (COALESCE(quantity_used, 0) + ?)
+                        WHERE supply_id = ?
+                    `, [material.quantity, material.quantity, material.owner_supply_id]);
+                    
+                    console.log('Updated owners_supply quantity_used for supply_id:', material.owner_supply_id, 'quantity:', material.quantity);
+                }
+            }
+
+            // Update request status to 'released'
+            const updateResult = await connection.query(`
+                UPDATE request_material 
+                SET status = 'released', approved_at = NOW()
+                WHERE request_no = ?
+            `, [request_no]);
+
+            console.log('Updated request_material status to released:', updateResult[0].affectedRows, 'rows affected for request_no:', request_no);
+
+            await connection.commit();
+            return { success: true, release_id: Date.now() };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error in createMaterialRelease:', error);
+            throw new Error('Failed to create material release');
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Update manufacturing request status to approved
+    updateManufacturingRequestStatus: async (requestNo, newStatus) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            console.log('Updating manufacturing request status:', requestNo, 'to:', newStatus);
+
+            // Update request status
+            const updateResult = await connection.query(`
+                UPDATE request_material 
+                SET status = ?, approved_at = NOW()
+                WHERE request_no = ?
+            `, [newStatus, requestNo]);
+
+            console.log('Updated request_material status:', updateResult[0].affectedRows, 'rows affected for request_no:', requestNo);
+
+            await connection.commit();
+            return { success: true, affectedRows: updateResult[0].affectedRows };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error in updateManufacturingRequestStatus:', error);
+            throw new Error('Failed to update manufacturing request status');
+        } finally {
+            connection.release();
+        }
     }
 };
 
