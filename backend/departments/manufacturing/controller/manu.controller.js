@@ -673,6 +673,121 @@ const ManufacturingController = {
         error: "Failed to activate contract" 
       });
     }
+  },
+
+  // Get all foremen
+  getForemen: async (req, res) => {
+    try {
+      console.log("Fetching foremen from database...");
+      const foremen = await ManufacturingModel.getForemen();
+      console.log("Foremen found:", foremen.length);
+      console.log("Foremen data:", foremen);
+      
+      res.json({
+        success: true,
+        foremen
+      });
+    } catch (error) {
+      console.error("Error fetching foremen:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch foremen" 
+      });
+    }
+  },
+
+  // Create material request
+  createMaterialRequest: async (req, res) => {
+    try {
+      const { project_id, source_type, purpose, materials } = req.body;
+      const requested_by = req.session.user.employee_id;
+
+      if (!project_id || !source_type || !purpose || !materials || materials.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: "All required fields must be filled" 
+        });
+      }
+
+      // Generate request number
+      const year = new Date().getFullYear();
+      const requestNo = `RM-${year}-${Date.now().toString().slice(-6)}`;
+
+      // Create material request records
+      const requestId = await ManufacturingModel.createMaterialRequest({
+        request_no: requestNo,
+        project_id,
+        requested_by,
+        department_id: 3, // Manufacturing department ID
+        source_type,
+        purpose,
+        materials
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Material request submitted successfully",
+        requestId,
+        requestNo
+      });
+    } catch (error) {
+      console.error("Error creating material request:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to create material request" 
+      });
+    }
+  },
+
+  // Get manufacturing request materials
+  getManufacturingRequestMaterials: async (req, res) => {
+    try {
+      const requestMaterials = await ManufacturingModel.getManufacturingRequestMaterials();
+      res.json({
+        success: true,
+        requestMaterials
+      });
+    } catch (error) {
+      console.error("Error fetching manufacturing request materials:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to fetch manufacturing request materials" 
+      });
+    }
+  },
+
+  // Mark materials as received
+  markMaterialsReceived: async (req, res) => {
+    try {
+      const { request_no } = req.body;
+
+      if (!request_no) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Request number is required" 
+        });
+      }
+
+      const result = await ManufacturingModel.markMaterialsReceived(request_no);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message: "Materials marked as received successfully"
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: result.error
+        });
+      }
+    } catch (error) {
+      console.error("Error marking materials as received:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to mark materials as received" 
+      });
+    }
   }
 };
 

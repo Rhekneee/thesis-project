@@ -171,13 +171,13 @@ const htmlRoutes = (app) => {
   app.get('/scm/request_material', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'requestmaterial.html')); // Adjusted path
   });
-  
-  app.get('/scm/supplier', (req, res) => {    
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
+
+  app.get('/scm/owners_supply', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'owners_supply.html')); // Adjusted path
   });
 
-  app.get('/scm/supplier_dashboard', (req, res) => {    
-    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier_dashboard.html')); // Adjusted path
+  app.get('/scm/supplier', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
   });
 
 

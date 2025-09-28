@@ -41,13 +41,26 @@ const ManufacturingModel = {
   getAllProjects: async () => {
     const query = `
       SELECT 
-        p.*,
+        pr.id,
+        pr.project_code,
+        pr.project_name,
+        pr.client_name,
+        pr.location,
+        pr.start_date,
+        pr.end_date,
+        pr.status,
+        pr.foreman_code,
+        pr.created_at,
+        pr.updated_at,
+        p.proposal_id,
         da.company_name as developer_company,
         da.contact_number as developer_contact,
         da.email as developer_email
-      FROM proposals p
+      FROM projects pr
+      LEFT JOIN proposals p ON pr.project_name = p.project_name AND pr.location = p.location
       LEFT JOIN developer_accounts da ON p.developer_id = da.id
-      ORDER BY p.created_at DESC
+      WHERE pr.status = 'planning' OR pr.status = 'ongoing'
+      ORDER BY pr.created_at DESC
     `;
     const [rows] = await db.execute(query);
     return rows;
@@ -486,6 +499,325 @@ const ManufacturingModel = {
       WHERE contract_id = ?
     `;
     await db.execute(query, [signaturePath, contractId]);
+    
+    // Create project record when contract becomes active
+    await ManufacturingModel.createProjectFromContract(contractId);
+  },
+
+  // Create project record from active contract
+  createProjectFromContract: async (contractId) => {
+    try {
+      // Get contract details with proposal and developer info
+      const contractQuery = `
+        SELECT 
+          c.*,
+          p.project_name,
+          p.location,
+          p.blocks,
+          p.estimated_cost,
+          da.company_name as developer_company
+        FROM contracts c
+        LEFT JOIN proposals p ON c.proposal_id = p.proposal_id
+        LEFT JOIN developer_accounts da ON c.developer_id = da.id
+        WHERE c.contract_id = ?
+      `;
+      const [contractRows] = await db.execute(contractQuery, [contractId]);
+      const contract = contractRows[0];
+      
+      if (!contract) {
+        throw new Error('Contract not found');
+      }
+
+      // Generate unique project code
+      const year = new Date().getFullYear();
+      const projectCode = `PRJ-${year}-${contractId.toString().padStart(4, '0')}`;
+
+      // Check if project already exists for this contract
+      const existingProjectQuery = `SELECT id FROM projects WHERE project_code = ?`;
+      const [existingRows] = await db.execute(existingProjectQuery, [projectCode]);
+      
+      if (existingRows.length > 0) {
+        console.log(`✅ Project already exists for contract ${contractId}: ${projectCode} (ID: ${existingRows[0].id})`);
+        return existingRows[0].id;
+      }
+
+      // Insert into projects table
+      const projectInsertQuery = `
+        INSERT INTO projects (
+          project_code,
+          project_name,
+          client_name,
+          location,
+          start_date,
+          status,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, 'planning', NOW())
+      `;
+
+      const [result] = await db.execute(projectInsertQuery, [
+        projectCode,
+        contract.project_name,
+        contract.developer_company,
+        contract.location,
+        contract.contract_date
+      ]);
+
+      console.log(`✅ Project created successfully: ${projectCode} (ID: ${result.insertId})`);
+      return result.insertId;
+      
+    } catch (error) {
+      // Handle duplicate entry error gracefully
+      if (error.code === 'ER_DUP_ENTRY') {
+        console.log(`✅ Project already exists (duplicate entry handled): ${error.sqlMessage}`);
+        // Try to get the existing project ID
+        try {
+          const year = new Date().getFullYear();
+          const projectCode = `PRJ-${year}-${contractId.toString().padStart(4, '0')}`;
+          const existingProjectQuery = `SELECT id FROM projects WHERE project_code = ?`;
+          const [existingRows] = await db.execute(existingProjectQuery, [projectCode]);
+          if (existingRows.length > 0) {
+            return existingRows[0].id;
+          }
+        } catch (lookupError) {
+          console.error("❌ ERROR: Failed to lookup existing project:", lookupError);
+        }
+        return null; // Return null if we can't find the existing project
+      }
+      
+      console.error("❌ ERROR: Failed to create project from contract:", error);
+      throw error;
+    }
+  },
+
+  // Get all foremen from the database
+  getForemen: async () => {
+    try {
+      console.log("Executing foremen query...");
+      
+      // First, let's see all roles that contain 'foreman'
+      const roleQuery = `SELECT DISTINCT r.name as role_name FROM roles r WHERE r.name LIKE '%foreman%'`;
+      const [roleRows] = await db.execute(roleQuery);
+      console.log("Roles containing 'foreman':", roleRows);
+      
+      // Now get all employees with foreman roles (excluding general_foreman)
+      const query = `
+        SELECT 
+          e.employee_id,
+          e.full_name,
+          e.contact,
+          e.profile_picture,
+          r.name as role_name,
+          d.name as department_name,
+          e.employment_status
+        FROM employees e
+        JOIN roles r ON e.role_id = r.id
+        JOIN departments d ON r.department_id = d.id
+        WHERE r.name LIKE '%foreman%'
+        AND r.name != 'general_foreman'
+        AND e.is_deleted = 0
+        ORDER BY e.full_name ASC
+      `;
+      console.log("Main query:", query);
+      const [rows] = await db.execute(query);
+      console.log("Query result:", rows);
+      return rows;
+    } catch (error) {
+      console.error("Error in getForemen:", error);
+      throw error;
+    }
+  },
+
+  // Create material request
+  createMaterialRequest: async (data) => {
+    try {
+      const { request_no, project_id, requested_by, department_id, source_type, purpose, materials } = data;
+      
+      // Insert each material as a separate request record
+      const insertPromises = materials.map(material => {
+        let query, params;
+        
+        if (source_type === 'owner_supply') {
+          // For owner supply, use owner_supply_id instead of material_id
+          query = `
+            INSERT INTO request_material (
+              request_no,
+              project_id,
+              requested_by,
+              department_id,
+              owner_supply_id,
+              quantity,
+              unit,
+              purpose,
+              source_type,
+              status,
+              requested_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+          `;
+          params = [
+            request_no,
+            project_id,
+            requested_by,
+            department_id,
+            material.material_id, // This is actually supply_id for owner supply
+            material.quantity,
+            material.unit,
+            purpose,
+            source_type
+          ];
+        } else {
+          // For company supply, use material_id
+          query = `
+            INSERT INTO request_material (
+              request_no,
+              project_id,
+              requested_by,
+              department_id,
+              material_id,
+              quantity,
+              unit,
+              purpose,
+              source_type,
+              status,
+              requested_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+          `;
+          params = [
+            request_no,
+            project_id,
+            requested_by,
+            department_id,
+            material.material_id,
+            material.quantity,
+            material.unit,
+            purpose,
+            source_type
+          ];
+        }
+        
+        return db.execute(query, params);
+      });
+
+      await Promise.all(insertPromises);
+      
+      return request_no; // Return the request number as ID
+    } catch (error) {
+      console.error("Error in createMaterialRequest:", error);
+      throw error;
+    }
+  },
+
+  // Get manufacturing request materials (all statuses from pending to released)
+  getManufacturingRequestMaterials: async () => {
+    try {
+      const query = `
+        SELECT 
+          rm.request_no,
+          rm.project_id,
+          rm.requested_by,
+          rm.department_id,
+          rm.source_type,
+          rm.purpose,
+          rm.status,
+          rm.requested_at,
+          rm.approved_at,
+          p.project_name,
+          e.full_name as requested_by_name,
+          d.name as department_name
+        FROM request_material rm
+        LEFT JOIN projects p ON rm.project_id = p.id
+        LEFT JOIN employees e ON rm.requested_by = e.employee_id
+        LEFT JOIN departments d ON rm.department_id = d.id
+        WHERE rm.department_id = 3
+        ORDER BY rm.requested_at DESC
+      `;
+      
+      const [rows] = await db.execute(query);
+      
+      // Group materials by request_no
+      const requestMap = new Map();
+      
+      for (const row of rows) {
+        const requestNo = row.request_no;
+        
+        if (!requestMap.has(requestNo)) {
+          requestMap.set(requestNo, {
+            request_no: requestNo,
+            project_id: row.project_id,
+            project_name: row.project_name,
+            requested_by: row.requested_by,
+            requested_by_name: row.requested_by_name,
+            department_id: row.department_id,
+            department_name: row.department_name,
+            source_type: row.source_type,
+            purpose: row.purpose,
+            status: row.status,
+            requested_at: row.requested_at,
+            approved_at: row.approved_at,
+            materials: []
+          });
+        }
+        
+        // Get materials for this request
+        const materialQuery = `
+          SELECT 
+            rm.material_id,
+            rm.owner_supply_id,
+            rm.quantity,
+            rm.unit,
+            rm.source_type,
+            CASE 
+              WHEN rm.source_type = 'owner_supply' THEN os.material_name
+              WHEN rm.source_type = 'company_supply' THEN m.name
+              ELSE 'Unknown Material'
+            END as material_name
+          FROM request_material rm
+          LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
+          LEFT JOIN materials m ON rm.material_id = m.material_id
+          WHERE rm.request_no = ?
+        `;
+        
+        const [materials] = await db.execute(materialQuery, [requestNo]);
+        requestMap.get(requestNo).materials = materials;
+      }
+      
+      return Array.from(requestMap.values());
+    } catch (error) {
+      console.error("Error in getManufacturingRequestMaterials:", error);
+      throw error;
+    }
+  },
+
+  // Mark materials as received
+  markMaterialsReceived: async (requestNo) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      console.log('Marking materials as received for request:', requestNo);
+
+      // Update request status to 'received'
+      const updateResult = await connection.query(`
+        UPDATE request_material 
+        SET status = 'received'
+        WHERE request_no = ?
+      `, [requestNo]);
+
+      console.log('Updated request_material status to received:', updateResult[0].affectedRows, 'rows affected for request_no:', requestNo);
+
+      if (updateResult[0].affectedRows === 0) {
+        await connection.rollback();
+        return { success: false, error: 'Request not found or already processed' };
+      }
+
+      await connection.commit();
+      return { success: true, affectedRows: updateResult[0].affectedRows };
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error in markMaterialsReceived:', error);
+      throw new Error('Failed to mark materials as received');
+    } finally {
+      connection.release();
+    }
   }
 };
 
