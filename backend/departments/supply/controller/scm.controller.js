@@ -1180,9 +1180,12 @@ const SCMController = {
 
     getAllMaterials: async (req, res) => {
         try {
+            console.log('getAllMaterials - Session user:', req.session?.user);
             if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
             const u = req.session.user;
-            const allowed = (u.role_name === 'logistics') || [1,26].includes(u.role_id);
+            console.log('getAllMaterials - User role:', u.role_name, 'Role ID:', u.role_id);
+            const allowed = (u.role_name === 'logistics') || (u.role_name === 'manufacturing') || (u.role_name === 'general_foreman') || [1,26].includes(u.role_id);
+            console.log('getAllMaterials - Access allowed:', allowed);
             if (!allowed) return res.status(403).json({ error: 'Forbidden' });
             const rows = await SCMModel.getAllMaterials();
             res.json(rows);
@@ -1623,6 +1626,321 @@ const SCMController = {
         } catch (error) {
             console.error('💥 Error in submitRefundRequest:', error);
             res.status(500).json({ error: 'Failed to submit refund request' });
+        }
+    },
+
+    // ===== Owners Supply Management =====
+    // Get all owners supply materials for checklist
+    getAllOwnersSupplyMaterials: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const materials = await SCMModel.getAllOwnersSupplyMaterials();
+            
+            res.json({
+                success: true,
+                materials: materials,
+                total: materials.length,
+                status_counts: {
+                    pending: materials.filter(m => m.status === 'Pending').length,
+                    delivered: materials.filter(m => m.status === 'Delivered').length,
+                    delayed: materials.filter(m => m.status === 'Delayed').length,
+                    cancelled: materials.filter(m => m.status === 'Cancelled').length,
+                    replaced: materials.filter(m => m.status === 'Replaced').length
+                }
+            });
+        } catch (error) {
+            console.error('Error in getAllOwnersSupplyMaterials:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch owners supply materials' 
+            });
+        }
+    },
+
+    // Update owners supply delivery status
+    updateOwnersSupplyDelivery: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const { supplyId } = req.params;
+            const { is_delivered, delivered_date, status, quantity_used, quantity_remaining } = req.body;
+
+            // Validate required fields
+            if (is_delivered === undefined && !status) {
+                return res.status(400).json({ error: 'Either delivery status or status update is required' });
+            }
+
+            // Validate status if provided
+            const validStatuses = ['Pending', 'Delivered', 'Delayed', 'Cancelled', 'Replaced'];
+            if (status && !validStatuses.includes(status)) {
+                return res.status(400).json({ error: 'Invalid status' });
+            }
+
+            // Validate quantities if provided
+            if (quantity_used !== undefined && (isNaN(quantity_used) || quantity_used < 0)) {
+                return res.status(400).json({ error: 'Invalid quantity used' });
+            }
+            if (quantity_remaining !== undefined && (isNaN(quantity_remaining) || quantity_remaining < 0)) {
+                return res.status(400).json({ error: 'Invalid quantity remaining' });
+            }
+
+            const result = await SCMModel.updateOwnersSupplyDelivery(Number(supplyId), {
+                is_delivered,
+                delivered_date,
+                status,
+                quantity_used,
+                quantity_remaining
+            });
+
+            if (!result.success) {
+                return res.status(404).json({ error: result.error });
+            }
+
+            res.json({
+                success: true,
+                message: 'Owners supply delivery status updated successfully',
+                supply: result.supply
+            });
+        } catch (error) {
+            console.error('Error in updateOwnersSupplyDelivery:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to update owners supply delivery status' 
+            });
+        }
+    },
+
+    // Get owners supply materials by project
+    getOwnersSupplyByProject: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+        // Check if user has logistics, general_foreman, or developer access
+        const user = req.session.user;
+        console.log('getOwnersSupplyByProject - User role:', user.role_name, 'Role ID:', user.role_id);
+        const isLogistics = user.role_name === 'logistics';
+        const isGeneralForeman = user.role_name === 'general_foreman';
+        const isDeveloper = user.role_id === 1;
+        
+        console.log('getOwnersSupplyByProject - Access checks:', {
+            isLogistics,
+            isGeneralForeman,
+            isDeveloper
+        });
+        
+        if (!isLogistics && !isGeneralForeman && !isDeveloper) {
+            return res.status(403).json({ error: 'Forbidden: Logistics, General Foreman, or Developer access required' });
+        }
+
+            const { proposalId } = req.params;
+            if (!proposalId) {
+                return res.status(400).json({ error: 'Project ID is required' });
+            }
+
+            const materials = await SCMModel.getOwnersSupplyByProject(Number(proposalId));
+            
+            res.json({
+                success: true,
+                materials: materials,
+                total: materials.length
+            });
+        } catch (error) {
+            console.error('Error in getOwnersSupplyByProject:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch project supply materials' 
+            });
+        }
+    },
+
+    // Get manufacturing material requests
+    getManufacturingRequests: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const requests = await SCMModel.getManufacturingRequests();
+            
+            res.json({
+                success: true,
+                requests: requests
+            });
+        } catch (error) {
+            console.error('Error in getManufacturingRequests:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch manufacturing requests' 
+            });
+        }
+    },
+
+    // Get employees for driver selection
+    getEmployees: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const employees = await SCMModel.getEmployees();
+            
+            res.json({
+                success: true,
+                employees: employees
+            });
+        } catch (error) {
+            console.error('Error in getEmployees:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch employees' 
+            });
+        }
+    },
+
+    // Handle material release
+    handleMaterialRelease: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes } = req.body;
+
+            console.log('Material release request data:', req.body);
+
+            if (!request_no || !delivery_type) {
+                return res.status(400).json({ error: 'Request number and delivery type are required' });
+            }
+
+            const result = await SCMModel.createMaterialRelease({
+                request_no,
+                delivery_type,
+                driver_id,
+                vehicle_info,
+                external_driver_name,
+                external_vehicle_details,
+                courier_service,
+                release_notes,
+                released_by: user.employee_id || user.id
+            });
+
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: 'Material release confirmed successfully',
+                    release_id: result.release_id
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+        } catch (error) {
+            console.error('Error in handleMaterialRelease:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to process material release' 
+            });
+        }
+    },
+
+    // Update manufacturing request status
+    updateManufacturingRequestStatus: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user has logistics access
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden: Logistics access required' });
+            }
+
+            const { request_no, status } = req.body;
+
+            console.log('Updating manufacturing request status:', request_no, 'to:', status);
+
+            if (!request_no || !status) {
+                return res.status(400).json({ error: 'Request number and status are required' });
+            }
+
+            const result = await SCMModel.updateManufacturingRequestStatus(request_no, status);
+
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: `Manufacturing request status updated to ${status}`,
+                    affectedRows: result.affectedRows
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+        } catch (error) {
+            console.error('Error in updateManufacturingRequestStatus:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to update manufacturing request status' 
+            });
         }
     }
 };

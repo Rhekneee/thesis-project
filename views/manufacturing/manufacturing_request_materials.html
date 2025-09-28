@@ -63,6 +63,15 @@
             z-index: 1050;
         }
 
+        /* Customize modal backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .modal-backdrop.show {
+            opacity: 0.3 !important;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             #content {
@@ -238,51 +247,82 @@
             <div class="request-form">
                 <form id="materialRequestForm">
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="projectSelect" class="form-label">Select Project</label>
                             <select class="form-select" id="projectSelect" required>
                                 <option value="">Choose Project...</option>
-                                <option value="1">Project A</option>
-                                <option value="2">Project B</option>
-                                <option value="3">Project C</option>
+                                <!-- Projects will be loaded dynamically -->
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="sourceType" class="form-label">Source Type</label>
+                            <select class="form-select" id="sourceType" required>
+                                <option value="">Select Source...</option>
+                                <option value="owner_supply">Owner Supply</option>
+                                <option value="company_supply">Company Supply</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label for="requestDate" class="form-label">Request Date</label>
                             <input type="date" class="form-control" id="requestDate" required>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    <!-- Company Supply Material Selection -->
+                    <div class="row mb-3" id="companySupplySection" style="display: none;">
                         <div class="col-md-4">
-                            <label for="materialType" class="form-label">Material Type</label>
-                            <select class="form-select" id="materialType" required>
-                                <option value="">Select Material Type...</option>
-                                <option value="cement">Cement</option>
-                                <option value="steel">Steel</option>
-                                <option value="wood">Wood</option>
-                                <option value="bricks">Bricks</option>
-                                <option value="sand">Sand</option>
+                            <label for="materialSelect" class="form-label">Select Material</label>
+                            <select class="form-select" id="materialSelect">
+                                <option value="">Select Material...</option>
+                                <!-- Materials will be loaded dynamically -->
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="quantity" min="1" required>
+                            <input type="number" class="form-control" id="quantity" min="0.01" step="0.01">
                         </div>
                         <div class="col-md-3">
                             <label for="unit" class="form-label">Unit</label>
-                            <select class="form-select" id="unit" required>
-                                <option value="">Select Unit...</option>
-                                <option value="kg">Kilograms (kg)</option>
-                                <option value="bags">Bags</option>
-                                <option value="pieces">Pieces</option>
-                                <option value="cubic">Cubic Meters</option>
-                            </select>
+                            <input type="text" class="form-control" id="unit" readonly>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="button" class="btn btn-success w-100" onclick="addMaterial()">
                                 <i class="fas fa-plus"></i> Add
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Owner Supply Materials Table -->
+                    <div class="row mb-3" id="ownerSupplySection" style="display: none;">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Available Owner Supply Materials</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Material Name</th>
+                                                    <th>Available Quantity</th>
+                                                    <th>Unit</th>
+                                                    <th>Status</th>
+                                                    <th>Request Quantity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="ownerSupplyMaterialsTable">
+                                                <!-- Owner supply materials will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-success" onclick="addSelectedOwnerMaterials()" id="addOwnerMaterialsBtn" disabled>
+                                            <i class="fas fa-plus"></i> Add Selected Materials
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -293,7 +333,7 @@
                             <table class="table table-bordered">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Material Type</th>
+                                        <th>Material Name</th>
                                         <th>Quantity</th>
                                         <th>Unit</th>
                                         <th>Actions</th>
@@ -307,8 +347,8 @@
 
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label for="notes" class="form-label">Additional Notes</label>
-                                <textarea class="form-control" id="notes" rows="3" placeholder="Enter any additional notes or specifications..."></textarea>
+                                <label for="purpose" class="form-label">Purpose</label>
+                                <textarea class="form-control" id="purpose" rows="3" placeholder="Enter the purpose for requesting these materials..." required></textarea>
                             </div>
                         </div>
 
@@ -321,24 +361,34 @@
                 </form>
             </div>
 
-            <!-- Recent Requests Table -->
+            <!-- All Request Materials Table -->
             <div class="recent-requests">
-                <h4>Recent Material Requests</h4>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Request ID</th>
-                            <th>Project</th>
-                            <th>Request Date</th>
-                            <th>Approved Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentRequests">
-                        <!-- Requests will be added here dynamically -->
-                    </tbody>
-                </table>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>All Material Requests</h4>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadAllRequestMaterials()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Request No</th>
+                                <th>Project</th>
+                                <th>Requested By</th>
+                                <th>Source Type</th>
+                                <th>Purpose</th>
+                                <th>Request Date</th>
+                                <th>Status</th>
+                                <th>Materials</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allRequestMaterials">
+                            <!-- All request materials will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Submit Confirmation Modal -->
@@ -370,7 +420,7 @@
                                     </ul>
                                 </div>
                                 <div class="mb-3">
-                                    <strong>Notes:</strong> <span id="confirmNotes"></span>
+                                    <strong>Purpose:</strong> <span id="confirmPurpose"></span>
                                 </div>
                             </div>
                         </div>
@@ -398,9 +448,9 @@
                                     <p><strong>Request Date:</strong> <span id="modalRequestDate"></span></p>
                                 </div>
                                 <div class="col-md-6">
+                                    <p><strong>Source Type:</strong> <span id="modalSourceType"></span></p>
                                     <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-                                    <p><strong>Approved Date:</strong> <span id="modalApprovedDate"></span></p>
-                                    <p><strong>Notes:</strong> <span id="modalNotes"></span></p>
+                                    <p><strong>Purpose:</strong> <span id="modalPurpose"></span></p>
                                 </div>
                             </div>
                             <h6>Requested Materials</h6>
@@ -408,7 +458,7 @@
                                 <table class="table table-bordered">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Material Type</th>
+                                            <th>Material Name</th>
                                             <th>Quantity</th>
                                             <th>Unit</th>
                                         </tr>
@@ -437,35 +487,77 @@
                         <div class="modal-body">
                             <form id="editMaterialForm">
                                 <div class="mb-3">
-                                    <label for="editMaterialType" class="form-label">Material Type</label>
-                                    <select class="form-select" id="editMaterialType" required>
-                                        <option value="">Select Material Type...</option>
-                                        <option value="cement">Cement</option>
-                                        <option value="steel">Steel</option>
-                                        <option value="wood">Wood</option>
-                                        <option value="bricks">Bricks</option>
-                                        <option value="sand">Sand</option>
+                                    <label for="editMaterialSelect" class="form-label">Material</label>
+                                    <select class="form-select" id="editMaterialSelect" required>
+                                        <option value="">Select Material...</option>
+                                        <!-- Materials will be loaded dynamically -->
                                     </select>
                                 </div>
                                 <div class="mb-3">
                                     <label for="editQuantity" class="form-label">Quantity</label>
-                                    <input type="number" class="form-control" id="editQuantity" min="1" required>
+                                    <input type="number" class="form-control" id="editQuantity" min="0.01" step="0.01" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="editUnit" class="form-label">Unit</label>
-                                    <select class="form-select" id="editUnit" required>
-                                        <option value="">Select Unit...</option>
-                                        <option value="kg">Kilograms (kg)</option>
-                                        <option value="bags">Bags</option>
-                                        <option value="pieces">Pieces</option>
-                                        <option value="cubic">Cubic Meters</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="editUnit" readonly>
                                 </div>
                             </form>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-primary" onclick="saveMaterialEdit()">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Request Materials Details Modal -->
+            <div class="modal fade" id="allRequestDetailsModal" tabindex="-1" aria-labelledby="allRequestDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="allRequestDetailsModalLabel">Request Material Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong>Request No:</strong> <span id="allModalRequestNo"></span></p>
+                                    <p><strong>Project:</strong> <span id="allModalProject"></span></p>
+                                    <p><strong>Requested By:</strong> <span id="allModalRequestedBy"></span></p>
+                                    <p><strong>Department:</strong> <span id="allModalDepartment"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Source Type:</strong> <span id="allModalSourceType"></span></p>
+                                    <p><strong>Request Date:</strong> <span id="allModalRequestDate"></span></p>
+                                    <p><strong>Approved Date:</strong> <span id="allModalApprovedDate"></span></p>
+                                    <p><strong>Status:</strong> <span id="allModalStatus"></span></p>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <p><strong>Purpose:</strong> <span id="allModalPurpose"></span></p>
+                            </div>
+                            <h6>Requested Materials</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Material Name</th>
+                                            <th>Quantity</th>
+                                            <th>Unit</th>
+                                            <th>Source</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allModalMaterialsList">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-success" id="markAsReceivedBtn" onclick="markAsReceived()" style="display: none;">
+                                <i class="fas fa-check"></i> Mark as Received
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -500,34 +592,388 @@
             // Set default date to today
             document.getElementById('requestDate').valueAsDate = new Date();
 
+            // Load data from APIs
+            loadProjects();
+            loadMaterials();
+            loadAllRequestMaterials();
+
             // Initialize the materials list
             updateMaterialsList();
             updateSubmitButton();
+
+            // Add event listeners
+            document.getElementById('materialSelect').addEventListener('change', onMaterialChange);
+            document.getElementById('editMaterialSelect').addEventListener('change', onEditMaterialChange);
+            document.getElementById('sourceType').addEventListener('change', onSourceTypeChange);
+            document.getElementById('projectSelect').addEventListener('change', onProjectChange);
         });
 
         // Global variables
         let materials = [];
         let editingIndex = -1;
         let requests = {};
+        let projects = [];
+        let materialsList = [];
+        let ownerSupplyMaterials = [];
+        let selectedProjectId = null;
 
-        // Add material to the list
+        // Load projects from API
+        async function loadProjects() {
+            try {
+                console.log('Loading projects...');
+                const response = await fetch('/manufacturing/projects');
+                const data = await response.json();
+                if (data && data.success) {
+                    projects = data.projects;
+                    console.log('Projects loaded:', projects);
+                    populateProjectSelect();
+                } else {
+                    console.error('Failed to load projects:', data?.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+            }
+        }
+
+        // Load materials from API (construction and equipment only)
+        async function loadMaterials() {
+            try {
+                const response = await fetch('/scm/materials');
+                const data = await response.json();
+                if (data && Array.isArray(data)) {
+                    // Filter for construction and equipment categories
+                    materialsList = data.filter(material => 
+                        material.category && 
+                        (material.category.toLowerCase().includes('construction') || 
+                         material.category.toLowerCase().includes('equipment'))
+                    );
+                    console.log('Filtered materials:', materialsList);
+                    populateMaterialSelects();
+                } else if (data && data.error === 'Forbidden') {
+                    console.log('Access denied to materials API, using fallback materials');
+                    // Use fallback materials for manufacturing users
+                    materialsList = getFallbackMaterials();
+                    populateMaterialSelects();
+                } else {
+                    console.error('Invalid response format:', data);
+                    materialsList = getFallbackMaterials();
+                    populateMaterialSelects();
+                }
+            } catch (error) {
+                console.error('Error loading materials:', error);
+                materialsList = getFallbackMaterials();
+                populateMaterialSelects();
+            }
+        }
+
+        // Fallback materials for manufacturing users
+        function getFallbackMaterials() {
+            return [
+                { material_id: 1, name: 'Cement', category: 'Construction', unit: 'bags' },
+                { material_id: 2, name: 'Steel Rods', category: 'Construction', unit: 'pieces' },
+                { material_id: 3, name: 'Rebar', category: 'Construction', unit: 'pieces' },
+                { material_id: 4, name: 'Concrete Mix', category: 'Construction', unit: 'cubic meters' },
+                { material_id: 5, name: 'Sand', category: 'Construction', unit: 'cubic meters' },
+                { material_id: 6, name: 'Gravel', category: 'Construction', unit: 'cubic meters' },
+                { material_id: 7, name: 'Bricks', category: 'Construction', unit: 'pieces' },
+                { material_id: 8, name: 'Wood Planks', category: 'Construction', unit: 'pieces' },
+                { material_id: 9, name: 'PVC Pipes', category: 'Construction', unit: 'pieces' },
+                { material_id: 10, name: 'Electrical Wire', category: 'Equipment', unit: 'meters' },
+                { material_id: 11, name: 'Insulation', category: 'Construction', unit: 'batts' },
+                { material_id: 12, name: 'Drywall', category: 'Construction', unit: 'sheets' },
+                { material_id: 13, name: 'Paint', category: 'Construction', unit: 'gallons' },
+                { material_id: 14, name: 'Roofing Shingles', category: 'Construction', unit: 'squares' },
+                { material_id: 15, name: 'Floor Tiles', category: 'Construction', unit: 'pieces' },
+                { material_id: 16, name: 'Grout', category: 'Construction', unit: 'bags' },
+                { material_id: 17, name: 'Light Fixtures', category: 'Equipment', unit: 'pieces' },
+                { material_id: 18, name: 'Electrical Outlets', category: 'Equipment', unit: 'pieces' },
+                { material_id: 19, name: 'Excavator', category: 'Equipment', unit: 'units' },
+                { material_id: 20, name: 'Crane', category: 'Equipment', unit: 'units' }
+            ];
+        }
+
+        // Load owner supply materials for a project
+        async function loadOwnerSupplyMaterials(projectId) {
+            if (!projectId || projectId === 'undefined') {
+                console.log('No valid project ID provided');
+                ownerSupplyMaterials = [];
+                populateOwnerSupplyTable();
+                return;
+            }
+            
+            try {
+                console.log('Loading owner supply materials for project:', projectId);
+                // Find the corresponding proposal_id for this project
+                const project = projects.find(p => p.id == projectId);
+                const proposalId = project ? project.proposal_id : projectId;
+                console.log('Using proposal_id:', proposalId);
+                const response = await fetch(`/scm/owners-supply/project/${proposalId}`);
+                const data = await response.json();
+                if (data && data.success) {
+                    console.log('All owner supply materials from API:', data.materials);
+                    console.log('Total materials returned:', data.materials.length);
+                    
+                    // Debug each material's status and material_status
+                    data.materials.forEach((m, index) => {
+                        console.log(`Material ${index}:`, {
+                            material_name: m.material_name,
+                            status: m.status,
+                            material_status: m.material_status,
+                            is_delivered: m.is_delivered
+                        });
+                    });
+                    
+                    // Filter only active and received materials
+                    ownerSupplyMaterials = data.materials.filter(m => 
+                        m.status === 'Delivered' && m.material_status === true
+                    );
+                    console.log('Filtered owner supply materials (Delivered + material_status=true):', ownerSupplyMaterials);
+                    console.log('Filter criteria: status=Delivered, material_status=true');
+                    populateOwnerSupplyTable();
+                } else if (data && data.error === 'Forbidden') {
+                    console.log('Access denied to owner supply API, using empty list');
+                    ownerSupplyMaterials = [];
+                    populateOwnerSupplyTable();
+                } else {
+                    console.error('Failed to load owner supply materials:', data?.error || 'Unknown error');
+                    ownerSupplyMaterials = [];
+                    populateOwnerSupplyTable();
+                }
+            } catch (error) {
+                console.error('Error loading owner supply materials:', error);
+                ownerSupplyMaterials = [];
+                populateOwnerSupplyTable();
+            }
+        }
+
+        // Populate project select dropdown
+        function populateProjectSelect() {
+            const projectSelect = document.getElementById('projectSelect');
+            projectSelect.innerHTML = '<option value="">Choose Project...</option>';
+            
+            console.log('Populating project select with:', projects);
+            
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id; // Use id from projects table
+                option.textContent = `${project.project_name} - ${project.location}`;
+                projectSelect.appendChild(option);
+            });
+        }
+
+        // Populate owner supply materials table
+        function populateOwnerSupplyTable() {
+            const tbody = document.getElementById('ownerSupplyMaterialsTable');
+            tbody.innerHTML = '';
+
+            console.log('Populating owner supply table with', ownerSupplyMaterials.length, 'materials');
+
+            if (ownerSupplyMaterials.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-3">
+                            <i class="fas fa-box-open me-2"></i>No available owner supply materials for this project
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            ownerSupplyMaterials.forEach((material, index) => {
+                const row = document.createElement('tr');
+                row.style.cursor = 'pointer';
+                row.dataset.materialIndex = index;
+                row.onclick = () => selectOwnerMaterial(index);
+                row.innerHTML = `
+                    <td>${material.material_name}</td>
+                    <td class="text-center">${material.quantity_remaining || material.quantity}</td>
+                    <td class="text-center">${material.unit}</td>
+                    <td class="text-center">
+                        <span class="badge bg-success">Available</span>
+                    </td>
+                    <td class="text-center">
+                        <input type="number" class="form-control form-control-sm" 
+                               id="quantity_${index}" 
+                               min="1" 
+                               max="${material.quantity_remaining || material.quantity}" 
+                               value="1" 
+                               style="width: 80px; display: inline-block;"
+                               onclick="event.stopPropagation()">
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Populate material select dropdowns
+        function populateMaterialSelects() {
+            const materialSelect = document.getElementById('materialSelect');
+            const editMaterialSelect = document.getElementById('editMaterialSelect');
+            
+            // Clear existing options
+            materialSelect.innerHTML = '<option value="">Select Material...</option>';
+            editMaterialSelect.innerHTML = '<option value="">Select Material...</option>';
+            
+            materialsList.forEach(material => {
+                const option = document.createElement('option');
+                option.value = material.material_id;
+                option.textContent = material.name;
+                option.dataset.unit = material.unit;
+                materialSelect.appendChild(option);
+                
+                const editOption = option.cloneNode(true);
+                editMaterialSelect.appendChild(editOption);
+            });
+        }
+
+        // Handle material selection change
+        function onMaterialChange() {
+            const materialSelect = document.getElementById('materialSelect');
+            const unitField = document.getElementById('unit');
+            
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+                unitField.value = selectedOption.dataset.unit || '';
+            } else {
+                unitField.value = '';
+            }
+        }
+
+        // Handle edit material selection change
+        function onEditMaterialChange() {
+            const editMaterialSelect = document.getElementById('editMaterialSelect');
+            const editUnitField = document.getElementById('editUnit');
+            
+            if (editMaterialSelect.value) {
+                const selectedOption = editMaterialSelect.options[editMaterialSelect.selectedIndex];
+                editUnitField.value = selectedOption.dataset.unit || '';
+            } else {
+                editUnitField.value = '';
+            }
+        }
+
+        // Handle source type change
+        function onSourceTypeChange() {
+            const sourceType = document.getElementById('sourceType').value;
+            const companySupplySection = document.getElementById('companySupplySection');
+            const ownerSupplySection = document.getElementById('ownerSupplySection');
+            
+            console.log('Source type changed to:', sourceType);
+            console.log('Selected project ID:', selectedProjectId);
+            
+            if (sourceType === 'company_supply') {
+                companySupplySection.style.display = 'block';
+                ownerSupplySection.style.display = 'none';
+            } else if (sourceType === 'owner_supply') {
+                companySupplySection.style.display = 'none';
+                ownerSupplySection.style.display = 'block';
+                // Load owner supply materials if project is selected
+                if (selectedProjectId) {
+                    loadOwnerSupplyMaterials(selectedProjectId);
+                } else {
+                    console.log('No project selected, cannot load owner supply materials');
+                }
+            } else {
+                companySupplySection.style.display = 'none';
+                ownerSupplySection.style.display = 'none';
+            }
+        }
+
+        // Handle project selection change
+        function onProjectChange() {
+            const projectSelect = document.getElementById('projectSelect');
+            selectedProjectId = projectSelect.value;
+            
+            console.log('Project changed to:', selectedProjectId);
+            
+            // If owner supply is selected, load materials for this project
+            const sourceType = document.getElementById('sourceType').value;
+            if (sourceType === 'owner_supply' && selectedProjectId) {
+                loadOwnerSupplyMaterials(selectedProjectId);
+            }
+        }
+
+        // Select owner material (toggle selection)
+        function selectOwnerMaterial(index) {
+            const row = document.querySelector(`#ownerSupplyMaterialsTable tr:nth-child(${index + 1})`);
+            if (row) {
+                // Toggle selection
+                if (row.classList.contains('table-primary')) {
+                    row.classList.remove('table-primary');
+                } else {
+                    row.classList.add('table-primary');
+                }
+                updateOwnerMaterialsButton();
+            }
+        }
+
+        // Update owner materials button state
+        function updateOwnerMaterialsButton() {
+            const selectedRows = document.querySelectorAll('#ownerSupplyMaterialsTable tr.table-primary');
+            const addBtn = document.getElementById('addOwnerMaterialsBtn');
+            addBtn.disabled = selectedRows.length === 0;
+        }
+
+        // Add selected owner materials to request
+        function addSelectedOwnerMaterials() {
+            const selectedRows = document.querySelectorAll('#ownerSupplyMaterialsTable tr.table-primary');
+            console.log('Selected rows:', selectedRows.length);
+            
+            selectedRows.forEach((row, rowIndex) => {
+                // Get material index from data attribute
+                const materialIndex = parseInt(row.dataset.materialIndex);
+                console.log('Processing row:', rowIndex, 'Material index:', materialIndex);
+                
+                if (materialIndex >= 0 && materialIndex < ownerSupplyMaterials.length) {
+                    const materialData = ownerSupplyMaterials[materialIndex];
+                    const quantityInput = document.getElementById(`quantity_${materialIndex}`);
+                    const requestedQuantity = parseFloat(quantityInput.value) || 1;
+                    
+                    console.log('Material data:', materialData);
+                    console.log('Requested quantity:', requestedQuantity);
+                    
+                    const material = {
+                        material_id: materialData.supply_id, // Using supply_id as material_id for owner supply
+                        name: materialData.material_name,
+                        quantity: requestedQuantity,
+                        unit: materialData.unit,
+                        source_type: 'owner_supply'
+                    };
+                    
+                    console.log('Adding material:', material);
+                    materials.push(material);
+                }
+            });
+            
+            console.log('Total materials after adding:', materials.length);
+            
+            // Clear selections
+            selectedRows.forEach(row => row.classList.remove('table-primary'));
+            
+            updateMaterialsList();
+            updateSubmitButton();
+            updateOwnerMaterialsButton();
+        }
+
+        // Add material to the list (for company supply)
         function addMaterial() {
-            const materialType = document.getElementById('materialType');
+            const materialSelect = document.getElementById('materialSelect');
             const quantity = document.getElementById('quantity');
             const unit = document.getElementById('unit');
 
             // Validate inputs
-            if (!materialType.value || !quantity.value || !unit.value) {
+            if (!materialSelect.value || !quantity.value || !unit.value) {
                 alert('Please fill in all material details');
                 return;
             }
 
+            const selectedMaterial = materialsList.find(m => m.material_id == materialSelect.value);
             const material = {
-                type: materialType.options[materialType.selectedIndex].text,
-                typeValue: materialType.value,
-                quantity: quantity.value,
-                unit: unit.options[unit.selectedIndex].text,
-                unitValue: unit.value
+                material_id: materialSelect.value,
+                name: selectedMaterial.name,
+                quantity: parseFloat(quantity.value),
+                unit: unit.value,
+                source_type: 'company_supply'
             };
 
             if (editingIndex >= 0) {
@@ -552,9 +998,13 @@
             tbody.innerHTML = '';
 
             materials.forEach((material, index) => {
+                const sourceBadge = material.source_type === 'owner_supply' 
+                    ? '<span class="badge bg-primary me-1">Owner</span>' 
+                    : '<span class="badge bg-secondary me-1">Company</span>';
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${material.type}</td>
+                    <td>${sourceBadge}${material.name}</td>
                     <td>${material.quantity}</td>
                     <td>${material.unit}</td>
                     <td>
@@ -573,35 +1023,48 @@
         // Open edit modal
         function openEditModal(index) {
             const material = materials[index];
-            document.getElementById('editMaterialType').value = material.typeValue;
+            
+            // Only allow editing for company supply materials
+            if (material.source_type === 'owner_supply') {
+                alert('Owner supply materials cannot be edited. Please remove and re-add if needed.');
+                return;
+            }
+            
+            document.getElementById('editMaterialSelect').value = material.material_id;
             document.getElementById('editQuantity').value = material.quantity;
-            document.getElementById('editUnit').value = material.unitValue;
+            document.getElementById('editUnit').value = material.unit;
             editingIndex = index;
 
-            const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+            const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'), {
+                backdrop: false,
+                keyboard: true,
+                focus: true
+            });
             editModal.show();
         }
 
         // Save material edit
         function saveMaterialEdit() {
-            const materialType = document.getElementById('editMaterialType');
-            const quantity = document.getElementById('editQuantity');
-            const unit = document.getElementById('editUnit');
+            const editMaterialSelect = document.getElementById('editMaterialSelect');
+            const editQuantity = document.getElementById('editQuantity');
+            const editUnit = document.getElementById('editUnit');
 
             // Validate inputs
-            if (!materialType.value || !quantity.value || !unit.value) {
+            if (!editMaterialSelect.value || !editQuantity.value || !editUnit.value) {
                 alert('Please fill in all material details');
                 return;
             }
 
             // Show confirmation dialog
             if (confirm('Are you sure you want to save these changes?')) {
+                const currentMaterial = materials[editingIndex];
+                const selectedMaterial = materialsList.find(m => m.material_id == editMaterialSelect.value);
                 const material = {
-                    type: materialType.options[materialType.selectedIndex].text,
-                    typeValue: materialType.value,
-                    quantity: quantity.value,
-                    unit: unit.options[unit.selectedIndex].text,
-                    unitValue: unit.value
+                    material_id: editMaterialSelect.value,
+                    name: selectedMaterial.name,
+                    quantity: parseFloat(editQuantity.value),
+                    unit: editUnit.value,
+                    source_type: currentMaterial.source_type // Preserve source type
                 };
 
                 // Update the material
@@ -629,7 +1092,7 @@
 
         // Reset material form
         function resetMaterialForm() {
-            document.getElementById('materialType').value = '';
+            document.getElementById('materialSelect').value = '';
             document.getElementById('quantity').value = '';
             document.getElementById('unit').value = '';
             editingIndex = -1;
@@ -654,43 +1117,68 @@
         function showSubmitConfirmation() {
             const project = document.getElementById('projectSelect');
             const projectName = project.options[project.selectedIndex].text;
+            const sourceType = document.getElementById('sourceType');
+            const sourceTypeName = sourceType.options[sourceType.selectedIndex].text;
             const requestDate = document.getElementById('requestDate').value;
-            const notes = document.getElementById('notes').value;
+            const purpose = document.getElementById('purpose').value;
 
             // Update confirmation modal content
             document.getElementById('confirmProject').textContent = projectName;
             document.getElementById('confirmRequestDate').textContent = requestDate;
-            document.getElementById('confirmNotes').textContent = notes || 'None';
+            document.getElementById('confirmPurpose').textContent = purpose || 'None';
 
             // Update materials list
             const materialsList = document.getElementById('confirmMaterialsList');
             materialsList.innerHTML = '';
             materials.forEach(material => {
                 const li = document.createElement('li');
-                li.textContent = `${material.type} - ${material.quantity} ${material.unit}`;
+                const sourceType = material.source_type === 'owner_supply' ? ' (Owner Supply)' : ' (Company Supply)';
+                li.textContent = `${material.name}${sourceType} - ${material.quantity} ${material.unit}`;
                 materialsList.appendChild(li);
             });
 
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('submitConfirmationModal'));
+            // Show modal without backdrop
+            const modal = new bootstrap.Modal(document.getElementById('submitConfirmationModal'), {
+                backdrop: false,
+                keyboard: true,
+                focus: true
+            });
             modal.show();
         }
 
         // Submit request
-        function submitRequest() {
+        async function submitRequest() {
             const project = document.getElementById('projectSelect');
             const projectName = project.options[project.selectedIndex].text;
+            const sourceType = document.getElementById('sourceType');
+            const sourceTypeName = sourceType.options[sourceType.selectedIndex].text;
             const requestDate = document.getElementById('requestDate').value;
-            const notes = document.getElementById('notes').value;
+            const purpose = document.getElementById('purpose').value;
 
             // Hide any previous messages
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('formMessages').style.display = 'block';
 
+            // Debug validation
+            console.log('Validation check:', {
+                project: project.value,
+                sourceType: sourceType.value,
+                requestDate: requestDate,
+                purpose: purpose,
+                materialsLength: materials.length
+            });
+
             // Validate required fields
-            if (!project.value || !requestDate || materials.length === 0) {
-                document.getElementById('errorMessage').innerHTML = 'Please fill in all required fields and add at least one material!';
+            if (!project.value || !sourceType.value || !requestDate || !purpose || materials.length === 0) {
+                let missingFields = [];
+                if (!project.value) missingFields.push('Project');
+                if (!sourceType.value) missingFields.push('Source Type');
+                if (!requestDate) missingFields.push('Request Date');
+                if (!purpose) missingFields.push('Purpose');
+                if (materials.length === 0) missingFields.push('Materials');
+                
+                document.getElementById('errorMessage').innerHTML = `Missing required fields: ${missingFields.join(', ')}`;
                 document.getElementById('errorMessage').style.display = 'block';
                 
                 // Hide error message after 2 seconds
@@ -701,17 +1189,36 @@
             }
 
             try {
-                // Generate a new request ID
-                const requestId = 'REQ' + String(Object.keys(requests).length + 1).padStart(3, '0');
+                // Submit to backend
+                const requestData = {
+                    project_id: project.value,
+                    source_type: sourceType.value,
+                    purpose: purpose,
+                    materials: materials
+                };
+
+                const response = await fetch('/manufacturing/request-materials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Generate a new request ID for display
+                    const requestId = result.request_no || 'RM-' + new Date().getFullYear() + '-' + String(Object.keys(requests).length + 1).padStart(3, '0');
 
                 // Create the new request object
                 const newRequest = {
                     id: requestId,
                     project: projectName,
+                        sourceType: sourceTypeName,
                     requestDate: requestDate,
-                    approvedDate: null,
                     status: 'Pending',
-                    notes: notes || 'None',
+                        purpose: purpose,
                     materials: [...materials]
                 };
 
@@ -724,8 +1231,8 @@
                 row.innerHTML = `
                     <td>${requestId}</td>
                     <td>${projectName}</td>
+                        <td>${sourceTypeName}</td>
                     <td>${requestDate}</td>
-                    <td>-</td>
                     <td><span class="badge bg-warning">Pending</span></td>
                     <td>
                         <button class="btn btn-sm btn-primary me-1" onclick="viewRequestDetails('${requestId}')" title="View Request Details">
@@ -747,7 +1254,13 @@
                 // Close modal after 2 seconds
                 setTimeout(() => {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('submitConfirmationModal'));
+                    if (modal) {
                     modal.hide();
+                    }
+                    
+                    // Remove any stuck backdrop
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(backdrop => backdrop.remove());
                     
                     // Reset modal content for next use
                     setTimeout(() => {
@@ -757,11 +1270,18 @@
                         document.getElementById('successMessage').style.display = 'none';
                     }, 500);
                 }, 2000);
+                } else {
+                    throw new Error(result.error || 'Failed to submit request');
+                }
 
             } catch (error) {
                 // Show error message if something goes wrong
                 document.getElementById('errorMessage').innerHTML = 'An error occurred while submitting the request. Please try again.';
                 document.getElementById('errorMessage').style.display = 'block';
+                
+                // Remove any stuck backdrop on error
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
                 
                 // Hide error message after 2 seconds
                 setTimeout(() => {
@@ -773,8 +1293,9 @@
         // Reset form fields
         function resetFormFields() {
             document.getElementById('projectSelect').value = '';
+            document.getElementById('sourceType').value = '';
             document.getElementById('requestDate').valueAsDate = new Date();
-            document.getElementById('notes').value = '';
+            document.getElementById('purpose').value = '';
             materials = [];
             updateMaterialsList();
             updateSubmitButton();
@@ -789,8 +1310,8 @@
             document.getElementById('modalRequestId').textContent = request.id;
             document.getElementById('modalProject').textContent = request.project;
             document.getElementById('modalRequestDate').textContent = request.requestDate;
-            document.getElementById('modalApprovedDate').textContent = request.approvedDate || '-';
-            document.getElementById('modalNotes').textContent = request.notes || 'None';
+            document.getElementById('modalSourceType').textContent = request.sourceType || '-';
+            document.getElementById('modalPurpose').textContent = request.purpose || 'None';
             
             // Update status with appropriate badge
             let statusBadge;
@@ -801,8 +1322,14 @@
                 case 'Approved':
                     statusBadge = '<span class="badge bg-success">Approved</span>';
                     break;
-                case 'Cancelled':
-                    statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+                case 'Rejected':
+                    statusBadge = '<span class="badge bg-danger">Rejected</span>';
+                    break;
+                case 'Released':
+                    statusBadge = '<span class="badge bg-info">Released</span>';
+                    break;
+                case 'Received':
+                    statusBadge = '<span class="badge bg-success">Received</span>';
                     break;
                 default:
                     statusBadge = '<span class="badge bg-warning">Pending</span>';
@@ -813,9 +1340,13 @@
             const materialsList = document.getElementById('modalMaterialsList');
             materialsList.innerHTML = '';
             request.materials.forEach(material => {
+                const sourceBadge = material.source_type === 'owner_supply' 
+                    ? '<span class="badge bg-primary me-1">Owner</span>' 
+                    : '<span class="badge bg-secondary me-1">Company</span>';
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${material.type}</td>
+                    <td>${sourceBadge}${material.name}</td>
                     <td>${material.quantity}</td>
                     <td>${material.unit}</td>
                 `;
@@ -826,8 +1357,12 @@
             const cancelBtn = document.getElementById('cancelRequestBtn');
             cancelBtn.style.display = request.status === 'Pending' ? 'block' : 'none';
 
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+            // Show modal without backdrop
+            const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'), {
+                backdrop: false,
+                keyboard: true,
+                focus: true
+            });
             modal.show();
         }
 
@@ -839,19 +1374,19 @@
                 
                 if (request) {
                     // Update request status
-                    request.status = 'Cancelled';
+                    request.status = 'Rejected';
                     
                     // Update the status in the table
                     const rows = document.getElementById('recentRequests').getElementsByTagName('tr');
                     for (let row of rows) {
                         if (row.cells[0].textContent === requestId) {
-                            row.cells[4].innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+                            row.cells[4].innerHTML = '<span class="badge bg-danger">Rejected</span>';
                             break;
                         }
                     }
 
                     // Update the status in the modal
-                    document.getElementById('modalStatus').innerHTML = '<span class="badge bg-danger">Cancelled</span>';
+                    document.getElementById('modalStatus').innerHTML = '<span class="badge bg-danger">Rejected</span>';
                     
                     // Hide the cancel button
                     document.getElementById('cancelRequestBtn').style.display = 'none';
@@ -860,6 +1395,247 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById('requestDetailsModal'));
                 modal.hide();
                 alert('Request cancelled successfully');
+            }
+        }
+
+        // Global variable for all request materials
+        let allRequestMaterials = [];
+
+        // Load all request materials from API
+        async function loadAllRequestMaterials() {
+            try {
+                console.log('Loading all request materials...');
+                const response = await fetch('/manufacturing/gather-request-material');
+                const data = await response.json();
+                
+                if (data && data.success) {
+                    allRequestMaterials = data.requestMaterials;
+                    console.log('All request materials loaded:', allRequestMaterials);
+                    renderAllRequestMaterials();
+                } else {
+                    console.error('Failed to load all request materials:', data?.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error loading all request materials:', error);
+            }
+        }
+
+        // Render all request materials in the table
+        function renderAllRequestMaterials() {
+            const tbody = document.getElementById('allRequestMaterials');
+            tbody.innerHTML = '';
+
+            if (allRequestMaterials.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-3">
+                            <i class="fas fa-box-open me-2"></i>No material requests found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            allRequestMaterials.forEach(request => {
+                const row = document.createElement('tr');
+                
+                // Format dates
+                const requestDate = request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A';
+                const approvedDate = request.approved_at ? new Date(request.approved_at).toLocaleDateString() : 'N/A';
+                
+                // Get status badge
+                let statusBadge;
+                switch(request.status) {
+                    case 'pending':
+                        statusBadge = '<span class="badge bg-warning">Pending</span>';
+                        break;
+                    case 'approved':
+                        statusBadge = '<span class="badge bg-success">Approved</span>';
+                        break;
+                    case 'released':
+                        statusBadge = '<span class="badge bg-info">Released</span>';
+                        break;
+                    case 'received':
+                        statusBadge = '<span class="badge bg-success">Received</span>';
+                        break;
+                    case 'rejected':
+                        statusBadge = '<span class="badge bg-danger">Rejected</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="badge bg-secondary">' + (request.status || 'Unknown') + '</span>';
+                }
+
+                // Get source type badge
+                const sourceTypeBadge = request.source_type === 'owner_supply' 
+                    ? '<span class="badge bg-primary">Owner Supply</span>' 
+                    : '<span class="badge bg-secondary">Company Supply</span>';
+
+                // Create materials summary
+                const materialsSummary = request.materials.length > 0 
+                    ? `${request.materials.length} material(s)` 
+                    : 'No materials';
+
+                row.innerHTML = `
+                    <td>${request.request_no}</td>
+                    <td>${request.project_name || 'N/A'}</td>
+                    <td>${request.requested_by_name || 'N/A'}</td>
+                    <td>${sourceTypeBadge}</td>
+                    <td>${request.purpose || 'N/A'}</td>
+                    <td>${requestDate}</td>
+                    <td>${statusBadge}</td>
+                    <td>${materialsSummary}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewAllRequestDetails('${request.request_no}')" title="View Details">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // View all request details
+        function viewAllRequestDetails(requestNo) {
+            const request = allRequestMaterials.find(r => r.request_no === requestNo);
+            if (!request) {
+                console.error('Request not found:', requestNo);
+                return;
+            }
+
+            // Update modal content
+            document.getElementById('allModalRequestNo').textContent = request.request_no;
+            document.getElementById('allModalProject').textContent = request.project_name || 'N/A';
+            document.getElementById('allModalRequestedBy').textContent = request.requested_by_name || 'N/A';
+            document.getElementById('allModalDepartment').textContent = request.department_name || 'N/A';
+            document.getElementById('allModalSourceType').textContent = request.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply';
+            document.getElementById('allModalRequestDate').textContent = request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A';
+            document.getElementById('allModalApprovedDate').textContent = request.approved_at ? new Date(request.approved_at).toLocaleDateString() : 'N/A';
+            document.getElementById('allModalPurpose').textContent = request.purpose || 'N/A';
+            
+            // Update status with appropriate badge
+            let statusBadge;
+            switch(request.status) {
+                case 'pending':
+                    statusBadge = '<span class="badge bg-warning">Pending</span>';
+                    break;
+                case 'approved':
+                    statusBadge = '<span class="badge bg-success">Approved</span>';
+                    break;
+                case 'released':
+                    statusBadge = '<span class="badge bg-info">Released</span>';
+                    break;
+                case 'received':
+                    statusBadge = '<span class="badge bg-success">Received</span>';
+                    break;
+                case 'rejected':
+                    statusBadge = '<span class="badge bg-danger">Rejected</span>';
+                    break;
+                default:
+                    statusBadge = '<span class="badge bg-secondary">' + (request.status || 'Unknown') + '</span>';
+            }
+            document.getElementById('allModalStatus').innerHTML = statusBadge;
+
+            // Show/hide Mark as Received button based on status
+            const markAsReceivedBtn = document.getElementById('markAsReceivedBtn');
+            if (request.status === 'released') {
+                markAsReceivedBtn.style.display = 'inline-block';
+                markAsReceivedBtn.setAttribute('data-request-no', request.request_no);
+            } else {
+                markAsReceivedBtn.style.display = 'none';
+            }
+
+            // Update materials list
+            const materialsList = document.getElementById('allModalMaterialsList');
+            materialsList.innerHTML = '';
+            
+            if (request.materials && request.materials.length > 0) {
+                request.materials.forEach(material => {
+                    const sourceBadge = material.source_type === 'owner_supply' 
+                        ? '<span class="badge bg-primary me-1">Owner</span>' 
+                        : '<span class="badge bg-secondary me-1">Company</span>';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${sourceBadge}${material.material_name || 'Unknown Material'}</td>
+                        <td>${material.quantity || 0}</td>
+                        <td>${material.unit || 'N/A'}</td>
+                        <td>${material.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}</td>
+                    `;
+                    materialsList.appendChild(row);
+                });
+            } else {
+                materialsList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No materials found</td>
+                    </tr>
+                `;
+            }
+
+            // Show modal without backdrop
+            const modal = new bootstrap.Modal(document.getElementById('allRequestDetailsModal'), {
+                backdrop: false,
+                keyboard: true,
+                focus: true
+            });
+            modal.show();
+        }
+
+        // Mark materials as received
+        async function markAsReceived() {
+            const markAsReceivedBtn = document.getElementById('markAsReceivedBtn');
+            const requestNo = markAsReceivedBtn.getAttribute('data-request-no');
+            
+            if (!requestNo) {
+                console.error('No request number found');
+                return;
+            }
+
+            if (confirm('Are you sure you want to mark these materials as received?')) {
+                try {
+                    console.log('Marking request as received:', requestNo);
+                    
+                    const response = await fetch('/manufacturing/mark-materials-received', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            request_no: requestNo
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Update the local data
+                        const request = allRequestMaterials.find(r => r.request_no === requestNo);
+                        if (request) {
+                            request.status = 'received';
+                        }
+
+                        // Refresh the table
+                        renderAllRequestMaterials();
+
+                        // Update the modal status
+                        document.getElementById('allModalStatus').innerHTML = '<span class="badge bg-success">Received</span>';
+                        
+                        // Hide the Mark as Received button
+                        markAsReceivedBtn.style.display = 'none';
+
+                        // Show success message
+                        alert('Materials marked as received successfully!');
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('allRequestDetailsModal'));
+                        modal.hide();
+                    } else {
+                        throw new Error(result.error || 'Failed to mark materials as received');
+                    }
+                } catch (error) {
+                    console.error('Error marking materials as received:', error);
+                    alert('Failed to mark materials as received. Please try again.');
+                }
             }
         }
     </script>

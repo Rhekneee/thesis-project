@@ -39,4 +39,12 @@ router.get('/contracts/:contractId', ManufacturingController.getContractById);
 router.post('/contracts/sign', signatureUpload.single('signature'), ManufacturingController.signContract);
 router.post('/contracts/manufacturing-sign', signatureUpload.single('signature'), ManufacturingController.manufacturingSignContract);
 
+// Foremen routes
+router.get('/foremen', ManufacturingController.getForemen);
+
+// Material request routes
+router.post('/request-materials', ManufacturingController.createMaterialRequest);
+router.get('/gather-request-material', ManufacturingController.getManufacturingRequestMaterials);
+router.put('/mark-materials-received', ManufacturingController.markMaterialsReceived);
+
 module.exports = router;

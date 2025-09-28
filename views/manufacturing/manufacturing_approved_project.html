@@ -650,7 +650,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success" onclick="openManufacturingSignModal(currentContractId)">
+                    <button type="button" class="btn btn-success" id="signContractBtn" onclick="openManufacturingSignModal(currentContractId)">
                         <i class="fas fa-signature me-2"></i>Sign Contract
                     </button>
                 </div>
@@ -717,36 +717,8 @@
         // Global approved projects array to store fetched data
         let approvedProjects = [];
 
-        // Sample data for available foremen
-        let availableForemen = [
-            {
-                id: 1,
-                name: 'Michael Johnson',
-                contact: '+63 912 345 6789',
-                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
-                projectsCompleted: 15,
-                currentProjects: 1,
-                specialization: 'Commercial Buildings'
-            },
-            {
-                id: 2,
-                name: 'David Wilson',
-                contact: '+63 923 456 7890',
-                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
-                projectsCompleted: 12,
-                currentProjects: 0,
-                specialization: 'Residential Projects'
-            },
-            {
-                id: 3,
-                name: 'Sarah Chen',
-                contact: '+63 934 567 8901',
-                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
-                projectsCompleted: 8,
-                currentProjects: 2,
-                specialization: 'Industrial Projects'
-            }
-        ];
+        // Foremen data will be loaded from API
+        let availableForemen = [];
 
         let currentPage = 1;
         let itemsPerPage = 5;
@@ -765,9 +737,9 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    // Filter for approved contracts and transform to approved projects format
+                    // Filter for approved AND active contracts (keep them until foreman is assigned)
                     approvedProjects = data.contracts
-                        .filter(contract => contract.status === 'Approved')
+                        .filter(contract => contract.status === 'Approved' || contract.status === 'Active')
                         .map(contract => ({
                             id: contract.contract_id,
                             name: contract.project_name || 'N/A',
@@ -775,10 +747,11 @@
                             location: contract.location || 'N/A',
                             approvalDate: contract.contract_date ? new Date(contract.contract_date).toLocaleDateString() : 'N/A',
                             manufacturingCost: contract.estimated_cost || 0,
-                            status: 'unassigned', // Default status for approved contracts
+                            status: contract.status === 'Active' ? 'assigned' : 'unassigned', // Show as assigned if Active
                             image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
-                            assignedForeman: null,
-                            contractId: contract.contract_id
+                            assignedForeman: contract.status === 'Active' ? { name: 'To be assigned' } : null,
+                            contractId: contract.contract_id,
+                            contractStatus: contract.status
                         }));
                     
                     console.log('Fetched approved contracts:', approvedProjects);
@@ -790,6 +763,45 @@
             } catch (error) {
                 console.error('Error fetching approved contracts:', error);
                 approvedProjects = [];
+            }
+        }
+
+        // Function to fetch foremen from API
+        async function fetchForemen() {
+            try {
+                console.log('Fetching foremen from API:', `${API_URL}/foremen`);
+                const response = await fetch(`${API_URL}/foremen`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Raw foremen data:', data);
+                
+                if (data.success) {
+                    console.log('Foremen from API:', data.foremen);
+                    // Transform API data to match expected format
+                    availableForemen = data.foremen.map(foreman => ({
+                        id: foreman.employee_id,
+                        name: foreman.full_name,
+                        contact: foreman.contact || 'N/A',
+                        image: foreman.profile_picture || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZmVzc2lvbmFsfGVufDB8fDB8fHww',
+                        role_name: foreman.role_name,
+                        department_name: foreman.department_name,
+                        currentProjects: 0, // Default to 0, could be enhanced later
+                        isAssigned: false // Default to false, could be enhanced later
+                    }));
+                    
+                    console.log('Transformed foremen:', availableForemen);
+                } else {
+                    console.error('Failed to fetch foremen:', data.error);
+                    availableForemen = [];
+                }
+            } catch (error) {
+                console.error('Error fetching foremen:', error);
+                availableForemen = [];
             }
         }
 
@@ -831,7 +843,7 @@
                             <button class="action-btn contract-btn" onclick="viewContract(${project.contractId})" title="View Contract">
                                 <i class="fas fa-file-contract"></i>
                             </button>
-                            ${project.status === 'unassigned' ? `
+                            ${project.status === 'unassigned' || project.contractStatus === 'Active' ? `
                                 <button class="action-btn assign-btn" onclick="assignForeman(${project.id})" title="Assign Foreman">
                                     <i class="fas fa-user-plus"></i>
                                 </button>
@@ -976,14 +988,22 @@
                 const foremenList = document.getElementById('foremenList');
                 foremenList.innerHTML = '';
 
+                // Debug: Log available foremen
+                console.log('Available foremen:', availableForemen);
+                console.log('Foremen count:', availableForemen.length);
+
                 // Filter out foremen who already have current projects
-                const availableForemenList = availableForemen.filter(f => f.currentProjects === 0);
+                // For now, show all foremen since we don't have real project assignment tracking
+                const availableForemenList = availableForemen.filter(f => !f.isAssigned);
+
+                console.log('Filtered foremen:', availableForemenList);
+                console.log('Filtered count:', availableForemenList.length);
 
                 if (availableForemenList.length === 0) {
                     foremenList.innerHTML = `
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            No available foremen at the moment. All foremen are currently assigned to projects.
+                            No available foremen at the moment. Please check if foremen are properly configured in the system.
                         </div>
                     `;
                     document.getElementById('confirmAssignBtn').disabled = true;
@@ -998,17 +1018,17 @@
                                 <div class="foreman-details">
                                     <h6>${foreman.name}</h6>
                                     <p>${foreman.contact}</p>
-                                    <p><small>${foreman.specialization}</small></p>
+                                    <p><small class="text-info">${foreman.role_name} - ${foreman.department_name}</small></p>
                                 </div>
                             </div>
                             <div class="foreman-stats">
                                 <div class="stat-item">
-                                    <div class="stat-value">${foreman.projectsCompleted}</div>
-                                    <div class="stat-label">Projects Completed</div>
+                                    <div class="stat-value">${foreman.role_name}</div>
+                                    <div class="stat-label">Role</div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value">${foreman.currentProjects}</div>
-                                    <div class="stat-label">Current Projects</div>
+                                    <div class="stat-value">${foreman.department_name}</div>
+                                    <div class="stat-label">Department</div>
                                 </div>
                             </div>
                         `;
@@ -1053,9 +1073,15 @@
                 foreman.currentProjects = 1;
                 foreman.isAssigned = true;
 
+                // Remove the project from the approved projects list since foreman is assigned
+                const projectIndex = approvedProjects.findIndex(p => p.id === currentProjectId);
+                if (projectIndex !== -1) {
+                    approvedProjects.splice(projectIndex, 1);
+                }
+
                 renderProjects();
                 $('#assignForemanModal').modal('hide');
-                showSuccessMessage(`Foreman ${foreman.name} has been assigned to ${project.name}`);
+                showSuccessMessage(`Foreman ${foreman.name} has been assigned to ${project.name}. Project has been moved from approved projects.`);
             }
         });
 
@@ -1100,6 +1126,21 @@
                 // Generate contract content
                 const contractContent = generateContractContent(contract);
                 document.getElementById('contractContent').innerHTML = contractContent;
+                
+                // Show/hide sign button based on contract status
+                const signBtn = document.getElementById('signContractBtn');
+                if (contract.status === 'Approved') {
+                    signBtn.style.display = 'inline-block';
+                    signBtn.innerHTML = '<i class="fas fa-signature me-2"></i>Sign Contract';
+                } else if (contract.status === 'Active') {
+                    signBtn.style.display = 'inline-block';
+                    signBtn.innerHTML = '<i class="fas fa-check me-2"></i>Contract Signed';
+                    signBtn.disabled = true;
+                    signBtn.classList.remove('btn-success');
+                    signBtn.classList.add('btn-secondary');
+                } else {
+                    signBtn.style.display = 'none';
+                }
                 
                 // Show modal
                 const modal = new bootstrap.Modal(document.getElementById('contractViewModal'));
@@ -1444,7 +1485,11 @@
                 }
             }
 
-            fetchApprovedContracts();
+            // Fetch both contracts and foremen on page load
+            Promise.all([
+                fetchApprovedContracts(),
+                fetchForemen()
+            ]);
         });
     </script>
 </body>
