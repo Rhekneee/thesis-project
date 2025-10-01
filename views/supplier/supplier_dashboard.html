@@ -590,6 +590,49 @@
       transform: scale(1.05);
       border-color: #28a745;
     }
+
+    /* Delivery Form Styles */
+    .delivery-form-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #dee2e6;
+    }
+
+    .delivery-form-card {
+      background: #fff;
+      border-radius: 6px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .delivery-form-card .form-control {
+      border-color: #dee2e6;
+      font-size: 0.9rem;
+    }
+
+    .delivery-form-card .form-control:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .delivery-form-card .form-label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 0.5rem;
+    }
+
+    .delivery-form-card .table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .delivery-form-card .table td {
+      vertical-align: middle;
+      color: #212529;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -864,6 +907,99 @@
           </div>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delivery Form Modal -->
+  <div class="modal fade" id="deliveryFormModal" tabindex="-1" aria-labelledby="deliveryFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deliveryFormModalLabel">
+            <i class="fas fa-truck"></i> Delivery Information Form
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="deliveryForm">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="deliveryOrderId" class="form-label">Order ID</label>
+                <input type="text" class="form-control" id="deliveryOrderId" readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="deliverySupplier" class="form-label">Supplier</label>
+                <input type="text" class="form-control" id="deliverySupplier" readonly>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="deliveryType" class="form-label">Delivery Type</label>
+                <input type="text" class="form-control" id="deliveryType" value="External Driver" readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="deliveryDate" class="form-label">Expected Delivery Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="deliveryDate" required>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="externalDriverName" class="form-label">External Driver Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="externalDriverName" placeholder="Driver's full name" required>
+              </div>
+              <div class="col-md-6">
+                <label for="externalVehicleDetails" class="form-label">Plate Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="externalVehicleDetails" placeholder="e.g., ABC-1234" required>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="courierService" class="form-label">Courier Service</label>
+                <input type="text" class="form-control" id="courierService" placeholder="e.g., LBC, J&T Express">
+              </div>
+              <div class="col-md-6">
+                <!-- Empty column for layout balance -->
+              </div>
+            </div>
+
+
+            <div class="mb-3">
+              <label for="deliveryNotes" class="form-label">Delivery Notes</label>
+              <textarea class="form-control" id="deliveryNotes" rows="3" placeholder="Additional notes for delivery..."></textarea>
+            </div>
+
+            <!-- Materials to be delivered -->
+            <div class="mb-3">
+              <h6>Materials to be Delivered</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Material</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                      <th>Price per Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="deliveryMaterialsList">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-success" id="confirmDeliveryBtn" onclick="confirmDeliveryForm()">
+            <i class="fas fa-truck"></i> Mark Out for Delivery
           </button>
         </div>
       </div>
@@ -1170,6 +1306,7 @@
         case 'Partially Delivered': return 'status-in-transit';
         case 'Received': return 'status-delivered';
         case 'Returned': return 'status-rejected';
+        case 'Return Pending': return 'status-rejected';
         case 'Backordered': return 'status-pending';
         case 'Cancelled': return 'status-rejected';
         default: return 'status-pending';
@@ -1470,7 +1607,7 @@
         const discInp = document.getElementById('discountInput');
         if (delInp) delInp.disabled = true;
         if (discInp) discInp.disabled = true;
-      } else if (invoice.status === 'Returned') {
+      } else if (invoice.status === 'Returned' || invoice.status === 'Return Pending') {
         if (redeliverBtn) {
           redeliverBtn.style.display = 'inline-flex';
           redeliverBtn.setAttribute('data-invoice-id', invoice.id);
@@ -1972,35 +2109,94 @@
       alert('Order has been rejected!');
     }
 
-    async function markOutForDelivery() {
-      const markOutForDeliveryBtn = document.getElementById('markOutForDeliveryBtn');
-      if (!markOutForDeliveryBtn) return;
-      
-      const invoiceId = markOutForDeliveryBtn.getAttribute('data-invoice-id');
-      if (!invoiceId) return;
-      
-      // Find the invoice in the records
-      const invoiceIndex = state.records.findIndex(r => String(r.id) === String(invoiceId));
-      if (invoiceIndex === -1) return;
-      
-      const inv = state.records[invoiceIndex];
+    // ===== Delivery Form Functions =====
+    let currentDeliveryInvoice = null;
+
+    function showDeliveryForm(invoiceId) {
+      const invoice = state.records.find(r => String(r.id) === String(invoiceId));
+      if (!invoice) return;
+
       // Require invoice uploaded before proceeding
-      if (!(inv.invoiceImage || inv.invoicePdf)) {
+      if (!(invoice.invoiceImage || invoice.invoicePdf)) {
         alert('Please upload an invoice image or PDF before marking Out for Delivery.');
         return;
       }
 
-      // If invoice exists (image/pdf), persist it now with a proper MySQL datetime
+      currentDeliveryInvoice = invoice;
+
+      // Populate form fields
+      document.getElementById('deliveryOrderId').value = invoice.orderId || '-';
+      document.getElementById('deliverySupplier').value = invoice.supplier || '-';
+      
+      // Set default delivery date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('deliveryDate').value = tomorrow.toISOString().split('T')[0];
+
+      // Populate materials list
+      const materialsList = document.getElementById('deliveryMaterialsList');
+      if (invoice.materials && invoice.materials.length > 0) {
+        materialsList.innerHTML = invoice.materials.map(material => `
+          <tr>
+            <td>${material.name || 'N/A'}</td>
+            <td>${material.quantity || 0}</td>
+            <td>${material.unit || '-'}</td>
+            <td>₱${Number(material.pricePerUnit || 0).toFixed(2)}</td>
+          </tr>
+        `).join('');
+      } else {
+        materialsList.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No materials found</td></tr>';
+      }
+
+      // Reset form
+      document.getElementById('deliveryForm').reset();
+      document.getElementById('deliveryOrderId').value = invoice.orderId || '-';
+      document.getElementById('deliverySupplier').value = invoice.supplier || '-';
+      document.getElementById('deliveryType').value = 'External Driver';
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('deliveryFormModal'));
+      modal.show();
+    }
+
+    async function confirmDeliveryForm() {
+      if (!currentDeliveryInvoice) return;
+
+      const form = document.getElementById('deliveryForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // Get form data
+      const deliveryData = {
+        delivery_type: 'external',
+        external_driver_name: document.getElementById('externalDriverName').value.trim(),
+        external_vehicle_details: document.getElementById('externalVehicleDetails').value.trim(),
+        courier_service: document.getElementById('courierService').value.trim(),
+        expected_delivery_date: document.getElementById('deliveryDate').value,
+        delivery_notes: document.getElementById('deliveryNotes').value.trim()
+      };
+
+      // Validate required fields
+      if (!deliveryData.external_driver_name || !deliveryData.external_vehicle_details || !deliveryData.expected_delivery_date) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
       try {
-        const payload = {};
-        if (inv.invoiceImage) payload.supplier_invoice = inv.invoiceImage;
-        if (inv.invoicePdf) payload.supplier_invoice = inv.invoicePdf;
-        if (payload.supplier_invoice) {
+        // First save invoice if exists
+        if (currentDeliveryInvoice.invoiceImage || currentDeliveryInvoice.invoicePdf) {
+          const payload = {};
+          if (currentDeliveryInvoice.invoiceImage) payload.supplier_invoice = currentDeliveryInvoice.invoiceImage;
+          if (currentDeliveryInvoice.invoicePdf) payload.supplier_invoice = currentDeliveryInvoice.invoicePdf;
+          
           const now = new Date();
           const pad = (n) => String(n).padStart(2, '0');
           const mysqlDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
           payload.invoice_date = mysqlDate;
-          const resp = await fetch(`/scm/purchases/${inv.id}/invoice`, {
+          
+          const resp = await fetch(`/scm/purchases/${currentDeliveryInvoice.id}/invoice`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -2011,40 +2207,59 @@
             return;
           }
         }
-      } catch (err) {
-        alert('Failed to save invoice.');
-        return;
-      }
 
-      // Update the status to Out for Delivery (UI)
-      state.records[invoiceIndex].status = 'Out for Delivery';
-
-      // Persist to backend: send status plus delivery values
-      try {
-        const resp = await fetch(`/scm/purchases/${inv.id}/status`, {
-          method: 'PUT',
+        // Update status and delivery information
+        const response = await fetch(`/scm/purchases/${currentDeliveryInvoice.id}/delivery`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             status: 'Out for Delivery',
-            delivery_cost: Number(inv.deliveryCost || 0),
-            discount: Number(inv.discountPercent || 0) // percent; backend stores as percent
+            delivery_cost: Number(currentDeliveryInvoice.deliveryCost || 0),
+            discount: Number(currentDeliveryInvoice.discountPercent || 0),
+            ...deliveryData
           })
         });
-        if (!resp.ok) {
-          const t = await resp.text().catch(() => '');
-          alert('Failed to update status. ' + t);
+
+        if (!response.ok) {
+          const error = await response.text().catch(() => '');
+          alert('Failed to update delivery information. ' + error);
           return;
         }
-      } catch (_) { return; }
+
+        // Update local state
+        const invoiceIndex = state.records.findIndex(r => String(r.id) === String(currentDeliveryInvoice.id));
+        if (invoiceIndex !== -1) {
+          state.records[invoiceIndex].status = 'Out for Delivery';
+          state.records[invoiceIndex].deliveryInfo = deliveryData;
+        }
+
+        // Close modals
+        const deliveryModal = bootstrap.Modal.getInstance(document.getElementById('deliveryFormModal'));
+        if (deliveryModal) deliveryModal.hide();
+        
+        closeViewDetailsModal();
+        
+        // Refresh from backend
+        await fetchPurchaseOrders();
+        
+        // Show success message
+        alert('Order has been marked as Out for Delivery with delivery information saved!');
+        
+      } catch (error) {
+        console.error('Error confirming delivery:', error);
+        alert('Failed to confirm delivery. Please try again.');
+      }
+    }
+
+    async function markOutForDelivery() {
+      const markOutForDeliveryBtn = document.getElementById('markOutForDeliveryBtn');
+      if (!markOutForDeliveryBtn) return;
       
-      // Close the modal
-      closeViewDetailsModal();
+      const invoiceId = markOutForDeliveryBtn.getAttribute('data-invoice-id');
+      if (!invoiceId) return;
       
-      // Refresh from backend to pull latest invoice_amount and status
-      await fetchPurchaseOrders();
-      
-      // Show success message
-      alert('Order has been marked as Out for Delivery!');
+      // Show delivery form instead of directly changing status
+      showDeliveryForm(invoiceId);
     }
 
     function markDelivered() {

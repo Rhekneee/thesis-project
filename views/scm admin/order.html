@@ -2016,6 +2016,38 @@
                     <div class="col-12 mt-2">
                       <div id="orderMetaInfo"></div>
                   </div>
+                    <!-- Delivery Information (shows when Out for Delivery) -->
+                    <div class="col-12 mt-3" id="deliveryInfoSection" style="display:none;">
+                      <div class="card p-3">
+                        <div class="d-flex align-items-center mb-3">
+                          <i class="fas fa-truck text-warning me-2"></i>
+                          <strong>Delivery Information</strong>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="mb-2">
+                              <small class="text-muted">Driver Name:</small>
+                              <div id="deliveryDriverName" class="fw-bold">-</div>
+                            </div>
+                            <div class="mb-2">
+                              <small class="text-muted">Vehicle Details:</small>
+                              <div id="deliveryVehicleDetails" class="fw-bold">-</div>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="mb-2">
+                              <small class="text-muted">Courier Service:</small>
+                              <div id="deliveryCourierService" class="fw-bold">-</div>
+                            </div>
+                            <div class="mb-2">
+                              <small class="text-muted">Expected Delivery Date:</small>
+                              <div id="deliveryExpectedDate" class="fw-bold">-</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Proof of Delivery upload (shows when Out for Delivery or later) -->
                     <div class="col-12 mt-3" id="proofSection" style="display:none;">
                       <div class="card p-3">
@@ -3790,6 +3822,19 @@ async function loadOrdersFromBackend() {
           
           // Set appropriate tooltip message
           markAsCompletedBtn.title = 'For suppliers with 2+ items: complete item checks first. For single-item suppliers: status must be Out for Delivery or later.';
+        }
+      }
+
+      // Toggle delivery info section visibility: show for Out for Delivery status
+      const deliveryInfoSection = document.getElementById('deliveryInfoSection');
+      if (deliveryInfoSection) {
+        const showDeliveryInfo = order.status === 'Out for Delivery';
+        if (showDeliveryInfo) {
+          deliveryInfoSection.style.display = '';
+          // Populate delivery information from material_releases
+          populateDeliveryInfo(order);
+        } else {
+          deliveryInfoSection.style.display = 'none';
         }
       }
 
@@ -7692,6 +7737,57 @@ async function submitFinanceForManual() {
         console.log('Could not find elements for supplier', index);
       }
     };
+
+    // Function to populate delivery information from material_releases
+    async function populateDeliveryInfo(order) {
+      try {
+        console.log('🔍 Fetching delivery info for order:', order.id);
+        
+        // Fetch delivery information from the backend
+        const response = await fetch(`/scm/purchases/${order.id}/delivery-info`);
+        
+        if (response.ok) {
+          const deliveryInfo = await response.json();
+          console.log('📦 Delivery info received:', deliveryInfo);
+          
+          // Populate the delivery information fields
+          document.getElementById('deliveryDriverName').textContent = 
+            deliveryInfo.external_driver_name || '-';
+          document.getElementById('deliveryVehicleDetails').textContent = 
+            deliveryInfo.external_vehicle_details || '-';
+          document.getElementById('deliveryCourierService').textContent = 
+            deliveryInfo.courier_service || '-';
+          
+          // Format the expected delivery date
+          const expectedDate = deliveryInfo.expected_delivery_date;
+          if (expectedDate) {
+            const date = new Date(expectedDate);
+            document.getElementById('deliveryExpectedDate').textContent = 
+              date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              });
+          } else {
+            document.getElementById('deliveryExpectedDate').textContent = '-';
+          }
+        } else {
+          console.warn('Failed to fetch delivery info:', response.status);
+          // Set default values
+          document.getElementById('deliveryDriverName').textContent = '-';
+          document.getElementById('deliveryVehicleDetails').textContent = '-';
+          document.getElementById('deliveryCourierService').textContent = '-';
+          document.getElementById('deliveryExpectedDate').textContent = '-';
+        }
+      } catch (error) {
+        console.error('Error fetching delivery info:', error);
+        // Set default values on error
+        document.getElementById('deliveryDriverName').textContent = '-';
+        document.getElementById('deliveryVehicleDetails').textContent = '-';
+        document.getElementById('deliveryCourierService').textContent = '-';
+        document.getElementById('deliveryExpectedDate').textContent = '-';
+      }
+    }
   </script>
   <!-- Removed incorrect local include to prevent 404/MIME errors -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

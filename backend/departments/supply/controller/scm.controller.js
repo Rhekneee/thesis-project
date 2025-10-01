@@ -1942,6 +1942,107 @@ const SCMController = {
                 error: 'Failed to update manufacturing request status' 
             });
         }
+    },
+
+    // Set delivery information for a purchase
+    setPurchaseDeliveryInfo: async (req, res) => {
+        try {
+            const { purchaseId } = req.params;
+            const { 
+                status, 
+                delivery_cost, 
+                discount,
+                delivery_type,
+                external_driver_name,
+                external_vehicle_details,
+                courier_service,
+                expected_delivery_date,
+                delivery_notes
+            } = req.body;
+
+            console.log('Setting delivery info for purchase:', purchaseId);
+            console.log('Delivery data:', req.body);
+
+            // Check if user is authenticated
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Check if user is a supplier
+            const user = req.session.user;
+            if (!user.is_supplier && user.role_id !== 27) {
+                return res.status(403).json({ error: 'Forbidden: Supplier access required' });
+            }
+
+            // Validate required fields
+            if (!status || !delivery_type || !external_driver_name || !external_vehicle_details || !expected_delivery_date) {
+                return res.status(400).json({ error: 'Missing required delivery information' });
+            }
+
+            // Update purchase with delivery information and status
+            const result = await SCMModel.setPurchaseDeliveryInfo(purchaseId, {
+                status,
+                delivery_cost: Number(delivery_cost) || 0,
+                discount: Number(discount) || 0,
+                delivery_type,
+                external_driver_name,
+                external_vehicle_details,
+                courier_service,
+                expected_delivery_date,
+                delivery_notes: delivery_notes || ''
+            });
+
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: 'Delivery information saved successfully',
+                    purchase_id: purchaseId
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    error: result.error
+                });
+            }
+        } catch (error) {
+            console.error('Error in setPurchaseDeliveryInfo:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to save delivery information' 
+            });
+        }
+    },
+
+    // Get delivery information for a purchase
+    getPurchaseDeliveryInfo: async (req, res) => {
+        try {
+            const { purchaseId } = req.params;
+
+            console.log('Getting delivery info for purchase:', purchaseId);
+
+            // Check if user is authenticated
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            // Get delivery information from material_releases table
+            const result = await SCMModel.getPurchaseDeliveryInfo(purchaseId);
+
+            if (result.success) {
+                res.json(result.deliveryInfo);
+            } else {
+                res.status(404).json({
+                    success: false,
+                    error: result.error || 'Delivery information not found'
+                });
+            }
+        } catch (error) {
+            console.error('Error in getPurchaseDeliveryInfo:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to get delivery information' 
+            });
+        }
     }
 };
 

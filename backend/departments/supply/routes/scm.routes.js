@@ -96,6 +96,12 @@ router.put('/purchases/:purchaseId/status', SCMController.setPurchaseStatus);
 // Save supplier invoice for a purchase
 router.post('/purchases/:purchaseId/invoice', SCMController.setPurchaseInvoice);
 
+// Save delivery information for a purchase
+router.post('/purchases/:purchaseId/delivery', SCMController.setPurchaseDeliveryInfo);
+
+// Get delivery information for a purchase
+router.get('/purchases/:purchaseId/delivery-info', SCMController.getPurchaseDeliveryInfo);
+
 // Bulk purchase requests (new schema)
 router.post('/purchase-requests/bulk', SCMController.createBulkPurchaseRequests);
 
