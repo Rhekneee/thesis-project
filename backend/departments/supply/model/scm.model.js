@@ -2027,6 +2027,226 @@ const SCMModel = {
         } finally {
             connection.release();
         }
+    },
+
+    // Set delivery information for a purchase
+    setPurchaseDeliveryInfo: async (purchaseId, deliveryData) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Check if purchase exists
+            const [purchaseRows] = await connection.query(
+                'SELECT purchase_id, status FROM purchases WHERE purchase_id = ?',
+                [purchaseId]
+            );
+
+            if (purchaseRows.length === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Purchase not found' };
+            }
+
+            // FIRST: Store delivery information in material_releases table
+            try {
+                console.log('🔍 Checking for existing material_releases record for purchase_id:', purchaseId);
+                
+                // Check if there's already a record for this purchase_id
+                const [existingRecords] = await connection.query(
+                    'SELECT id FROM material_releases WHERE purchase_id = ?',
+                    [purchaseId]
+                );
+
+                console.log('📋 Existing records found:', existingRecords.length);
+
+                if (existingRecords.length > 0) {
+                    // Update existing record with delivery information
+                    console.log('🔄 Updating existing material_releases record');
+                    await connection.query(`
+                        UPDATE material_releases 
+                        SET 
+                            external_driver_name = ?,
+                            external_vehicle_details = ?,
+                            courier_service = ?,
+                            expected_delivery_date = ?,
+                            released_at = NOW(),
+                            status = 'released'
+                        WHERE purchase_id = ?
+                    `, [
+                        deliveryData.external_driver_name,
+                        deliveryData.external_vehicle_details,
+                        deliveryData.courier_service || null,
+                        deliveryData.expected_delivery_date,
+                        purchaseId
+                    ]);
+                    console.log('✅ Successfully updated existing record');
+                } else {
+                    // Insert new record - get required fields from purchases table
+                    console.log('➕ Inserting new material_releases record');
+                    
+                    const [purchaseRows] = await connection.query(
+                        'SELECT material_id, pr_id FROM purchases WHERE purchase_id = ?',
+                        [purchaseId]
+                    );
+
+                    console.log('📦 Purchase data found:', purchaseRows.length > 0 ? purchaseRows[0] : 'None');
+
+                    if (purchaseRows.length > 0) {
+                        const { material_id, pr_id } = purchaseRows[0];
+                        
+                        // For company supply procurement, project_id is always null
+                        const project_id = null;
+                        
+                        // For request_id, we need to use NULL since this is company procurement, not a request_material
+                        const request_id = null;
+                        
+                        console.log('🏗️ Project ID set to null for company supply');
+                        console.log('📋 Request ID set to null for company procurement');
+                        
+                        // Insert new record into material_releases
+                        console.log('🔧 Inserting with values:', {
+                            material_id,
+                            request_id,
+                            purchaseId,
+                            project_id,
+                            expected_delivery_date: deliveryData.expected_delivery_date,
+                            external_driver_name: deliveryData.external_driver_name,
+                            external_vehicle_details: deliveryData.external_vehicle_details,
+                            courier_service: deliveryData.courier_service || null
+                        });
+                        
+                        const insertResult = await connection.query(`
+                            INSERT INTO material_releases (
+                                material_id, request_id, purchase_id, project_id, expected_delivery_date,
+                                external_driver_name, external_vehicle_details, courier_service,
+                                released_at, status, source_type
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'released', 'company_procured')
+                        `, [
+                            material_id,
+                            request_id,
+                            purchaseId,
+                            project_id,
+                            deliveryData.expected_delivery_date,
+                            deliveryData.external_driver_name,
+                            deliveryData.external_vehicle_details,
+                            deliveryData.courier_service || null
+                        ]);
+                        
+                        console.log('🔧 Insert result:', insertResult[0]);
+                        console.log('✅ Successfully inserted new record');
+                    } else {
+                        console.error('❌ No purchase data found for purchase_id:', purchaseId);
+                    }
+                }
+            } catch (deliveryInfoError) {
+                console.error('❌ Could not store delivery info in material_releases table:', deliveryInfoError);
+                
+                // Fallback: Try a simpler insert without project_id if the first attempt failed
+                try {
+                    console.log('🔄 Attempting fallback insert without project_id...');
+                    const [purchaseRows] = await connection.query(
+                        'SELECT material_id, pr_id FROM purchases WHERE purchase_id = ?',
+                        [purchaseId]
+                    );
+                    
+                    if (purchaseRows.length > 0) {
+                        const { material_id, pr_id } = purchaseRows[0];
+                        
+                        await connection.query(`
+                            INSERT INTO material_releases (
+                                material_id, request_id, purchase_id, expected_delivery_date,
+                                external_driver_name, external_vehicle_details, courier_service,
+                                released_at, status, source_type
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'released', 'company_procured')
+                        `, [
+                            material_id,
+                            null, // request_id = null for company procurement
+                            purchaseId,
+                            deliveryData.expected_delivery_date,
+                            deliveryData.external_driver_name,
+                            deliveryData.external_vehicle_details,
+                            deliveryData.courier_service || null
+                        ]);
+                        console.log('✅ Fallback insert successful');
+                    }
+                } catch (fallbackError) {
+                    console.error('❌ Fallback insert also failed:', fallbackError);
+                }
+                // Continue without failing the main operation
+            }
+
+            // SECOND: Update purchase status and delivery information
+            const updates = [
+                'status = ?',
+                'delivery_cost = ?',
+                'discount = ?'
+            ];
+            const values = [
+                deliveryData.status,
+                deliveryData.delivery_cost,
+                deliveryData.discount,
+                purchaseId
+            ];
+
+            const updateQuery = `UPDATE purchases SET ${updates.join(', ')} WHERE purchase_id = ?`;
+            const [updateResult] = await connection.query(updateQuery, values);
+
+            if (updateResult.affectedRows === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Failed to update purchase' };
+            }
+
+            console.log('✅ Purchase status updated successfully');
+
+            await connection.commit();
+            return { success: true, affectedRows: updateResult.affectedRows };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error in setPurchaseDeliveryInfo:', error);
+            return { success: false, error: 'Failed to save delivery information' };
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Get delivery information for a purchase
+    getPurchaseDeliveryInfo: async (purchaseId) => {
+        try {
+            console.log('🔍 Getting delivery info for purchase_id:', purchaseId);
+            
+            const [rows] = await db.query(`
+                SELECT 
+                    external_driver_name,
+                    external_vehicle_details,
+                    courier_service,
+                    expected_delivery_date,
+                    released_at,
+                    status
+                FROM material_releases 
+                WHERE purchase_id = ?
+                ORDER BY released_at DESC
+                LIMIT 1
+            `, [purchaseId]);
+
+            console.log('📋 Query result:', rows.length > 0 ? rows[0] : 'No records found');
+
+            if (rows.length > 0) {
+                return { 
+                    success: true, 
+                    deliveryInfo: rows[0] 
+                };
+            } else {
+                return { 
+                    success: false, 
+                    error: 'Delivery information not found' 
+                };
+            }
+        } catch (error) {
+            console.error('Error in getPurchaseDeliveryInfo:', error);
+            return { 
+                success: false, 
+                error: 'Failed to get delivery information' 
+            };
+        }
     }
 };
 
