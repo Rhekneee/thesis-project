@@ -3,60 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pre-Onboarding Documents</title>
+    <title>Welcome to MDB Construction - Onboarding</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .onboarding-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #2c3e50;
+            line-height: 1.6;
         }
 
-        .onboarding-modal {
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .welcome-section {
             background: white;
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin: 20px 0 32px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .welcome-icon {
+            font-size: 3.5rem;
+            color: #2563eb;
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+
+        .welcome-title {
+            color: #1e293b;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.025em;
+        }
+
+        .welcome-subtitle {
+            color: #64748b;
+            font-size: 1.125rem;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        .account-info {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             border-radius: 15px;
-            padding: 30px;
-            max-width: 800px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            margin: 30px auto;
+            border-left: 5px solid #4f6ef5;
+            max-width: 500px;
+        }
+
+        .account-info h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .credentials {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+
+        .credential-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .credential-value {
+            color: #4f6ef5;
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 0 0 32px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .form-title {
+            color: #1e293b;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+            letter-spacing: -0.025em;
+        }
+
+        .form-subtitle {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1rem;
+            font-weight: 400;
         }
 
         .document-card {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
             margin-bottom: 20px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            background: #fafbfc;
         }
 
         .document-card:hover {
-            border-color: #007bff;
-            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.1);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+            background: white;
         }
 
         .document-card.uploaded {
-            border-color: #28a745;
-            background-color: #f8fff9;
+            border-color: #059669;
+            background: #f0fdf4;
         }
 
         .document-card.approved {
-            border-color: #28a745;
-            background-color: #d4edda;
+            border-color: #059669;
+            background: #dcfce7;
         }
 
         .document-card.rejected {
-            border-color: #dc3545;
-            background-color: #f8d7da;
+            border-color: #dc2626;
+            background: #fef2f2;
         }
 
         .status-badge {
@@ -88,59 +188,46 @@
         }
 
         .upload-area {
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            padding: 30px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 32px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            background: #f8fafc;
         }
 
         .upload-area:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
+            border-color: #2563eb;
+            background-color: #eff6ff;
         }
 
         .upload-area.dragover {
-            border-color: #007bff;
-            background-color: #e3f2fd;
+            border-color: #2563eb;
+            background-color: #dbeafe;
         }
 
         .progress-bar {
             height: 8px;
-            border-radius: 4px;
-            background-color: #e9ecef;
+            border-radius: 6px;
+            background-color: #e2e8f0;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background-color: #007bff;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
             transition: width 0.3s ease;
         }
 
-        .btn-close-onboarding {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #6c757d;
-            cursor: pointer;
-        }
-
-        .btn-close-onboarding:hover {
-            color: #dc3545;
-        }
-
         .completion-message {
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #059669, #10b981);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 32px;
+            border-radius: 16px;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 32px;
+            box-shadow: 0 4px 20px rgba(5, 150, 105, 0.2);
         }
 
         .loading-spinner {
@@ -157,23 +244,617 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            border: none;
+            padding: 16px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .next-steps {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: left;
+        }
+
+        .next-steps h5 {
+            color: #92400e;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .next-steps li {
+            color: #92400e;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+
+         /* Policies Section Styles */
+         .policies-section {
+             background: #f8f9fa;
+             border-radius: 15px;
+             padding: 30px;
+             border: 1px solid #e9ecef;
+         }
+
+         .policy-card {
+             background: white;
+             border-radius: 10px;
+             padding: 25px;
+             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+             border-left: 4px solid #4f6ef5;
+         }
+
+         .declaration-card {
+             background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+             border-radius: 10px;
+             padding: 25px;
+             border: 1px solid #ffeaa7;
+             border-left: 4px solid #ffc107;
+         }
+
+         .policy-title {
+             color: #2c3e50;
+             font-size: 1.2rem;
+             font-weight: bold;
+             margin-bottom: 20px;
+             display: flex;
+             align-items: center;
+         }
+
+         .policy-content {
+             padding-left: 10px;
+         }
+
+         .policy-item {
+             margin-bottom: 20px;
+             padding: 15px;
+             background: #f8f9fa;
+             border-radius: 8px;
+             border: 1px solid #e9ecef;
+         }
+
+         .policy-item:last-child {
+             margin-bottom: 0;
+         }
+
+         .form-check-label {
+             font-size: 0.95rem;
+             line-height: 1.5;
+             cursor: pointer;
+         }
+
+         .form-check-input {
+             margin-top: 0.3rem;
+         }
+
+         .form-check-input:checked {
+             background-color: #4f6ef5;
+             border-color: #4f6ef5;
+         }
+
+         .form-check-input:focus {
+             box-shadow: 0 0 0 0.2rem rgba(79, 110, 245, 0.25);
+         }
+
+         .policy-item a {
+             text-decoration: none;
+             font-weight: 500;
+         }
+
+         .policy-item a:hover {
+             text-decoration: underline;
+         }
+
+         .declaration-card .form-check-label {
+             font-weight: 500;
+         }
+
+         .declaration-card ul {
+             margin-top: 10px;
+             padding-left: 20px;
+         }
+
+         .declaration-card li {
+             margin-bottom: 5px;
+             color: #856404;
+         }
+
+         /* Scrollable Policy Content Styles */
+         .policy-scrollable-content {
+             max-height: 500px;
+             overflow-y: auto;
+             border: 1px solid #e9ecef;
+             border-radius: 8px;
+             padding: 20px;
+             background: #f8f9fa;
+         }
+
+         .policy-section {
+             margin-bottom: 30px;
+             padding-bottom: 20px;
+             border-bottom: 1px solid #dee2e6;
+         }
+
+         .policy-section:last-child {
+             border-bottom: none;
+             margin-bottom: 0;
+         }
+
+         .policy-section h6 {
+             color: #2c3e50;
+             font-weight: bold;
+             margin-bottom: 15px;
+             padding-bottom: 8px;
+             border-bottom: 2px solid #4f6ef5;
+         }
+
+         .policy-text {
+             color: #495057;
+             line-height: 1.6;
+         }
+
+         .policy-text p {
+             margin-bottom: 12px;
+         }
+
+         .policy-text ul {
+             margin-bottom: 15px;
+             padding-left: 20px;
+         }
+
+         .policy-text li {
+             margin-bottom: 8px;
+         }
+
+         .policy-text strong {
+             color: #2c3e50;
+         }
+
+         /* Custom scrollbar */
+         .policy-scrollable-content::-webkit-scrollbar {
+             width: 8px;
+         }
+
+         .policy-scrollable-content::-webkit-scrollbar-track {
+             background: #f1f1f1;
+             border-radius: 4px;
+         }
+
+         .policy-scrollable-content::-webkit-scrollbar-thumb {
+             background: #4f6ef5;
+             border-radius: 4px;
+         }
+
+        .policy-scrollable-content::-webkit-scrollbar-thumb:hover {
+            background: #3d5ce6;
+        }
+
+        /* Header Styles */
+        .page-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-name {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .user-avatar {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-avatar .avatar-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-avatar:hover .avatar-icon {
+            transform: scale(1.05);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            min-width: 180px;
+            padding: 8px 0;
+            margin-top: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .dropdown-item:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .dropdown-item i {
+            margin-right: 12px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e9ecef;
+            margin: 8px 0;
+        }
+
+        /* Adjust main container for fixed header */
+        .main-container {
+            padding-top: 80px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 16px;
+                padding-top: 80px;
+            }
+            
+            .welcome-section {
+                padding: 32px 24px;
+                margin: 16px 0 24px 0;
+            }
+            
+            .form-section {
+                padding: 24px;
+                margin: 0 0 24px 0;
+            }
+            
+            .welcome-title {
+                font-size: 1.875rem;
+            }
+            
+            .form-title {
+                font-size: 1.5rem;
+            }
+            
+            .page-header {
+                padding: 12px 16px;
+            }
+        }
+        
+        
     </style>
 </head>
 <body>
-    <!-- Pre-Onboarding Overlay -->
-    <div id="onboardingOverlay" class="onboarding-overlay" style="display: none;">
-        <div class="onboarding-modal">
-            <button type="button" class="btn-close-onboarding" onclick="closeOnboardingForm()">
-                <i class="fas fa-times"></i>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="user-info">
+            <p class="user-name" id="userName">Loading...</p>
+            <div class="user-avatar" onclick="toggleDropdown()">
+                <div class="avatar-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <button class="dropdown-item" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
             </button>
-            
-            <div class="text-center mb-4">
-                <h2 class="text-primary">
-                    <i class="fas fa-file-upload me-2"></i>
-                    Pre-Onboarding Documents
-                </h2>
-                <p class="text-muted">Please upload the required documents to complete your onboarding process.</p>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-icon">
+                <i class="fas fa-handshake"></i>
+            </div>
+            
+            <h1 class="welcome-title">Welcome to MDB Construction!</h1>
+            <p class="welcome-subtitle">Complete your onboarding process to get started</p>
+
+            <div class="next-steps">
+                <h5><i class="fas fa-list-check me-2"></i>Next Steps</h5>
+                <ul>
+                    <li>Review company policies below</li>
+                    <li>Complete the onboarding form</li>
+                    <li>Upload all required documents</li>
+                    <li>Submit the complete form</li>
+                    <li>Wait for HR approval</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Company Policies Display Section -->
+        <div class="form-section">
+            <h2 class="form-title">
+                <i class="fas fa-file-contract me-2"></i>
+                Company Policies
+                </h2>
+            <p class="form-subtitle">Please review our company policies before proceeding with onboarding.</p>
+
+            <div class="policies-section">
+                <div class="policy-card">
+                    <h5 class="policy-title">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Employee Policies and Guidelines
+                    </h5>
+                    <div class="policy-content">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Important:</strong> Please review all policies carefully. You will be asked to acknowledge your understanding and agreement to these policies in the onboarding form below.
+            </div>
+                        
+                        <!-- Scrollable Policy Content -->
+                        <div class="policy-scrollable-content">
+                            <div class="policy-section">
+                                <h6><i class="fas fa-file-alt me-2"></i>Employee Handbook</h6>
+                                <div class="policy-text">
+                                    <p><strong>Welcome to MDB Construction</strong></p>
+                                    <p>This handbook serves as a guide to help you understand our company's policies, procedures, and benefits. It is designed to provide you with the information you need to be successful in your role.</p>
+                                    
+                                    <p><strong>Company Mission:</strong> To deliver exceptional construction services while maintaining the highest standards of quality, safety, and integrity.</p>
+                                    
+                                    <p><strong>Core Values:</strong></p>
+                                    <ul>
+                                        <li>Integrity and honesty in all business dealings</li>
+                                        <li>Commitment to quality and excellence</li>
+                                        <li>Respect for all team members and clients</li>
+                                        <li>Innovation and continuous improvement</li>
+                                        <li>Safety as our top priority</li>
+                                    </ul>
+                                    
+                                    <p><strong>Employee Benefits:</strong></p>
+                                    <ul>
+                                        <li>Health insurance coverage</li>
+                                        <li>Retirement savings plan</li>
+                                        <li>Paid time off and holidays</li>
+                                        <li>Professional development opportunities</li>
+                                        <li>Performance-based bonuses</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="policy-section">
+                                <h6><i class="fas fa-gavel me-2"></i>Code of Conduct</h6>
+                                <div class="policy-text">
+                                    <p><strong>Ethical Standards</strong></p>
+                                    <p>All employees are expected to maintain the highest ethical standards in their professional conduct. This includes:</p>
+                                    
+                                    <ul>
+                                        <li>Honesty and integrity in all business transactions</li>
+                                        <li>Respect for colleagues, clients, and vendors</li>
+                                        <li>Compliance with all applicable laws and regulations</li>
+                                        <li>Protection of company assets and confidential information</li>
+                                        <li>Fair and equal treatment of all individuals</li>
+                                    </ul>
+                                    
+                                    <p><strong>Professional Behavior:</strong></p>
+                                    <ul>
+                                        <li>Maintain professional appearance and demeanor</li>
+                                        <li>Arrive on time and fulfill work commitments</li>
+                                        <li>Communicate respectfully and professionally</li>
+                                        <li>Report any unethical behavior or violations</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="policy-section">
+                                <h6><i class="fas fa-hard-hat me-2"></i>Health & Safety Policy</h6>
+                                <div class="policy-text">
+                                    <p><strong>Safety First</strong></p>
+                                    <p>The safety and health of our employees is our top priority. All employees must:</p>
+                                    
+                                    <ul>
+                                        <li>Follow all safety protocols and procedures</li>
+                                        <li>Use appropriate personal protective equipment (PPE)</li>
+                                        <li>Report any safety hazards or incidents immediately</li>
+                                        <li>Participate in safety training programs</li>
+                                        <li>Maintain a clean and organized work environment</li>
+                                    </ul>
+                                    
+                                    <p><strong>Emergency Procedures:</strong></p>
+                                    <ul>
+                                        <li>Know the location of emergency exits and equipment</li>
+                                        <li>Follow evacuation procedures in case of emergency</li>
+                                        <li>Report to designated assembly points</li>
+                                        <li>Cooperate with emergency responders</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="policy-section">
+                                <h6><i class="fas fa-lock me-2"></i>IT & Privacy Policy</h6>
+                                <div class="policy-text">
+                                    <p><strong>Technology Usage Guidelines</strong></p>
+                                    <p>Company technology resources are provided for business purposes. Employees must:</p>
+                                    
+                                    <ul>
+                                        <li>Use company equipment responsibly and professionally</li>
+                                        <li>Protect passwords and login credentials</li>
+                                        <li>Report any security incidents or breaches</li>
+                                        <li>Follow data backup and recovery procedures</li>
+                                        <li>Respect intellectual property rights</li>
+                                    </ul>
+                                    
+                                    <p><strong>Privacy Protection:</strong></p>
+                                    <ul>
+                                        <li>Protect confidential client and company information</li>
+                                        <li>Follow data retention and disposal policies</li>
+                                        <li>Respect employee privacy rights</li>
+                                        <li>Comply with data protection regulations</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="policy-section">
+                                <h6><i class="fas fa-file-signature me-2"></i>Non-Disclosure Agreement</h6>
+                                <div class="policy-text">
+                                    <p><strong>Confidentiality Requirements</strong></p>
+                                    <p>As an employee, you will have access to confidential information. You agree to:</p>
+                                    
+                                    <ul>
+                                        <li>Keep all confidential information strictly confidential</li>
+                                        <li>Not disclose information to unauthorized persons</li>
+                                        <li>Use confidential information only for business purposes</li>
+                                        <li>Return all confidential materials upon termination</li>
+                                        <li>Report any unauthorized disclosure immediately</li>
+                                    </ul>
+                                    
+                                    <p><strong>Confidential Information Includes:</strong></p>
+                                    <ul>
+                                        <li>Client lists and project details</li>
+                                        <li>Financial information and business strategies</li>
+                                        <li>Proprietary processes and technologies</li>
+                                        <li>Employee personal information</li>
+                                        <li>Any information marked as confidential</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="policy-section">
+                                <h6><i class="fas fa-clipboard-list me-2"></i>Terms & Conditions</h6>
+                                <div class="policy-text">
+                                    <p><strong>Employment Terms</strong></p>
+                                    <p>Your employment with MDB Construction is subject to the following terms:</p>
+                                    
+                                    <ul>
+                                        <li>Employment is at-will and may be terminated by either party</li>
+                                        <li>Compensation will be paid according to agreed terms</li>
+                                        <li>Work hours and schedule as determined by management</li>
+                                        <li>Compliance with all company policies and procedures</li>
+                                        <li>Performance expectations as outlined in job description</li>
+                                    </ul>
+                                    
+                                    <p><strong>Termination Conditions:</strong></p>
+                                    <ul>
+                                        <li>Violation of company policies may result in termination</li>
+                                        <li>Poor performance may result in disciplinary action</li>
+                                        <li>Misconduct will result in immediate termination</li>
+                                        <li>Return of company property upon termination</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature / Contract Acknowledgment -->
+                <div class="declaration-card mt-3" id="contractSignatureBlock">
+                    <h5 class="mb-3"><i class="fas fa-file-signature me-2"></i>Employment Contract Acknowledgment</h5>
+                    <p class="mb-3">By signing below, I acknowledge that I have read and agree to the company policies and terms.</p>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            <div class="border rounded p-2 bg-white">
+                                <canvas id="signaturePad" style="width:100%; height:200px; background:#fff; cursor: crosshair;"></canvas>
+                                <div class="mt-3">
+                                    <div id="signaturePreview" class="border rounded p-2" style="min-height:100px; background:#fff; display:flex; align-items:center; justify-content:center;">
+                                        <span class="text-muted">No signature yet</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnClearSignature"><i class="fas fa-eraser me-1"></i>Clear</button>
+                                <button type="button" class="btn btn-warning btn-sm" id="btnUndoSignature"><i class="fas fa-undo me-1"></i>Undo</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-success" id="btnSubmitContract"><i class="fas fa-file-signature me-2"></i>Sign Contract</button>
+                                <small class="text-muted">This action submits your signature as acknowledgment.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="contractResult" class="mt-2 text-success" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="form-section">
+            <h2 class="form-title">
+                <i class="fas fa-file-upload me-2"></i>
+                Employee Onboarding Documents
+            </h2>
+            <p class="form-subtitle">Please upload all required employment documents to complete your onboarding process.</p>
 
             <!-- Progress Section -->
             <div class="mb-4">
@@ -186,16 +867,26 @@
                 </div>
             </div>
 
-            <!-- Documents Container -->
-            <div id="documentsContainer">
-                <!-- Documents will be dynamically loaded here -->
-            </div>
+            <!-- Onboarding Form -->
+            <form id="onboardingForm" enctype="multipart/form-data">
+                <!-- Documents Container -->
+                <div id="documentsContainer">
+                    <!-- Documents will be dynamically loaded here -->
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                        <i class="fas fa-paper-plane me-2"></i>Submit Documents
+                    </button>
+                </div>
+            </form>
 
             <!-- Completion Message -->
             <div id="completionMessage" class="completion-message" style="display: none;">
                 <i class="fas fa-check-circle fa-2x mb-3"></i>
-                <h4>All Documents Uploaded!</h4>
-                <p>Your documents have been submitted for review. You will be notified once HR completes the review process.</p>
+                <h4>Documents Submitted Successfully!</h4>
+                <p>Your uploaded documents have been submitted for review. You can continue uploading additional documents or wait for HR to review your submission.</p>
             </div>
 
             <!-- Loading State -->
@@ -215,14 +906,92 @@
         </div>
     </div>
 
+    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentEmployeeId = null;
         let documents = [];
+        let uploadedFiles = {};
+        let documentTypeMapping = {}; // Maps safe IDs to original document types
+        let completedDocuments = new Set(); // Tracks canonical doc keys completed
+        let existingUploadsByType = {}; // Maps raw server document_type -> status
+        let existingStatusByKey = {}; // Maps canonical doc key -> status
+        
+        function getStorageKey(empId) { return `onboardingCompleted:${empId}`; }
+        function loadLocalCompleted(empId) {
+            try { return JSON.parse(localStorage.getItem(getStorageKey(empId)) || '[]'); } catch { return []; }
+        }
+        function saveLocalCompleted(empId, keys) {
+            try { localStorage.setItem(getStorageKey(empId), JSON.stringify(Array.from(new Set(keys)))); } catch {}
+        }
+        
+        // Debug helpers
+        const DEBUG_ONBOARDING = true;
+        function dbg(label, data) { if (DEBUG_ONBOARDING) { try { console.log(`[ONBOARD] ${label}:`, data); } catch {} } }
+
+        function normalizeServerStatus(rawStatus, filePath) {
+            const s = (rawStatus ? String(rawStatus).toLowerCase() : '').trim();
+            if (s === 'uplaoded') return 'uploaded';
+            if (!s && filePath) return 'uploaded';
+            return s || 'pending';
+        }
+
+        // Canonicalization helpers
+        function normalizeType(str) {
+            return (str || '')
+                .toLowerCase()
+                .replace(/drivers?\s*license/g, 'driver license')
+                .replace(/pag[-\s]*ibig/g, 'pagibig')
+                .replace(/phil\s*health/g, 'philhealth')
+                .replace(/[^a-z0-9]+/g, '')
+                .trim();
+        }
+
+        const docPatterns = {
+            valid_id: ['validid','passport','driverlicense','driverlicence','driverslicense','governmentid','govid','idcard','id'],
+            sss: ['sss','sssid','sssnumber'],
+            tin: ['tin','tinid','tinnumber'],
+            philhealth: ['philhealth','philhealthid','philhealthnumber'],
+            pagibig: ['pagibig','hdmf'],
+            nbi: ['nbi','nbiclearance'],
+            police: ['police','policeclearance']
+        };
+
+        function getDocKeyFromDisplay(display) {
+            const s = normalizeType(display);
+            // Hard-map exact display strings as well
+            if (s === 'sssidnumber') return 'sss';
+            if (s === 'tinidnumber') return 'tin';
+            if (s.includes('validid') || s.includes('passport') || s.includes('driverlicense') || s.includes('driverslicense') || s.includes('governmentid') || s === 'id') return 'valid_id';
+            if (s.includes('sss')) return 'sss';
+            if (s.includes('tin')) return 'tin';
+            if (s.includes('philhealth')) return 'philhealth';
+            if (s.includes('pagibig') || s.includes('hdmf')) return 'pagibig';
+            if (s.includes('nbi')) return 'nbi';
+            if (s.includes('police')) return 'police';
+            return s || display; // fallback to normalized
+        }
+
+        function getDocKeyFromServer(type) {
+            const n = normalizeType(type);
+            // Hard-map the common database labels
+            if (n === 'sssidnumber') return 'sss';
+            if (n === 'tinidnumber') return 'tin';
+            for (const [key, patterns] of Object.entries(docPatterns)) {
+                if (patterns.some(p => n.includes(p))) return key;
+            }
+            return n || type;
+        }
 
         // Check onboarding status on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
             checkOnboardingStatus();
+            setupFormSubmission();
+            setupDropdownClose();
+            initSignaturePad();
+            loadSignaturePreview();
         });
 
         // Check if user needs to complete onboarding
@@ -239,7 +1008,7 @@
                     if (data.showOnboardingForm) {
                         // Get employee ID from session or user data
                         await getEmployeeId();
-                        showOnboardingForm();
+                        loadOnboardingDocuments();
                     }
                 }
             } catch (error) {
@@ -264,83 +1033,224 @@
             }
         }
 
-        // Show onboarding form
-        function showOnboardingForm() {
-            document.getElementById('onboardingOverlay').style.display = 'flex';
-            loadOnboardingDocuments();
+        // Setup form submission
+        function setupFormSubmission() {
+            const form = document.getElementById('onboardingForm');
+            form.addEventListener('submit', handleFormSubmission);
         }
 
-        // Close onboarding form
-        function closeOnboardingForm() {
-            document.getElementById('onboardingOverlay').style.display = 'none';
+        // Handle form submission
+        async function handleFormSubmission(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+                
+                // Check if at least one document is uploaded
+                const uploadedCount = Object.keys(uploadedFiles).length;
+                if (uploadedCount === 0) {
+                    throw new Error('Please upload at least one document before submitting');
+                }
+                
+                // Submit all documents at once
+                const formData = new FormData();
+                formData.append('employeeId', currentEmployeeId);
+                
+                // Add all staged files
+                Object.keys(uploadedFiles).forEach(docType => {
+                    formData.append(docType, uploadedFiles[docType]);
+                });
+                
+                const response = await fetch('/hr/onboarding/submit-all', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Mark staged documents as completed (uploaded)
+                    const newlyCompletedKeys = [];
+                    Object.keys(uploadedFiles).forEach(docType => {
+                        const key = getDocKeyFromDisplay(docType);
+                        completedDocuments.add(key);
+                        existingStatusByKey[key] = 'uploaded';
+                        newlyCompletedKeys.push(key);
+                        const safeId = docType.replace(/[^a-zA-Z0-9]/g, '_');
+                        const uploadArea = document.querySelector(`#file-${safeId}`)?.closest('.upload-area');
+                        const fileInfoElement = document.getElementById(`file-info-${safeId}`);
+                        const docObj = documents.find(d => getDocKeyFromDisplay(d.document_type) === key);
+                        const card = docObj ? document.getElementById(`doc-${docObj.id}`) : null;
+                        if (docObj) docObj.status = 'uploaded';
+                        if (uploadArea) {
+                            uploadArea.style.borderColor = '#059669';
+                            uploadArea.style.background = '#f0fdf4';
+                            uploadArea.style.cursor = 'default';
+                            uploadArea.onclick = null;
+                        }
+                        if (fileInfoElement) {
+                            const nameEl = document.getElementById(`file-name-${safeId}`);
+                            if (nameEl) nameEl.textContent = 'Saved on server';
+                            fileInfoElement.style.display = 'block';
+                        }
+                        if (card) card.classList.add('uploaded');
+                        const statusBadge = card?.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'status-badge status-uploaded';
+                            statusBadge.innerHTML = '<i class="fas fa-check me-1"></i>Uploaded';
+                        }
+                    });
+
+                    // Persist completed keys locally for future reloads
+                    const merged = Array.from(new Set([...(loadLocalCompleted(currentEmployeeId)), ...newlyCompletedKeys]));
+                    saveLocalCompleted(currentEmployeeId, merged);
+                    dbg('persisted completed keys', merged);
+
+                    // Clear staged files
+                    uploadedFiles = {};
+
+                    document.getElementById('completionMessage').style.display = 'block';
+                    document.getElementById('onboardingForm').style.display = 'none';
+
+                    // After 5 seconds, hide the message and return to the submission form
+                    setTimeout(() => {
+                        const msg = document.getElementById('completionMessage');
+                        const formEl = document.getElementById('onboardingForm');
+                        if (msg) msg.style.display = 'none';
+                        if (formEl) {
+                            formEl.style.display = 'block';
+                            // Ensure UI reflects latest completion state
+                            renderDocuments();
+                            updateProgress();
+                            updateSubmitButton();
+                            try { formEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+                        }
+                    }, 5000);
+                } else {
+                    throw new Error('Failed to submit documents');
+                }
+                
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showError(error.message || 'Failed to submit documents. Please try again.');
+            } finally {
+                updateProgress();
+                updateSubmitButton();
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
         }
 
         // Load onboarding documents
         async function loadOnboardingDocuments() {
-            if (!currentEmployeeId) {
-                showError('Employee ID not found');
-                return;
-            }
+            // Always use default documents for standard employee onboarding
+            console.log('Loading standard employee onboarding documents');
+            // Try to fetch existing uploads first
+            await loadExistingUploads();
+            loadDefaultDocuments();
+        }
 
-            showLoading();
-
-            try {
-                const response = await fetch(`/hr/onboarding/documents/${currentEmployeeId}`, {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    documents = data.documents || [];
-                    renderDocuments();
-                    updateProgress();
+        // Load default documents if API fails
+        function loadDefaultDocuments() {
+            documents = [
+                { id: 1, document_type: 'Valid ID (Driver\'s License/Passport)', status: 'pending' },
+                { id: 2, document_type: 'SSS ID/Number', status: 'pending' },
+                { id: 3, document_type: 'TIN ID/Number', status: 'pending' },
+                { id: 4, document_type: 'PhilHealth ID/Number', status: 'pending' },
+                { id: 5, document_type: 'Pag-IBIG ID/Number', status: 'pending' },
+                { id: 6, document_type: 'NBI Clearance', status: 'pending' }
+            ];
+            
+            // Apply existing upload statuses by canonical key
+            completedDocuments = new Set();
+            documents = documents.map(d => {
+                const key = getDocKeyFromDisplay(d.document_type);
+                const st = existingStatusByKey[key];
+                if (st) {
+                    d.status = st; // 'uploaded' | 'approved' | 'rejected'
+                    if (st === 'uploaded' || st === 'approved') completedDocuments.add(key);
                 } else {
-                    throw new Error('Failed to load documents');
+                    // Fallback: if locally marked completed, force status to uploaded
+                    const localCompleted = loadLocalCompleted(currentEmployeeId);
+                    if (localCompleted.includes(key)) {
+                        d.status = 'uploaded';
+                        completedDocuments.add(key);
+                        existingStatusByKey[key] = 'uploaded';
+                    }
                 }
-            } catch (error) {
-                console.error('Error loading documents:', error);
-                showError('Failed to load documents. Please try again.');
-            }
+                dbg('map-status', { docType: d.document_type, key, chosenStatus: d.status });
+                return d;
+            });
+            
+            // Persist merged completion keys (server + local) for stability across reloads
+            saveLocalCompleted(currentEmployeeId, Array.from(completedDocuments));
+            
+
+            renderDocuments();
+            updateProgress();
+            updateSubmitButton();
         }
 
         // Render documents
         function renderDocuments() {
             const container = document.getElementById('documentsContainer');
             
-            if (documents.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                        <p>No documents required for your role.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = documents.map(doc => `
-                <div class="document-card ${doc.status}" id="doc-${doc.id}">
+            // Hide loading state and show documents container
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            container.style.display = 'block';
+            
+            container.innerHTML = documents.map(doc => {
+                const safeId = doc.document_type.replace(/[^a-zA-Z0-9]/g, '_');
+                documentTypeMapping[safeId] = doc.document_type; // Store mapping
+                const key = getDocKeyFromDisplay(doc.document_type);
+                const serverStatus = existingStatusByKey[key] || doc.status;
+                const isCompleted = completedDocuments.has(key) || serverStatus === 'uploaded' || serverStatus === 'approved' || doc.status === 'uploaded' || doc.status === 'approved';
+                dbg('render-decision', { docType: doc.document_type, key, serverStatus, docStatus: doc.status, isCompleted });
+                const cardClasses = 'document-card' + (serverStatus === 'approved' || doc.status === 'approved' ? ' approved' : (isCompleted ? ' uploaded' : ''));
+                const statusBadge = isCompleted
+                    ? `<span class=\"status-badge status-uploaded\" title=\"${(serverStatus||doc.status)||'uploaded'}\"><i class=\"fas fa-check me-1\"></i>${(serverStatus === 'approved' || doc.status === 'approved') ? 'Approved' : 'Uploaded'}</span>`
+                    : `<span class=\"status-badge status-pending\">Pending</span>`;
+                return `
+                <div class="${cardClasses}" id="doc-${doc.id}">
                     <div class="row align-items-center">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <h5 class="mb-2">
                                 <i class="fas fa-file-alt me-2"></i>
                                 ${doc.document_type}
                             </h5>
-                            <div class="mb-2">
-                                <span class="status-badge status-${doc.status}">
-                                    ${doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
-                                </span>
-                                ${doc.uploaded_at ? `<small class="text-muted ms-2">Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}</small>` : ''}
-                            </div>
-                            ${doc.remarks ? `<p class="text-muted small mb-0"><strong>Remarks:</strong> ${doc.remarks}</p>` : ''}
+                            <div>${statusBadge}</div>
+                            <p class="text-muted small mb-0">Required document for onboarding</p>
                         </div>
-                        <div class="col-md-4 text-end">
-                            ${renderDocumentActions(doc)}
+                        <div class="col-md-6">
+                            <div class="upload-area" ${isCompleted ? 'style="border-color:#059669;background:#f0fdf4;cursor:default"' : ''}
+                                 ${isCompleted ? '' : `onclick=\"triggerFileUpload('${safeId}')\"`}
+                                 ondrop="handleFileDrop(event, '${safeId}')" 
+                                 ondragover="handleDragOver(event)" 
+                                 ondragleave="handleDragLeave(event)">
+                                <i class="fas fa-cloud-upload-alt fa-2x ${isCompleted ? 'text-success' : 'text-muted'} mb-2"></i>
+                                <p class="mb-1">${isCompleted ? 'Uploaded' : 'Click to upload or drag and drop'}</p>
+                                <p class="text-muted small">PDF, JPG, PNG files up to 5MB</p>
+                                <input type="file" id="file-${safeId}" 
+                                       name="${doc.document_type}"
+                                       accept=".pdf,.jpg,.jpeg,.png" 
+                                       style="display: none;" 
+                                       onchange="handleFileSelect(event, '${safeId}')">
+                            </div>
+                            <div id="file-info-${safeId}" class="mt-2" style="${isCompleted ? '' : 'display: none;'}">
+                                <div class="alert ${serverStatus === 'approved' || doc.status === 'approved' ? 'alert-success' : 'alert-success'}">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <span id="file-name-${safeId}">${isCompleted ? 'Saved on server' : ''}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    ${doc.status === 'pending' ? renderUploadArea(doc) : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Render document actions
@@ -396,53 +1306,64 @@
         // Update progress
         function updateProgress() {
             const total = documents.length;
-            const completed = documents.filter(doc => doc.status === 'approved').length;
-            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const completedCount = documents.filter(d => {
+                const key = getDocKeyFromDisplay(d.document_type);
+                return completedDocuments.has(key) || d.status === 'uploaded' || d.status === 'approved';
+            }).length;
+            const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+            dbg('progress', { total, completedCount, percentage, completedKeys: Array.from(completedDocuments) });
 
             document.getElementById('progressFill').style.width = percentage + '%';
             document.getElementById('progressText').textContent = percentage + '%';
+        }
 
-            // Show completion message if all documents are approved
-            if (completed === total && total > 0) {
-                document.getElementById('completionMessage').style.display = 'block';
+        // Update submit button state
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            const total = documents.length;
+            const completedCount = documents.filter(d => {
+                const key = getDocKeyFromDisplay(d.document_type);
+                return completedDocuments.has(key) || d.status === 'uploaded' || d.status === 'approved';
+            }).length;
+            const hasUploadedDocuments = completedCount > 0;
+            
+            if (hasUploadedDocuments) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('btn-secondary');
+                submitBtn.classList.add('btn-primary');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-secondary');
             }
         }
 
+
         // Trigger file upload
-        function triggerFileUpload(documentType) {
-            document.getElementById(`file-${documentType}`).click();
+        function triggerFileUpload(safeId) {
+            console.log('Triggering file upload for:', safeId);
+            const fileInput = document.getElementById(`file-${safeId}`);
+            if (fileInput) {
+                fileInput.click();
+            } else {
+                console.error('File input not found for:', safeId);
+            }
         }
 
         // Handle file selection
-        async function handleFileSelect(event, documentType) {
+        function handleFileSelect(event, safeId) {
             const file = event.target.files[0];
+            console.log('File selected:', file, 'for safeId:', safeId);
             if (file) {
-                await uploadFile(file, documentType);
+                const documentType = documentTypeMapping[safeId];
+                validateAndStoreFile(file, documentType, safeId);
             }
         }
 
-        // Handle drag and drop
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(event) {
-            event.currentTarget.classList.remove('dragover');
-        }
-
-        function handleFileDrop(event, documentType) {
-            event.preventDefault();
-            event.currentTarget.classList.remove('dragover');
+        // Validate and store file
+        function validateAndStoreFile(file, documentType, safeId) {
+            console.log('Validating file:', file.name, 'for document type:', documentType);
             
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                uploadFile(files[0], documentType);
-            }
-        }
-
-        // Upload file
-        async function uploadFile(file, documentType) {
             // Validate file
             if (file.size > 5 * 1024 * 1024) {
                 alert('File size must be less than 5MB');
@@ -455,29 +1376,65 @@
                 return;
             }
 
-            // Create FormData
-            const formData = new FormData();
-            formData.append('file', file);
+            // Stage locally (do NOT upload yet)
+            uploadedFiles[documentType] = file;
+            
+            // Show file info as staged
+            const fileNameElement = document.getElementById(`file-name-${safeId}`);
+            const fileInfoElement = document.getElementById(`file-info-${safeId}`);
+            const uploadArea = document.querySelector(`#file-${safeId}`)?.closest('.upload-area');
+            if (fileNameElement) fileNameElement.textContent = `${file.name} (ready to submit)`;
+            if (fileInfoElement) fileInfoElement.style.display = 'block';
+            if (uploadArea) {
+                uploadArea.style.borderColor = '#0ea5e9';
+                uploadArea.style.background = '#f0f9ff';
+            }
+            
+            // Update progress and submit button (based on staged files)
+            updateProgress();
+            updateSubmitButton();
+        }
 
-            try {
-                const response = await fetch(`/hr/onboarding/upload/${currentEmployeeId}/${documentType}`, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
+        // Remove file
+        function removeFile(safeId) {
+            const documentType = documentTypeMapping[safeId];
+            delete uploadedFiles[documentType];
+            
+            const fileInfoElement = document.getElementById(`file-info-${safeId}`);
+            const fileInput = document.getElementById(`file-${safeId}`);
+            
+            if (fileInfoElement) {
+                fileInfoElement.style.display = 'none';
+            }
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            updateProgress();
+            updateSubmitButton();
+        }
 
-                if (response.ok) {
-                    // Reload documents to show updated status
-                    await loadOnboardingDocuments();
-                    showSuccess('Document uploaded successfully!');
-                } else {
-                    throw new Error('Upload failed');
-                }
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                showError('Failed to upload document. Please try again.');
+        // Handle drag and drop
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleFileDrop(event, safeId) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const documentType = documentTypeMapping[safeId];
+                validateAndStoreFile(files[0], documentType, safeId);
             }
         }
+
 
         // View document
         function viewDocument(filePath) {
@@ -521,9 +1478,310 @@
             }, 3000);
         }
 
-        // Global function to show onboarding form (can be called from other pages)
-        window.showOnboardingForm = showOnboardingForm;
-        window.closeOnboardingForm = closeOnboardingForm;
+        // Load user information
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/auth/current-user', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("🔍 DEBUG Frontend: Received user data:", data);
+                    
+                    const userNameElement = document.getElementById('userName');
+                    
+                    // Use displayName if available, otherwise fallback to other options
+                    if (data.displayName) {
+                        console.log("🔍 DEBUG Frontend: Using displayName:", data.displayName);
+                        userNameElement.textContent = data.displayName;
+                    } else if (data.fullName) {
+                        console.log("🔍 DEBUG Frontend: Using fullName:", data.fullName);
+                        userNameElement.textContent = data.fullName;
+                    } else if (data.firstName && data.lastName) {
+                        const fullName = `${data.firstName} ${data.lastName}`;
+                        console.log("🔍 DEBUG Frontend: Using firstName + lastName:", fullName);
+                        userNameElement.textContent = fullName;
+                    } else if (data.email) {
+                        console.log("🔍 DEBUG Frontend: Using email:", data.email);
+                        userNameElement.textContent = data.email;
+                    } else {
+                        console.log("🔍 DEBUG Frontend: No valid name found, using 'User'");
+                        userNameElement.textContent = 'User';
+                    }
+                } else {
+                    console.log("🔍 DEBUG Frontend: Response not ok:", response.status, response.statusText);
+                    // If not authenticated, show default
+                    document.getElementById('userName').textContent = 'User';
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+                document.getElementById('userName').textContent = 'User';
+            }
+        }
+
+        // Toggle dropdown menu
+        function toggleDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        function setupDropdownClose() {
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('userDropdown');
+                const avatar = document.querySelector('.user-avatar');
+                
+                if (!avatar.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login.html';
+                } else {
+                    // Force redirect even if logout fails
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+                // Force redirect even if logout fails
+                window.location.href = '/login.html';
+            }
+        }
+
+        // per-file upload function removed; uploads occur on overall Submit only
+
+        async function loadExistingUploads() {
+            try {
+                if (!currentEmployeeId) return;
+                const res = await fetch(`/hr/onboarding/documents/${encodeURIComponent(currentEmployeeId)}`, { credentials: 'include' });
+                if (!res.ok) {
+                    return;
+                }
+                const data = await res.json();
+                let docs = (data.documents || data || []);
+                dbg('existing-docs (per-employee)', docs);
+
+                existingUploadsByType = {};
+                existingStatusByKey = {};
+                completedDocuments = new Set();
+                // Seed from per-employee (may include pending placeholders)
+                docs.forEach(d => {
+                    const type = d.document_type || d.type || d.name;
+                    const status = normalizeServerStatus(d.status, d.file_path);
+                    const key = getDocKeyFromServer(type);
+                    if (!type) return;
+                    existingUploadsByType[type] = status;
+                    existingStatusByKey[key] = status;
+                    if (status === 'uploaded' || status === 'approved') completedDocuments.add(key);
+                });
+
+                // Always also fetch global pending-docs to upgrade statuses for actual uploads
+                try {
+                    const resPending = await fetch('/hr/onboarding/pending-documents', { credentials: 'include' });
+                    if (resPending.ok) {
+                        const pd = await resPending.json();
+                        const all = pd.documents || [];
+                        dbg('pending-docs (global)', all);
+                        const mine = all.filter(x => (x.employee_id || x.employeeId) === currentEmployeeId);
+                        dbg('pending-docs (filtered for employee)', mine);
+                        mine.forEach(x => {
+                            const type = x.document_type || x.type || x.name;
+                            const key = getDocKeyFromServer(type);
+                            // Upgrade logic: prefer uploaded/approved over pending
+                            const prev = existingStatusByKey[key];
+                            if (!prev || prev === 'pending') {
+                                existingStatusByKey[key] = 'uploaded';
+                                completedDocuments.add(key);
+                            }
+                        });
+                    }
+                } catch (e) { dbg('pending-docs fetch error', String(e)); }
+
+                dbg('existingStatusByKey (after merge pending)', existingStatusByKey);
+                dbg('completedDocuments (after merge pending)', Array.from(completedDocuments));
+
+                // Merge locally saved completions
+                const localKeys = loadLocalCompleted(currentEmployeeId);
+                dbg('localCompleted (from storage)', localKeys);
+                localKeys.forEach(k => { existingStatusByKey[k] = existingStatusByKey[k] || 'uploaded'; completedDocuments.add(k); });
+                dbg('completedDocuments (after merge local)', Array.from(completedDocuments));
+            } catch (e) {
+                console.warn('Failed to load existing uploads:', e);
+            }
+        }
+
+        // Signature pad logic
+        let sigCanvas, sigCtx, sigStrokes = [], sigUndone = [];
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('signaturePad');
+            if (!sigCanvas) return;
+            sigCtx = sigCanvas.getContext('2d');
+            function resize() {
+                const data = sigCanvas.toDataURL();
+                sigCanvas.width = sigCanvas.clientWidth;
+                sigCanvas.height = 200;
+                const img = new Image();
+                img.onload = () => sigCtx.drawImage(img, 0, 0);
+                img.src = data;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            let drawing = false;
+            let currentStroke = [];
+            const start = (x, y) => { drawing = true; currentStroke = [{ x, y }]; };
+            const move = (x, y) => {
+                if (!drawing) return;
+                const last = currentStroke[currentStroke.length - 1];
+                sigCtx.beginPath();
+                sigCtx.moveTo(last.x, last.y);
+                sigCtx.lineTo(x, y);
+                sigCtx.strokeStyle = '#111827';
+                sigCtx.lineWidth = 2;
+                sigCtx.lineCap = 'round';
+                sigCtx.stroke();
+                currentStroke.push({ x, y });
+            };
+            const end = () => {
+                if (!drawing) return;
+                drawing = false;
+                if (currentStroke.length > 0) { sigStrokes.push(currentStroke); sigUndone = []; }
+            };
+
+            const getPos = (e) => {
+                const r = sigCanvas.getBoundingClientRect();
+                if (e.touches && e.touches[0]) {
+                    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+                }
+                return { x: e.clientX - r.left, y: e.clientY - r.top };
+            };
+            const redraw = () => {
+                sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height);
+                sigStrokes.forEach(st => {
+                    for (let i=1;i<st.length;i++) {
+                        sigCtx.beginPath();
+                        sigCtx.moveTo(st[i-1].x, st[i-1].y);
+                        sigCtx.lineTo(st[i].x, st[i].y);
+                        sigCtx.strokeStyle = '#111827';
+                        sigCtx.lineWidth = 2;
+                        sigCtx.lineCap = 'round';
+                        sigCtx.stroke();
+                    }
+                });
+            };
+
+            sigCanvas.addEventListener('mousedown', e => { const p = getPos(e); start(p.x,p.y); });
+            sigCanvas.addEventListener('mousemove', e => { const p = getPos(e); move(p.x,p.y); });
+            sigCanvas.addEventListener('mouseup', end);
+            sigCanvas.addEventListener('mouseleave', end);
+            sigCanvas.addEventListener('touchstart', e => { const p = getPos(e); start(p.x,p.y); });
+            sigCanvas.addEventListener('touchmove', e => { e.preventDefault(); const p = getPos(e); move(p.x,p.y); });
+            sigCanvas.addEventListener('touchend', end);
+
+            document.getElementById('btnClearSignature')?.addEventListener('click', () => { sigStrokes = []; sigUndone = []; sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height); });
+            document.getElementById('btnUndoSignature')?.addEventListener('click', () => { const st = sigStrokes.pop(); if (st) sigUndone.push(st); redraw(); });
+            document.getElementById('btnSubmitContract')?.addEventListener('click', submitContractSignature);
+        }
+
+        async function submitContractSignature() {
+            if (!sigCanvas || sigStrokes.length === 0) {
+                return alert('Please sign before submitting.');
+            }
+            sigCanvas.toBlob(async (blob) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('signature', blob, 'signature.png');
+                    const res = await fetch('/hr/onboarding/contract/sign', { method: 'POST', body: formData, credentials: 'include' });
+                    if (!res.ok) throw new Error('Failed to submit signature');
+                    const data = await res.json();
+                    const resultEl = document.getElementById('contractResult');
+                    if (resultEl) {
+                        resultEl.textContent = 'Contract signed successfully.';
+                        resultEl.style.display = 'block';
+                    }
+                    loadSignaturePreview();
+                } catch (e) {
+                    alert(e.message || 'Failed to submit signature');
+                }
+            }, 'image/png');
+        }
+
+        async function loadSignaturePreview() {
+            try {
+                const res = await fetch('/hr/onboarding/contract/status', { credentials: 'include' });
+                if (!res.ok) return;
+                const data = await res.json();
+                const preview = document.getElementById('signaturePreview');
+                if (!preview) return;
+                preview.innerHTML = '';
+                if (data && data.signature_path) {
+                    const img = document.createElement('img');
+                    img.src = `/uploads/signatures/${encodeURIComponent(data.signature_path)}`;
+                    img.alt = 'Digital Signature';
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '160px';
+                    preview.appendChild(img);
+                    // Hide the entire signature pad block if already signed
+                    const block = document.getElementById('contractSignatureBlock');
+                    if (block) block.style.display = 'none';
+                } else {
+                    preview.innerHTML = '<span class="text-muted">No signature yet</span>';
+                    const block = document.getElementById('contractSignatureBlock');
+                    if (block) block.style.display = 'block';
+                }
+                renderSignatureLine(data);
+            } catch {}
+        }
+
+        function renderSignatureLine(data) {
+            try {
+                const scrollable = document.querySelector('.policy-scrollable-content');
+                if (!scrollable) return;
+                let line = document.getElementById('signatureLinePreview');
+                if (!line) {
+                    line = document.createElement('div');
+                    line.id = 'signatureLinePreview';
+                    line.className = 'mt-4 pt-3';
+                    scrollable.appendChild(line);
+                }
+                line.innerHTML = '';
+                const wrap = document.createElement('div');
+                wrap.className = 'd-flex align-items-center justify-content-between';
+                const label = document.createElement('div');
+                label.textContent = 'Employee Signature';
+                label.style.marginRight = '16px';
+                const sigArea = document.createElement('div');
+                sigArea.style.flex = '1';
+                sigArea.style.borderBottom = '2px solid #999';
+                sigArea.style.minHeight = '40px';
+                sigArea.style.display = 'flex';
+                sigArea.style.alignItems = 'center';
+                sigArea.style.justifyContent = 'center';
+                if (data && data.signature_path) {
+                    const img = document.createElement('img');
+                    img.src = `/uploads/signatures/${encodeURIComponent(data.signature_path)}`;
+                    img.alt = 'Digital Signature';
+                    img.style.maxHeight = '36px';
+                    img.style.objectFit = 'contain';
+                    sigArea.appendChild(img);
+                }
+                wrap.appendChild(label);
+                wrap.appendChild(sigArea);
+                line.appendChild(wrap);
+            } catch {}
+        }
     </script>
 </body>
 </html> 

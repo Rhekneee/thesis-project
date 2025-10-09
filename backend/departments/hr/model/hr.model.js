@@ -29,6 +29,34 @@ const fixPlainTextPasswords = async () => {
 fixPlainTextPasswords().catch(console.error);
 
 const HRModel = {
+    // 🔹 Save employee face encoding
+    saveEmployeeFace: async (employeeId, faceEncoding) => {
+        try {
+            const [result] = await db.query(
+                `INSERT INTO employee_faces (employee_id, face_encoding) VALUES (?, ?)`,
+                [employeeId, JSON.stringify(faceEncoding)]
+            );
+            return result.insertId;
+        } catch (error) {
+            console.error("❌ Error saving employee face:", error);
+            throw error;
+        }
+    },
+
+    // 🔹 Get all face encodings for an employee
+    getEmployeeFaces: async (employeeId) => {
+        try {
+            const [rows] = await db.query(
+                `SELECT id, employee_id, face_encoding, created_at FROM employee_faces WHERE employee_id = ? ORDER BY created_at DESC`,
+                [employeeId]
+            );
+            return rows;
+        } catch (error) {
+            console.error("❌ Error fetching employee faces:", error);
+            throw error;
+        }
+    },
+
     // 🔹 Get permission by ID
     getRoleById: async (roleId) => {
         const query = "SELECT * FROM roles WHERE id = ?";
@@ -111,17 +139,27 @@ const HRModel = {
         }
     },
 
+    // 🔹 Generate random password for temporary accounts
+    generateRandomPassword: () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    },
+
     // 🔹 Create a new user with onboarding pending status (for new hires)
-    createUserWithOnboardingPending: async (email, role_id, username) => {
-        console.log("🔹 Creating user with onboarding pending status:", { email, role_id, username });
+    createUserWithOnboardingPending: async (email, role_id, employee_id) => {
+        console.log("🔹 Creating user with onboarding pending status:", { email, role_id, employee_id });
 
         if (!role_id) {
             throw new Error("❌ Role ID is required and cannot be null");
         }
 
         // Validate inputs
-        if (!email || !username) {
-            throw new Error("❌ Email and username are required");
+        if (!email || !employee_id) {
+            throw new Error("❌ Email and employee_id are required");
         }
 
         // Test database connection first
@@ -133,10 +171,13 @@ const HRModel = {
             throw new Error("Database connection failed");
         }
 
-        const defaultPassword = "default123";
-        // Hash the default password
+        // Generate random password for temporary account
+        const randomPassword = HRModel.generateRandomPassword();
+        console.log("🔹 Generated random password for temporary account");
+
+        // Hash the random password
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+        const hashedPassword = await bcrypt.hash(randomPassword, saltRounds);
         console.log("🔹 Password hashed successfully");
 
         // Check if email already exists
@@ -153,7 +194,7 @@ const HRModel = {
             console.error("❌ Error checking existing user:", error);
         }
 
-        // 🧾 Insert the user with hashed password and active status but onboarding pending
+        // 🧾 Insert the user with employee_id as username, hashed password and active status but onboarding pending
         const userInsertQuery = `
             INSERT INTO users (email, username, role_id, password, created_at, is_active, onboarding_completed) 
             VALUES (?, ?, ?, ?, NOW(), 1, 0)
@@ -162,18 +203,18 @@ const HRModel = {
         try {
             console.log("🔹 About to execute user insert query with onboarding pending");
             console.log("🔹 Query:", userInsertQuery);
-            console.log("🔹 Values:", [email, username, role_id, "***hashed***"]);
+            console.log("🔹 Values:", [email, employee_id, role_id, "***hashed***"]);
             
             const [result] = await db.query(userInsertQuery, [
                 email,
-                username, // Use the full_name as username
+                employee_id, // Use employee_id as username
                 role_id,
                 hashedPassword
             ]);
 
             console.log("✅ User created successfully with onboarding pending, ID:", result.insertId);
             console.log("✅ Result object:", result);
-            return result.insertId;
+            return { userId: result.insertId, tempPassword: randomPassword };
         } catch (error) {
             console.error("❌ Error creating user with onboarding pending:", error);
             console.error("❌ SQL Error details:", {
@@ -183,6 +224,32 @@ const HRModel = {
                 sql: error.sql
             });
             throw new Error("Failed to create user: " + (error.sqlMessage || error.message));
+        }
+    },
+
+    // 🔹 Complete onboarding and transition to permanent account
+    completeOnboarding: async (userId, employeeId) => {
+        console.log("🔹 Completing onboarding for user:", userId, "with employee ID:", employeeId);
+
+        try {
+            // Update user to use employee_id as permanent username and mark onboarding as completed
+            const updateQuery = `
+                UPDATE users 
+                SET username = ?, onboarding_completed = 1 
+                WHERE id = ?
+            `;
+
+            const [result] = await db.query(updateQuery, [employeeId, userId]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error("User not found or already completed onboarding");
+            }
+
+            console.log("✅ Onboarding completed successfully for user:", userId);
+            return true;
+        } catch (error) {
+            console.error("❌ Error completing onboarding:", error);
+            throw new Error("Failed to complete onboarding: " + (error.sqlMessage || error.message));
         }
     },
 
@@ -1141,8 +1208,7 @@ const HRModel = {
                     p.*, 
                     e.full_name,  
                     r.name AS position,
-                    DATE_FORMAT(p.start_date, '%Y-%m-%d') as start_date,
-                    DATE_FORMAT(p.end_date, '%Y-%m-%d') as end_date
+                    DATE_FORMAT(p.payroll_date, '%Y-%m-%d') as payroll_date
                  FROM payroll p 
                  JOIN employees e 
                    ON p.employee_id = e.employee_id
@@ -1153,8 +1219,8 @@ const HRModel = {
             console.log('Retrieved pending payroll records:', {
                 count: rows.length,
                 firstRecord: rows[0] ? {
-                    start: rows[0].start_date,
-                    end: rows[0].end_date
+                    payroll_date: rows[0].payroll_date,
+                    payroll_period: rows[0].payroll_period
                 } : null
             });
             return rows;
@@ -1362,11 +1428,11 @@ const HRModel = {
     calculateDeductions: async (employeeSalary, payrollPeriod = 'second') => {
         try {
             const [deductions] = await db.query(`
-                SELECT * FROM payroll_deductions 
+                SELECT id, deduction_type, fixed_amount, description, category, is_active, effective_date, created_at, updated_at
+                FROM payroll_deductions 
                 WHERE is_active = 1 
-                AND ? BETWEEN min_salary_range AND max_salary_range
                 ORDER BY category, deduction_type
-            `, [employeeSalary]);
+            `);
 
             let totalDeductions = 0;
             let taxableDeductions = 0;
@@ -3007,22 +3073,17 @@ const HRModel = {
     // Check if user has completed onboarding
     checkUserOnboardingStatus: async (userId) => {
         try {
-            console.log('🔍 HR Model: checkUserOnboardingStatus called for user ID:', userId);
-            
             const [result] = await db.query(`
                 SELECT onboarding_completed 
                 FROM users 
                 WHERE id = ?
             `, [userId]);
             
-            console.log('🔍 HR Model: Query result:', result);
-            
             const onboardingCompleted = result.length > 0 ? result[0].onboarding_completed : true;
-            console.log('🔍 HR Model: Onboarding completed value:', onboardingCompleted);
             
             return onboardingCompleted;
         } catch (error) {
-            console.error("🔍 HR Model: Error checking user onboarding status:", error);
+            console.error("Error checking user onboarding status:", error);
             throw error;
         }
     },
@@ -3395,8 +3456,6 @@ const HRModel = {
     // Get user data (employee ID)
     getUserData: async (userId) => {
         try {
-            console.log('🔍 HR Model: getUserData called for user ID:', userId);
-            
             const [userResult] = await db.query(`
                 SELECT u.id, e.employee_id
                 FROM users u
@@ -3410,7 +3469,7 @@ const HRModel = {
 
             return userResult[0];
         } catch (error) {
-            console.error("❌ Error getting user data:", error);
+            console.error("Error getting user data:", error);
             throw error;
         }
     },
@@ -3422,7 +3481,7 @@ const HRModel = {
             
             const [documentsResult] = await db.query(`
                 SELECT id, document_type, status, file_path, uploaded_at, remarks
-                FROM pre_onboarding_documents 
+                FROM onboarding_documents 
                 WHERE employee_id = ?
                 ORDER BY document_type
             `, [employeeId]);
@@ -3434,13 +3493,62 @@ const HRModel = {
         }
     },
 
+    // Upload onboarding document (for bulk upload)
+    uploadOnboardingDocument: async (employeeId, documentType, filename, originalName, fileSize, mimeType) => {
+        try {
+            console.log('🔍 HR Model: uploadOnboardingDocument called');
+            
+            // Get user_id from employee_id
+            const [userResult] = await db.query(`
+                SELECT user_id FROM employees WHERE employee_id = ?
+            `, [employeeId]);
+            
+            if (!userResult || userResult.length === 0) {
+                throw new Error('Employee not found');
+            }
+            
+            const userId = userResult[0].user_id;
+            
+            // Insert or update document in onboarding_documents table
+            const [existingDoc] = await db.query(`
+                SELECT id FROM onboarding_documents 
+                WHERE employee_id = ? AND document_type = ?
+            `, [employeeId, documentType]);
+            
+            if (existingDoc && existingDoc.length > 0) {
+                // Update existing document
+                await db.query(`
+                    UPDATE onboarding_documents 
+                    SET file_path = ?, status = 'uploaded', uploaded_at = NOW()
+                    WHERE employee_id = ? AND document_type = ?
+                `, [filename, employeeId, documentType]);
+            } else {
+                // Insert new document
+                await db.query(`
+                    INSERT INTO onboarding_documents 
+                    (user_id, employee_id, document_type, file_path, status, uploaded_at) 
+                    VALUES (?, ?, ?, ?, 'uploaded', NOW())
+                `, [userId, employeeId, documentType, filename]);
+            }
+
+            return {
+                success: true,
+                message: 'Document uploaded successfully',
+                filename: filename
+            };
+        } catch (error) {
+            console.error("❌ Error uploading onboarding document:", error);
+            throw error;
+        }
+    },
+
     // Update document status after upload
     updateDocumentStatus: async (employeeId, documentType, filename) => {
         try {
             console.log('🔍 HR Model: updateDocumentStatus called');
             
             await db.query(`
-                UPDATE pre_onboarding_documents 
+                UPDATE onboarding_documents 
                 SET status = 'uploaded', file_path = ?, uploaded_at = NOW()
                 WHERE employee_id = ? AND document_type = ?
             `, [filename, employeeId, documentType]);
@@ -3555,7 +3663,7 @@ const HRModel = {
             const { user_id, employee_id, document_type, file_path, status = 'pending', remarks = null } = documentData;
             
             const query = `
-                INSERT INTO pre_onboarding_documents 
+                INSERT INTO onboarding_documents 
                 (user_id, employee_id, document_type, file_path, status, remarks, uploaded_at) 
                 VALUES (?, ?, ?, ?, ?, ?, NOW())
             `;
@@ -3582,7 +3690,7 @@ const HRModel = {
                 SELECT 
                     id, user_id, employee_id, document_type, file_path, 
                     status, remarks, uploaded_at, reviewed_at, reviewed_by
-                FROM pre_onboarding_documents 
+                FROM onboarding_documents 
                 WHERE employee_id = ?
                 ORDER BY uploaded_at DESC
             `;
@@ -3599,22 +3707,60 @@ const HRModel = {
         }
     },
 
+    // Get all documents pending verification (status = 'uploaded')
+    getPendingOnboardingDocuments: async () => {
+        try {
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Model: getPendingOnboardingDocuments called');
+            const [rows] = await db.query(`
+                SELECT 
+                    od.id,
+                    od.user_id,
+                    od.employee_id,
+                    e.full_name,
+                    od.document_type,
+                    od.file_path,
+                    od.status,
+                    od.remarks,
+                    od.uploaded_at,
+                    od.reviewed_at,
+                    od.reviewed_by
+                FROM onboarding_documents od
+                LEFT JOIN employees e ON e.employee_id = od.employee_id
+                WHERE od.status = 'uploaded'
+                ORDER BY od.uploaded_at DESC
+            `);
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Model: pending docs count =', rows.length);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting pending onboarding documents:', error);
+            throw error;
+        }
+    },
+
     // Update document status
     updateOnboardingDocumentStatus: async (documentId, status, reviewedBy = null, remarks = null) => {
         try {
-            console.log('🔍 HR Model: updateOnboardingDocumentStatus called');
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Model: updateOnboardingDocumentStatus called');
             
-            const query = `
-                UPDATE pre_onboarding_documents 
+            const updateQuery = `
+                UPDATE onboarding_documents 
                 SET status = ?, reviewed_by = ?, reviewed_at = NOW(), remarks = ?
                 WHERE id = ?
             `;
-            
-            await db.query(query, [status, reviewedBy, remarks, documentId]);
+            const [res] = await db.query(updateQuery, [status, reviewedBy, remarks, documentId]);
+
+            if (res && res.affectedRows > 0) {
+                return {
+                    success: true,
+                    message: 'Document status updated successfully',
+                    table: 'onboarding_documents'
+                };
+            }
             
             return {
-                success: true,
-                message: 'Document status updated successfully'
+                success: false,
+                message: 'No document found to update',
+                table: 'onboarding_documents'
             };
         } catch (error) {
             console.error('❌ Error updating document status:', error);
@@ -4414,6 +4560,289 @@ const HRModel = {
     },
 
     // ... existing code ...
+    async saveContractSignature({ userId, employeeId, signaturePath, signedAt }) {
+        const db = require('../../../db');
+        // Upsert: if an employment contract row exists, update; otherwise insert a new row
+        // Assume document_type label for contract is 'Employment Contract'
+        const docType = 'Employment Contract';
+        // Try update first
+        const [updateRes] = await db.query(
+            `UPDATE onboarding_documents 
+             SET contract_status = 'signed', signature_path = ?, signed_at = ?, status = 'uploaded'
+             WHERE employee_id = ? AND document_type = ?`,
+            [signaturePath, signedAt, employeeId, docType]
+        );
+        if (updateRes.affectedRows === 0) {
+            // Insert
+            const [insertRes] = await db.query(
+                `INSERT INTO onboarding_documents (user_id, employee_id, document_type, file_path, status, contract_status, signature_path, signed_at)
+                 VALUES (?, ?, ?, NULL, 'uploaded', 'signed', ?, ?)`,
+                [userId, employeeId, docType, signaturePath, signedAt]
+            );
+            return insertRes.insertId;
+        }
+        return true;
+    },
+
+    async getContractStatus(employeeId) {
+        const db = require('../../../db');
+        const [rows] = await db.query(
+            `SELECT contract_status, signature_path, signed_at 
+             FROM onboarding_documents 
+             WHERE employee_id = ? AND document_type = 'Employment Contract' 
+             ORDER BY id DESC LIMIT 1`,
+            [employeeId]
+        );
+        return rows && rows[0] ? rows[0] : null;
+    },
+
+    async validateContract(documentId, validatedBy) {
+        const db = require('../../../db');
+        const [res] = await db.query(
+            `UPDATE onboarding_documents 
+             SET status = 'approved', hr_validated = 1, reviewed_by = ?, reviewed_at = NOW()
+             WHERE id = ?`,
+            [validatedBy, documentId]
+        );
+        return res.affectedRows > 0;
+    },
+
+    async getEmployeeEmailAndIdByDocumentId(documentId) {
+        const db = require('../../../db');
+        const [rows] = await db.query(
+            `SELECT u.email, e.employee_id 
+             FROM onboarding_documents od
+             JOIN employees e ON e.employee_id = od.employee_id
+             JOIN users u ON u.id = e.user_id
+             WHERE od.id = ?
+             LIMIT 1`,
+            [documentId]
+        );
+        return rows && rows[0] ? rows[0] : { email: null, employee_id: null };
+    },
+
+    // Check if employee is eligible for onboarding approval email
+    async checkEligibilityForOnboardingEmail(employeeId) {
+        const db = require('../../../db');
+        
+        // Check if employment contract is validated/approved
+        const [contractRows] = await db.query(
+            `SELECT COUNT(*) as count FROM onboarding_documents 
+             WHERE employee_id = ? 
+             AND document_type LIKE '%employment contract%' 
+             AND status = 'approved'`,
+            [employeeId]
+        );
+        
+        const contractApproved = contractRows[0].count > 0;
+        
+        // Check if at least one ID document is approved (excluding employment contract)
+        const [idRows] = await db.query(
+            `SELECT COUNT(*) as count FROM onboarding_documents 
+             WHERE employee_id = ? 
+             AND document_type NOT LIKE '%employment contract%'
+             AND status = 'approved'`,
+            [employeeId]
+        );
+        
+        const idApproved = idRows[0].count > 0;
+        
+        return {
+            contractApproved,
+            idApproved,
+            eligible: contractApproved && idApproved
+        };
+    },
+
+    // Send onboarding approval email if eligible
+    async sendOnboardingEmailIfEligible(employeeId) {
+        const eligibility = await this.checkEligibilityForOnboardingEmail(employeeId);
+        
+        if (eligibility.eligible) {
+            // Get employee email and user ID
+            const [rows] = await db.query(
+                `SELECT u.email, e.employee_id, u.id as user_id
+                 FROM employees e
+                 JOIN users u ON u.id = e.user_id
+                 WHERE e.employee_id = ?
+                 LIMIT 1`,
+                [employeeId]
+            );
+            
+            if (rows && rows[0]) {
+                const { email, employee_id, user_id } = rows[0];
+                const { sendOnboardingApprovalNotification } = require('../../../utils/emailService');
+                
+                // Send the onboarding approval email
+                await sendOnboardingApprovalNotification(email, employee_id, 'default123');
+                if (process.env.NODE_ENV === 'development') {
+                    console.debug(`✅ Onboarding approval email sent to ${email} for employee ${employee_id}`);
+                }
+                
+                // Mark onboarding as completed in users table
+                await db.query(
+                    `UPDATE users SET onboarding_completed = 1 WHERE id = ?`,
+                    [user_id]
+                );
+                if (process.env.NODE_ENV === 'development') {
+                    console.debug(`✅ Onboarding marked as completed for user ${user_id} (employee ${employee_id})`);
+                }
+                
+                return true;
+            }
+        }
+        
+        return false;
+    },
+
+    // Get employee distribution by department via roles mapping
+    getEmployeeDistributionByDepartment: async () => {
+        try {
+            const db = require('../../../db');
+            const [rows] = await db.query(`
+                SELECT 
+                    r.department_id AS department_id,
+                    COALESCE(d.name, CONCAT('Department ', r.department_id)) AS department_name,
+                    COUNT(*) AS count
+                FROM employees e
+                JOIN roles r ON r.id = e.role_id
+                LEFT JOIN departments d ON d.id = r.department_id
+                WHERE e.is_deleted IS NULL OR e.is_deleted = 0
+                GROUP BY r.department_id, d.name
+                ORDER BY count DESC
+            `);
+            return rows || [];
+        } catch (error) {
+            console.error('❌ Error getting employee distribution by department:', error);
+            throw new Error('Failed to get employee distribution');
+        }
+    },
+
+    // Attendance trend from attendance table
+    getAttendanceTrend: async (period) => {
+        const db = require('../../../db');
+        try {
+            const now = new Date();
+            let startDate, endDate, groupBy;
+
+            if (period === 'year') {
+                startDate = new Date(now.getFullYear(), 0, 1);
+                endDate = new Date(now.getFullYear(), 11, 31);
+                groupBy = 'MONTH(a.date)';
+            } else if (period === 'month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                groupBy = 'DATE(a.date)';
+            } else {
+                // week (Monday - Sunday)
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                startDate = new Date(now.getFullYear(), now.getMonth(), diff);
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                groupBy = 'DATE(a.date)';
+            }
+
+            const startStr = startDate.toISOString().slice(0, 10);
+            const endStr = endDate.toISOString().slice(0, 10);
+
+            // Total active employees as baseline
+            const [empRows] = await db.query(
+                `SELECT COUNT(*) as total FROM employees WHERE (is_deleted IS NULL OR is_deleted = 0)`
+            );
+            const totalEmployees = empRows && empRows[0] ? Number(empRows[0].total) : 0;
+
+            // Aggregate attendance records in range
+            const [rows] = await db.query(
+                `SELECT 
+                    ${groupBy} as grp,
+                    SUM(CASE WHEN a.check_in IS NOT NULL THEN 1 ELSE 0 END) AS present_count
+                 FROM attendance a
+                 WHERE DATE(a.date) BETWEEN ? AND ?
+                 GROUP BY grp
+                 ORDER BY grp ASC`,
+                [startStr, endStr]
+            );
+
+            const labels = [];
+            const values = [];
+
+            if (period === 'year') {
+                // Fill months Jan..Dec
+                for (let m = 0; m < 12; m++) {
+                    const label = new Date(now.getFullYear(), m, 1).toLocaleString('default', { month: 'short' });
+                    labels.push(label);
+                    const found = rows.find(r => Number(r.grp) === (m + 1));
+                    const present = found ? Number(found.present_count) : 0;
+                    const daysInMonth = new Date(now.getFullYear(), m + 1, 0).getDate();
+                    // Expected opportunities: totalEmployees * working days approx; use daysInMonth for simplicity
+                    const denom = totalEmployees * daysInMonth || 1;
+                    values.push(Math.max(0, Math.min(100, Math.round((present / denom) * 100))));
+                }
+            } else {
+                // day-level between start and end
+                const dayCount = Math.round((endDate - startDate) / (1000*60*60*24)) + 1;
+                for (let i = 0; i < dayCount; i++) {
+                    const d = new Date(startDate);
+                    d.setDate(startDate.getDate() + i);
+                    labels.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+                    const key = d.toISOString().slice(0, 10);
+                    const found = rows.find(r => new Date(r.grp).toISOString().slice(0,10) === key);
+                    const present = found ? Number(found.present_count) : 0;
+                    const denom = totalEmployees || 1;
+                    values.push(Math.max(0, Math.min(100, Math.round((present / denom) * 100))));
+                }
+            }
+
+            return { labels, values };
+        } catch (error) {
+            console.error('❌ Error computing attendance trend:', error);
+            throw new Error('Failed to compute attendance trend');
+        }
+    },
+
+    // Payroll periods approval progress (approved vs remaining)
+    getPayrollApprovalProgress: async () => {
+        const db = require('../../../db');
+        try {
+            // Count total periods
+            const [periods] = await db.query(`SELECT COUNT(*) AS total FROM payroll_periods`);
+            const totalPeriods = periods && periods[0] ? Number(periods[0].total) : 0;
+
+            if (totalPeriods === 0) {
+                return { approved: 0, remaining: 100, totalPeriods: 0 };
+            }
+
+            // A period is considered approved if all its entries are approved OR period status is approved
+            const [approvedByStatus] = await db.query(`SELECT COUNT(*) AS cnt FROM payroll_periods WHERE status = 'approved'`);
+            const approvedStatusCount = approvedByStatus && approvedByStatus[0] ? Number(approvedByStatus[0].cnt) : 0;
+
+            // Additionally include periods whose all entries are approved (if entries table exists)
+            let approvedByEntriesCount = 0;
+            try {
+                const [rows] = await db.query(`
+                    SELECT COUNT(*) AS cnt
+                    FROM payroll_periods p
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM payroll_entries e
+                        WHERE e.period_id = p.id AND e.status <> 'approved'
+                    )
+                `);
+                approvedByEntriesCount = rows && rows[0] ? Number(rows[0].cnt) : 0;
+            } catch (_) {
+                // entries table may not exist; ignore
+            }
+
+            // Combine (some overlap; use UNION logic if needed; for simplicity take max)
+            const approvedPeriods = Math.max(approvedStatusCount, approvedByEntriesCount);
+            const approvedPct = Math.max(0, Math.min(100, Math.round((approvedPeriods / totalPeriods) * 100)));
+            const remainingPct = 100 - approvedPct;
+            return { approved: approvedPct, remaining: remainingPct, totalPeriods: totalPeriods };
+        } catch (error) {
+            console.error('❌ Error computing payroll approval progress:', error);
+            return { approved: 0, remaining: 100, totalPeriods: 0 };
+        }
+    },
 };
 
 module.exports = HRModel;

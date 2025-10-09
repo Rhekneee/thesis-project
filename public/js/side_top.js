@@ -37,6 +37,7 @@ function toggleChevron() {
         // Close notification dropdown when clicking outside
         window.onclick = function(event) {
             const dropdown = document.getElementById('notificationDropdown');
+            if (!dropdown) return; // guard if dropdown not present on this page
             if (!event.target.matches('.notification-icon') && !event.target.matches('.notification-icon *')) {
                 if (dropdown.classList.contains('show')) {
                     dropdown.classList.remove('show');

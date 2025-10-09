@@ -32,7 +32,9 @@ const authMiddleware = {
         console.log('🔍 HR Middleware: User ID:', userId);
         
         const onboardingStatus = await HRModel.checkIfUserNeedsPreOnboarding(userId);
-        console.log('🔍 HR Middleware: Onboarding status:', onboardingStatus);
+        if (process.env.NODE_ENV === 'development') {
+            console.debug('🔍 HR Middleware: Onboarding status:', onboardingStatus);
+        }
         
         if (onboardingStatus.needsOnboarding) {
             console.log('🔍 HR Middleware: User needs pre-onboarding, blocking access');

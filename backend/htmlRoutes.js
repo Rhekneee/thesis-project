@@ -213,6 +213,9 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_list.html')); // Adjusted path
   });
 
+  app.get('/hr/hr_employee_documents', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_documents.html')); // Adjusted path
+  });
   
   app.get('/hr/hr_interview', (req, res) => {    
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_interview.html')); // Adjusted path

@@ -4,7 +4,7 @@ const moment = require('moment');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { sendEmailNotification, sendHireNotification, sendRejectNotification, sendSupplierAccountNotification, sendEmployeeAccountNotification, sendDeveloperApprovalNotification } = require('../../../utils/emailService');
+const { sendEmailNotification, sendHireNotification, sendRejectNotification, sendSupplierAccountNotification, sendEmployeeAccountNotification, sendDeveloperApprovalNotification, sendOnboardingApprovalNotification } = require('../../../utils/emailService');
 const Notifications = require('../../../models/notification.model');
 
 // Configure multer for file upload
@@ -107,12 +107,15 @@ const HRController = {
             let user_id = await HRModel.getUserIdByEmail(email);
             console.log("🔹 Checking if user exists for email:", email, "User ID found:", user_id);
             
+            let tempPassword = null;
             if (!user_id) {
                 console.log("🔹 Creating new user with onboarding pending status:", full_name);
                 console.log("🔹 Role ID:", role_id, "Type:", typeof role_id);
                 try {
                     // Use createUserWithOnboardingPending to set onboarding_completed = 0
-                    user_id = await HRModel.createUserWithOnboardingPending(email, role_id, nextEmployeeId);
+                    const userResult = await HRModel.createUserWithOnboardingPending(email, role_id, nextEmployeeId);
+                    user_id = userResult.userId;
+                    tempPassword = userResult.tempPassword;
                     console.log("✅ User created successfully with onboarding pending, ID:", user_id);
                     
                     // Verify the user was actually created
@@ -154,11 +157,142 @@ const HRController = {
     
             // Add the employee to the database
             const result = await HRModel.addEmployee(employeeData);
-            res.status(201).json({ message: "Employee added successfully", ...result });
+            
+            // Send email notification with temporary credentials if new user was created
+            if (tempPassword) {
+                try {
+                    await sendEmployeeAccountNotification(
+                        email,
+                        email, // Use email as login credential for onboarding
+                        tempPassword,
+                        'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                    );
+                    console.log("✅ Temporary account email sent successfully");
+                } catch (emailError) {
+                    console.error("❌ Error sending email notification:", emailError);
+                    // Don't fail the entire operation if email fails
+                }
+            }
+            
+            res.status(201).json({ 
+                message: "Employee added successfully", 
+                ...result,
+                tempCredentials: tempPassword ? {
+                    username: email,
+                    password: tempPassword,
+                    loginUrl: 'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                } : null
+            });
     
         } catch (error) {
             console.error("❌ Error adding employee:", error);
             res.status(500).json({ message: "Failed to add employee" });
+        }
+    },
+
+    // Get all documents with status 'uploaded' (pending verification)
+    getAllPendingOnboardingDocuments: async (req, res) => {
+        try {
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Controller: getAllPendingOnboardingDocuments called');
+            const rows = await HRModel.getPendingOnboardingDocuments();
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Controller: pending docs count =', rows.length);
+            res.json({ success: true, documents: rows });
+        } catch (error) {
+            console.error('❌ HR Controller: Error getting pending onboarding documents:', error);
+            res.status(500).json({ success: false, error: 'Failed to get pending onboarding documents' });
+        }
+    },
+
+    // 🔹 Complete onboarding for an employee
+    completeOnboarding: async (req, res) => {
+        try {
+            const { userId, employeeId } = req.body;
+
+            if (!userId || !employeeId) {
+                return res.status(400).json({ error: "User ID and Employee ID are required" });
+            }
+
+            // Complete onboarding in the model
+            await HRModel.completeOnboarding(userId, employeeId);
+
+            res.status(200).json({ 
+                message: "Onboarding completed successfully",
+                permanentUsername: employeeId
+            });
+        } catch (error) {
+            console.error("❌ Error completing onboarding:", error);
+            res.status(500).json({ error: "Failed to complete onboarding" });
+        }
+    },
+
+    // 🔹 Submit all onboarding documents at once
+    submitAllOnboardingDocuments: async (req, res) => {
+        try {
+            const { employeeId } = req.body;
+            
+            if (!employeeId) {
+                return res.status(400).json({ error: "Employee ID is required" });
+            }
+
+            // Get all uploaded files
+            const files = req.files || [];
+            
+            if (files.length === 0) {
+                return res.status(400).json({ error: "No files uploaded" });
+            }
+
+            // Process each file
+            const uploadResults = [];
+            
+            for (const file of files) {
+                try {
+                    // Get document type from field name
+                    const documentType = file.fieldname;
+                    
+                    // Save file info to database
+                    const result = await HRModel.uploadOnboardingDocument(
+                        employeeId,
+                        documentType,
+                        file.filename,
+                        file.originalname,
+                        file.size,
+                        file.mimetype
+                    );
+                    
+                    uploadResults.push({
+                        documentType,
+                        success: true,
+                        filename: file.filename
+                    });
+                    
+                } catch (error) {
+                    console.error(`Error uploading ${file.fieldname}:`, error);
+                    uploadResults.push({
+                        documentType: file.fieldname,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            // Check if all uploads were successful
+            const failedUploads = uploadResults.filter(result => !result.success);
+            
+            if (failedUploads.length > 0) {
+                return res.status(500).json({ 
+                    error: "Some files failed to upload",
+                    details: failedUploads
+                });
+            }
+
+            res.status(200).json({ 
+                message: "All documents uploaded successfully",
+                uploadedDocuments: uploadResults.length
+            });
+
+        } catch (error) {
+            console.error("❌ Error submitting onboarding documents:", error);
+            res.status(500).json({ error: "Failed to submit onboarding documents" });
         }
     },
 
@@ -213,6 +347,43 @@ const HRController = {
 
     getAllPermissions: async () => {
         return await HRModel.getAllPermissions();
+    },
+
+    // 🔹 Enroll employee face (upload image → call Face API → store encoding)
+    enrollEmployeeFace: async (req, res) => {
+        try {
+            const employeeId = req.params.employeeId;
+
+            if (!employeeId) {
+                return res.status(400).json({ error: 'employeeId is required' });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No image file uploaded' });
+            }
+
+            // Ensure employee exists
+            const employee = await HRModel.getEmployeeById(employeeId);
+            if (!employee) {
+                return res.status(404).json({ error: 'Employee not found' });
+            }
+
+            // Call Face API service to extract encoding
+            const faceService = require('../../../utils/faceService');
+            const encoding = await faceService.extractEncodingFromImage(req.file.path);
+
+            if (!encoding || (Array.isArray(encoding) && encoding.length === 0)) {
+                return res.status(422).json({ error: 'No face detected or encoding failed' });
+            }
+
+            // Save to DB
+            await HRModel.saveEmployeeFace(employeeId, encoding);
+
+            return res.status(200).json({ success: true, message: 'Face enrolled successfully' });
+        } catch (error) {
+            console.error('❌ Error enrolling employee face:', error);
+            return res.status(500).json({ error: 'Failed to enroll employee face' });
+        }
     },
     
     // 🔹 Update an existing employee (Manager Only)
@@ -281,14 +452,15 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Handle check-in
     checkInAttendance: async (req, res) => {
         const userId = req.params.id;
-        const { date, checkInTime, userLat, userLng } = req.body;
+        const { date, checkInTime, userLat, userLng, facialVerification } = req.body;
 
         console.log('📝 Check-in request received:', {
             userId,
             date,
             checkInTime,
             userLat,
-            userLng
+            userLng,
+            facialVerification
         });
 
         try {
@@ -333,7 +505,103 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 return res.status(400).json({ error: 'Invalid check-in time format' });
             }
 
+            // Optional: facial verification when an image is provided (field name: image)
+            if (req.file && (req.file.buffer || req.file.path)) {
+                try {
+                    const faceService = require('../../../utils/faceService');
+                    // Extract encoding from uploaded image
+                    const encoding = await faceService.extractEncodingFromImage(req.file.buffer || req.file.path);
+                    if (!encoding || (Array.isArray(encoding) && encoding.length === 0)) {
+                        return res.status(400).json({ error: 'Face not detected' });
+                    }
+
+                    // Fetch stored encodings for this user (by employee_id)
+                    const db = require('../../../db');
+                    const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
+                    if (!empRows || empRows.length === 0) {
+                        return res.status(404).json({ error: 'Employee record not found for user' });
+                    }
+                    const employeeId = empRows[0].employee_id;
+                    const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
+                    if (!faces || faces.length === 0) {
+                        return res.status(401).json({ error: 'No enrolled face found. Please register facial data first.' });
+                    }
+
+                    // Compare encodings using cosine similarity
+                    const toArray = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : null);
+                    const cosSim = (a, b) => {
+                        if (!a || !b || a.length !== b.length) return -1;
+                        let dot = 0, na = 0, nb = 0;
+                        for (let i = 0; i < a.length; i++) {
+                            dot += a[i] * b[i];
+                            na += a[i] * a[i];
+                            nb += b[i] * b[i];
+                        }
+                        na = Math.sqrt(na); nb = Math.sqrt(nb);
+                        return na > 0 && nb > 0 ? dot / (na * nb) : -1;
+                    };
+
+                    const matched = faces.some(row => {
+                        const stored = toArray(row.face_encoding);
+                        return cosSim(stored, encoding) >= 0.85;
+                    });
+
+                    if (!matched) {
+                        return res.status(401).json({ error: 'Face verification failed' });
+                    }
+                } catch (err) {
+                    console.error('❌ Facial verification error:', err);
+                    return res.status(400).json({ error: 'Facial verification error' });
+                }
+            }
+
             console.log('✅ Input validation passed, proceeding with check-in...');
+            
+            // If facialVerification flag is set, only do radius check and return verification requirement
+            if (facialVerification === true || facialVerification === 'true') {
+                console.log('🔍 Performing radius check for facial verification flow...');
+                
+                // Do radius check only (without recording attendance)
+                const officeLat = 14.329643700546274;
+                const officeLng = 120.94080148408072;
+                const allowedRadius = 500;
+                
+                // Calculate distance
+                const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
+                console.log('📍 Distance from office:', Math.round(distance), 'meters');
+                
+                if (distance > allowedRadius) {
+                    console.log('❌ User outside allowed range');
+                    return res.status(400).json({ error: `You are outside the allowed range (${Math.round(distance)}m).` });
+                }
+                
+                // Check if employee has facial data enrolled
+                const db = require('../../../db');
+                const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
+                
+                if (!empRows || empRows.length === 0) {
+                    return res.status(404).json({ error: 'Employee record not found' });
+                }
+                
+                const employeeId = empRows[0].employee_id;
+                const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
+                
+                if (!faces || faces.length === 0) {
+                    return res.status(400).json({ 
+                        error: 'No facial data enrolled. Please contact HR to enroll your face first.',
+                        code: 'NO_FACE_ENROLLED'
+                    });
+                }
+                
+                // If radius check passed and face is enrolled, return that facial verification is required
+                console.log('✅ Radius check passed, facial verification required');
+                return res.status(200).json({ 
+                    requiresFacialVerification: true,
+                    message: 'Location verified. Please complete facial verification.'
+                });
+            }
+            
+            // Regular check-in flow (with or without facial verification)
             const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
             
             if (result.error) {
@@ -363,6 +631,166 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             
             return res.status(500).json({ 
                 error: 'Internal Server Error',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    },
+
+    // Handle facial verification for attendance
+    verifyFaceForAttendance: async (req, res) => {
+        const userId = req.params.userId;
+
+        console.log('📝 Facial verification request received for user:', userId);
+
+        try {
+            if (!req.file || (!req.file.buffer && !req.file.path)) {
+                return res.status(400).json({ error: 'No image file provided' });
+            }
+
+            // Extract face encoding from uploaded image
+            const faceService = require('../../../utils/faceService');
+            const encoding = await faceService.extractEncodingFromImage(req.file.buffer || req.file.path);
+            
+            if (!encoding || (Array.isArray(encoding) && encoding.length === 0)) {
+                return res.status(400).json({ error: 'Face not detected in image' });
+            }
+
+            // Fetch stored encodings for this user (by employee_id)
+            const db = require('../../../db');
+            const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
+            
+            if (!empRows || empRows.length === 0) {
+                return res.status(404).json({ error: 'Employee record not found for user' });
+            }
+            
+            const employeeId = empRows[0].employee_id;
+            const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
+            
+            if (!faces || faces.length === 0) {
+                return res.status(400).json({ 
+                    error: 'No enrolled face found. Please contact HR to enroll your facial data first.',
+                    code: 'NO_FACE_ENROLLED'
+                });
+            }
+
+            // Compare encodings using cosine similarity
+            const toArray = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : null);
+            const cosSim = (a, b) => {
+                if (!a || !b || a.length !== b.length) return -1;
+                let dot = 0, na = 0, nb = 0;
+                for (let i = 0; i < a.length; i++) {
+                    dot += a[i] * b[i];
+                    na += a[i] * a[i];
+                    nb += b[i] * b[i];
+                }
+                na = Math.sqrt(na); 
+                nb = Math.sqrt(nb);
+                return na > 0 && nb > 0 ? dot / (na * nb) : -1;
+            };
+
+            let bestMatch = 0;
+            let matched = false;
+            
+            for (const row of faces) {
+                const stored = toArray(row.face_encoding);
+                const similarity = cosSim(stored, encoding);
+                console.log('🔍 Face similarity score:', similarity);
+                
+                if (similarity > bestMatch) {
+                    bestMatch = similarity;
+                }
+                
+                // Set threshold to 0.02 for practical use (2%)
+                if (similarity >= 0.02) {
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                console.log('❌ Face verification failed. Best match score:', bestMatch);
+                let errorMessage = 'Face verification failed. ';
+                
+                if (bestMatch < 0.01) {
+                    errorMessage += 'Please ensure your face is clearly visible and well-lit.';
+                } else if (bestMatch < 0.015) {
+                    errorMessage += 'Please position your face directly in front of the camera.';
+                } else {
+                    errorMessage += 'Face similarity is too low. Please try again with better lighting.';
+                }
+                
+                return res.status(401).json({ 
+                    error: errorMessage,
+                    similarity: bestMatch,
+                    code: 'FACE_MATCH_FAILED'
+                });
+            }
+
+            console.log('✅ Facial verification successful for user:', userId);
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Face verified successfully' 
+            });
+
+        } catch (error) {
+            console.error('❌ Error in facial verification:', error);
+            return res.status(500).json({ error: 'Facial verification failed' });
+        }
+    },
+
+    // Complete attendance after successful facial verification
+    completeAttendanceAfterVerification: async (req, res) => {
+        const userId = req.params.userId;
+        const { date, checkInTime, userLat, userLng } = req.body;
+
+        console.log('📝 Completing attendance after facial verification for user:', userId);
+
+        try {
+            // Validate required fields
+            if (!userId || !date || !checkInTime || userLat === undefined || userLng === undefined) {
+                return res.status(400).json({ 
+                    error: 'Missing required fields for attendance completion'
+                });
+            }
+
+            // Validate user ID format
+            if (isNaN(parseInt(userId))) {
+                return res.status(400).json({ error: 'Invalid user ID format' });
+            }
+
+            // Validate coordinates
+            if (isNaN(parseFloat(userLat)) || isNaN(parseFloat(userLng))) {
+                return res.status(400).json({ error: 'Invalid coordinates' });
+            }
+
+            // Validate date format
+            const dateObj = new Date(date);
+            if (isNaN(dateObj.getTime())) {
+                return res.status(400).json({ error: 'Invalid date format' });
+            }
+
+            // Validate check-in time format
+            const timeObj = new Date(checkInTime);
+            if (isNaN(timeObj.getTime())) {
+                return res.status(400).json({ error: 'Invalid check-in time format' });
+            }
+
+            // Now record the attendance (facial verification already completed)
+            console.log('✅ Recording attendance after successful facial verification...');
+            const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
+            
+            if (result.error) {
+                console.log('❌ Attendance recording failed:', result.error);
+                return res.status(400).json({ error: result.error });
+            }
+
+            console.log('✅ Attendance recorded successfully after facial verification');
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error('❌ Error completing attendance after verification:', error);
+            return res.status(500).json({ 
+                error: 'Failed to complete attendance',
                 details: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }
@@ -586,9 +1014,12 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 // 3. Check if user already exists
                 let user_id = await HRModel.getUserIdByEmail(application.email);
                 let isNewUser = false;
+                let tempPassword = null;
                 if (!user_id) {
-                    // Username is the new employee_id - Set is_active to 1 but with onboarding pending
-                    user_id = await HRModel.createUserWithOnboardingPending(application.email, roleId, nextEmployeeId);
+                    // Create user with email as temporary username and random password
+                    const userResult = await HRModel.createUserWithOnboardingPending(application.email, roleId, nextEmployeeId);
+                    user_id = userResult.userId;
+                    tempPassword = userResult.tempPassword;
                     isNewUser = true;
                 }
 
@@ -611,20 +1042,24 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 await HRModel.addEmployee(employeeData);
 
                 // 6. Send credentials email to the applicant (employee onboarding)
-                await sendEmployeeAccountNotification(
-                    application.email,
-                    nextEmployeeId, // username
-                    'default123',
-                    'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
-                );
+                if (tempPassword) {
+                    await sendEmployeeAccountNotification(
+                        application.email,
+                        application.email, // Use email as login credential for onboarding
+                        tempPassword,
+                        'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                    );
+                }
 
                 // 5. Add credentials to response (like SCM)
-                if (isNewUser) {
+                if (isNewUser && tempPassword) {
                     return res.status(200).json({
                         message: `Status updated to ${status}`,
-                        username: nextEmployeeId,
-                        defaultPassword: 'default123',
-                        loginUrl: 'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                        tempCredentials: {
+                            username: application.email,
+                            password: tempPassword,
+                            loginUrl: 'https://mdb-construction-25b433e6e5d5.herokuapp.com/'
+                        }
                     });
                 }
             }
@@ -2349,29 +2784,22 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Check user onboarding status (for frontend to show/hide onboarding form)
     checkUserOnboardingStatus: async (req, res) => {
         try {
-            console.log('🔍 HR Controller: checkUserOnboardingStatus called');
-            console.log('🔍 HR Controller: Session user:', req.session?.user);
-            
             if (!req.session?.user?.id) {
-                console.log('🔍 HR Controller: No user ID in session');
                 return res.status(401).json({ error: 'User not authenticated' });
             }
 
             const userId = req.session.user.id;
-            console.log('🔍 HR Controller: User ID:', userId);
             
             const onboardingCompleted = await HRModel.checkUserOnboardingStatus(userId);
-            console.log('🔍 HR Controller: Onboarding completed:', onboardingCompleted);
             
             const response = { 
                 onboardingCompleted,
                 showOnboardingForm: !onboardingCompleted
             };
-            console.log('🔍 HR Controller: Sending response:', response);
             
             res.json(response);
         } catch (error) {
-            console.error('🔍 HR Controller: Error checking user onboarding status:', error);
+            console.error('Error checking user onboarding status:', error);
             res.status(500).json({ error: 'Failed to check onboarding status' });
         }
     },
@@ -2456,7 +2884,9 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             console.log('🔍 HR Controller: User ID:', userId);
             
             const onboardingStatus = await HRModel.checkIfUserNeedsPreOnboarding(userId);
-            console.log('🔍 HR Controller: Onboarding status:', onboardingStatus);
+            if (process.env.NODE_ENV === 'development') {
+                console.debug('🔍 HR Controller: Onboarding status:', onboardingStatus);
+            }
             
             res.json(onboardingStatus);
         } catch (error) {
@@ -2680,8 +3110,6 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Get user data (employee ID)
     getUserData: async (req, res) => {
         try {
-            console.log('🔍 HR Controller: getUserData called');
-            
             if (!req.session?.user?.id) {
                 return res.status(401).json({ error: 'User not authenticated' });
             }
@@ -2700,7 +3128,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 employeeId: user.employee_id
             });
         } catch (error) {
-            console.error('🔍 HR Controller: Error getting user data:', error);
+            console.error('Error getting user data:', error);
             res.status(500).json({ error: 'Failed to get user data' });
         }
     },
@@ -2818,6 +3246,14 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             // Create document using model
             const result = await HRModel.createOnboardingDocument(documentData);
 
+            // Immediately mark status as 'uploaded' so it doesn't remain pending
+            try {
+                await HRModel.updateOnboardingDocumentStatus(result.documentId, 'uploaded', userId, remarks || null);
+            } catch (e) {
+                // Non-fatal: proceed even if status update fails
+                console.warn('Unable to set document status to uploaded:', e?.message || e);
+            }
+
             res.json({
                 success: true,
                 message: 'Document uploaded successfully',
@@ -2857,7 +3293,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
     // Update document status
     updateDocumentStatus: async (req, res) => {
         try {
-            console.log('🔍 HR Controller: updateDocumentStatus called');
+            if (process.env.NODE_ENV === 'development') console.debug('🔍 HR Controller: updateDocumentStatus called');
             
             if (!req.session?.user?.id) {
                 return res.status(401).json({ error: 'User not authenticated' });
@@ -2869,6 +3305,21 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
             // Update document status using model
             await HRModel.updateOnboardingDocumentStatus(documentId, status, reviewedBy, remarks);
+
+            // If document was approved, check if employee is eligible for onboarding email
+            if (status === 'approved') {
+                try {
+                    // Get employee ID from the document
+                    const { employee_id } = await HRModel.getEmployeeEmailAndIdByDocumentId(documentId);
+                    if (employee_id) {
+                        // Check eligibility and send email if conditions are met
+                        await HRModel.sendOnboardingEmailIfEligible(employee_id);
+                    }
+                } catch (e) {
+                    console.error('Error checking eligibility for onboarding email:', e);
+                    // Non-fatal error, don't fail the approval
+                }
+            }
 
             res.json({
                 success: true,
@@ -3242,7 +3693,150 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 message: "Internal server error while fetching payslip details"
             });
         }
-    }
+    },
+
+    // Sign employment contract (policies acknowledgment)
+    signContract: async (req, res) => {
+        try {
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+            const userId = req.session.user.id;
+            const employeeId = req.session.user.employee_id;
+            if (!employeeId) {
+                return res.status(400).json({ error: 'Employee ID not found in session' });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No signature file uploaded' });
+            }
+
+            const signaturePath = req.file.filename;
+            const signedAt = new Date();
+
+            // Persist contract status/signature via model
+            await HRModel.saveContractSignature({ userId, employeeId, signaturePath, signedAt });
+
+            res.json({ success: true, message: 'Contract signed successfully', signaturePath, signedAt });
+        } catch (error) {
+            console.error('Error signing contract:', error);
+            res.status(500).json({ error: 'Failed to sign contract' });
+        }
+    },
+
+    getContractStatus: async (req, res) => {
+        try {
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+            const employeeId = req.session.user.employee_id;
+            const status = await HRModel.getContractStatus(employeeId);
+            res.json(status || { contract_status: 'pending', signature_path: null, signed_at: null });
+        } catch (e) {
+            console.error('Error getting contract status:', e);
+            res.status(500).json({ error: 'Failed to get contract status' });
+        }
+    },
+
+    // HR validate contract (not approve/reject)
+    validateContract: async (req, res) => {
+        try {
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+            const { documentId } = req.params;
+            if (!documentId) return res.status(400).json({ error: 'Document ID is required' });
+            const ok = await HRModel.validateContract(documentId, req.session.user.id);
+            if (!ok) return res.status(404).json({ error: 'Contract not found' });
+            try {
+                // Get employee ID from the document
+                const { employee_id } = await HRModel.getEmployeeEmailAndIdByDocumentId(documentId);
+                if (employee_id) {
+                    // Check eligibility and send email if conditions are met
+                    await HRModel.sendOnboardingEmailIfEligible(employee_id);
+                }
+            } catch (e) { 
+                console.error('Error checking eligibility for onboarding email:', e);
+                /* non-fatal */ 
+            }
+            res.json({ success: true, message: 'Contract validated' });
+        } catch (e) {
+            console.error('Error validating contract:', e);
+            res.status(500).json({ error: 'Failed to validate contract' });
+        }
+    },
+
+    getContractStatusByEmployee: async (req, res) => {
+        try {
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+            const { employeeId } = req.params;
+            if (!employeeId) return res.status(400).json({ error: 'Employee ID is required' });
+            const status = await HRModel.getContractStatus(employeeId);
+            res.json(status || { contract_status: 'pending', signature_path: null, signed_at: null });
+        } catch (e) {
+            console.error('Error getting contract status by employee:', e);
+            res.status(500).json({ error: 'Failed to get contract status' });
+        }
+    },
+
+    notifyOnboardingApproved: async (req, res) => {
+        try {
+            if (!req.session?.user?.id) {
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+            const { employeeId } = req.params;
+            if (!employeeId) return res.status(400).json({ error: 'Employee ID is required' });
+            // Check eligibility and send email if conditions are met
+            const emailSent = await HRModel.sendOnboardingEmailIfEligible(employeeId);
+            if (!emailSent) {
+                return res.status(400).json({ 
+                    error: 'Email not sent - employee not eligible. Contract must be validated and at least one ID document must be approved.' 
+                });
+            }
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Error notifying onboarding approved:', e);
+            res.status(500).json({ error: 'Failed to send notification' });
+        }
+    },
+
+    // Employee distribution by department (via roles)
+    getEmployeeDistribution: async (req, res) => {
+        try {
+            const data = await HRModel.getEmployeeDistributionByDepartment();
+            res.json({ success: true, data });
+        } catch (error) {
+            console.error('Error getting employee distribution:', error);
+            res.status(500).json({ success: false, error: 'Failed to get employee distribution' });
+        }
+    },
+
+    // Attendance trend from Attendance table
+    getAttendanceTrend: async (req, res) => {
+        try {
+            const period = (req.query.period || 'week').toLowerCase();
+            const allowed = new Set(['week','month','year']);
+            const eff = allowed.has(period) ? period : 'week';
+            const trend = await HRModel.getAttendanceTrend(eff);
+            res.json(trend);
+        } catch (error) {
+            console.error('Error getting attendance trend:', error);
+            res.status(500).json({ error: 'Failed to get attendance trend' });
+        }
+    },
+
+    // Payroll approval progress (donut)
+    getPayrollApprovalProgress: async (req, res) => {
+        try {
+            const progress = await HRModel.getPayrollApprovalProgress();
+            res.json({ success: true, progress });
+        } catch (error) {
+            console.error('Error getting payroll approval progress:', error);
+            res.status(500).json({ success: false, error: 'Failed to get payroll approval progress' });
+        }
+    },
 };
 
 module.exports = HRController;
