@@ -139,6 +139,16 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
   });
   
+  // Virtual Tour Portal (CRM Admin)
+  app.get('/crm/virtual_tour_dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_portal.html'));
+  });
+
+  // Virtual Tour Location Detail (CRM Admin)
+  app.get('/crm/virtual_tour_location_detail', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
+  });
+  
 
   // ====================
   // SCM admin Routes

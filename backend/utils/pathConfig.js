@@ -30,7 +30,9 @@ class PathConfig {
             properties: null,
             profile_pictures: null,
             projects: null,
-            signatures: null
+            signatures: null,
+            virtual_locations: null,
+            virtual_scenes: null
         };
         
         this.initializePaths();
@@ -72,6 +74,8 @@ class PathConfig {
         this.uploadDirs.profile_pictures = path.join(basePath, 'profile_pictures');
         this.uploadDirs.projects = path.join(basePath, 'projects');
         this.uploadDirs.signatures = path.join(basePath, 'signatures');
+        this.uploadDirs.virtual_locations = path.join(basePath, 'virtual_locations');
+        this.uploadDirs.virtual_scenes = path.join(basePath, 'virtual_scenes');
         
         // Create directories if they don't exist
         this.createDirectories();

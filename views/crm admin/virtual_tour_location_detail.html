@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Tour Location Detail</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Pannellum CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .page-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            color: #1e293b;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .main-container {
+            height: calc(100vh - 80px);
+            margin-top: 80px;
+            display: flex;
+            transition: margin-right 0.3s ease;
+        }
+
+        .main-container.scenes-open {
+            margin-right: 350px;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 40px 20px 40px 0;
+            background: #f8f9fa;
+        }
+
+        .header-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            margin-left: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .location-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            margin-bottom: 10px;
+        }
+
+        .location-text {
+            flex: 1;
+        }
+
+        .vertical-dots {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            position: relative;
+        }
+
+        .vertical-dots:hover {
+            background-color: #f1f5f9;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: #64748b;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .vertical-dots:hover .dot {
+            background-color: #2563eb;
+        }
+
+        .dropdown-menu {
+            min-width: 180px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 1000;
+            background: white;
+            display: none;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .scenes-panel {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100vh;
+            background: white;
+            border-left: 1px solid #e2e8f0;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .scenes-panel.open {
+            right: 0;
+        }
+
+        .scenes-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8f9fa;
+        }
+
+        .scenes-content {
+            padding: 20px;
+        }
+
+        .scene-tile {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .scene-tile:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+            border-color: #2563eb;
+        }
+
+        .scene-tile.active {
+            border-color: #2563eb;
+            background: #f0f7ff;
+        }
+
+        .scene-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .scene-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+            flex: 1;
+        }
+
+        .scene-dropdown {
+            position: relative;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+
+        .scene-dropdown:hover {
+            background-color: #f1f5f9;
+        }
+
+        .scene-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .scene-dropdown-menu.show {
+            display: block;
+        }
+
+        .scene-dropdown-item {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .scene-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .scene-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .scene-dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .scene-image {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .hotspots-list {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .hotspot-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .hotspot-item i {
+            color: #2563eb;
+        }
+
+        .hotspots-button {
+            width: 100%;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            color: #64748b;
+            font-weight: 600;
+            cursor: not-allowed;
+            transition: all 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .hotspots-button.active {
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        .hotspots-button.active:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .location-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .location-description {
+            color: #64748b;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .preview-section {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            position: relative;
+            margin-left: 0;
+            margin-right: 20px;
+        }
+
+        .scene-preview {
+            display: none;
+        }
+
+        .scene-preview.active {
+            display: block;
+        }
+
+        .scene-preview-container {
+            position: relative;
+            width: 100%;
+            margin: 20px auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            background: #000;
+        }
+
+        #pannellum-viewer {
+            width: 100%;
+            height: 600px;
+            border-radius: 16px;
+        }
+
+        /* Custom hotspot styling */
+        .custom-hotspot {
+            background: rgba(37, 99, 235, 0.8);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-hotspot:hover {
+            background: rgba(37, 99, 235, 1);
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+        }
+
+        .custom-hotspot::before {
+            content: "→";
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scene-preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .scene-preview-title-overlay {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            margin: 0;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .scene-preview-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: transparent;
+            padding: 10px 20px;
+            border-radius: 25px;
+            pointer-events: auto;
+        }
+
+        .scene-preview-controls button {
+            background: none;
+            border: none;
+            color: #2563eb;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .scene-preview-controls button:hover {
+            background: rgba(37, 99, 235, 0.1);
+            transform: scale(1.1);
+        }
+
+        .scene-preview-info {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .scene-preview-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .scene-preview-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .scene-preview-meta-item i {
+            color: #2563eb;
+            font-size: 1rem;
+        }
+
+        .scene-preview-instructions {
+            background: #e0f2fe;
+            border: 1px solid #0891b2;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .scene-preview-instructions h6 {
+            color: #0c4a6e;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        .scene-preview-instructions p {
+            color: #075985;
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .scene-preview-info {
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .scene-preview-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .scene-preview-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .scene-preview-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scene-preview-meta i {
+            color: #2563eb;
+        }
+
+        .preview-container {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .nothing-preview {
+            color: #64748b;
+            font-size: 1.3rem;
+            margin: 40px 20px;
+            font-weight: 500;
+        }
+
+
+        .location-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .location-image {
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .location-info {
+            padding: 30px;
+        }
+
+        .location-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .location-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .meta-item i {
+            color: #2563eb;
+        }
+
+        .location-description {
+            color: #475569;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-custom {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 12px 24px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #64748b;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 20px;
+            }
+            .location-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .dropdown-menu {
+                right: auto;
+                left: 0;
+            }
+            .location-title {
+                font-size: 1.5rem;
+            }
+            .scenes-panel {
+                width: 100%;
+                right: -100%;
+            }
+            .main-container.scenes-open {
+                margin-right: 0;
+            }
+        }
+    </style>
+    <script src="/public/js/session.js" defer></script>
+</head>
+<body>
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-vr-cardboard"></i>
+            Virtual Tour Location Detail
+        </h1>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm" id="locationsBtn">
+                <i class="fas fa-map-marker-alt me-1"></i>
+                Locations
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="scenesBtn">
+                <i class="fas fa-vr-cardboard me-1"></i>
+                Scenes
+            </button>
+            <a class="btn btn-outline-secondary btn-sm" href="/crm/virtual_tour_dashboard">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Portal
+            </a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-spinner" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0">Loading location details...</p>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-message" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+            <h5>Location Not Found</h5>
+            <p class="mb-0">The requested location could not be found or has been removed.</p>
+        </div>
+
+        <!-- Main Content -->
+        <div id="locationDetail" class="content-wrapper" style="display: none;">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="location-header">
+                    <div class="location-text">
+                        <h1 class="location-title" id="locationName">Location Name</h1>
+                        <div class="location-description" id="locationDescription">
+                            No description provided for this location.
+                        </div>
+                    </div>
+                    
+                    <div class="vertical-dots" onclick="toggleDropdown()">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        
+                        <div class="dropdown-menu" id="locationDropdown">
+                            <button class="dropdown-item" onclick="editLocation()">
+                                <i class="fas fa-edit"></i>Edit
+                            </button>
+                            <button class="dropdown-item" onclick="previewLocation()">
+                                <i class="fas fa-eye"></i>Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <div id="nothingPreview" class="nothing-preview">Nothing to preview</div>
+                
+                <!-- Scene Preview -->
+                <div id="scenePreview" class="scene-preview">
+                    <div class="scene-preview-container">
+                        <div id="pannellum-viewer"></div>
+                        <div class="scene-preview-overlay">
+                            <h3 id="scenePreviewTitleOverlay" class="scene-preview-title-overlay">Scene Name</h3>
+                            <div class="scene-preview-controls">
+                                <button id="resetViewBtn" onclick="resetSceneView()" title="Reset View">
+                                    <i class="fas fa-home"></i>
+                                </button>
+                                <button id="fullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button id="infoBtn" onclick="toggleSceneInfo()" title="Scene Info">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="scenePreviewInfo" class="scene-preview-info">
+                        <h3 id="scenePreviewTitle" class="scene-preview-title">Scene Details</h3>
+                        <div class="scene-preview-meta">
+                            <div class="scene-preview-meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span id="scenePreviewDate">Created: --</span>
+                            </div>
+                            <div class="scene-preview-meta-item">
+                                <i class="fas fa-crosshairs"></i>
+                                <span id="scenePreviewHotspots">0 Hotspots</span>
+                            </div>
+                            <div class="scene-preview-meta-item">
+                                <i class="fas fa-eye"></i>
+                                <span id="scenePreviewAngles">Pitch: 0°, Yaw: 0°</span>
+                            </div>
+                            <div class="scene-preview-meta-item">
+                                <i class="fas fa-image"></i>
+                                <span id="scenePreviewDimensions">360° Panoramic</span>
+                            </div>
+                        </div>
+                        
+                        <div class="scene-preview-instructions">
+                            <h6><i class="fas fa-mouse-pointer me-2"></i>How to Navigate</h6>
+                            <p>Click and drag to look around the 360° scene. Use the controls above to reset view, go fullscreen, or view scene information.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenes Panel -->
+    <div id="scenesPanel" class="scenes-panel">
+        <div class="scenes-header">
+            <h5 class="mb-0">
+                <i class="fas fa-vr-cardboard me-2"></i>
+                Scenes
+            </h5>
+            <small class="text-muted">Manage virtual tour scenes</small>
+        </div>
+         <div class="scenes-content">
+             <!-- Add Scene Button -->
+             <div class="text-center mb-3">
+                 <button class="btn btn-primary btn-sm" onclick="showAddSceneModal()">
+                     <i class="fas fa-plus me-1"></i>Add Scene
+                 </button>
+             </div>
+             
+             <!-- Scenes Container -->
+             <div id="scenesContainer">
+                 <div id="noScenesMessage" class="text-center text-muted py-4">
+                     <i class="fas fa-vr-cardboard fa-2x mb-2"></i>
+                     <p class="mb-0">No scenes created yet</p>
+                     <small>Click "Add Scene" to upload 360° images</small>
+                 </div>
+             </div>
+             
+             <!-- Hotspots Button -->
+             <button id="hotspotsButton" class="hotspots-button" onclick="manageHotspots()">
+                 <i class="fas fa-crosshairs me-2"></i>Manage Hotspots
+             </button>
+         </div>
+    </div>
+
+    <!-- Add Hotspot Modal -->
+    <div class="modal fade" id="addHotspotModal" tabindex="-1" aria-labelledby="addHotspotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addHotspotModalLabel">
+                        <i class="fas fa-crosshairs me-2"></i>Add Hotspot
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addHotspotForm">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="hotspotType" class="form-label">Hotspot Type</label>
+                                <select id="hotspotType" class="form-select" required onchange="toggleHotspotOptions()">
+                                    <option value="">Select type...</option>
+                                    <option value="link">Link to Another Scene</option>
+                                    <option value="info">Information Popup</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12" id="linkOptions" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="targetSceneName" class="form-label">Target Scene Name</label>
+                                    <input type="text" id="targetSceneName" class="form-control" placeholder="e.g., Living Room, Kitchen, Bedroom">
+                                    <div class="form-text">Name for the new scene</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="targetSceneImage" class="form-label">Target Scene Image</label>
+                                    <input type="file" id="targetSceneImage" class="form-control" accept="image/jpeg,image/jpg,image/png">
+                                    <div class="form-text">Upload the 360° image for the target scene</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12" id="infoOptions" style="display: none;">
+                                <label for="infoText" class="form-label">Information Text</label>
+                                <textarea id="infoText" class="form-control" rows="4" placeholder="Enter information to display when hotspot is clicked..."></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="hotspotTooltip" class="form-label">Tooltip (Hover Text)</label>
+                                <input type="text" id="hotspotTooltip" class="form-control" placeholder="Text shown when hovering over hotspot" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="hotspotPitch" class="form-label">Pitch Position</label>
+                                <input type="number" id="hotspotPitch" class="form-control" step="0.1" min="-90" max="90" required readonly>
+                                <div class="form-text">Vertical position (set by drag & drop)</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="hotspotYaw" class="form-label">Yaw Position</label>
+                                <input type="number" id="hotspotYaw" class="form-control" step="0.1" min="-180" max="180" required readonly>
+                                <div class="form-text">Horizontal position (set by drag & drop)</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveHotspot()">
+                        <i class="fas fa-save me-1"></i>Save Hotspot
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Scene Modal -->
+    <div class="modal fade" id="addSceneModal" tabindex="-1" aria-labelledby="addSceneModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSceneModalLabel">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Scene
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSceneForm" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="sceneName" class="form-label">Scene Name</label>
+                                <input type="text" id="sceneName" class="form-control" placeholder="e.g., Living Room, Kitchen, Bedroom" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="sceneImage" class="form-label">360° Image</label>
+                                <input type="file" id="sceneImage" class="form-control" accept="image/jpeg,image/jpg,image/png" required>
+                                <div class="form-text">Upload a 360° panoramic image (JPEG, JPG, or PNG)</div>
+                                <div class="alert alert-info mt-2" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Initial viewing angles (pitch and yaw) will be set after adding hotspots through drag and drop interaction.
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveScene()">
+                        <i class="fas fa-save me-1"></i>Save Scene
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Pannellum JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <script>
+        let currentLocation = null;
+
+        // Get location ID from URL parameters
+        function getLocationIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Load location details
+        async function loadLocationDetail() {
+            const locationId = getLocationIdFromUrl();
+            
+            if (!locationId) {
+                showError();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/crm/virtual-tour/locations/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Location not found');
+                }
+
+                const data = await response.json();
+                currentLocation = data.location;
+                displayLocationDetail(data.location);
+            } catch (error) {
+                console.error('Error loading location:', error);
+                showError();
+            }
+        }
+
+        // Display location details
+        function displayLocationDetail(location) {
+            // Update page title
+            document.title = `${location.location_name} - Virtual Tour Location`;
+            
+            // Update location name
+            document.getElementById('locationName').textContent = location.location_name;
+            
+            // Update description
+            const description = location.description || 'No description provided for this location.';
+            document.getElementById('locationDescription').textContent = description;
+
+            // Show the detail card
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('locationDetail').style.display = 'flex';
+        }
+
+        // Toggle dropdown menu
+        function toggleDropdown() {
+            const dropdown = document.getElementById('locationDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('locationDropdown');
+            const dots = document.querySelector('.vertical-dots');
+            
+            if (!dots.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Toggle scenes panel
+        function toggleScenesPanel() {
+            const panel = document.getElementById('scenesPanel');
+            const container = document.querySelector('.main-container');
+            const scenesBtn = document.getElementById('scenesBtn');
+            const locationsBtn = document.getElementById('locationsBtn');
+            
+            if (panel.classList.contains('open')) {
+                // Close panel
+                panel.classList.remove('open');
+                container.classList.remove('scenes-open');
+                scenesBtn.classList.remove('btn-primary');
+                scenesBtn.classList.add('btn-outline-secondary');
+                locationsBtn.classList.remove('btn-outline-secondary');
+                locationsBtn.classList.add('btn-outline-primary');
+            } else {
+                // Open panel
+                panel.classList.add('open');
+                container.classList.add('scenes-open');
+                scenesBtn.classList.remove('btn-outline-secondary');
+                scenesBtn.classList.add('btn-primary');
+                locationsBtn.classList.remove('btn-outline-primary');
+                locationsBtn.classList.add('btn-outline-secondary');
+            }
+        }
+
+        // Show error state
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        }
+
+        // Action functions (placeholders for future functionality)
+        function editLocation() {
+            alert(`Edit functionality for: ${currentLocation?.location_name}\n\nThis will open an edit modal or redirect to an edit page.`);
+        }
+
+
+        function previewLocation() {
+            alert(`Preview functionality for: ${currentLocation?.location_name}\n\nThis will show a preview of the location.`);
+        }
+
+        function deleteLocation() {
+            if (confirm(`Are you sure you want to delete "${currentLocation?.location_name}"?\n\nThis action cannot be undone.`)) {
+                alert(`Delete functionality for: ${currentLocation?.location_name}\n\nThis will permanently delete the location.`);
+            }
+        }
+
+        // Show add scene modal
+        function showAddSceneModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addSceneModal'));
+            modal.show();
+        }
+
+        // Save scene
+        async function saveScene() {
+            const sceneName = document.getElementById('sceneName').value.trim();
+            const sceneImage = document.getElementById('sceneImage').files[0];
+
+            if (!sceneName) {
+                alert('Please enter a scene name');
+                return;
+            }
+
+            if (!sceneImage) {
+                alert('Please select a 360° image');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('scene_name', sceneName);
+                formData.append('image', sceneImage);
+                formData.append('pitch', 0); // Default pitch - will be updated via hotspots
+                formData.append('yaw', 0);   // Default yaw - will be updated via hotspots
+                formData.append('location_id', getLocationIdFromUrl());
+
+                const response = await fetch('/crm/virtual-tour/scenes', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save scene');
+                }
+
+                const result = await response.json();
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addSceneModal'));
+                modal.hide();
+
+                // Reset form
+                document.getElementById('addSceneForm').reset();
+
+                // Show success message
+                alert('Scene added successfully!');
+                
+                // Refresh scenes list
+                await loadScenes();
+                
+            } catch (error) {
+                console.error('Error saving scene:', error);
+                alert('Failed to save scene. Please try again.');
+            }
+        }
+
+        // Load scenes for current location
+        async function loadScenes() {
+            try {
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                displayScenes(data.scenes || []);
+            } catch (error) {
+                console.error('Error loading scenes:', error);
+                displayScenes([]);
+            }
+        }
+
+        // Display scenes as tiles
+        async function displayScenes(scenes) {
+            const container = document.getElementById('scenesContainer');
+            const noScenesMessage = document.getElementById('noScenesMessage');
+            const hotspotsButton = document.getElementById('hotspotsButton');
+
+            if (scenes.length === 0) {
+                noScenesMessage.style.display = 'block';
+                hotspotsButton.classList.remove('active');
+            } else {
+                noScenesMessage.style.display = 'none';
+                hotspotsButton.classList.add('active');
+
+                container.innerHTML = '';
+                
+                // Load hotspots for each scene
+                for (const scene of scenes) {
+                    const sceneTile = await createSceneTile(scene);
+                    container.appendChild(sceneTile);
+                }
+            }
+        }
+
+        // Create scene tile HTML
+        async function createSceneTile(scene) {
+            const tile = document.createElement('div');
+            tile.className = 'scene-tile';
+            tile.onclick = (e) => {
+                // Don't trigger preview if clicking on dropdown
+                if (!e.target.closest('.scene-dropdown')) {
+                    previewScene(scene);
+                }
+            };
+            
+            // Load hotspots for this scene
+            let hotspots = [];
+            try {
+                const response = await fetch(`/crm/virtual-tour/hotspots/${scene.id}`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    hotspots = data.hotspots || [];
+                }
+            } catch (error) {
+                console.error('Error loading hotspots for scene:', scene.id, error);
+            }
+            
+            // Create hotspots HTML
+            let hotspotsHtml = '';
+            if (hotspots.length === 0) {
+                hotspotsHtml = `
+                    <div class="hotspot-item">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>No hotspots added yet</span>
+                    </div>
+                `;
+            } else {
+                hotspotsHtml = hotspots.map(hotspot => `
+                    <div class="hotspot-item">
+                        <i class="fas fa-${hotspot.type === 'link' ? 'link' : 'info-circle'}"></i>
+                        <span>${hotspot.tooltip}</span>
+                    </div>
+                `).join('');
+            }
+            
+            tile.innerHTML = `
+                <div class="scene-header">
+                    <h6 class="scene-name">${scene.scene_name}</h6>
+                    <div class="scene-dropdown" onclick="event.stopPropagation(); toggleSceneDropdown(${scene.id})">
+                        <i class="fas fa-ellipsis-v"></i>
+                        <div class="scene-dropdown-menu" id="sceneDropdown${scene.id}">
+                            <button class="scene-dropdown-item" onclick="editScene(${scene.id})">
+                                <i class="fas fa-edit"></i>Edit
+                            </button>
+                            <button class="scene-dropdown-item" onclick="deleteScene(${scene.id})">
+                                <i class="fas fa-trash"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="hotspots-list">
+                    ${hotspotsHtml}
+                </div>
+            `;
+            
+            return tile;
+        }
+
+        // Pannellum Variables
+        let currentScene = null;
+        let viewer = null;
+        let hotspotMode = false;
+        let hotspotPosition = null;
+        let sceneHotspots = [];
+
+        // Preview scene in main area using Pannellum
+        async function previewScene(scene) {
+            currentScene = scene;
+            
+            // Remove active class from all tiles
+            document.querySelectorAll('.scene-tile').forEach(tile => {
+                tile.classList.remove('active');
+            });
+            
+            // Find and activate the clicked tile
+            const tiles = document.querySelectorAll('.scene-tile');
+            tiles.forEach(tile => {
+                const sceneName = tile.querySelector('.scene-name').textContent;
+                if (sceneName === scene.scene_name) {
+                    tile.classList.add('active');
+                }
+            });
+            
+            // Update preview section
+            const nothingPreview = document.getElementById('nothingPreview');
+            const scenePreview = document.getElementById('scenePreview');
+            
+            nothingPreview.style.display = 'none';
+            scenePreview.classList.add('active');
+            
+            // Update scene preview content
+            document.getElementById('scenePreviewTitle').textContent = scene.scene_name;
+            document.getElementById('scenePreviewTitleOverlay').textContent = scene.scene_name;
+            document.getElementById('scenePreviewDate').textContent = `Created: ${scene.created_at || 'Unknown'}`;
+            document.getElementById('scenePreviewAngles').textContent = `Pitch: ${scene.pitch || 0}°, Yaw: ${scene.yaw || 0}°`;
+            
+            // Initialize Pannellum viewer if image is available
+            if (scene.image_path) {
+                // Load hotspots for this scene
+                await loadSceneHotspots(scene.id);
+                initializePannellumViewer(scene);
+            } else {
+                // Clear viewer if no image
+                if (viewer) {
+                    viewer.destroy();
+                    viewer = null;
+                }
+            }
+        }
+
+        // Load hotspots for a scene
+        async function loadSceneHotspots(sceneId) {
+            try {
+                const response = await fetch(`/crm/virtual-tour/hotspots/${sceneId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load hotspots');
+                }
+
+                const data = await response.json();
+                sceneHotspots = data.hotspots || [];
+                console.log('Loaded hotspots for scene:', sceneId, sceneHotspots);
+            } catch (error) {
+                console.error('Error loading hotspots:', error);
+                sceneHotspots = [];
+            }
+        }
+
+        // Initialize Pannellum viewer
+        function initializePannellumViewer(scene) {
+            // Destroy existing viewer if it exists
+            if (viewer) {
+                viewer.destroy();
+            }
+
+            // Create new Pannellum viewer
+            // Convert hotspots to Pannellum format
+            const pannellumHotspots = sceneHotspots.map(hotspot => {
+                const hotspotConfig = {
+                    pitch: hotspot.pitch,
+                    yaw: hotspot.yaw,
+                    type: 'info',
+                    text: hotspot.tooltip,
+                    cssClass: 'custom-hotspot',
+                    clickHandlerFunc: function() {
+                        if (hotspot.type === 'link' && hotspot.target_scene_id) {
+                            navigateToScene(hotspot.target_scene_id);
+                        } else if (hotspot.type === 'info') {
+                            alert(hotspot.info_text || hotspot.tooltip);
+                        }
+                    }
+                };
+
+                return hotspotConfig;
+            });
+
+            viewer = pannellum.viewer('pannellum-viewer', {
+                type: 'equirectangular',
+                panorama: `/uploads/virtual_scenes/${scene.image_path}`,
+                autoLoad: true,
+                autoRotate: 0, // Disabled auto-rotation
+                compass: true,
+                northOffset: 0,
+                showControls: false, // Hide default controls since we have custom ones
+                hfov: 100,
+                minHfov: 50,
+                maxHfov: 120,
+                pitch: scene.pitch || 0,
+                yaw: scene.yaw || 0,
+                hotSpots: pannellumHotspots,
+                onLoad: function() {
+                    console.log('Pannellum viewer loaded successfully with hotspots:', pannellumHotspots);
+                },
+                onError: function(error) {
+                    console.error('Pannellum viewer error:', error);
+                }
+            });
+
+            // Listen for view changes to update angle display
+            viewer.on('viewchange', function() {
+                const currentPitch = Math.round(viewer.getPitch());
+                const currentYaw = Math.round(viewer.getYaw());
+                document.getElementById('scenePreviewAngles').textContent = 
+                    `Pitch: ${currentPitch}°, Yaw: ${currentYaw}°`;
+            });
+
+            // Listen for mouse clicks when in hotspot mode
+            viewer.on('mousedown', function(event) {
+                if (hotspotMode) {
+                    const pitch = viewer.getPitch();
+                    const yaw = viewer.getYaw();
+                    
+                    // Set hotspot position
+                    hotspotPosition = { pitch, yaw };
+                    
+                    // Fill in the position fields
+                    document.getElementById('hotspotPitch').value = Math.round(pitch * 100) / 100;
+                    document.getElementById('hotspotYaw').value = Math.round(yaw * 100) / 100;
+                    
+                    // Show the hotspot modal
+                    const modal = new bootstrap.Modal(document.getElementById('addHotspotModal'));
+                    modal.show();
+                    
+                    // Load available scenes for linking
+                    loadAvailableScenes();
+                }
+            });
+        }
+
+        // Navigate to target scene when hotspot is clicked
+        async function navigateToScene(targetSceneId) {
+            try {
+                // Get all scenes to find the target scene
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                
+                // Find the target scene
+                const targetScene = scenes.find(scene => scene.id == targetSceneId);
+                if (targetScene) {
+                    // Preview the target scene
+                    await previewScene(targetScene);
+                } else {
+                    alert('Target scene not found');
+                }
+            } catch (error) {
+                console.error('Error navigating to scene:', error);
+                alert('Failed to navigate to target scene');
+            }
+        }
+
+        // Reset scene view to default
+        function resetSceneView() {
+            if (viewer && currentScene) {
+                viewer.setPitch(currentScene.pitch || 0);
+                viewer.setYaw(currentScene.yaw || 0);
+                viewer.setHfov(100);
+            }
+        }
+
+        // Toggle fullscreen for scene preview
+        function toggleFullscreen() {
+            if (viewer) {
+                viewer.toggleFullscreen();
+            }
+        }
+
+        // Toggle scene info visibility
+        function toggleSceneInfo() {
+            const info = document.getElementById('scenePreviewInfo');
+            const infoBtn = document.getElementById('infoBtn');
+            
+            if (info.style.display === 'none') {
+                info.style.display = 'block';
+                infoBtn.innerHTML = '<i class="fas fa-info-circle"></i>';
+            } else {
+                info.style.display = 'none';
+                infoBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        // Toggle scene dropdown
+        function toggleSceneDropdown(sceneId) {
+            // Close all other dropdowns
+            document.querySelectorAll('.scene-dropdown-menu').forEach(menu => {
+                if (menu.id !== `sceneDropdown${sceneId}`) {
+                    menu.classList.remove('show');
+                }
+            });
+            
+            // Toggle current dropdown
+            const dropdown = document.getElementById(`sceneDropdown${sceneId}`);
+            dropdown.classList.toggle('show');
+        }
+
+        // Scene management functions
+        function editScene(sceneId) {
+            alert(`Edit scene functionality for scene ID: ${sceneId}`);
+        }
+
+        function deleteScene(sceneId) {
+            if (confirm('Are you sure you want to delete this scene?')) {
+                alert(`Delete scene functionality for scene ID: ${sceneId}`);
+            }
+        }
+
+        // Manage hotspots
+        function manageHotspots() {
+            const hotspotsButton = document.getElementById('hotspotsButton');
+            if (hotspotsButton.classList.contains('active')) {
+                hotspotMode = !hotspotMode;
+                
+                if (hotspotMode) {
+                    hotspotsButton.innerHTML = '<i class="fas fa-times me-2"></i>Cancel Hotspot Mode';
+                    hotspotsButton.style.background = '#dc3545';
+                    hotspotsButton.style.color = 'white';
+                    
+                    // Change cursor to indicate hotspot mode
+                    if (viewer) {
+                        const container = document.getElementById('pannellum-viewer');
+                        container.style.cursor = 'crosshair';
+                    }
+                    
+                    alert('Hotspot mode enabled! Click on the 360° image to place a hotspot.');
+                } else {
+                    hotspotsButton.innerHTML = '<i class="fas fa-crosshairs me-2"></i>Manage Hotspots';
+                    hotspotsButton.style.background = '#2563eb';
+                    hotspotsButton.style.color = 'white';
+                    
+                    // Reset cursor
+                    if (viewer) {
+                        const container = document.getElementById('pannellum-viewer');
+                        container.style.cursor = 'grab';
+                    }
+                }
+            }
+        }
+
+        // Toggle hotspot options based on type
+        function toggleHotspotOptions() {
+            const type = document.getElementById('hotspotType').value;
+            const linkOptions = document.getElementById('linkOptions');
+            const infoOptions = document.getElementById('infoOptions');
+            
+            if (type === 'link') {
+                linkOptions.style.display = 'block';
+                infoOptions.style.display = 'none';
+            } else if (type === 'info') {
+                linkOptions.style.display = 'none';
+                infoOptions.style.display = 'block';
+            } else {
+                linkOptions.style.display = 'none';
+                infoOptions.style.display = 'none';
+            }
+        }
+
+        // Load available scenes for linking (no longer needed for file upload)
+        async function loadAvailableScenes() {
+            // This function is no longer needed since we're using file upload
+            // Keeping it for compatibility but it does nothing
+        }
+
+        // Save hotspot
+        async function saveHotspot() {
+            const type = document.getElementById('hotspotType').value;
+            const tooltip = document.getElementById('hotspotTooltip').value.trim();
+            const pitch = document.getElementById('hotspotPitch').value;
+            const yaw = document.getElementById('hotspotYaw').value;
+            
+            if (!type || !tooltip || !pitch || !yaw) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (type === 'link') {
+                const targetSceneName = document.getElementById('targetSceneName').value.trim();
+                const targetSceneImage = document.getElementById('targetSceneImage').files[0];
+                
+                if (!targetSceneName) {
+                    alert('Please enter a scene name for the target scene');
+                    return;
+                }
+                
+                if (!targetSceneImage) {
+                    alert('Please upload a target scene image for the link');
+                    return;
+                }
+            }
+            
+            if (type === 'info') {
+                const infoText = document.getElementById('infoText').value.trim();
+                if (!infoText) {
+                    alert('Please enter information text');
+                    return;
+                }
+            }
+
+            try {
+                let targetSceneId = null;
+                
+                // If it's a link hotspot, first create the target scene
+                if (type === 'link') {
+                    const targetSceneImage = document.getElementById('targetSceneImage').files[0];
+                    const targetSceneName = document.getElementById('targetSceneName').value.trim();
+                    
+                    // Create target scene first
+                    const sceneFormData = new FormData();
+                    sceneFormData.append('scene_name', targetSceneName);
+                    sceneFormData.append('image', targetSceneImage);
+                    sceneFormData.append('pitch', 0);
+                    sceneFormData.append('yaw', 0);
+                    sceneFormData.append('location_id', getLocationIdFromUrl());
+                    
+                    const sceneResponse = await fetch('/crm/virtual-tour/scenes', {
+                        method: 'POST',
+                        body: sceneFormData,
+                        credentials: 'include'
+                    });
+                    
+                    if (!sceneResponse.ok) {
+                        const errorData = await sceneResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP ${sceneResponse.status}: Failed to create target scene`);
+                    }
+                    
+                    const sceneResult = await sceneResponse.json();
+                    console.log('Scene creation response:', sceneResult);
+                    targetSceneId = sceneResult.id;
+                }
+
+                // Now create the hotspot
+                const hotspotData = {
+                    scene_id: currentScene.id,
+                    type: type,
+                    pitch: parseFloat(pitch),
+                    yaw: parseFloat(yaw),
+                    tooltip: tooltip
+                };
+                
+                if (type === 'link') {
+                    hotspotData.target_scene_id = targetSceneId;
+                } else if (type === 'info') {
+                    hotspotData.info_text = document.getElementById('infoText').value.trim();
+                }
+                
+                console.log('Creating hotspot with data:', hotspotData);
+
+                const response = await fetch('/crm/virtual-tour/hotspots', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(hotspotData),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: Failed to save hotspot`);
+                }
+
+                const result = await response.json();
+                console.log('Hotspot creation response:', result);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addHotspotModal'));
+                modal.hide();
+
+                // Reset form
+                document.getElementById('addHotspotForm').reset();
+                
+                // Exit hotspot mode
+                hotspotMode = false;
+                const hotspotsButton = document.getElementById('hotspotsButton');
+                hotspotsButton.innerHTML = '<i class="fas fa-crosshairs me-2"></i>Manage Hotspots';
+                hotspotsButton.style.background = '#2563eb';
+                hotspotsButton.style.color = 'white';
+                
+                if (viewer) {
+                    const container = document.getElementById('pannellum-viewer');
+                    container.style.cursor = 'grab';
+                }
+
+                // Show success message
+                alert('Hotspot and target scene created successfully!');
+                
+                // Reload scenes to show updated hotspots
+                await loadScenes();
+                
+            } catch (error) {
+                console.error('Error saving hotspot:', error);
+                alert(`Failed to save hotspot: ${error.message}`);
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.scene-dropdown')) {
+                document.querySelectorAll('.scene-dropdown-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLocationDetail();
+            loadScenes(); // Load scenes when page loads
+            
+            // Add event listeners for header buttons
+            document.getElementById('locationsBtn').addEventListener('click', function() {
+                const panel = document.getElementById('scenesPanel');
+                const container = document.querySelector('.main-container');
+                const scenesBtn = document.getElementById('scenesBtn');
+                const locationsBtn = document.getElementById('locationsBtn');
+                
+                // Close scenes panel if open
+                if (panel.classList.contains('open')) {
+                    panel.classList.remove('open');
+                    container.classList.remove('scenes-open');
+                    scenesBtn.classList.remove('btn-primary');
+                    scenesBtn.classList.add('btn-outline-secondary');
+                }
+                
+                // Highlight locations button
+                locationsBtn.classList.remove('btn-outline-primary');
+                locationsBtn.classList.add('btn-primary');
+            });
+            
+            document.getElementById('scenesBtn').addEventListener('click', toggleScenesPanel);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Tour Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .page-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+            color: #1e293b;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px 40px 20px; /* space for fixed header */
+        }
+
+        .placeholder-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .placeholder-card .icon {
+            font-size: 2.5rem;
+            color: #2563eb;
+            margin-bottom: 12px;
+        }
+
+        .placeholder-card h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #1f2937;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .placeholder-card p {
+            color: #64748b;
+            margin: 0;
+            font-size: 1.125rem;
+        }
+
+        .welcome-title {
+            background: linear-gradient(90deg, #2563eb, #10b981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-subtitle {
+            color: #475569;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 90px 16px 24px 16px; }
+        }
+    </style>
+    <script src="/public/js/session.js" defer></script>
+</head>
+<body>
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-vr-cardboard"></i>
+            Virtual Tour Portal
+        </h1>
+        <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="/crm/crm_admin">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to CRM
+            </a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="placeholder-card">
+            <div class="icon"><i class="fas fa-cubes"></i></div>
+            <h2 class="welcome-title">Welcome to Virtual Tour Builder</h2>
+            <p class="welcome-subtitle">Create, preview, and publish immersive property tours for your clients.</p>
+        </div>
+
+        <div class="mt-4">
+            <div class="card" style="border-radius:12px; border:1px solid #e9ecef;">
+                <div class="card-body">
+                    <h5 class="mb-3" style="color:#1e293b; font-weight:700;">Add Location</h5>
+                    <form id="vtLocationForm" class="row g-3" enctype="multipart/form-data">
+                        <div class="col-md-6">
+                            <label for="vtLocationName" class="form-label">Location Name</label>
+                            <input type="text" id="vtLocationName" class="form-control" placeholder="e.g., Amaia Scapes - Phase 2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vtLocationPicture" class="form-label">Picture or PDF (optional)</label>
+                            <input type="file" id="vtLocationPicture" class="form-control" accept="image/jpeg,image/jpg,application/pdf">
+                        </div>
+                        <div class="col-12">
+                            <label for="vtLocationDesc" class="form-label">Description (optional)</label>
+                            <textarea id="vtLocationDesc" class="form-control" rows="3" placeholder="Short description..."></textarea>
+                        </div>
+                        <div class="col-12 d-flex align-items-center gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Save Location
+                            </button>
+                            <span id="vtLocationStatus" class="text-muted" style="display:none;"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3" style="border-radius:12px; border:1px solid #e9ecef;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0" style="color:#1e293b; font-weight:700;">Locations</h5>
+                        <button id="vtRefreshBtn" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i></button>
+                    </div>
+                    <div id="vtLocationsGrid" class="row g-3"></div>
+                    <div id="vtLocationsEmpty" class="text-muted text-center py-4" style="display:none;">
+                        <i class="fas fa-map-marker-alt fa-2x mb-2"></i><br>
+                        No locations yet. Add your first location above.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Minimal JS to handle add/list locations
+        async function fetchLocations() {
+            try {
+                const res = await fetch('/crm/virtual-tour/locations', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed');
+                const data = await res.json();
+                const grid = document.getElementById('vtLocationsGrid');
+                const empty = document.getElementById('vtLocationsEmpty');
+                grid.innerHTML = '';
+                const locations = data.locations || [];
+                if (locations.length === 0) {
+                    empty.style.display = '';
+                    return;
+                }
+                empty.style.display = 'none';
+                
+                locations.forEach(loc => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4';
+                    
+                    const isPdf = loc.picture_path && /\.pdf$/i.test(loc.picture_path);
+                    const pictureHtml = loc.picture_path && !isPdf ? 
+                        `<img src="/uploads/virtual_locations/${loc.picture_path}" alt="${loc.location_name}" class="card-img-top" style="height:200px; object-fit:cover;">` :
+                        (loc.picture_path && isPdf ?
+                        `<div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:200px;">
+                            <i class="fas fa-file-pdf fa-3x text-danger me-2"></i>
+                            <a href="/uploads/virtual_locations/${loc.picture_path}" target="_blank" class="text-decoration-none">View PDF</a>
+                        </div>` :
+                        `<div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>`);
+                    
+                    const description = loc.description ? 
+                        `<p class="card-text text-muted" style="font-size:0.9rem; line-height:1.4;">${loc.description}</p>` : 
+                        `<p class="card-text text-muted" style="font-size:0.9rem;">No description provided</p>`;
+                    
+                    col.innerHTML = `
+                        <div class="card h-100" style="border-radius:12px; border:1px solid #e9ecef; transition:transform 0.2s, box-shadow 0.2s;" 
+                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" 
+                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            ${pictureHtml}
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title mb-2" style="font-weight:700; color:#1e293b; font-size:1.1rem;">${loc.location_name}</h6>
+                                ${description}
+                                <div class="mt-auto pt-2">
+                                    <small class="text-muted">Created: ${loc.created_at || ''}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 p-3 pt-0">
+                                <button class="btn btn-outline-primary btn-sm w-100" onclick="handleLocationMore(${loc.id})">
+                                    <i class="fas fa-ellipsis-h me-1"></i>More
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(col);
+                });
+            } catch (e) {
+                console.warn('Failed to load locations:', e);
+            }
+        }
+        
+        function handleLocationMore(locationId) {
+            // Navigate to location detail page
+            window.location.href = `/crm/virtual_tour_location_detail?id=${locationId}`;
+        }
+
+        document.getElementById('vtRefreshBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            fetchLocations();
+        });
+
+        document.getElementById('vtLocationForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameEl = document.getElementById('vtLocationName');
+            const descEl = document.getElementById('vtLocationDesc');
+            const pictureEl = document.getElementById('vtLocationPicture');
+            const statusEl = document.getElementById('vtLocationStatus');
+            
+            if (!nameEl.value.trim()) return;
+            
+            try {
+                statusEl.style.display = '';
+                statusEl.textContent = 'Saving...';
+                
+                const formData = new FormData();
+                formData.append('location_name', nameEl.value.trim());
+                formData.append('description', descEl.value.trim());
+                if (pictureEl.files[0]) {
+                    formData.append('picture', pictureEl.files[0]);
+                }
+                
+                const res = await fetch('/crm/virtual-tour/locations', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                if (!res.ok) throw new Error('Save failed');
+                
+                nameEl.value = '';
+                descEl.value = '';
+                pictureEl.value = '';
+                statusEl.textContent = 'Saved';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 1200);
+                fetchLocations();
+            } catch (err) {
+                statusEl.style.display = '';
+                statusEl.textContent = 'Error saving';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 1500);
+            }
+        });
+
+        // Initial load
+        fetchLocations();
+    </script>
+    
+    
+</body>
+<br>
+</html>
+
