@@ -163,9 +163,10 @@ const checkIfResume = async (filePath) => {
 // Define upload directories using path configuration
 const resumeUploadDir = pathConfig.getUploadPath('resume');
 const profilePictureUploadDir = pathConfig.getUploadPath('profile_pictures');
+const virtualLocationUploadDir = pathConfig.getUploadPath('virtual_locations');
 
 // Ensure upload directories exist
-[resumeUploadDir, profilePictureUploadDir].forEach(dir => {
+[resumeUploadDir, profilePictureUploadDir, virtualLocationUploadDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -215,6 +216,56 @@ const uploadProfilePicture = multer({
         fileSize: 5 * 1024 * 1024 // 5MB limit
     }
 });
+
+// Virtual location upload middleware (accepts JPG/JPEG/PDF)
+const virtualLocationStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, virtualLocationUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `vtloc-${timestamp}${ext}`);
+    }
+});
+
+const virtualLocationUpload = multer({
+    storage: virtualLocationStorage,
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/jpg', 'application/pdf'];
+        if (allowed.includes(file.mimetype)) return cb(null, true);
+        return cb(new Error('Only JPEG, JPG or PDF files are allowed.'));
+    },
+    limits: { fileSize: 10 * 1024 * 1024 }
+}).single('picture');
+
+// Virtual scene upload middleware (accepts JPG/JPEG/PNG for 360° images)
+const virtualSceneUploadDir = pathConfig.getUploadPath('virtual_scenes');
+
+if (!fs.existsSync(virtualSceneUploadDir)) {
+    fs.mkdirSync(virtualSceneUploadDir, { recursive: true });
+}
+
+const virtualSceneStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, virtualSceneUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `vtscene-${timestamp}${ext}`);
+    }
+});
+
+const virtualSceneUpload = multer({
+    storage: virtualSceneStorage,
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (allowed.includes(file.mimetype)) return cb(null, true);
+        return cb(new Error('Only JPEG, JPG or PNG files are allowed for 360° images.'));
+    },
+    limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit for high-res 360° images
+}).single('image');
 
 // 📤 Controller logic for handling resume uploads
 const CRMController = {
@@ -740,6 +791,157 @@ const CRMController = {
         }
     },
 
+    // Virtual Tour: Locations
+    createVirtualLocation: async (req, res) => {
+        try {
+            const { location_name, description } = req.body;
+            if (!location_name || location_name.trim() === '') {
+                return res.status(400).json({ error: 'Location name is required' });
+            }
+
+            const created_by = req.session?.user?.id || null;
+            let picture_path = null;
+            
+            // Handle file upload if present
+            if (req.file) {
+                picture_path = req.file.filename;
+            }
+
+            const id = await CRMModel.createVirtualLocation({ 
+                location_name, 
+                description, 
+                picture_path, 
+                created_by 
+            });
+            res.status(201).json({ success: true, id });
+        } catch (error) {
+            console.error('Error creating virtual location:', error);
+            res.status(500).json({ error: 'Failed to create virtual location' });
+        }
+    },
+
+    listVirtualLocations: async (req, res) => {
+        try {
+            const rows = await CRMModel.listVirtualLocations();
+            res.json({ success: true, locations: rows });
+        } catch (error) {
+            console.error('Error listing virtual locations:', error);
+            res.status(500).json({ error: 'Failed to fetch virtual locations' });
+        }
+    },
+
+    getVirtualLocationById: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const location = await CRMModel.getVirtualLocationById(id);
+            
+            if (!location) {
+                return res.status(404).json({ error: 'Location not found' });
+            }
+            
+            res.json({ success: true, location });
+        } catch (error) {
+            console.error('Error fetching virtual location:', error);
+            res.status(500).json({ error: 'Failed to fetch virtual location' });
+        }
+    },
+
+    // Virtual Tour: Scenes
+    createVirtualScene: async (req, res) => {
+        try {
+            console.log('📝 Creating virtual scene - Request body:', req.body);
+            console.log('📝 Creating virtual scene - Request file:', req.file);
+            
+            const { scene_name, pitch, yaw, location_id } = req.body;
+            
+            console.log('📝 Parsed form data:', { scene_name, pitch, yaw, location_id });
+            
+            if (!scene_name || !location_id) {
+                return res.status(400).json({ error: 'Scene name and location ID are required' });
+            }
+
+            let image_path = null;
+            
+            // Handle file upload if present
+            if (req.file) {
+                image_path = req.file.filename;
+                console.log('📝 File uploaded:', image_path);
+            } else {
+                return res.status(400).json({ error: '360° image is required' });
+            }
+
+            const id = await CRMModel.createVirtualScene({ 
+                location_id: parseInt(location_id),
+                scene_name, 
+                image_path, 
+                pitch: 0, // Default pitch - will be updated when hotspots are added
+                yaw: 0    // Default yaw - will be updated when hotspots are added
+            });
+            
+            console.log('✅ Scene created with ID:', id);
+            res.status(201).json({ success: true, id });
+        } catch (error) {
+            console.error('Error creating virtual scene:', error);
+            res.status(500).json({ error: 'Failed to create virtual scene' });
+        }
+    },
+
+    getVirtualScenesByLocation: async (req, res) => {
+        try {
+            const { location_id } = req.params;
+            const scenes = await CRMModel.getVirtualScenesByLocation(location_id);
+            res.json({ success: true, scenes });
+        } catch (error) {
+            console.error('Error fetching virtual scenes:', error);
+            res.status(500).json({ error: 'Failed to fetch virtual scenes' });
+        }
+    },
+
+    // Virtual Tour: Hotspots
+    createVirtualHotspot: async (req, res) => {
+        try {
+            const { scene_id, target_scene_id, type, pitch, yaw, tooltip, info_text } = req.body;
+            
+            if (!scene_id || !type || pitch === undefined || yaw === undefined || !tooltip) {
+                return res.status(400).json({ error: 'Scene ID, type, pitch, yaw, and tooltip are required' });
+            }
+
+            if (type === 'link' && !target_scene_id) {
+                return res.status(400).json({ error: 'Target scene ID is required for link hotspots' });
+            }
+
+            if (type === 'info' && !info_text) {
+                return res.status(400).json({ error: 'Info text is required for info hotspots' });
+            }
+
+            const id = await CRMModel.createVirtualHotspot({
+                scene_id: parseInt(scene_id),
+                target_scene_id: target_scene_id ? parseInt(target_scene_id) : null,
+                type,
+                pitch: parseFloat(pitch),
+                yaw: parseFloat(yaw),
+                tooltip,
+                info_text: info_text || null
+            });
+            
+            res.status(201).json({ success: true, id });
+        } catch (error) {
+            console.error('Error creating virtual hotspot:', error);
+            res.status(500).json({ error: 'Failed to create virtual hotspot' });
+        }
+    },
+
+    getVirtualHotspotsByScene: async (req, res) => {
+        try {
+            const { scene_id } = req.params;
+            const hotspots = await CRMModel.getVirtualHotspotsByScene(scene_id);
+            res.json({ success: true, hotspots });
+        } catch (error) {
+            console.error('Error fetching virtual hotspots:', error);
+            res.status(500).json({ error: 'Failed to fetch virtual hotspots' });
+        }
+    },
+
     // Get developer details by ID
     getDeveloperById: async (req, res) => {
         try {
@@ -790,5 +992,7 @@ module.exports = {
     CRMController, 
     upload,
     developerUpload,
-    handlePropertyUpload
+    handlePropertyUpload,
+    virtualLocationUpload,
+    virtualSceneUpload
 };
