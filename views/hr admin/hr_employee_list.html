@@ -372,8 +372,10 @@
 
             <!-- Employee Management Buttons -->
             <div class="d-flex justify-content-between">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">Add Employee</button>
-
+                <div class="d-flex" style="gap:10px;">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">Add Employee</button>
+                    <button class="btn btn-success" id="openRegisterFacial">Register Facial</button>
+                </div>
                 <button id="showDeletedBtn" class="btn btn-info" onclick="toggleDeletedEmployees()">Show Deleted Employees</button>
             </div>
             
@@ -499,6 +501,16 @@
                                                 <!-- Roles will be loaded dynamically -->
                                             </select>
                                         </div>
+                                        <h3 style="margin-top: 1.5rem;">Facial Recognition</h3>
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center flex-wrap" style="gap:10px; margin-top:8px;">
+                                                <button type="button" class="btn btn-secondary btn-sm" id="openNewEmpCamera">Open Camera</button>
+                                                <button type="button" class="btn btn-primary btn-sm" id="captureNewEmpFace" disabled>Capture</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="closeNewEmpCamera" disabled>Close Camera</button>
+                                            </div>
+                                            <video id="newEmpFaceVideo" autoplay playsinline style="width:100%; max-height:220px; display:none; border:1px solid #ccc; border-radius:4px; margin-top:8px;"></video>
+                                            <small class="text-muted">Optional: capture a face now or use Register Facial button later.</small>
+                                        </div>
                                         <h3 style="margin-top: 1.5rem;">Emergency Contact</h3>
                                         <div class="form-group">
                                             <label for="emergency_contact_name">Contact Name</label>
@@ -558,6 +570,73 @@
         : `${window.location.origin}/hr`;
 
         
+        // Face enrollment helpers (new employee and existing via modal)
+        let newEmpCameraStream = null;
+        let pendingNewEmpFaceBlob = null;
+        const openNewEmpCameraBtn = document.getElementById('openNewEmpCamera');
+        const captureNewEmpFaceBtn = document.getElementById('captureNewEmpFace');
+        const closeNewEmpCameraBtn = document.getElementById('closeNewEmpCamera');
+        const newEmpFaceVideo = document.getElementById('newEmpFaceVideo');
+
+        async function uploadEmployeeFace(employeeId, fileOrBlob) {
+            const fd = new FormData();
+            fd.append('image', fileOrBlob, 'face.jpg');
+            const res = await fetch(`${API_URL}/employees/${employeeId}/face/enroll`, {
+                method: 'POST',
+                body: fd,
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Face enrollment failed');
+            }
+            return res.json();
+        }
+
+        if (openNewEmpCameraBtn) {
+            openNewEmpCameraBtn.addEventListener('click', async () => {
+                try {
+                    pendingNewEmpFaceBlob = null;
+                    newEmpCameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    newEmpFaceVideo.srcObject = newEmpCameraStream;
+                    newEmpFaceVideo.style.display = 'block';
+                    captureNewEmpFaceBtn.disabled = false;
+                    closeNewEmpCameraBtn.disabled = false;
+                } catch (err) {
+                    console.error('Camera error:', err);
+                    alert('Unable to access camera. Please allow permissions.');
+                }
+            });
+        }
+
+        if (captureNewEmpFaceBtn) {
+            captureNewEmpFaceBtn.addEventListener('click', async () => {
+                if (!newEmpCameraStream) return;
+                const width = newEmpFaceVideo.videoWidth || 640;
+                const height = newEmpFaceVideo.videoHeight || 480;
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(newEmpFaceVideo, 0, 0, width, height);
+                await new Promise(resolve => canvas.toBlob((blob) => { pendingNewEmpFaceBlob = blob; resolve(); }, 'image/jpeg', 0.9));
+                alert('Face captured. Save employee to enroll.');
+            });
+        }
+
+        if (closeNewEmpCameraBtn) {
+            closeNewEmpCameraBtn.addEventListener('click', () => {
+                if (newEmpCameraStream) {
+                    newEmpCameraStream.getTracks().forEach(t => t.stop());
+                    newEmpCameraStream = null;
+                }
+                newEmpFaceVideo.srcObject = null;
+                newEmpFaceVideo.style.display = 'none';
+                captureNewEmpFaceBtn.disabled = true;
+                closeNewEmpCameraBtn.disabled = true;
+            });
+        }
+
         let employees = []; // Declare employees array globally
         let itemsPerPage = 5;
         let currentPage = 1;
@@ -638,8 +717,9 @@
                     <td>
                         ${employee.is_deleted
                             ? `<button class="btn btn-success btn-sm" onclick="restoreEmployee(${employee.employee_id})">Restore</button>`
-                            : `<button class="btn btn-warning btn-sm" onclick="editEmployee('${employee.employee_id}')">Edit</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${employee.employee_id})">Delete</button>`}
+                            : `<button class=\"btn btn-warning btn-sm\" onclick=\"editEmployee('${employee.employee_id}')\">Edit</button>
+                            <button class=\"btn btn-info btn-sm\" onclick=\"openFaceCameraModal('${employee.employee_id}')\">Register Face</button>
+                            <button class=\"btn btn-danger btn-sm\" onclick=\"deleteEmployee(${employee.employee_id})\">Delete</button>`}
                     </td>
                 `;
                 container.appendChild(row);
@@ -714,6 +794,234 @@
             } catch (error) {
                 console.error("Error restoring employee:", error);
                 alert("Error restoring employee");
+            }
+        }
+
+        // ===== Existing employee Register Face - Camera Modal =====
+        // Modal template with employee search and expandable details
+        const faceCamModalHtml = `
+        <div class="modal fade" id="faceCameraModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Register Facial</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Search Employee</label>
+                  <input type="text" class="form-control" id="faceSearchInput" placeholder="Type name to search...">
+                  <div class="list-group mt-2" id="faceSearchResults" style="max-height:200px; overflow:auto;"></div>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="faceConfirmSelect" disabled>
+                  <label class="form-check-label" for="faceConfirmSelect">I confirm this is the correct employee</label>
+                </div>
+                <div id="faceEmployeeDetails" style="display:none;">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="p-2 border rounded">
+                        <h6>Basic Info</h6>
+                        <div><strong>Name:</strong> <span id="fd_name"></span></div>
+                        <div><strong>Email:</strong> <span id="fd_email"></span></div>
+                        <div><strong>Contact:</strong> <span id="fd_contact"></span></div>
+                        <div><strong>Address:</strong> <span id="fd_address"></span></div>
+                        <div><strong>Birthday:</strong> <span id="fd_birthday"></span></div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="p-2 border rounded">
+                        <h6>Employment</h6>
+                        <div><strong>Employment Status:</strong> <span id="fd_status"></span></div>
+                        <div><strong>Education:</strong> <span id="fd_education"></span></div>
+                        <div><strong>Department:</strong> <span id="fd_department"></span></div>
+                        <div><strong>Position:</strong> <span id="fd_position"></span></div>
+                        <div><strong>Employee ID:</strong> <span id="fd_employee_id"></span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <hr class="my-3" />
+                  <h6>Facial Capture</h6>
+                  <video id="faceCamVideo" autoplay playsinline style="width:100%; max-height:360px; border:1px solid #ccc; border-radius:4px;"></video>
+                  <div class="d-flex" style="gap:10px; margin-top:10px;">
+                    <button type="button" class="btn btn-secondary" id="startFaceCam">Open Camera</button>
+                    <button type="button" class="btn btn-primary" id="captureFaceCam" disabled>Capture & Enroll</button>
+                    <button type="button" class="btn btn-outline-secondary" id="stopFaceCam" disabled>Close Camera</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+        // Inject modal once
+        if (!document.getElementById('faceCameraModal')) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = faceCamModalHtml;
+            document.body.appendChild(wrapper);
+        }
+
+        let faceCamStream = null;
+        let targetEmployeeIdForFace = null;
+        let faceCamModalInstance = null;
+
+        function openFaceCameraModal(employeeId = null) {
+            targetEmployeeIdForFace = employeeId;
+            const modalEl = document.getElementById('faceCameraModal');
+            faceCamModalInstance = new bootstrap.Modal(modalEl);
+            faceCamModalInstance.show();
+
+            const startBtn = document.getElementById('startFaceCam');
+            const captureBtn = document.getElementById('captureFaceCam');
+            const stopBtn = document.getElementById('stopFaceCam');
+            const videoEl = document.getElementById('faceCamVideo');
+            const searchInput = document.getElementById('faceSearchInput');
+            const searchResults = document.getElementById('faceSearchResults');
+            const confirmSelect = document.getElementById('faceConfirmSelect');
+            const details = document.getElementById('faceEmployeeDetails');
+
+            // If opened from Actions button with known ID, preload details
+            if (employeeId) {
+                preloadEmployeeForFacial(employeeId, confirmSelect, details);
+            } else {
+                // reset details
+                details.style.display = 'none';
+                confirmSelect.checked = false;
+                confirmSelect.disabled = true;
+            }
+
+            function updateCaptureEnabled() {
+                const cameraReady = !!faceCamStream;
+                captureBtn.disabled = !cameraReady;
+            }
+
+            // Search handling (autocomplete)
+            let searchTimeout;
+            searchInput.oninput = () => {
+                const q = searchInput.value.trim().toLowerCase();
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => doEmployeeSearch(q, searchResults, confirmSelect, details), 200);
+            };
+
+            startBtn.onclick = async () => {
+                try {
+                    faceCamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoEl.srcObject = faceCamStream;
+                    updateCaptureEnabled();
+                    stopBtn.disabled = false;
+                } catch (err) {
+                    console.error('Camera error:', err);
+                    alert('Unable to access camera. Please allow permissions.');
+                }
+            };
+
+            captureBtn.onclick = async () => {
+                if (!faceCamStream || !targetEmployeeIdForFace) return;
+                const width = videoEl.videoWidth || 640;
+                const height = videoEl.videoHeight || 480;
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0, width, height);
+                await new Promise(resolve => canvas.toBlob(async (blob) => {
+                    try {
+                        await uploadEmployeeFace(targetEmployeeIdForFace, blob);
+                        alert('✅ Face enrolled successfully');
+                        faceCamModalInstance.hide();
+                    } catch (err) {
+                        console.error(err);
+                        alert('❌ Failed to enroll face');
+                    }
+                    resolve();
+                }, 'image/jpeg', 0.9));
+            };
+
+            stopBtn.onclick = () => {
+                if (faceCamStream) {
+                    faceCamStream.getTracks().forEach(t => t.stop());
+                    faceCamStream = null;
+                }
+                videoEl.srcObject = null;
+                captureBtn.disabled = true;
+                stopBtn.disabled = true;
+            };
+
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                if (faceCamStream) {
+                    faceCamStream.getTracks().forEach(t => t.stop());
+                    faceCamStream = null;
+                }
+                videoEl.srcObject = null;
+                captureBtn.disabled = true;
+                stopBtn.disabled = true;
+                targetEmployeeIdForFace = null;
+                searchInput.value = '';
+                searchResults.innerHTML = '';
+                details.style.display = 'none';
+                confirmSelect.checked = false;
+                confirmSelect.disabled = true;
+            }, { once: true });
+
+            // Confirm selection toggles details and capture availability
+            confirmSelect.onchange = () => {
+                if (confirmSelect.checked) {
+                    details.style.display = 'block';
+                } else {
+                    details.style.display = 'none';
+                }
+            };
+        }
+
+        async function doEmployeeSearch(query, container, confirmSelect, details) {
+            container.innerHTML = '';
+            if (!query) return;
+            try {
+                // client-side filter from loaded employees to keep it simple
+                const matches = (employees || []).filter(e =>
+                    (e.full_name || '').toLowerCase().includes(query) ||
+                    (e.email || '').toLowerCase().includes(query)
+                ).slice(0, 20);
+                matches.forEach(e => {
+                    const a = document.createElement('a');
+                    a.href = 'javascript:void(0)';
+                    a.className = 'list-group-item list-group-item-action';
+                    a.textContent = `${e.full_name} (${e.email})`;
+                    a.onclick = () => preloadEmployeeForFacial(e.employee_id, confirmSelect, details);
+                    container.appendChild(a);
+                });
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+        }
+
+        async function preloadEmployeeForFacial(employeeId, confirmSelect, details) {
+            try {
+                const res = await fetch(`${API_URL}/employees/${employeeId}`);
+                if (!res.ok) throw new Error('Failed to fetch employee');
+                const e = await res.json();
+                targetEmployeeIdForFace = e.employee_id;
+                document.getElementById('fd_employee_id').textContent = e.employee_id || '';
+                document.getElementById('fd_name').textContent = e.full_name || '';
+                document.getElementById('fd_email').textContent = e.email || '';
+                document.getElementById('fd_contact').textContent = e.contact || '';
+                document.getElementById('fd_address').textContent = e.address || '';
+                document.getElementById('fd_birthday').textContent = e.birthday || '';
+                document.getElementById('fd_status').textContent = e.employment_status || '';
+                document.getElementById('fd_education').textContent = e.educational_background || '';
+                document.getElementById('fd_department').textContent = e.department_name || '';
+                document.getElementById('fd_position').textContent = e.role_name || '';
+                confirmSelect.disabled = false;
+                confirmSelect.checked = true;
+                details.style.display = 'block';
+                // Update capture button availability if camera already started
+                const modalEl = document.getElementById('faceCameraModal');
+                const captureBtn = modalEl.querySelector('#captureFaceCam');
+                const cameraReady = !!faceCamStream;
+                captureBtn.disabled = !(cameraReady && confirmSelect.checked);
+            } catch (err) {
+                console.error('Preload error:', err);
+                alert('Failed to load employee details');
             }
         }
         // Pagination controls rendering
@@ -834,6 +1142,10 @@
             
             // Initial render of employees
             renderEmployees();
+
+            // Register Facial button (standalone modal)
+            const openRegFacialBtn = document.getElementById('openRegisterFacial');
+            openRegFacialBtn?.addEventListener('click', () => openFaceCameraModal());
         });
 
         // Save new employee function
@@ -862,7 +1174,26 @@
                 });
 
                 if (response.ok) {
-                    alert("Employee added successfully!");
+                    const created = await response.json().catch(() => null);
+                    const newEmployeeId = created?.employee_id || created?.employeeId;
+                    // Enforce face capture when "Register now" is selected
+                    const faceNow = document.getElementById('faceNowOption')?.checked;
+                    if (faceNow && !pendingNewEmpFaceBlob) {
+                        alert('Please capture a face photo before saving, or choose "To follow".');
+                        return;
+                    }
+                    // If camera capture exists, enroll it
+                    if (pendingNewEmpFaceBlob && newEmployeeId) {
+                        try {
+                            await uploadEmployeeFace(newEmployeeId, pendingNewEmpFaceBlob);
+                            alert('✅ Face enrolled successfully');
+                        } catch (err) {
+                            console.error('Face enroll failed:', err);
+                            alert('⚠️ Employee created, but face enrollment failed. You can register later from the list.');
+                        }
+                    } else {
+                        alert("Employee added successfully!");
+                    }
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addEmployeeModal'));
                     modal.hide();
                     // Clear the form fields
@@ -877,6 +1208,15 @@
                     document.getElementById('emergency_contact_relationship').value = '';
                     document.getElementById('emergency_contact_phone').value = '';
                     document.getElementById('roleSelect').value = '';
+                    // Close camera if open
+                    if (newEmpCameraStream) {
+                        newEmpCameraStream.getTracks().forEach(t => t.stop());
+                        newEmpCameraStream = null;
+                        newEmpFaceVideo.srcObject = null;
+                        newEmpFaceVideo.style.display = 'none';
+                        captureNewEmpFaceBtn.disabled = true;
+                        closeNewEmpCameraBtn.disabled = true;
+                    }
                     renderEmployees();
                 } else {
                     const error = await response.json();

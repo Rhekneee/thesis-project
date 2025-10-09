@@ -416,6 +416,19 @@
               </select>
           </div>
 
+          <h3>Facial Recognition</h3>
+          <div class="form-group">
+              <label>Register Face:</label>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="button" id="openNewEmpCamera">Open Camera</button>
+                <button type="button" id="captureNewEmpFace" disabled>Capture</button>
+                <button type="button" id="closeNewEmpCamera" disabled>Close Camera</button>
+                <small>(or upload file)</small>
+                <input type="file" id="faceImage" name="face_image" accept="image/*" />
+              </div>
+              <video id="newEmpFaceVideo" autoplay playsinline style="width:100%; max-height:220px; display:none; border:1px solid #ccc; border-radius:4px;"></video>
+          </div>
+
           <button type="submit">Add Employee</button>
       </form>
   </div>
@@ -524,6 +537,14 @@ const employeeList = document.getElementById("employeeList");
 const addModal = document.getElementById('employeeModal');
 const addEmployeeBtn = document.getElementById('add-employee-btn');
 const closeAddModal = document.getElementById('closeModal');
+const employeeForm = document.getElementById('employeeForm');
+const faceImageInput = document.getElementById('faceImage');
+const openNewEmpCameraBtn = document.getElementById('openNewEmpCamera');
+const captureNewEmpFaceBtn = document.getElementById('captureNewEmpFace');
+const closeNewEmpCameraBtn = document.getElementById('closeNewEmpCamera');
+const newEmpFaceVideo = document.getElementById('newEmpFaceVideo');
+let newEmpCameraStream = null;
+let pendingNewEmpFaceBlob = null;
 
 // Show the modal when "Add Employee" button is clicked
 addEmployeeBtn.addEventListener('click', () => {
@@ -541,6 +562,138 @@ window.addEventListener('click', (e) => {
         addModal.style.display = 'none'; // Close modal if clicked outside
     }
 });
+
+// 🔹 New Employee Camera controls
+openNewEmpCameraBtn.addEventListener('click', async () => {
+  try {
+    pendingNewEmpFaceBlob = null;
+    newEmpCameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    newEmpFaceVideo.srcObject = newEmpCameraStream;
+    newEmpFaceVideo.style.display = 'block';
+    captureNewEmpFaceBtn.disabled = false;
+    closeNewEmpCameraBtn.disabled = false;
+  } catch (err) {
+    console.error('Camera error:', err);
+    alert('Unable to access camera. Please allow camera permissions or use file upload.');
+  }
+});
+
+captureNewEmpFaceBtn.addEventListener('click', async () => {
+  if (!newEmpCameraStream) return;
+  const trackSettings = newEmpCameraStream.getVideoTracks()[0]?.getSettings?.() || {};
+  const width = newEmpFaceVideo.videoWidth || trackSettings.width || 640;
+  const height = newEmpFaceVideo.videoHeight || trackSettings.height || 480;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(newEmpFaceVideo, 0, 0, width, height);
+  await new Promise(resolve => canvas.toBlob((blob) => { pendingNewEmpFaceBlob = blob; resolve(); }, 'image/jpeg', 0.9));
+  alert('Face captured. Submit the form to enroll.');
+});
+
+closeNewEmpCameraBtn.addEventListener('click', () => {
+  if (newEmpCameraStream) {
+    newEmpCameraStream.getTracks().forEach(t => t.stop());
+    newEmpCameraStream = null;
+  }
+  newEmpFaceVideo.srcObject = null;
+  newEmpFaceVideo.style.display = 'none';
+  captureNewEmpFaceBtn.disabled = true;
+  closeNewEmpCameraBtn.disabled = true;
+});
+// 🔹 Handle Add Employee form submit (with optional face enrollment)
+employeeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(employeeForm);
+    const payload = {
+        email: formData.get('email'),
+        full_name: formData.get('full_name'),
+        contact: formData.get('contact'),
+        address: formData.get('address'),
+        birthday: formData.get('birthday'),
+        employment_status: formData.get('employment_status'),
+        educational_background: formData.get('educational_background'),
+        emergency_contact_name: formData.get('emergency_contact_name'),
+        emergency_contact_relationship: formData.get('emergency_contact_relationship'),
+        emergency_contact_phone: formData.get('emergency_contact_phone'),
+        role_id: formData.get('role_id')
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/employees`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+            alert(`❌ Failed to add employee: ${result.error || result.message || 'Unknown error'}`);
+            return;
+        }
+
+        // result should contain { user_id, employee_id }
+        const newEmployeeId = result.employee_id || result?.employeeId || payload.employee_id;
+        alert('✅ Employee added successfully');
+
+        // If camera capture exists, enroll it; else if file provided, enroll file
+        if (pendingNewEmpFaceBlob && newEmployeeId) {
+            try {
+                await uploadEmployeeFace(newEmployeeId, pendingNewEmpFaceBlob);
+                alert('✅ Face enrolled successfully');
+            } catch (err) {
+                console.error('Face enroll failed:', err);
+                alert('⚠️ Employee created, but face enrollment failed. You can register later from the list.');
+            }
+        } else {
+          const faceFile = faceImageInput.files && faceImageInput.files[0];
+          if (faceFile && newEmployeeId) {
+            try {
+                await uploadEmployeeFace(newEmployeeId, faceFile);
+                alert('✅ Face enrolled successfully');
+            } catch (err) {
+                console.error('Face enroll failed:', err);
+                alert('⚠️ Employee created, but face enrollment failed. You can register later from the list.');
+            }
+          }
+        }
+
+        employeeForm.reset();
+        addModal.style.display = 'none';
+        // Close camera if open
+        if (newEmpCameraStream) {
+          newEmpCameraStream.getTracks().forEach(t => t.stop());
+          newEmpCameraStream = null;
+          newEmpFaceVideo.srcObject = null;
+          newEmpFaceVideo.style.display = 'none';
+          captureNewEmpFaceBtn.disabled = true;
+          closeNewEmpCameraBtn.disabled = true;
+        }
+        loadEmployees('false');
+    } catch (err) {
+        console.error('Add employee error:', err);
+        alert('❌ An error occurred while adding employee');
+    }
+});
+
+async function uploadEmployeeFace(employeeId, fileOrBlob) {
+    const fd = new FormData();
+    fd.append('image', fileOrBlob, 'face.jpg');
+    const res = await fetch(`${API_URL}/employees/${employeeId}/face/enroll`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'include'
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Face enrollment failed');
+    }
+    return res.json();
+}
+
 
 
 // 🔹 Event Listeners for Filtering Employee Data
@@ -604,6 +757,7 @@ async function loadEmployees(filter) {
                         ? `<button class="restoreBtn" data-id="${emp.employee_id}">Restore</button>`
                         : `<button class="archiveBtn" data-id="${emp.employee_id}">Archive</button>`}
                     <button class="editBtn" data-id="${emp.employee_id}">Edit</button>
+                    ${!emp.is_deleted ? `<button class="registerFaceBtn" data-id="${emp.employee_id}">Register Face</button>` : ''}
                 </td>`;
 
             // Append the row to the table body
@@ -643,6 +797,15 @@ function addEmployeeActionListeners() {
             // Find the corresponding employee data and populate the form
             const employee = findEmployeeById(employeeId);  // Assume you have a function to find employee data
             populateEditForm(employee);  // Populate the edit form with employee data
+        });
+    });
+
+    // Register Face Button
+    document.querySelectorAll('.registerFaceBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const employeeId = e.target.dataset.id;
+            triggerFacePickerFor(employeeId);
         });
     });
 }
@@ -859,6 +1022,92 @@ async function findEmployeeById(employeeId) {
 
 
   </script>
+
+<!-- Camera Modal for Register Face (existing employee) -->
+<div class="modal" id="faceCameraModal">
+  <div class="modal-content">
+    <span class="close" id="closeFaceCamModal">&times;</span>
+    <h3>Register Face</h3>
+    <video id="faceCamVideo" autoplay playsinline style="width:100%; max-height:360px; border:1px solid #ccc; border-radius:4px;"></video>
+    <div style="display:flex; gap:10px;">
+      <button type="button" id="startFaceCam">Open Camera</button>
+      <button type="button" id="captureFaceCam" disabled>Capture & Enroll</button>
+      <button type="button" id="stopFaceCam" disabled>Close Camera</button>
+    </div>
+  </div>
+  </div>
+<script>
+let faceEnrollTargetEmployeeId = null;
+const faceCameraModal = document.getElementById('faceCameraModal');
+const closeFaceCamModalBtn = document.getElementById('closeFaceCamModal');
+const faceCamVideo = document.getElementById('faceCamVideo');
+const startFaceCamBtn = document.getElementById('startFaceCam');
+const captureFaceCamBtn = document.getElementById('captureFaceCam');
+const stopFaceCamBtn = document.getElementById('stopFaceCam');
+let faceCamStream = null;
+
+function triggerFacePickerFor(employeeId) {
+  faceEnrollTargetEmployeeId = employeeId;
+  faceCameraModal.style.display = 'block';
+}
+
+function closeFaceCameraModal() {
+  faceCameraModal.style.display = 'none';
+  if (faceCamStream) {
+    faceCamStream.getTracks().forEach(t => t.stop());
+    faceCamStream = null;
+  }
+  faceCamVideo.srcObject = null;
+  captureFaceCamBtn.disabled = true;
+  stopFaceCamBtn.disabled = true;
+}
+
+closeFaceCamModalBtn.addEventListener('click', closeFaceCameraModal);
+
+startFaceCamBtn.addEventListener('click', async () => {
+  try {
+    faceCamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    faceCamVideo.srcObject = faceCamStream;
+    captureFaceCamBtn.disabled = false;
+    stopFaceCamBtn.disabled = false;
+  } catch (err) {
+    console.error('Camera error:', err);
+    alert('Unable to access camera. Please allow camera permissions.');
+  }
+});
+
+captureFaceCamBtn.addEventListener('click', async () => {
+  if (!faceCamStream || !faceEnrollTargetEmployeeId) return;
+  const width = faceCamVideo.videoWidth || 640;
+  const height = faceCamVideo.videoHeight || 480;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(faceCamVideo, 0, 0, width, height);
+  await new Promise(resolve => canvas.toBlob(async (blob) => {
+    try {
+      await uploadEmployeeFace(faceEnrollTargetEmployeeId, blob);
+      alert('✅ Face enrolled successfully');
+      closeFaceCameraModal();
+    } catch (err) {
+      console.error(err);
+      alert('❌ Failed to enroll face');
+    }
+    resolve();
+  }, 'image/jpeg', 0.9));
+});
+
+stopFaceCamBtn.addEventListener('click', () => {
+  if (faceCamStream) {
+    faceCamStream.getTracks().forEach(t => t.stop());
+    faceCamStream = null;
+  }
+  faceCamVideo.srcObject = null;
+  captureFaceCamBtn.disabled = true;
+  stopFaceCamBtn.disabled = true;
+});
+</script>
   
   
 </body>

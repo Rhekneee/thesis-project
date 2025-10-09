@@ -1046,18 +1046,18 @@
                 if (data.success) {
                     // Transform API data to match expected format
                     projects = data.projects.map(project => ({
-                        id: project.proposal_id,
+                        id: project.proposal_id || project.id, // Use proposal_id for proposals, id for active projects
                         name: project.project_name,
                         developer: project.developer_company || 'Unknown Developer',
                         location: project.location,
                         submissionDate: project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A',
-                        deadline: 'N/A', // No deadline in proposals table
+                        deadline: project.end_date || 'N/A', // Use end_date for active projects
                         status: project.status,
                         manufacturingCost: project.estimated_cost || null,
                         costBreakdown: '', // No cost breakdown in proposals table
                         image: 'https://via.placeholder.com/300x200?text=No+Image', // No image in proposals table
-                        blocks: project.blocks,
-                        description: project.description
+                        blocks: project.blocks || 1, // Default blocks if not provided
+                        description: project.description || ''
                     }));
                     
                     console.log('Fetched proposals:', projects);

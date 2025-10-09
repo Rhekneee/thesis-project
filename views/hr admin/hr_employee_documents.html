@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        
+        #content {
+            margin-left: 250px; /* Match sidebar width */
+            margin-top: 60px; /* Match topbar height */
+            padding: 20px;
+            min-height: calc(100vh - 60px); /* Full height minus topbar */
+            background-color: #f8f9fa;
+            transition: margin-left 0.3s;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+        
+        .btn-icon { width: auto; height: auto; display: inline-flex; align-items: center; justify-content: center; padding: .25rem .5rem; border-radius: .25rem; }
+
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+    <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
+    </div>
+    <ul class="list-unstyled">
+        <li class="nav-item">
+            <a class="nav-item active" href="/hr/hr_admin">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance</span>
+            </a>
+            <ul class="collapse" id="Attendance">
+                <li class="nav-item">
+                    <a href="/hr/hr_daily_attendance">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Daily Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_history_attendance">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Attendance Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_leave_request">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Request Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_work_adjustment">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Work Adjustment</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Payroll Management</span>
+            </a>
+            <ul class="collapse" id="Payroll">
+                <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Employee Management</span>
+            </a>
+            <ul class="collapse" id="Employee">
+                <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Recruitment</span>
+            </a>
+            <ul class="collapse" id="Recruitment">
+                <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+            </ul>
+        </li>    
+        <li class="nav-item">
+            <a href="/hr/developers_approval">
+                <i class="fas fa-users"></i>
+                <span>Developers Approval</span>
+            </a>
+        </li>
+    </ul>
+    <!-- Move Logout outside the main ul -->
+    <div class="logout-container">
+        <a href="/logout" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+    </div>
+</div>
+        <!-- Main content area -->
+        <div id="content">
+            <!-- ========== HR Employee Documents - Pending Verification ========== -->
+            <div class="container-fluid">
+                <div class="row mb-3">
+                    <div class="col-lg-12 d-flex align-items-end justify-content-between">
+                        <div>
+                            <h2 class="mb-0">Employee Documents - Pending HR Verification</h2>
+                            <small class="text-muted">Automatically shows all documents with status "uploaded" awaiting HR review</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-secondary" type="button" onclick="loadAllPendingDocs()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div id="docsStatus" class="mb-3 text-muted">Loading pending documents...</div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle" id="pendingDocsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 34%">Employee Name</th>
+                                        <th style="width: 26%">Email</th>
+                                        <th style="width: 24%">Contact</th>
+                                        <th style="width: 16%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingDocsTbody">
+                                    <tr><td colspan="4" class="text-center text-muted">No data</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Document Details Modal -->
+        <div class="modal fade" id="documentModal" tabindex="-1" aria-labelledby="documentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="documentModalLabel">Document Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="mb-2"><strong>Employee:</strong> <span id="mdEmployeeName">-</span></div>
+                                    <div class="mb-2"><strong>Email:</strong> <span id="mdEmployeeEmail">-</span></div>
+                                    <div class="mb-2"><strong>Contact:</strong> <span id="mdEmployeeContact">-</span></div>
+                                    <div class="mb-2"><strong>Document Type:</strong> <span id="mdDocType">-</span></div>
+                                    <div class="mb-2"><strong>Other Documents:</strong>
+                                        <div id="mdOtherDocs" class="mt-1"></div>
+                                    </div>
+                                    <div class="mb-2"><strong>Status:</strong> <span id="mdStatus" class="badge bg-info text-dark">-</span></div>
+                                    <div class="mb-2"><strong>Uploaded At:</strong> <span id="mdUploadedAt">-</span></div>
+                                    <div class="mt-2" id="contractSection" style="display:none;">
+                                        <div class="mb-1 d-flex align-items-center justify-content-between">
+                                            <div><strong>Employment Contract</strong>: <span id="mdContractStatus" class="badge bg-warning text-dark">Pending</span></div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnViewContract"><i class="fas fa-file-contract me-1"></i>View Contract</button>
+                                        </div>
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <small class="text-muted" id="mdContractUploadedAt">-</small>
+                                            <button type="button" class="btn btn-info text-white btn-sm" id="btnValidateContract"><i class="fas fa-check-circle me-1"></i>Validate Contract</button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="fw-bold mb-2">Documents</div>
+                                        <div id="mdDocList" class="d-flex flex-column gap-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="border rounded p-2" style="min-height: 480px; background: #fff;">
+                                    <div id="mdPreviewContainer" class="w-100 h-100 d-flex align-items-center justify-content-center">
+                                        <span class="text-muted">No preview available</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" id="btnPrintDoc"><i class="fas fa-print me-1"></i>Print</button>
+                        <button type="button" class="btn btn-success" id="btnApproveDoc"><i class="fas fa-check me-1"></i>Approve</button>
+                        <button type="button" class="btn btn-warning" id="btnRejectSelected"><i class="fas fa-times-circle me-1"></i>Reject Selected</button>
+                        <button type="button" class="btn btn-outline-danger" id="btnRemoveDoc"><i class="fas fa-trash me-1"></i>Remove</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Approve Document Confirmation Modal -->
+        <div class="modal fade" id="approveDocConfirmModal" tabindex="-1" aria-labelledby="approveDocConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="approveDocConfirmModalLabel">Approve Document</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">Are you sure you want to approve <strong id="approveDocType">this document</strong> for <strong id="approveEmployeeName">this employee</strong>?</div>
+                        <ul class="mb-0">
+                            <li>The document status will be set to <strong>approved</strong></li>
+                            <li>If the employment contract is validated and at least one ID is approved, an email will be automatically sent to the employee</li>
+                            <li>This action cannot be undone easily</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" id="btnConfirmApproveDoc">Yes, Approve</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Modal -->
+        <div class="modal fade" id="contractModal" tabindex="-1" aria-labelledby="contractModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="contractModalLabel">Employment Contract</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="max-height: 60vh; overflow:auto; border:1px solid #e5e7eb; border-radius: .25rem; padding: 12px; background:#fff;">
+                            <div id="contractScrollablePolicies" class="policy-scrollable-content"></div>
+                        </div>
+                        <div class="mt-3" id="contractSignaturePreview" style="display:none;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Validation Confirmation Modal -->
+        <div class="modal fade" id="contractConfirmModal" tabindex="-1" aria-labelledby="contractConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="contractConfirmModalLabel">Validate Employment Contract</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">Are you sure you want to validate the employment contract for <strong id="confirmEmployeeName">this employee</strong>?</div>
+                        <ul class="mb-0">
+                            <li>Change the contract status from "uploaded" to <strong>approved</strong></li>
+                            <li>Send an onboarding approval email if all requirements are met</li>
+                            <li>This action cannot be undone easily</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmValidateContract">Yes, Validate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generic Result Modal -->
+        <div class="modal fade" id="actionResultModal" tabindex="-1" aria-labelledby="actionResultModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="actionResultModalLabel">Action Result</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="actionResultBody">Done.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script>
+        // Dynamically set API_URL based on current origin
+        const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/hr' 
+        : `${window.location.origin}/hr`;
+        // Standard onboarding document types (for display of missing docs)
+        const ALL_DOC_TYPES = [
+            "Valid ID (Driver's License/Passport)",
+            'SSS ID/Number',
+            'TIN ID/Number',
+            'PhilHealth ID/Number',
+            'Pag-IBIG ID/Number',
+            'NBI Clearance'
+        ];
+        function formatDate(dt) {
+            if (!dt) return '-';
+            try { return new Date(dt).toLocaleString(); } catch { return dt; }
+        }
+
+        async function loadAllPendingDocs() {
+            const statusEl = document.getElementById('docsStatus');
+            const tbody = document.getElementById('pendingDocsTbody');
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm me-2"></div>Loading all pending documents...</td></tr>`;
+            statusEl.textContent = 'Loading all pending documents...';
+
+            try {
+                console.log('🔍 Frontend: fetching /onboarding/pending-documents');
+                const res = await fetch(`${API_URL}/onboarding/pending-documents`, { credentials: 'include' });
+                console.log('🔍 Frontend: response ok?', res.ok, res.status, res.statusText);
+                if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+                const data = await res.json();
+                console.log('🔍 Frontend: pending docs payload', data);
+                const allPending = data.documents || [];
+                window.pendingDocs = allPending; // keep for modal/actions
+
+                if (allPending.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan=\"4\" class=\"text-center text-muted\">No documents pending verification.</td></tr>`;
+                    statusEl.textContent = 'No pending documents found.';
+                    return;
+                }
+
+                // Group by employee_id
+                const byEmployee = new Map();
+                for (const d of allPending) {
+                    const key = d.employee_id || 'unknown';
+                    if (!byEmployee.has(key)) {
+                        byEmployee.set(key, {
+                            employee_id: key,
+                            full_name: d.full_name || '-',
+                            email: d.email || '-',
+                            contact: d.contact || '-',
+                            docs: []
+                        });
+                    }
+                    const g = byEmployee.get(key);
+                    g.docs.push(d);
+                    if ((!g.email || g.email === '-') && d.email) g.email = d.email;
+                    if ((!g.contact || g.contact === '-') && d.contact) g.contact = d.contact;
+                }
+
+                const groups = Array.from(byEmployee.values()).sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
+                window.pendingGroups = groups;
+
+                // Fetch authoritative email/contact from employees table for each group
+                try {
+                    await Promise.all(groups.map(async (g) => {
+                        if (!g.employee_id || g.employee_id === 'unknown') return;
+                        try {
+                            const empRes = await fetch(`${API_URL}/employees/${encodeURIComponent(g.employee_id)}`, { credentials: 'include' });
+                            if (empRes.ok) {
+                                const emp = await empRes.json();
+                                g.email = emp.email || g.email;
+                                g.contact = emp.contact || g.contact;
+                            }
+                        } catch {}
+                    }));
+                } catch {}
+
+                tbody.innerHTML = groups.map((g, idx) => `
+                    <tr>
+                        <td>${g.full_name || '-'}</td>
+                        <td>${g.email || '-'}</td>
+                        <td>${g.contact || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-icon" title="Details" onclick="openGroupModal(${idx})"><i class="fas fa-eye"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                statusEl.textContent = `Showing ${allPending.length} pending document(s) across ${groups.length} employee(s).`;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan=\"4\" class=\"text-center text-danger\">Failed to load documents: ${err.message}</td></tr>`;
+                statusEl.textContent = 'Error loading documents.';
+            }
+        }
+
+        // Auto load on page ready
+        document.addEventListener('DOMContentLoaded', loadAllPendingDocs);
+        
+        let currentGroupIndex = null;
+        let currentDocIndex = null;
+        
+        function getDocId(doc) {
+            return doc?.id || doc?.document_id || doc?.documentId;
+        }
+
+        function fileUrl(doc) {
+            if (!doc?.file_path) return null;
+            return `/uploads/onboarding/${encodeURIComponent(doc.file_path)}`;
+        }
+
+        function renderPreview(doc) {
+            const container = document.getElementById('mdPreviewContainer');
+            const url = fileUrl(doc);
+            container.innerHTML = '';
+            if (!url) {
+                container.innerHTML = '<span class="text-muted">No file to preview</span>';
+                return;
+            }
+            const lower = url.toLowerCase();
+            if (lower.endsWith('.pdf')) {
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.className = 'w-100';
+                iframe.style.minHeight = '460px';
+                iframe.id = 'docPreviewFrame';
+                container.appendChild(iframe);
+            } else if (lower.match(/\.(png|jpg|jpeg|gif|webp)$/)) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'img-fluid';
+                img.style.maxHeight = '460px';
+                img.alt = 'Document Image';
+                img.id = 'docPreviewImage';
+                container.appendChild(img);
+            } else {
+                container.innerHTML = `<a href="${url}" target="_blank" class="btn btn-outline-primary"><i class="fas fa-external-link-alt me-1"></i>Open Document</a>`;
+            }
+        }
+
+        let selectedDocIndexes = new Set();
+        let filteredIndexMap = [];
+
+        function renderDocList(group) {
+            const list = document.getElementById('mdDocList');
+            list.innerHTML = '';
+            const contractIdx = group.docs.findIndex(d => (d.document_type || '').toLowerCase().includes('employment contract'));
+            // Build filtered docs excluding contract
+            const filtered = group.docs
+                .slice()
+                .sort((a,b) => new Date(b.uploaded_at||0) - new Date(a.uploaded_at||0))
+                .filter(d => !((d.document_type || '').toLowerCase().includes('employment contract')));
+            // Map filtered indexes to original indexes for bulk ops
+            filteredIndexMap = filtered.map(fd => group.docs.findIndex(orig => orig === fd));
+
+            filtered.forEach((d, i) => {
+                const row = document.createElement('div');
+                row.className = 'd-flex align-items-center gap-2';
+
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = selectedDocIndexes.has(i);
+                cb.onchange = (e) => {
+                    if (e.target.checked) selectedDocIndexes.add(i); else selectedDocIndexes.delete(i);
+                };
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm ' + (i === currentDocIndex ? 'btn-primary' : 'btn-outline-primary');
+                btn.textContent = `${d.document_type || 'Document'} (${new Date(d.uploaded_at||Date.now()).toLocaleDateString()})`;
+                btn.onclick = () => {
+                    currentDocIndex = i;
+                    updateModalForCurrent();
+                };
+
+                row.appendChild(cb);
+                row.appendChild(btn);
+                list.appendChild(row);
+            });
+        }
+
+        function updateModalForCurrent() {
+            const group = window.pendingGroups?.[currentGroupIndex];
+            if (!group) return;
+            // Determine current doc from filtered list mapping
+            const effectiveIdx = filteredIndexMap[currentDocIndex] ?? currentDocIndex;
+            const doc = group.docs[effectiveIdx];
+            document.getElementById('documentModalLabel').textContent = `Documents for ${group.full_name || ''}`;
+            document.getElementById('mdEmployeeName').textContent = group.full_name || '-';
+            document.getElementById('mdEmployeeEmail').textContent = group.email || '-';
+            document.getElementById('mdEmployeeContact').textContent = group.contact || '-';
+            document.getElementById('mdDocType').textContent = doc.document_type || '-';
+            document.getElementById('mdStatus').textContent = (doc.status || '-').toUpperCase();
+            document.getElementById('mdUploadedAt').textContent = formatDate(doc.uploaded_at);
+
+            // Render missing docs (not found in system) as orange badges
+            const uploadedTypes = new Set(group.docs.map(d => d.document_type).filter(Boolean));
+            const other = ALL_DOC_TYPES.filter(t => !uploadedTypes.has(t));
+            const otherWrap = document.getElementById('mdOtherDocs');
+            if (otherWrap) {
+                otherWrap.innerHTML = other.length
+                    ? other.map(o => `<span class="badge bg-warning text-dark me-1 mb-1">${o}</span>`).join('')
+                    : '<span class="text-muted">None</span>';
+            }
+            // Show contract section if contract exists for this employee
+            const contractDoc = group.docs.find(d => (d.document_type || '').toLowerCase().includes('employment contract'));
+            const contractSection = document.getElementById('contractSection');
+            if (contractSection) {
+                if (contractDoc) {
+                    contractSection.style.display = 'block';
+                    const cStatus = (contractDoc.status || 'pending').toUpperCase();
+                    document.getElementById('mdContractStatus').textContent = cStatus;
+                    document.getElementById('mdContractUploadedAt').textContent = formatDate(contractDoc.uploaded_at);
+                    // Store current contract id on the validate button for use
+                    document.getElementById('btnValidateContract').dataset.contractId = getDocId(contractDoc) || '';
+                    // Attach view handler
+                    document.getElementById('btnViewContract').onclick = () => openContractInline(group.employee_id || group.employeeId);
+                } else {
+                    contractSection.style.display = 'none';
+                }
+            }
+            renderDocList(group);
+            renderPreview(doc);
+        }
+
+        window.openGroupModal = async function(index) {
+            if (!window.pendingGroups || !window.pendingGroups[index]) return;
+            currentGroupIndex = index;
+            currentDocIndex = 0;
+            const group = window.pendingGroups[index];
+
+            if ((!group.email || group.email === '-') || (!group.contact || group.contact === '-')) {
+                try {
+                    const res = await fetch(`${API_URL}/employees/${encodeURIComponent(group.employee_id)}`, { credentials: 'include' });
+                    if (res.ok) {
+                        const emp = await res.json();
+                        group.email = emp.email || group.email;
+                        group.contact = emp.contact || group.contact;
+                    }
+                } catch {}
+            }
+
+            updateModalForCurrent();
+            const modal = new bootstrap.Modal(document.getElementById('documentModal'));
+            modal.show();
+        }
+
+        document.getElementById('btnApproveDoc').addEventListener('click', showApproveDocConfirm);
+
+        document.getElementById('btnConfirmApproveDoc').addEventListener('click', async () => {
+            const modalEl = document.getElementById('approveDocConfirmModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            try {
+                const res = await fetch(`${API_URL}/onboarding/documents/${pendingApproveDocId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'approved', remarks: '' })
+                });
+                if (!res.ok) throw new Error('Failed to approve');
+                instance?.hide();
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Document approved successfully!';
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+                await loadAllPendingDocs();
+                bootstrap.Modal.getInstance(document.getElementById('documentModal'))?.hide();
+            } catch (e) {
+                instance?.hide();
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Approve failed: ' + (e?.message || e);
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+            }
+        });
+
+        document.getElementById('btnPrintDoc').addEventListener('click', () => {
+            const group = window.pendingGroups?.[currentGroupIndex];
+            const doc = group ? group.docs[currentDocIndex] : null;
+            const iframe = document.getElementById('docPreviewFrame');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                return;
+            }
+            const img = document.getElementById('docPreviewImage');
+            if (img) {
+                const w = window.open('');
+                if (!w) return;
+                w.document.write(`<img src="${img.src}" style="max-width:100%" />`);
+                w.document.close();
+                w.focus();
+                w.print();
+                w.close();
+                return;
+            }
+            const url = doc ? fileUrl(doc) : null;
+            if (url) window.open(url, '_blank')?.print();
+        });
+
+        document.getElementById('btnRemoveDoc').addEventListener('click', async () => {
+            const group = window.pendingGroups?.[currentGroupIndex];
+            if (!group) return;
+            const doc = group.docs[currentDocIndex];
+            const docId = getDocId(doc);
+            if (!docId) return alert('Document ID not found');
+            if (!confirm('Remove this document? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`${API_URL}/onboarding/documents/${docId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                if (!res.ok) throw new Error('Failed to remove');
+                await loadAllPendingDocs();
+                bootstrap.Modal.getInstance(document.getElementById('documentModal'))?.hide();
+            } catch (e) {
+                alert('Remove failed: ' + e.message);
+            }
+        });
+        
+        async function bulkUpdateSelected(status) {
+            const group = window.pendingGroups?.[currentGroupIndex];
+            if (!group) return;
+            const indices = Array.from(selectedDocIndexes);
+            if (indices.length === 0) return alert('No documents selected');
+            try {
+                for (const i of indices) {
+                    const origIdx = filteredIndexMap[i] ?? i;
+                    const d = group.docs[origIdx];
+                    const id = getDocId(d);
+                    if (!id) continue;
+                    await fetch(`${API_URL}/onboarding/documents/${id}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ status, remarks: '' })
+                    });
+                }
+                // refresh and keep modal open
+                await loadAllPendingDocs();
+                // Re-open current group modal
+                openGroupModal(currentGroupIndex);
+                // Trigger onboarding approval email for this employee (server can dedupe)
+                try {
+                    const group = window.pendingGroups?.[currentGroupIndex];
+                    if (group && group.email && group.employee_id) {
+                        await fetch(`${API_URL}/onboarding/notify/${encodeURIComponent(group.employee_id)}`, { method: 'POST', credentials: 'include' });
+                    }
+                } catch {}
+            } catch (e) {
+                alert(`Bulk ${status} failed: ` + e.message);
+            }
+        }
+
+        document.getElementById('btnRejectSelected').addEventListener('click', () => bulkUpdateSelected('rejected'));
+        document.getElementById('btnValidateContract').addEventListener('click', showValidateContractConfirm);
+
+        let pendingContractId = null;
+
+        function showValidateContractConfirm() {
+            const btn = document.getElementById('btnValidateContract');
+            const id = btn?.dataset?.contractId;
+            if (!id) {
+                // Show result modal instead of alert
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Document ID not found';
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+                return;
+            }
+            pendingContractId = id;
+            const group = window.pendingGroups?.[currentGroupIndex];
+            const employeeName = group?.full_name || 'this employee';
+            const nameEl = document.getElementById('confirmEmployeeName');
+            if (nameEl) nameEl.textContent = employeeName;
+            new bootstrap.Modal(document.getElementById('contractConfirmModal')).show();
+        }
+
+        document.getElementById('btnConfirmValidateContract').addEventListener('click', async () => {
+            const modalEl = document.getElementById('contractConfirmModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            try {
+                const res = await fetch(`${API_URL}/onboarding/documents/${pendingContractId}/validate`, { method: 'PUT', credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to validate');
+                // Close confirm modal
+                instance?.hide();
+                // Show success in result modal
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Employment contract validated successfully!';
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+                await loadAllPendingDocs();
+                openGroupModal(currentGroupIndex);
+            } catch (e) {
+                // Close confirm modal and show error
+                instance?.hide();
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Validate failed: ' + (e?.message || e);
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+            }
+        });
+
+        async function openContractInline(employeeId) {
+            try {
+                const preview = document.getElementById('mdPreviewContainer');
+                if (preview) preview.innerHTML = '<div class="text-muted">Loading contract...</div>';
+                // Load signature for this employee
+                const res = await fetch(`${API_URL}/onboarding/contract/status/${encodeURIComponent(employeeId)}`, { credentials: 'include' });
+                let signatureData = null;
+                if (res.ok) signatureData = await res.json();
+                // Load policies HTML from the pre-onboarding form and extract the scrollable policies content
+                let policiesHtml = null;
+                try {
+                    const resp = await fetch('/hr/onboarding-form', { credentials: 'include' });
+                    if (resp.ok) {
+                        const html = await resp.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const policyEl = doc.querySelector('.policy-scrollable-content');
+                        if (policyEl) policiesHtml = policyEl.innerHTML;
+                    }
+                } catch {}
+                const content = document.createElement('div');
+                content.innerHTML = `
+                    <div style="max-height: 460px; overflow:auto; border:1px solid #e5e7eb; border-radius: .25rem; padding: 12px; background:#fff;">
+                        <div class="policy-scrollable-content">${policiesHtml || '<div class="text-muted">Policies content unavailable.</div>'}</div>
+                        <div class="mt-4 pt-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div style="margin-right:16px;">Employee Signature</div>
+                                <div style="flex:1; border-bottom:2px solid #999; min-height:40px; display:flex; align-items:center; justify-content:center;" id="inlineContractSig"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (preview) {
+                    preview.innerHTML = '';
+                    preview.appendChild(content);
+                    const sig = document.getElementById('inlineContractSig');
+                    if (sig) {
+                        if (signatureData && signatureData.signature_path) {
+                            const img = document.createElement('img');
+                            img.src = `/uploads/signatures/${encodeURIComponent(signatureData.signature_path)}`;
+                            img.alt = 'Digital Signature';
+                            img.style.maxHeight = '36px';
+                            img.style.objectFit = 'contain';
+                            sig.appendChild(img);
+                        }
+                    }
+                }
+            } catch (e) {
+                alert('Unable to load contract: ' + (e.message || e));
+            }
+        }
+        
+    </script>
+    <!-- Add side_top.js -->
+    <script src="/public/js/side_top.js"></script>
+</body>
+
+</html>

@@ -64,45 +64,166 @@
     <div class="panorama-container">
       <div id="panorama"></div>
     </div>
+    
+    <!-- Hotspot Controls -->
+    <div style="position: fixed; top: 100px; right: 20px; z-index: 1000;">
+      <button id="editHotspots" class="btn btn-primary" onclick="toggleHotspotEdit()">
+        <i class="bi bi-plus-circle"></i> Edit Hotspots
+      </button>
+    </div>
   
     <script>
-      pannellum.viewer('panorama', {
+      let viewer;
+      let isEditMode = false;
+      let currentScene = 'room1';
+
+      // Initialize the viewer
+      viewer = pannellum.viewer('panorama', {
         "default": {
-          "firstScene": "room1", // Start with Room 1
-          "sceneFadeDuration": 1000, // Scene transition duration
+          "firstScene": "room1",
+          "sceneFadeDuration": 1000,
         },
 
         "scenes": {
           "room1": {
             "title": "Room 1",
             "type": "equirectangular",
-            "panorama": "/image/room1.jpg",
+            "panorama": "/image/20251003_131026_592.jpg",
             "hotSpots": [
               {
                 "pitch": 0,
-                "yaw": 165, // Position of the hotspot on Room 1 image
+                "yaw": 5000,
                 "type": "scene",
-                "text": "Go to Room 2", // Text for the hotspot
-                "sceneId": "room2" // Target scene when clicked
+                "text": "Go to Room 2",
+                "sceneId": "room2"
               }
             ]
           },
           "room2": {
             "title": "Room 2",
             "type": "equirectangular",
-            "panorama": "/image/room2.jpeg", // Image for Room 2 from public/images
+            "panorama": "/image/20251003_131037_674.jpg",
             "hotSpots": [
               {
                 "pitch": 0,
-                "yaw": -100, // Position of the hotspot on Room 2 image
+                "yaw": -100,
                 "type": "scene",
-                "text": "Back to Room 1", // Text for the hotspot
-                "sceneId": "room1" // Target scene when clicked
+                "text": "Back to Room 1",
+                "sceneId": "room1"
               }
             ]
           }
         }
       });
+
+      // Track current scene
+      viewer.on('scenechange', function() {
+        currentScene = viewer.getScene();
+      });
+
+      // Toggle hotspot editing mode
+      function toggleHotspotEdit() {
+        isEditMode = !isEditMode;
+        const button = document.getElementById('editHotspots');
+        
+        if (isEditMode) {
+          button.innerHTML = '<i class="bi bi-check-circle"></i> Save Hotspots';
+          button.classList.remove('btn-primary');
+          button.classList.add('btn-success');
+          enableHotspotEditing();
+        } else {
+          button.innerHTML = '<i class="bi bi-plus-circle"></i> Edit Hotspots';
+          button.classList.remove('btn-success');
+          button.classList.add('btn-primary');
+          disableHotspotEditing();
+        }
+      }
+
+      // Enable hotspot editing
+      function enableHotspotEditing() {
+        const container = document.getElementById('panorama');
+        
+        // Add click listener to the panorama container
+        container.addEventListener('click', addHotspotOnClick);
+        
+        // Show instructions
+        showInstructions();
+      }
+
+      // Disable hotspot editing
+      function disableHotspotEditing() {
+        const container = document.getElementById('panorama');
+        container.removeEventListener('click', addHotspotOnClick);
+        hideInstructions();
+      }
+
+      // Add hotspot when clicking on the panorama
+      function addHotspotOnClick(event) {
+        if (!isEditMode) return;
+        
+        // Get the click position relative to the panorama
+        const rect = event.target.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Convert screen coordinates to panorama coordinates
+        const coords = viewer.mouseEventToCoords(event);
+        
+        // Prompt for hotspot details
+        const hotspotText = prompt('Enter hotspot text:');
+        if (!hotspotText) return;
+        
+        const targetScene = prompt('Enter target scene ID (room1, room2, etc.):');
+        if (!targetScene) return;
+        
+        // Add the hotspot
+        viewer.addHotSpot({
+          pitch: coords.pitch,
+          yaw: coords.yaw,
+          type: 'scene',
+          text: hotspotText,
+          sceneId: targetScene
+        }, currentScene);
+        
+        console.log('Added hotspot at:', coords);
+      }
+
+      // Show editing instructions
+      function showInstructions() {
+        const instructions = document.createElement('div');
+        instructions.id = 'editingInstructions';
+        instructions.style.cssText = `
+          position: fixed;
+          top: 150px;
+          right: 20px;
+          background: rgba(0,0,0,0.8);
+          color: white;
+          padding: 15px;
+          border-radius: 5px;
+          z-index: 1001;
+          max-width: 200px;
+        `;
+        instructions.innerHTML = `
+          <h6>Editing Mode</h6>
+          <p>Click anywhere on the panorama to add a hotspot.</p>
+          <small>You'll be prompted for text and target scene.</small>
+        `;
+        document.body.appendChild(instructions);
+      }
+
+      // Hide editing instructions
+      function hideInstructions() {
+        const instructions = document.getElementById('editingInstructions');
+        if (instructions) {
+          instructions.remove();
+        }
+      }
+
+      // Add Bootstrap CSS for the button
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css';
+      document.head.appendChild(link);
     </script>
 </body>
 </html>
