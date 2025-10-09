@@ -166,24 +166,29 @@ const sendEmployeeAccountNotification = async (to, username, password, link) => 
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: to,
-            subject: 'Welcome to MDB Construction – Your Employee Account Details',
+            subject: 'Welcome to MDB Construction – Your Temporary Account Details',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #4f6ef5;">Welcome to MDB Construction!</h2>
                     <p>Dear New Employee,</p>
-                    <p>We are excited to welcome you to the team! Your employee account has been created. Please find your login credentials below. For your security, we recommend changing your password after your first login.</p>
+                    <p>We are excited to welcome you to the team! Your temporary employee account has been created. Please find your login credentials below. <strong>This is a temporary account for onboarding purposes.</strong></p>
                     <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <p style="margin: 5px 0;"><strong>Username:</strong> ${username}</p>
+                        <p style="margin: 5px 0;"><strong>Login Username:</strong> ${username}</p>
                         <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
                     </div>
                     <p>You can access the employee portal here:<br>
                         <a href="${link}" style="color: #4f6ef5;">${link}</a>
                     </p>
-                    <ul style="margin: 16px 0 16px 20px; color: #374151;">
-                        <li>Log in using the credentials above.</li>
-                        <li>Change your password immediately after logging in for the first time.</li>
-                        <li>Keep your login information confidential and do not share it with others.</li>
-                    </ul>
+                    <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                        <h4 style="color: #856404; margin-top: 0;">Important: Onboarding Process</h4>
+                        <ul style="margin: 10px 0; color: #856404;">
+                            <li>Log in using your email address and the temporary password above</li>
+                            <li>Complete your onboarding process</li>
+                            <li>After onboarding completion, you can also log in using your Employee ID</li>
+                            <li>You can change your password after your first login</li>
+                            <li>Keep your login information confidential and do not share it with others</li>
+                        </ul>
+                    </div>
                     <p>If you have any questions or require assistance, please contact our HR team.</p>
                     <br>
                     <p>We look forward to working with you!</p>
@@ -426,6 +431,52 @@ const sendPurchaseEstimationRejection = async ({ to, supplierName, purchaseId, m
     }
 };
 
+const sendOnboardingApprovalNotification = async (to, employeeId, defaultPassword = 'default123') => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: 'Onboarding Documents Approved – Your Login Credentials',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4f6ef5;">Onboarding Documents Approved</h2>
+                    <p>Dear Employee,</p>
+                    <p>Congratulations! Your onboarding documents have been approved and validated. Your permanent employee account is now active.</p>
+                    
+                    <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4f6ef5;">
+                        <h3 style="color: #4f6ef5; margin-top: 0;">Your Login Credentials</h3>
+                        <p style="margin: 8px 0;"><strong>Employee ID (Username):</strong> ${employeeId}</p>
+                        <p style="margin: 8px 0;"><strong>Default Password:</strong> ${defaultPassword}</p>
+                    </div>
+                    
+                    <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px 16px;border-radius:4px;color:#7c2d12;margin:16px 0;">
+                        <p style="margin: 0; font-weight: 600;">Important Security Notice:</p>
+                        <ul style="margin: 8px 0 0 20px; padding: 0;">
+                            <li>Please change your password immediately after first login</li>
+                            <li>Keep your login credentials confidential</li>
+                            <li>Do not share your password with anyone</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="background:#d1ecf1;border-left:4px solid #17a2b8;padding:12px 16px;border-radius:4px;color:#0c5460;margin:16px 0;">
+                        <strong>Next Steps:</strong> You can now log in to the system using your Employee ID and the default password above. Please report to the HR office for any additional onboarding requirements.
+                    </p>
+                    
+                    <br>
+                    <p>Welcome to the team!</p>
+                    <p>Best regards,<br>HR Department<br>M.D. Buendia Construction Inc.</p>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        if (process.env.NODE_ENV === 'development') console.debug('Onboarding approval email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending onboarding approval email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
@@ -434,5 +485,6 @@ module.exports = {
     sendEmployeeAccountNotification,
     sendDeveloperApprovalNotification,
     sendManualSupplierWelcome,
-    sendPurchaseEstimationRejection
+    sendPurchaseEstimationRejection,
+    sendOnboardingApprovalNotification
 }; 

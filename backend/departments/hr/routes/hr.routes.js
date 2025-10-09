@@ -9,6 +9,7 @@
     const path = require('path');
     const fs = require('fs');
     const multer = require('multer');
+    const faceUpload = multer({ dest: path.join(__dirname, '..', '..', '..', 'uploads', 'onboarding') });
 
     // Configure multer for onboarding document uploads
     const onboardingStorage = multer.diskStorage({
@@ -42,12 +43,55 @@
         }
     }).single('file');
 
+    // Configure multer for bulk onboarding document uploads
+    const bulkOnboardingUpload = multer({
+        storage: onboardingStorage,
+        limits: {
+            fileSize: 5 * 1024 * 1024 // 5MB limit per file
+        },
+        fileFilter: function (req, file, cb) {
+            // Accept only PDF and image files
+            if (!file.originalname.match(/\.(pdf|jpg|jpeg|png)$/)) {
+                return cb(new Error('Only PDF, JPG, JPEG, and PNG files are allowed!'), false);
+            }
+            cb(null, true);
+        }
+    }).any(); // Accept any number of files with any field names
+
+    // Configure multer for signature uploads
+    const signatureStorage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'signatures');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            cb(null, uploadDir);
+        },
+        filename: function (req, file, cb) {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, `signature_${uniqueSuffix}${path.extname(file.originalname) || '.png'}`);
+        }
+    });
+    const signatureUpload = multer({
+        storage: signatureStorage,
+        limits: { fileSize: 2 * 1024 * 1024 }, // 2MB should be plenty for signatures
+        fileFilter: function (req, file, cb) {
+            if (!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
+                return cb(new Error('Only PNG/JPG signatures are allowed!'), false);
+            }
+            cb(null, true);
+        }
+    });
+
     // 🔹 Employee Management
     router.get('/employees', authMiddleware.verifySession, HRController.getAllEmployees);         // Get all employees
     router.post('/employees', authMiddleware.verifySession, HRController.addEmployee);            // Add new employee
     router.get('/employees/:id', authMiddleware.verifySession, HRController.getEmployeeDetails);  // Get employee details
     router.put('/employees/:id', authMiddleware.verifySession, HRController.updateEmployee);      // Update employee
     router.put('/employees/:id/contact', authMiddleware.verifySession, HRController.updateEmployeeContact); // Update employee contact info
+
+    // 🔹 Facial Recognition Enrollment
+    router.post('/employees/:employeeId/face/enroll', authMiddleware.verifySession, faceUpload.single('image'), HRController.enrollEmployeeFace);
 
     // 🔹 Permission Management
     router.get('/roles', authMiddleware.verifySession, HRController.getRoles);    // Get all roles/permissions
@@ -58,8 +102,15 @@
     
 
     // 🔹 Attendance Management
-// 🔹 Check-in attendance for the employee
-    router.post('/check-in/:id', HRController.checkInAttendance);
+    // For check-in with optional face image, accept multipart via multer.memoryStorage
+    const memoryStorage = multer({ storage: multer.memoryStorage() });
+    router.post('/check-in/:id', memoryStorage.single('image'), HRController.checkInAttendance);
+
+    // 🔹 Facial verification for attendance (separate endpoint)
+    router.post('/verify-face/:userId', memoryStorage.single('image'), HRController.verifyFaceForAttendance);
+
+    // 🔹 Complete attendance after facial verification
+    router.post('/complete-attendance/:userId', HRController.completeAttendanceAfterVerification);
 
     // 🔹 Check-out attendance for the employee
     router.post('/check-out/:id', HRController.checkOutAttendance);
@@ -247,6 +298,21 @@
     router.post('/developers/:id/approve', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.approveDeveloper);
     router.post('/developers/:id/reject', authMiddleware.verifySession, authMiddleware.verifyHRRole, HRController.rejectDeveloper);
 
+    // Submit all onboarding documents at once
+    router.post('/onboarding/submit-all', authMiddleware.verifySession, bulkOnboardingUpload, HRController.submitAllOnboardingDocuments);
+
+    // Sign employment contract (company policies acknowledgment)
+    router.post('/onboarding/contract/sign', authMiddleware.verifySession, signatureUpload.single('signature'), HRController.signContract);
+    // Get contract signature status for current user
+    router.get('/onboarding/contract/status', authMiddleware.verifySession, HRController.getContractStatus);
+    // HR: Get contract status for a specific employee
+    router.get('/onboarding/contract/status/:employeeId', authMiddleware.verifySession, HRController.getContractStatusByEmployee);
+    // Validate a contract document (HR action)
+    router.put('/onboarding/documents/:documentId/validate', authMiddleware.verifySession, HRController.validateContract);
+
+    // Complete onboarding transition
+    router.post('/complete-onboarding', authMiddleware.verifySession, HRController.completeOnboarding);
+
     // Pre-onboarding Documents Routes
     router.get('/onboarding/documents/:employeeId', authMiddleware.verifySession, HRController.getPreOnboardingDocuments);
     router.post('/onboarding/upload/:employeeId/:documentType', authMiddleware.verifySession, onboardingUpload, HRController.uploadPreOnboardingDocument);
@@ -272,6 +338,8 @@
     
     // Get onboarding documents for employee
     router.get('/onboarding/documents/:employeeId', authMiddleware.verifySession, HRController.getOnboardingDocuments);
+    // Get all pending (status='uploaded') onboarding documents
+    router.get('/onboarding/pending-documents', authMiddleware.verifySession, HRController.getAllPendingOnboardingDocuments);
     
     // Upload onboarding document
     router.post('/onboarding/upload/:employeeId/:documentType', authMiddleware.verifySession, onboardingUpload, HRController.uploadOnboardingDocument);
@@ -344,5 +412,14 @@
     router.get('/onboarding-form', (req, res) => {
         res.sendFile(path.join(__dirname, '../../../../views/pre_onboarding_form.html'));
     });
+
+    // Employee distribution by department
+    router.get('/employee-distribution', authMiddleware.verifySession, HRController.getEmployeeDistribution);
+
+    // Attendance trend (week/month/year)
+    router.get('/attendance/trend', authMiddleware.verifySession, HRController.getAttendanceTrend);
+
+    // Payroll approval progress
+    router.get('/payroll/approval-progress', authMiddleware.verifySession, HRController.getPayrollApprovalProgress);
 
     module.exports = router;

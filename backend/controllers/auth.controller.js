@@ -188,35 +188,48 @@ exports.login = async (req, res) => {
             
         }
 
-        // If not a developer or supplier, try normal employee login - ONLY through employee_id
-        const checkUserSQL = `
-            SELECT users.id, users.email, users.username, users.password, users.created_at, 
-                   users.role_id, roles.name AS role_name, employees.employee_id
-            FROM users
-            JOIN roles ON users.role_id = roles.id
-            JOIN employees ON users.id = employees.user_id
-            WHERE employees.employee_id = ?;
-        `;
+        // If not a developer or supplier, try normal employee login
+        // Support both employee_id (permanent) and email (temporary for onboarding)
+        let checkUserSQL;
+        let queryParams;
         
+        // Check if input looks like an email
+        if (employee_id.includes('@')) {
+            // Login with email (temporary account for onboarding)
+            checkUserSQL = `
+                SELECT users.id, users.email, users.username, users.password, users.created_at, 
+                       users.role_id, roles.name AS role_name, employees.employee_id, users.onboarding_completed
+                FROM users
+                JOIN roles ON users.role_id = roles.id
+                JOIN employees ON users.id = employees.user_id
+                WHERE users.email = ? AND users.onboarding_completed = 0;
+            `;
+            queryParams = [employee_id];
+        } else {
+            // Login with employee_id (permanent account)
+            checkUserSQL = `
+                SELECT users.id, users.email, users.username, users.password, users.created_at, 
+                       users.role_id, roles.name AS role_name, employees.employee_id, users.onboarding_completed
+                FROM users
+                JOIN roles ON users.role_id = roles.id
+                JOIN employees ON users.id = employees.user_id
+                WHERE employees.employee_id = ?;
+            `;
+            queryParams = [employee_id];
+        }
         
-        const [users] = await db.query(checkUserSQL, [employee_id]);
+        const [users] = await db.query(checkUserSQL, queryParams);
         
-
         if (users.length === 0) {
-            
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
         const user = users[0];
         
-
-        // Now check password using bcrypt
-        
+        // Check password using bcrypt
         const isPasswordValid = await bcrypt.compare(password, user.password);
         
-        
         if (!isPasswordValid) {
-            
             return res.status(401).json({ message: "Invalid password." });
         }
 
@@ -227,16 +240,24 @@ exports.login = async (req, res) => {
             username: user.username,
             role_name: user.role_name,
             employee_id: user.employee_id,
+            onboarding_completed: user.onboarding_completed,
             is_external: false
         };
         
 
-        // Determine redirect path based on role
+        // Determine redirect path based on role and onboarding status
         let redirectPath = '/dashboard';
-        if (user.role_id === 25) { // Developer
-            redirectPath = '/developer/developer_dashboard';
-        } else if (user.role_id === 26) { // Customer
-            redirectPath = '/customer/dashboard';
+        
+        // Check if user needs onboarding
+        if (user.onboarding_completed === 0) {
+            redirectPath = '/pre_onboarding_form.html';
+        } else {
+            // Normal role-based redirects for completed onboarding
+            if (user.role_id === 25) { // Developer
+                redirectPath = '/developer/developer_dashboard';
+            } else if (user.role_id === 26) { // Customer
+                redirectPath = '/customer/dashboard';
+            }
         }
         
 
@@ -261,4 +282,80 @@ exports.logout = (req, res) => {
         }
         res.redirect("/");  // Redirect to login page after logout
     });
+};
+
+// Get current user information
+exports.getCurrentUser = async (req, res) => {
+    try {
+        // Check if user is logged in
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
+
+        const userId = req.session.user.id;
+        
+        // Get user's full information including name from employees table
+        const userQuery = `
+            SELECT 
+                u.id,
+                u.email,
+                u.username,
+                u.role_id,
+                r.name AS role_name,
+                e.employee_id,
+                e.full_name,
+                u.onboarding_completed,
+                u.is_active
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN employees e ON u.id = e.user_id
+            WHERE u.id = ?
+        `;
+
+        const [users] = await db.query(userQuery, [userId]);
+
+        if (users.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const user = users[0];
+
+        // Determine display name based on onboarding status
+        let displayName = 'User';
+        
+        // Always try to use full name first if available, regardless of onboarding status
+        if (user.full_name) {
+            displayName = user.full_name;
+        } else if (user.onboarding_completed === 1) {
+            // Completed onboarding but no full name - use email or username
+            displayName = user.email || user.username || 'User';
+        } else {
+            // Pre-onboarding and no full name - use email or username
+            if (user.email) {
+                displayName = user.email;
+            } else if (user.username) {
+                displayName = user.username;
+            } else {
+                displayName = 'New Employee';
+            }
+        }
+
+        // Return user information
+        res.json({
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role_id: user.role_id,
+            role_name: user.role_name,
+            employee_id: user.employee_id,
+            fullName: user.full_name,
+            displayName: displayName,
+            onboarding_completed: user.onboarding_completed,
+            is_active: user.is_active
+        });
+
+    } catch (error) {
+        console.error("❌ Error getting current user:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
 };

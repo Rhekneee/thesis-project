@@ -1437,7 +1437,7 @@
         async function getCurrentDeveloperId() {
             try {
                 console.log('🔍 DEBUG: Fetching developer session...');
-                const sessionResponse = await fetch('/crm/developer/check-session', {
+                const sessionResponse = await fetch('/developer/check-session', {
                     credentials: 'include'
                 });
                 
@@ -2082,7 +2082,12 @@
         async function fetchAndDisplayContracts(filter = 'all') {
             try {
                 const developerId = await getCurrentDeveloperId();
-                const response = await fetch(`/crm/manufacturing/contracts/developer/${developerId}`);
+                if (!developerId) {
+                    console.error('No developer ID available');
+                    return;
+                }
+                
+                const response = await fetch(`/manufacturing/contracts/developer/${developerId}`);
                 
                 if (!response.ok) throw new Error('Failed to fetch contracts');
                 

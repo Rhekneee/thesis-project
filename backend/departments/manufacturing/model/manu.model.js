@@ -39,31 +39,27 @@ const ManufacturingModel = {
   },
 
   getAllProjects: async () => {
-    const query = `
+    // Get only proposals with pending status
+    const proposalsQuery = `
       SELECT 
-        pr.id,
-        pr.project_code,
-        pr.project_name,
-        pr.client_name,
-        pr.location,
-        pr.start_date,
-        pr.end_date,
-        pr.status,
-        pr.foreman_code,
-        pr.created_at,
-        pr.updated_at,
         p.proposal_id,
+        p.project_name,
+        p.location,
+        p.blocks,
+        p.description,
+        p.status,
+        p.estimated_cost,
+        p.created_at,
         da.company_name as developer_company,
         da.contact_number as developer_contact,
         da.email as developer_email
-      FROM projects pr
-      LEFT JOIN proposals p ON pr.project_name = p.project_name AND pr.location = p.location
+      FROM proposals p
       LEFT JOIN developer_accounts da ON p.developer_id = da.id
-      WHERE pr.status = 'planning' OR pr.status = 'ongoing'
-      ORDER BY pr.created_at DESC
+      ORDER BY p.created_at DESC
     `;
-    const [rows] = await db.execute(query);
-    return rows;
+    const [proposals] = await db.execute(proposalsQuery);
+    
+    return proposals;
   },
 
   getProjectById: async (projectId) => {

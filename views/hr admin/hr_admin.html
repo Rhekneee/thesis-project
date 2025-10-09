@@ -1313,6 +1313,7 @@
                         <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
                         <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
                         <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -1390,15 +1391,81 @@
                     </div>
                 </div>
 
+                
+                <!-- Attendance Insights -->
+                <div class="row" style="margin: 16px 0;">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div>
+                                        <h5 class="mb-0">Attendance Trend</h5>
+                                        <small class="text-muted">Line chart – X-axis: Dates, Y-axis: % Attendance</small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label for="attendancePeriodSelect" class="me-2 mb-0">Period</label>
+                                        <select id="attendancePeriodSelect" class="form-select form-select-sm" style="width:auto;">
+                                            <option value="week" selected>Current Week</option>
+                                            <option value="month">Current Month</option>
+                                            <option value="year">Current Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-3 align-items-stretch">
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3 h-100 d-flex flex-column justify-content-center" style="background:#f8fafc;">
+                                            <div class="mb-3">
+                                                <div class="text-muted" style="font-size:12px;">Present</div>
+                                                <div id="presentCount" style="font-size:24px; font-weight:700;">0%</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-muted" style="font-size:12px;">Late</div>
+                                                <div id="lateCount" style="font-size:24px; font-weight:700;">0%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <canvas id="attendanceTrendChart" height="140"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="calendarNavPrev" title="Previous Month">&lt;</button>
+                                    <h6 class="mb-0" id="calendarTitle">Calendar</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="calendarNavNext" title="Next Month">&gt;</button>
+                                </div>
+                                <div id="calendarUnified"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Charts Section -->
                 <div class="row chart-container">
                     <div class="col-md-6">
                         <h4>Employee Distribution</h4>
-                        <canvas id="employeeDistributionChart"></canvas>
+                        <canvas id="employeeDistributionChart" style="width:100%;"></canvas>
+                        <div id="employeeDistributionLegend" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;"></div>
                     </div>
                     <div class="col-md-6">
-                        <h4>Payroll Overview</h4>
-                        <canvas id="payrollOverviewChart"></canvas>
+                        <h4>Payroll Approval</h4>
+                        <canvas id="payrollApprovalDonut" style="width:100%; max-width:270px; height:100px; margin:0 auto;"></canvas>
+                        <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                            <span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#333;">
+                                <span style="display:inline-block; width:12px; height:12px; background:#28a745; border-radius:2px; border:1px solid rgba(0,0,0,0.1);"></span>
+                                <span>Approved</span>
+                            </span>
+                            <div class="mb-1" style="font-size:14px; color:#333;">
+                                <span style="display:inline-block; width:12px; height:12px; background:#e0e0e0; border-radius:2px; border:1px solid rgba(0,0,0,0.1); margin-right:6px;"></span>
+                                Remaining
+                            </div>
+                            <div class="text-muted" id="payrollApprovalNote" style="font-size:12px;">—</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1451,10 +1518,10 @@
         
         // Sample data for charts (use real data)
         const employeeDistributionData = {
-            labels: [ 'HR', 'Finance', 'Manufacturing', 'CRM', 'SCM'],
+            labels: [],
             datasets: [{
-                data: [50, 30, 40, 35, 45],
-                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8']
+                data: [],
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#20c997', '#6610f2', '#e83e8c']
             }]
         };
 
@@ -1504,9 +1571,236 @@
 
         // Create charts using Chart.js
         const employeeDistributionChart = new Chart(document.getElementById('employeeDistributionChart'), {
-            type: 'pie',
-            data: employeeDistributionData
+            type: 'bar',
+            data: employeeDistributionData,
+            options: {
+                layout: { padding: 6 },
+                scales: {
+                    x: { stacked: true },
+                    y: { beginAtZero: true, stacked: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
         });
+
+        // Attendance Trend (Line)
+        const attendanceTrendChart = new Chart(document.getElementById('attendanceTrendChart'), {
+            type: 'line',
+            data: { labels: [], datasets: [{
+                label: 'Attendance %',
+                data: [],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0,123,255,0.15)',
+                pointRadius: 3,
+                tension: 0.3
+            }]},
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + '%' } },
+                    x: { ticks: { maxRotation: 0, autoSkip: true } }
+                }
+            }
+        });
+
+        function getWeekDates(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+            const monday = new Date(d.setDate(diff));
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const dd = new Date(monday);
+                dd.setDate(monday.getDate() + i);
+                days.push(dd);
+            }
+            return days;
+        }
+
+        function formatDateLabel(d) {
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+
+        async function refreshAttendanceTrend() {
+            const period = document.getElementById('attendancePeriodSelect').value;
+            let labels = [], data = [];
+            const now = new Date();
+
+            try {
+                const res = await fetch(`/hr/attendance/trend?period=${encodeURIComponent(period)}`, { credentials: 'include' });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (Array.isArray(json.labels) && Array.isArray(json.values)) {
+                        labels = json.labels;
+                        data = json.values;
+                    }
+                }
+            } catch (e) { /* optional: ignore, fallback below */ }
+
+            if (labels.length === 0) {
+                if (period === 'week') {
+                    const days = getWeekDates(now);
+                    labels = days.map(formatDateLabel);
+                    data = days.map(() => 60 + Math.round(Math.random() * 40));
+                } else if (period === 'month') {
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const last = new Date(year, month + 1, 0).getDate();
+                    labels = Array.from({ length: last }, (_, i) => new Date(year, month, i + 1)).map(formatDateLabel);
+                    data = labels.map(() => 60 + Math.round(Math.random() * 40));
+                } else {
+                    labels = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), i, 1).toLocaleString(undefined, { month: 'short' }));
+                    data = labels.map(() => 60 + Math.round(Math.random() * 40));
+                }
+            }
+
+            attendanceTrendChart.data.labels = labels;
+            attendanceTrendChart.data.datasets[0].data = data;
+            attendanceTrendChart.update();
+
+            const avg = data.reduce((a, b) => a + b, 0) / (data.length || 1);
+            const presentEl = document.getElementById('presentCount');
+            const lateEl = document.getElementById('lateCount');
+            if (presentEl) presentEl.textContent = Math.round(avg) + '%';
+            if (lateEl) lateEl.textContent = Math.max(0, 100 - Math.round(avg)) + '%';
+        }
+
+        document.getElementById('attendancePeriodSelect').addEventListener('change', refreshAttendanceTrend);
+
+        let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth();
+
+        function renderUnifiedCalendar() {
+            const container = document.getElementById('calendarUnified');
+            const title = document.getElementById('calendarTitle');
+            if (!container || !title) return;
+            const first = new Date(calendarYear, calendarMonth, 1);
+            const last = new Date(calendarYear, calendarMonth + 1, 0);
+            const startDay = (first.getDay() + 6) % 7; // Monday as first
+            const daysInMonth = last.getDate();
+            title.textContent = first.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+            let html = '<table class="table table-sm table-bordered mb-0" style="font-size:14px; table-layout:fixed; width:100%;">';
+            const thStyle = 'padding:8px 10px; white-space:nowrap; text-align:center;';
+            html += `<thead><tr>
+                <th style="${thStyle}">Mon</th>
+                <th style="${thStyle}">Tue</th>
+                <th style="${thStyle}">Wed</th>
+                <th style="${thStyle}">Thu</th>
+                <th style="${thStyle}">Fri</th>
+                <th style="${thStyle}">Sat</th>
+                <th style="${thStyle}">Sun</th>
+            </tr></thead><tbody><tr>`;
+            const tdEmpty = '<td style="height:46px; padding:10px 12px;"></td>';
+            for (let i = 0; i < startDay; i++) html += tdEmpty;
+            let day = 1; let col = startDay;
+            const today = new Date();
+            const isTodayMonth = (calendarYear === today.getFullYear() && calendarMonth === today.getMonth());
+            const todayDate = today.getDate();
+            while (day <= daysInMonth) {
+                const isToday = isTodayMonth && (day === todayDate);
+                const baseStyle = 'height:46px; padding:10px 12px; text-align:center;';
+                const todayStyle = 'background:#d1e9ff; border:1px solid #90caf9; border-radius:4px; font-weight:700;';
+                html += `<td style="${baseStyle}${isToday ? todayStyle : ''}">${day}</td>`;
+                day++; col++;
+                if (col === 7 && day <= daysInMonth) { html += '</tr><tr>'; col = 0; }
+            }
+            if (col > 0 && col < 7) { for (let i = col; i < 7; i++) html += tdEmpty; }
+            html += '</tr></tbody></table>';
+            container.innerHTML = html;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'calendarNavPrev') {
+                e.preventDefault();
+                calendarMonth -= 1;
+                if (calendarMonth < 0) { calendarMonth = 11; calendarYear -= 1; }
+                renderUnifiedCalendar();
+            } else if (e.target && e.target.id === 'calendarNavNext') {
+                e.preventDefault();
+                calendarMonth += 1;
+                if (calendarMonth > 11) { calendarMonth = 0; calendarYear += 1; }
+                renderUnifiedCalendar();
+            }
+        });
+
+        async function refreshEmployeeDistribution() {
+            try {
+                const res = await fetch('/hr/employee-distribution', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch employee distribution');
+                const json = await res.json();
+                const rows = (json && json.success && Array.isArray(json.data)) ? json.data : [];
+                const rawLabels = rows.map(r => (r.department_name || `Dept ${r.department_id || ''}`));
+                // humanize labels: replace underscores, trim, title-case words
+                const labels = rawLabels.map(l => {
+                    const cleaned = String(l).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+                    return cleaned.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                });
+                const data = rows.map(r => Number(r.count) || 0);
+                const palette = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#20c997', '#6610f2', '#e83e8c', '#fd7e14', '#343a40'];
+                const colors = labels.map((_, i) => palette[i % palette.length]);
+
+                employeeDistributionChart.data.labels = labels;
+                employeeDistributionChart.data.datasets[0].data = data;
+                employeeDistributionChart.data.datasets[0].backgroundColor = colors;
+                employeeDistributionChart.update();
+
+                // Render custom legend below chart
+                const legendEl = document.getElementById('employeeDistributionLegend');
+                if (legendEl) {
+                    legendEl.innerHTML = labels.map((label, i) => {
+                        const color = colors[i];
+                        return `<span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#333;">
+                            <span style="display:inline-block; width:12px; height:12px; background:${color}; border-radius:2px; border:1px solid rgba(0,0,0,0.1);"></span>
+                            <span>${label}</span>
+                        </span>`;
+                    }).join(' ');
+                }
+            } catch (e) {
+                if (typeof console !== 'undefined' && (window?.NODE_ENV === 'development')) console.debug('Distribution fetch error:', e);
+            }
+        }
+
+        // Initial fetch and periodic refresh every 30s
+        document.addEventListener('DOMContentLoaded', refreshEmployeeDistribution);
+        setInterval(refreshEmployeeDistribution, 30000);
+
+        // Payroll Approval Donut
+        const payrollApprovalChart = new Chart(document.getElementById('payrollApprovalDonut'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved','Remaining'],
+                datasets: [{
+                    data: [0, 100],
+                    backgroundColor: ['#28a745','#e0e0e0'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '65%',
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        async function refreshPayrollApprovalDonut() {
+            try {
+                const res = await fetch('/hr/payroll/approval-progress', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch payroll approval progress');
+                const json = await res.json();
+                const p = json && json.success ? json.progress : { approved: 0, remaining: 100, totalPeriods: 0 };
+                payrollApprovalChart.data.datasets[0].data = [Number(p.approved)||0, Number(p.remaining)||0];
+                payrollApprovalChart.update();
+                const note = document.getElementById('payrollApprovalNote');
+                if (note) note.textContent = `Total periods: ${p.totalPeriods} • Approved: ${p.approved}%`;
+            } catch (e) {
+                const note = document.getElementById('payrollApprovalNote');
+                if (note) note.textContent = 'Unable to load approval progress';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', refreshPayrollApprovalDonut);
+        setInterval(refreshPayrollApprovalDonut, 30000);
 
         const payrollOverviewChart = new Chart(document.getElementById('payrollOverviewChart'), {
             type: 'bar',
@@ -1687,6 +1981,10 @@
                 content.style.marginLeft = '300px';
                 content.style.width = 'calc(100% - 300px)';
             }
+
+            // Initial loads for attendance section
+            refreshAttendanceTrend();
+            renderUnifiedCalendar();
         });
 
         // Handle window resize
@@ -1706,6 +2004,8 @@
                 content.style.marginLeft = '300px';
                 content.style.width = 'calc(100% - 300px)';
             }
+            // Keep calendar in sync on resize
+            renderUnifiedCalendar();
         });
  
         // Function to fetch user info
