@@ -109,13 +109,18 @@ exports.login = async (req, res) => {
             if (userDetails.length > 0) {
                 const user = userDetails[0];
                 
+                // Fetch permissions for the user's role
+                const permissions = await getPermissionsForRole(user.role_id);
+
                 req.session.user = {
                     id: user.id,
                     email: user.email,
                     username: user.username,
                     role_name: user.role_name,
+                    role_id: user.role_id,
                     employee_id: user.employee_id,
-                    is_external: true
+                    is_external: true,
+                    permissions
                 };
                 
                 return res.status(200).json({ 
@@ -167,6 +172,9 @@ exports.login = async (req, res) => {
             if (userDetails.length > 0) {
                 const user = userDetails[0];
                 
+                // Fetch permissions for the user's role
+                const permissions = await getPermissionsForRole(user.role_id);
+
                 req.session.user = {
                     id: user.id,
                     email: user.email,
@@ -174,7 +182,8 @@ exports.login = async (req, res) => {
                     role_name: user.role_name,
                     role_id: user.role_id,
                     supplier_id: user.supplier_id,
-                    is_supplier: true
+                    is_supplier: true,
+                    permissions
                 };
                 
                 return res.status(200).json({ 
@@ -234,14 +243,19 @@ exports.login = async (req, res) => {
         }
 
         
+        // Fetch permissions for the user's role
+        const permissions = await getPermissionsForRole(user.role_id);
+
         req.session.user = {
             id: user.id,
             email: user.email,
             username: user.username,
             role_name: user.role_name,
+            role_id: user.role_id,
             employee_id: user.employee_id,
             onboarding_completed: user.onboarding_completed,
-            is_external: false
+            is_external: false,
+            permissions
         };
         
 

@@ -231,6 +231,49 @@ function toggleChevron() {
                     };
                 }
 
+                // Add a topbar action (Virtual Tour Portal) beside the notification bell
+                try {
+                    const topbarRight = document.querySelector('.topbar .topbar-right');
+                    const roleName = (user.role_name || '').toLowerCase();
+                    const userPermissions = Array.isArray(user.permissions) ? user.permissions : [];
+                    const hasVirtualTourAccess = roleName === 'sales_marketing_head' || userPermissions.includes('access_virtual_tour_dashboard');
+
+                    if (topbarRight && hasVirtualTourAccess && !document.getElementById('topbar-virtual-tour')) {
+                        const vt = document.createElement('button');
+                        vt.id = 'topbar-virtual-tour';
+                        vt.type = 'button';
+                        vt.title = 'Virtual Tour Portal';
+                        vt.style.display = 'inline-flex';
+                        vt.style.alignItems = 'center';
+                        vt.style.marginRight = '12px';
+                        vt.style.background = '#0d6efd';
+                        vt.style.border = '1px solid #0b5ed7';
+                        vt.style.color = '#ffffff';
+                        vt.style.cursor = 'pointer';
+                        vt.style.padding = '6px 12px';
+                        vt.style.outline = 'none';
+                        vt.style.borderRadius = '6px';
+                        vt.style.fontSize = '14px';
+                        vt.style.lineHeight = '1';
+                        vt.innerHTML = '<span class="d-none d-sm-inline">Virtual Tour Portal</span>';
+
+                        // Navigate when clicked
+                        vt.addEventListener('click', function() {
+                            window.location.href = '/crm/virtual_tour_dashboard';
+                        });
+
+                        const notificationIcon = topbarRight.querySelector('.notification-icon');
+                        if (notificationIcon) {
+                            // Place to the left of the bell
+                            topbarRight.insertBefore(vt, notificationIcon);
+                        } else {
+                            topbarRight.prepend(vt);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to inject Virtual Tour topbar action:', e);
+                }
+
                 // Update profile pictures
                 const profilePicture = document.getElementById('profilePicture');
                 const topbarProfilePicture = document.getElementById('topbarProfilePicture');

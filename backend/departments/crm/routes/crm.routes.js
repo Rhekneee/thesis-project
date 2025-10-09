@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 // Import the correct controller and multer upload handler
-const { CRMController, upload, developerUpload, handlePropertyUpload } = require("../controller/crm.controller");
+const { CRMController, upload, developerUpload, handlePropertyUpload, virtualLocationUpload, virtualSceneUpload } = require("../controller/crm.controller");
 
 // Add route to serve default profile picture
 router.get('/default-profile-picture', (req, res) => {
@@ -105,5 +105,18 @@ router.get('/developer/check-session', (req, res) => {
         res.status(401).json({ error: 'Not logged in as developer' });
     }
 });
+
+// Virtual Tour: Locations
+router.get('/virtual-tour/locations', CRMController.listVirtualLocations);
+router.get('/virtual-tour/locations/:id', CRMController.getVirtualLocationById);
+router.post('/virtual-tour/locations', virtualLocationUpload, CRMController.createVirtualLocation);
+
+// Virtual Tour: Scenes
+router.get('/virtual-tour/scenes/:location_id', CRMController.getVirtualScenesByLocation);
+router.post('/virtual-tour/scenes', virtualSceneUpload, CRMController.createVirtualScene);
+
+// Virtual Tour: Hotspots
+router.get('/virtual-tour/hotspots/:scene_id', CRMController.getVirtualHotspotsByScene);
+router.post('/virtual-tour/hotspots', CRMController.createVirtualHotspot);
 
 module.exports = router;

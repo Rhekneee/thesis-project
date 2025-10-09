@@ -424,6 +424,101 @@ const CRMModel = {
             throw error;
         }
     },
+
+    // Virtual Tour: Locations
+    createVirtualLocation: async (data) => {
+        const query = `
+            INSERT INTO virtual_locations (location_name, description, picture_path, created_by)
+            VALUES (?, ?, ?, ?)
+        `;
+        const [result] = await db.execute(query, [
+            data.location_name,
+            data.description || null,
+            data.picture_path || null,
+            data.created_by || null
+        ]);
+        return result.insertId;
+    },
+
+    listVirtualLocations: async () => {
+        const query = `
+            SELECT id, location_name, description, picture_path,
+                   DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM virtual_locations
+            ORDER BY created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    getVirtualLocationById: async (id) => {
+        const query = `
+            SELECT id, location_name, description, picture_path,
+                   DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM virtual_locations
+            WHERE id = ?
+        `;
+        const [rows] = await db.execute(query, [id]);
+        return rows[0] || null;
+    },
+
+    // Virtual Tour: Scenes
+    createVirtualScene: async (data) => {
+        const query = `
+            INSERT INTO virtual_scenes (location_id, scene_name, image_path, pitch, yaw)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        const [result] = await db.execute(query, [
+            data.location_id,
+            data.scene_name,
+            data.image_path,
+            data.pitch || 0,
+            data.yaw || 0
+        ]);
+        return result.insertId;
+    },
+
+    getVirtualScenesByLocation: async (location_id) => {
+        const query = `
+            SELECT id, scene_name, image_path, pitch, yaw,
+                   DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM virtual_scenes
+            WHERE location_id = ?
+            ORDER BY created_at ASC
+        `;
+        const [rows] = await db.execute(query, [location_id]);
+        return rows;
+    },
+
+    // Virtual Tour: Hotspots
+    createVirtualHotspot: async (data) => {
+        const query = `
+            INSERT INTO virtual_hotspots (scene_id, target_scene_id, type, pitch, yaw, tooltip, info_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        const [result] = await db.execute(query, [
+            data.scene_id,
+            data.target_scene_id || null,
+            data.type,
+            data.pitch,
+            data.yaw,
+            data.tooltip,
+            data.info_text || null
+        ]);
+        return result.insertId;
+    },
+
+    getVirtualHotspotsByScene: async (scene_id) => {
+        const query = `
+            SELECT id, scene_id, target_scene_id, type, pitch, yaw, tooltip, info_text,
+                   DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM virtual_hotspots
+            WHERE scene_id = ?
+            ORDER BY created_at ASC
+        `;
+        const [rows] = await db.execute(query, [scene_id]);
+        return rows;
+    }
 };
 
 module.exports = CRMModel;
