@@ -490,6 +490,37 @@ const CRMModel = {
         return rows;
     },
 
+    updateVirtualScene: async (id, data) => {
+        let query = `
+            UPDATE virtual_scenes SET
+                scene_name = ?,
+                pitch = ?,
+                yaw = ?
+        `;
+        const params = [data.scene_name, data.pitch, data.yaw];
+
+        // Add image_path to update if provided
+        if (data.image_path) {
+            query += ', image_path = ?';
+            params.push(data.image_path);
+        }
+
+        query += ' WHERE id = ?';
+        params.push(id);
+
+        await db.execute(query, params);
+    },
+
+    deleteVirtualScene: async (id) => {
+        const query = "DELETE FROM virtual_scenes WHERE id = ?";
+        await db.execute(query, [id]);
+    },
+
+    deleteVirtualHotspotsByScene: async (scene_id) => {
+        const query = "DELETE FROM virtual_hotspots WHERE scene_id = ?";
+        await db.execute(query, [scene_id]);
+    },
+
     // Virtual Tour: Hotspots
     createVirtualHotspot: async (data) => {
         const query = `
@@ -518,6 +549,52 @@ const CRMModel = {
         `;
         const [rows] = await db.execute(query, [scene_id]);
         return rows;
+    },
+
+    updateVirtualHotspot: async (id, data) => {
+        let query = `
+            UPDATE virtual_hotspots SET
+                target_scene_id = ?,
+                type = ?,
+                pitch = ?,
+                yaw = ?,
+                tooltip = ?,
+                info_text = ?
+        `;
+        const params = [
+            data.target_scene_id || null,
+            data.type,
+            data.pitch,
+            data.yaw,
+            data.tooltip,
+            data.info_text || null
+        ];
+
+        query += ' WHERE id = ?';
+        params.push(id);
+
+        await db.execute(query, params);
+    },
+
+    updateVirtualHotspotPosition: async (id, data) => {
+        const query = `
+            UPDATE virtual_hotspots SET
+                pitch = ?,
+                yaw = ?
+            WHERE id = ?
+        `;
+        const params = [
+            data.pitch,
+            data.yaw,
+            id
+        ];
+
+        await db.execute(query, params);
+    },
+
+    deleteVirtualHotspot: async (id) => {
+        const query = "DELETE FROM virtual_hotspots WHERE id = ?";
+        await db.execute(query, [id]);
     }
 };
 

@@ -477,6 +477,116 @@ const sendOnboardingApprovalNotification = async (to, employeeId, defaultPasswor
     }
 };
 
+// Email notification for labor submission with estimated cost
+const sendLaborSubmissionNotification = async (to, developerName, projectName, estimatedCost) => {
+    try {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: to,
+            subject: `Project Labor Submission Update - ${projectName}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
+                        <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🏗️ Labor Submission Update</h1>
+                        <p style="margin: 10px 0 0; opacity: 0.9;">MDB Construction Manufacturing Department</p>
+                    </div>
+                    
+                    <div style="padding: 30px;">
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                            Dear <strong>${developerName}</strong>,
+                        </p>
+                        
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                            We are pleased to inform you that the labor requirements for your project <strong>"${projectName}"</strong> have been successfully submitted and processed by our manufacturing team.
+                        </p>
+                        
+                        <!-- Project Cost Information -->
+                        <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border: 2px solid #d1d5db; border-radius: 12px; padding: 25px; margin: 25px 0; position: relative;">
+                            <div style="position: absolute; top: -12px; left: 20px; background-color: #10b981; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                                💰 Initial Cost Estimate
+                            </div>
+                            <div style="margin-top: 15px; text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: #059669; margin-bottom: 10px;">
+                                    ₱${parseFloat(estimatedCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <p style="color: #6b7280; margin: 0; font-size: 14px;">
+                                    Initial manufacturing cost estimate for your project
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Important Notice -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 20px; margin-right: 10px;">📋</span>
+                                <h3 style="color: #92400e; margin: 0; font-size: 18px; font-weight: 600;">Important Reminder</h3>
+                            </div>
+                            <p style="color: #92400e; margin: 0; font-size: 16px; line-height: 1.6;">
+                                Please <strong>login to your developer account</strong> to review the detailed labor breakdown, track project progress, and stay updated with the latest information about your project.
+                            </p>
+                        </div>
+                        
+                        <!-- Next Steps -->
+                        <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                            <h3 style="color: #0c4a6e; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                                📋 What's Next?
+                            </h3>
+                            <ul style="color: #0c4a6e; margin: 0; padding-left: 20px; line-height: 1.6;">
+                                <li style="margin-bottom: 8px;">Log in to your developer portal to view detailed labor requirements</li>
+                                <li style="margin-bottom: 8px;">Review the submitted manpower specifications</li>
+                                <li style="margin-bottom: 8px;">Track project progress and updates</li>
+                                <li style="margin-bottom: 8px;">Contact our manufacturing team if you have any questions</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8fafc; border-radius: 8px;">
+                            <h4 style="color: #374151; margin: 0 0 10px; font-size: 16px; font-weight: 600;">Need Assistance?</h4>
+                            <p style="color: #6b7280; margin: 0 0 15px; font-size: 14px;">
+                                Our manufacturing team is here to assist you with any questions or concerns.
+                            </p>
+                            <p style="color: #667eea; margin: 0; font-weight: 600; font-size: 14px;">
+                                📧 Contact: manufacturing@mdbconstruction.com
+                            </p>
+                        </div>
+                        
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                            Thank you for choosing MDB Construction for your project needs.
+                        </p>
+                        
+                        <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                            Best regards,<br>
+                            <strong>Manufacturing Department</strong><br>
+                            MDB Construction Inc.
+                        </p>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="background-color: #1f2937; padding: 20px; text-align: center; border-top: 1px solid #374151;">
+                        <p style="color: #9ca3af; margin: 0 0 10px; font-size: 14px;">
+                            Building Dreams, Creating Excellence
+                        </p>
+                        <p style="color: #6b7280; margin: 0; font-size: 12px;">
+                            © 2024 MDB Construction Inc. All rights reserved.
+                        </p>
+                        <div style="margin-top: 15px;">
+                            <span style="color: #9ca3af; font-size: 12px;">
+                                This is an automated message. Please do not reply to this email.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Labor submission notification email sent:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Error sending labor submission notification email:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendEmailNotification,
     sendHireNotification,
@@ -486,5 +596,6 @@ module.exports = {
     sendDeveloperApprovalNotification,
     sendManualSupplierWelcome,
     sendPurchaseEstimationRejection,
-    sendOnboardingApprovalNotification
+    sendOnboardingApprovalNotification,
+    sendLaborSubmissionNotification
 }; 

@@ -3,6 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const pathConfig = require('../../../utils/pathConfig'); // Import path configuration
+const { sendLaborSubmissionNotification } = require('../../../utils/emailService');
+const Notifications = require('../../../models/notification.model');
 
 // Configure multer for project image uploads
 const projectUploadDir = pathConfig.getUploadPath('projects');
@@ -786,6 +788,182 @@ const ManufacturingController = {
       res.status(500).json({ 
         success: false,
         error: "Failed to mark materials as received" 
+      });
+    }
+  },
+
+  // Send labor submission notification email
+  sendLaborSubmissionEmail: async (req, res) => {
+    try {
+      const { project_id, developer_id, estimated_cost } = req.body;
+
+      if (!project_id || !developer_id || !estimated_cost) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Project ID, developer ID, and estimated cost are required" 
+        });
+      }
+
+      // Get project and developer details
+      const project = await ManufacturingModel.getProjectById(project_id);
+      if (!project) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Project not found" 
+        });
+      }
+
+      // Get developer details from the project
+      const developerEmail = project.developer_email;
+      const developerName = project.developer_company;
+
+      if (!developerEmail) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Developer email not found" 
+        });
+      }
+
+      // Send email notification
+      await sendLaborSubmissionNotification(
+        developerEmail,
+        developerName || 'Developer',
+        project.project_name,
+        estimated_cost
+      );
+
+      res.json({
+        success: true,
+        message: "Labor submission notification email sent successfully"
+      });
+
+    } catch (error) {
+      console.error("Error sending labor submission email:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to send labor submission notification email" 
+      });
+    }
+  },
+
+  // Handle cost negotiation from developer
+  negotiateCost: async (req, res) => {
+    try {
+      const { project_id, current_cost, reason } = req.body;
+
+      if (!project_id || !reason) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Project ID and reason are required" 
+        });
+      }
+
+      // Get project details
+      const project = await ManufacturingModel.getProjectById(project_id);
+      if (!project) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Project not found" 
+        });
+      }
+
+      // Check if project is in a negotiable state
+      if (project.status === 'contract_generated' || project.status === 'developer_approved') {
+        return res.status(400).json({ 
+          success: false,
+          error: "Cost discussion is not available for projects in this status" 
+        });
+      }
+
+      // Create notification for manufacturing team
+      const projectCost = project.estimated_cost;
+      
+      await Notifications.create({
+        departmentId: 3, // Manufacturing department ID
+        title: "Cost Discussion Request",
+        message: `Developer "${project.developer_company}" has requested to discuss the cost for project "${project.project_name}". Current cost: ₱${projectCost.toLocaleString()}. Reason: ${reason}`,
+        type: 'warning'
+      });
+
+      res.json({
+        success: true,
+        message: "Cost discussion request submitted successfully. The manufacturing team will contact you soon."
+      });
+
+    } catch (error) {
+      console.error("Error processing cost negotiation:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to process cost discussion request" 
+      });
+    }
+  },
+
+  // Get unread notifications for manufacturing department
+  getUnreadNotifications: async (req, res) => {
+    try {
+      const userId = req.session.user?.id;
+      const departmentId = 3; // Manufacturing department ID
+      
+      const notifications = await Notifications.getUnreadFor({ userId, departmentId, limit: 20 });
+      
+      res.json({
+        success: true,
+        notifications
+      });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch notifications"
+      });
+    }
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (req, res) => {
+    try {
+      const notificationId = req.params.id;
+      
+      const success = await Notifications.markAsRead(notificationId);
+      
+      if (success) {
+        res.json({
+          success: true,
+          message: "Notification marked as read"
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          error: "Notification not found"
+        });
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark notification as read"
+      });
+    }
+  },
+
+  // Mark all notifications as read
+  markAllNotificationsAsRead: async (req, res) => {
+    try {
+      const userId = req.session.user?.id;
+      const departmentId = 3; // Manufacturing department ID
+      
+      const affectedRows = await Notifications.markAllAsRead({ userId, departmentId });
+      
+      res.json({
+        success: true,
+        message: `${affectedRows} notifications marked as read`
+      });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark all notifications as read"
       });
     }
   }

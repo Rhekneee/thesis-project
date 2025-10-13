@@ -897,6 +897,59 @@ const CRMController = {
         }
     },
 
+    updateVirtualScene: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { scene_name, pitch, yaw } = req.body;
+            
+            console.log('📝 Updating virtual scene:', { id, scene_name, pitch, yaw });
+            console.log('📝 File received:', req.file);
+            
+            if (!scene_name) {
+                return res.status(400).json({ error: 'Scene name is required' });
+            }
+
+            // Prepare update data
+            const updateData = {
+                scene_name,
+                pitch: parseFloat(pitch) || 0,
+                yaw: parseFloat(yaw) || 0
+            };
+
+            // Handle file upload if present
+            if (req.file) {
+                updateData.image_path = req.file.filename;
+                console.log('📝 New image uploaded:', req.file.filename);
+            }
+
+            await CRMModel.updateVirtualScene(id, updateData);
+            
+            res.json({ success: true, message: 'Scene updated successfully' });
+        } catch (error) {
+            console.error('Error updating virtual scene:', error);
+            res.status(500).json({ error: 'Failed to update virtual scene' });
+        }
+    },
+
+    deleteVirtualScene: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            console.log('🗑️ Deleting virtual scene:', id);
+            
+            // First, delete all hotspots associated with this scene
+            await CRMModel.deleteVirtualHotspotsByScene(id);
+            
+            // Then delete the scene itself
+            await CRMModel.deleteVirtualScene(id);
+            
+            res.json({ success: true, message: 'Scene and associated hotspots deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting virtual scene:', error);
+            res.status(500).json({ error: 'Failed to delete virtual scene' });
+        }
+    },
+
     // Virtual Tour: Hotspots
     createVirtualHotspot: async (req, res) => {
         try {
@@ -939,6 +992,83 @@ const CRMController = {
         } catch (error) {
             console.error('Error fetching virtual hotspots:', error);
             res.status(500).json({ error: 'Failed to fetch virtual hotspots' });
+        }
+    },
+
+    updateVirtualHotspot: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { target_scene_id, type, pitch, yaw, tooltip, info_text } = req.body;
+            
+            // Check if this is a position-only update (only pitch and yaw provided)
+            if (pitch !== undefined && yaw !== undefined && !type && !tooltip) {
+                // Position-only update
+                await CRMModel.updateVirtualHotspotPosition(id, {
+                    pitch: parseFloat(pitch),
+                    yaw: parseFloat(yaw)
+                });
+                res.json({ success: true, message: 'Hotspot position updated successfully' });
+                return;
+            }
+            
+            // Full hotspot update - validate all required fields
+            if (!type || pitch === undefined || yaw === undefined || !tooltip) {
+                return res.status(400).json({ error: 'Type, pitch, yaw, and tooltip are required' });
+            }
+
+            if (type === 'link' && !target_scene_id) {
+                return res.status(400).json({ error: 'Target scene ID is required for link hotspots' });
+            }
+
+            if (type === 'info' && !info_text) {
+                return res.status(400).json({ error: 'Info text is required for info hotspots' });
+            }
+
+            await CRMModel.updateVirtualHotspot(id, {
+                target_scene_id: target_scene_id ? parseInt(target_scene_id) : null,
+                type,
+                pitch: parseFloat(pitch),
+                yaw: parseFloat(yaw),
+                tooltip,
+                info_text: info_text || null
+            });
+            
+            res.json({ success: true, message: 'Hotspot updated successfully' });
+        } catch (error) {
+            console.error('Error updating virtual hotspot:', error);
+            res.status(500).json({ error: 'Failed to update virtual hotspot' });
+        }
+    },
+
+    updateVirtualHotspotPosition: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { pitch, yaw } = req.body;
+            
+            if (pitch === undefined || yaw === undefined) {
+                return res.status(400).json({ error: 'Pitch and yaw coordinates are required' });
+            }
+
+            await CRMModel.updateVirtualHotspotPosition(id, {
+                pitch: parseFloat(pitch),
+                yaw: parseFloat(yaw)
+            });
+            
+            res.json({ success: true, message: 'Hotspot position updated successfully' });
+        } catch (error) {
+            console.error('Error updating virtual hotspot position:', error);
+            res.status(500).json({ error: 'Failed to update virtual hotspot position' });
+        }
+    },
+
+    deleteVirtualHotspot: async (req, res) => {
+        try {
+            const { id } = req.params;
+            await CRMModel.deleteVirtualHotspot(id);
+            res.json({ success: true, message: 'Hotspot deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting virtual hotspot:', error);
+            res.status(500).json({ error: 'Failed to delete virtual hotspot' });
         }
     },
 
