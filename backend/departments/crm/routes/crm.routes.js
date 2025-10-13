@@ -114,9 +114,13 @@ router.post('/virtual-tour/locations', virtualLocationUpload, CRMController.crea
 // Virtual Tour: Scenes
 router.get('/virtual-tour/scenes/:location_id', CRMController.getVirtualScenesByLocation);
 router.post('/virtual-tour/scenes', virtualSceneUpload, CRMController.createVirtualScene);
+router.put('/virtual-tour/scenes/:id', virtualSceneUpload, CRMController.updateVirtualScene);
+router.delete('/virtual-tour/scenes/:id', CRMController.deleteVirtualScene);
 
 // Virtual Tour: Hotspots
 router.get('/virtual-tour/hotspots/:scene_id', CRMController.getVirtualHotspotsByScene);
 router.post('/virtual-tour/hotspots', CRMController.createVirtualHotspot);
+router.put('/virtual-tour/hotspots/:id', CRMController.updateVirtualHotspot);
+router.delete('/virtual-tour/hotspots/:id', CRMController.deleteVirtualHotspot);
 
 module.exports = router;

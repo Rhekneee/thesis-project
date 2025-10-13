@@ -184,39 +184,10 @@
                     <span>Notifications</span>
                     <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
                 </div>
-                <div class="notification-item">
-                    <div class="notification-title">New Leave Request</div>
-                    <div class="notification-time">5 minutes ago</div>
+                <div id="notificationList">
+                    <!-- Dynamic notifications will be loaded here -->
                 </div>
-                <div class="notification-item">
-                    <div class="notification-title">Payroll Processed</div>
-                    <div class="notification-time">1 hour ago</div>
-                </div>
-                <div class="notification-item">
-                        <span class="profile-name">John Doe</span>
-                        <span class="profile-position">HR Manager</span>
-                    </div>
-                </div>
-                
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown" id="notificationDropdown">
-                    <div class="notification-header">
-                        <span>Notifications</span>
-                        <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-title">New Leave Request</div>
-                        <div class="notification-time">5 minutes ago</div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-title">Payroll Processed</div>
-                        <div class="notification-time">1 hour ago</div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-title">New Employee Added</div>
-                        <div class="notification-time">2 hours ago</div>
-                    </div>
-                </div>
+            </div>
             </div>
         </div>
         <!-- Sidebar -->
@@ -663,6 +634,146 @@
                 console.log('🔍 Manufacturing Dashboard: No OnboardingCheckerInstance found');
             }
         }, 2000);
+    </script>
+
+    <!-- Dynamic Notification System -->
+    <script>
+        // Notifications UI logic
+        let notificationsCache = [];
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+            if (dropdown.classList.contains('show')) {
+                fetchNotifications();
+            }
+        }
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/manufacturing/notifications/unread', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch notifications');
+                const data = await res.json();
+                notificationsCache = Array.isArray(data.notifications) ? data.notifications : [];
+                renderNotifications();
+                updateBadge();
+            } catch (e) {
+                console.error('Notifications fetch error:', e);
+            }
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notificationList');
+            list.innerHTML = '';
+            if (!notificationsCache.length) {
+                const empty = document.createElement('div');
+                empty.className = 'notification-item';
+                empty.innerHTML = '<div class="notification-title">No new notifications</div>';
+                list.appendChild(empty);
+                return;
+            }
+            notificationsCache.forEach(n => {
+                const div = document.createElement('div');
+                div.className = 'notification-item unread';
+                // Determine destination link based on notification type
+                const href = getNotificationLink(n);
+                div.onclick = () => handleNotificationClick(n.id, href);
+                const ts = formatTimeAgo(n.created_at);
+                div.innerHTML = `
+                    <div class="notification-title">${escapeHtml(n.title || '')}</div>
+                    <div style="font-size:12px;color:#555;line-height:1.3;">${escapeHtml(n.message || '')}</div>
+                    <div class="notification-time">${ts}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function getNotificationLink(notification) {
+            const title = (notification.title || '').toLowerCase();
+            const message = (notification.message || '').toLowerCase();
+            
+            // Cost negotiation notifications should go to manufacturing projects
+            if (title.includes('cost negotiation') || message.includes('negotiation')) {
+                return '/manufacturing/manufacturing_projects';
+            }
+            
+            // Labor submission notifications
+            if (title.includes('labor') || message.includes('labor')) {
+                return '/manufacturing/manufacturing_projects';
+            }
+            
+            return null;
+        }
+
+        function updateBadge() {
+            const badge = document.querySelector('.notification-badge');
+            if (notificationsCache.length > 0) {
+                badge.style.display = 'inline-block';
+                badge.textContent = notificationsCache.length > 9 ? '9+' : notificationsCache.length;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function markAsRead(id) {
+            try {
+                await fetch(`/manufacturing/notifications/${id}/read`, { method: 'POST', credentials: 'include' });
+                notificationsCache = notificationsCache.filter(n => n.id !== id);
+                renderNotifications();
+                updateBadge();
+            } catch (e) {
+                console.error('Mark as read failed:', e);
+            }
+        }
+
+        async function handleNotificationClick(id, href) {
+            await markAsRead(id);
+            if (href) {
+                window.location.href = href;
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                await fetch('/manufacturing/notifications/read-all', { method: 'POST', credentials: 'include' });
+                notificationsCache = [];
+                renderNotifications();
+                updateBadge();
+            } catch (e) {
+                console.error('Mark all as read failed:', e);
+            }
+        }
+
+        // Helpers
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"]/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s]));
+        }
+
+        function formatTimeAgo(ts) {
+            try {
+                const d = new Date(ts);
+                const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+                if (diff < 60) return `${diff}s ago`;
+                if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+                if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+                return `${Math.floor(diff/86400)}d ago`;
+            } catch { return ''; }
+        }
+
+        // Polling for new notifications every 30 seconds
+        setInterval(fetchNotifications, 30000);
+
+        // Initial fetch when page loads
+        document.addEventListener('DOMContentLoaded', fetchNotifications);
+
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.querySelector('.notification-icon');
+            if (!dropdown.contains(event.target) && !bell.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>

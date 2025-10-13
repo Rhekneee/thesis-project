@@ -47,4 +47,15 @@ router.post('/request-materials', ManufacturingController.createMaterialRequest)
 router.get('/gather-request-material', ManufacturingController.getManufacturingRequestMaterials);
 router.put('/mark-materials-received', ManufacturingController.markMaterialsReceived);
 
+// Email notification routes
+router.post('/send-labor-notification', ManufacturingController.sendLaborSubmissionEmail);
+
+// Cost negotiation routes
+router.post('/negotiate-cost', ManufacturingController.negotiateCost);
+
+// Notification routes
+router.get('/notifications/unread', ManufacturingController.getUnreadNotifications);
+router.post('/notifications/:id/read', ManufacturingController.markNotificationAsRead);
+router.post('/notifications/read-all', ManufacturingController.markAllNotificationsAsRead);
+
 module.exports = router;
