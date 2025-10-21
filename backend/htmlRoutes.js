@@ -95,7 +95,12 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'add_properties.html')); // Adjusted path
   });
 
+  // Restrict Agents page for sales_marketing_coordinator
   app.get('/crm/agents', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName === 'sales_marketing_coordinator') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'agents.html')); // Adjusted path
   });
 
@@ -135,7 +140,12 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_leave_request.html')); // Adjusted path
   });
 
+  // Restrict Job Posting page for sales_marketing_coordinator
   app.get('/crm/job_posting', (req, res) => {    
+    const roleName = req.session?.user?.role_name;
+    if (roleName === 'sales_marketing_coordinator') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
   });
   

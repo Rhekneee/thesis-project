@@ -446,7 +446,8 @@ const sendOnboardingApprovalNotification = async (to, employeeId, defaultPasswor
                     <div style="background-color: #f5f5f5; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #4f6ef5;">
                         <h3 style="color: #4f6ef5; margin-top: 0;">Your Login Credentials</h3>
                         <p style="margin: 8px 0;"><strong>Employee ID (Username):</strong> ${employeeId}</p>
-                        <p style="margin: 8px 0;"><strong>Default Password:</strong> ${defaultPassword}</p>
+                        <p style="margin: 8px 0;"><strong>Password:</strong> ${defaultPassword}</p>
+                        <p style="margin: 8px 0; color: #666; font-size: 14px;"><em>Note: Your password for your permanent account.</em></p>
                     </div>
                     
                     <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px 16px;border-radius:4px;color:#7c2d12;margin:16px 0;">

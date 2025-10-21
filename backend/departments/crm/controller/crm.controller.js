@@ -304,6 +304,17 @@ const CRMController = {
         }
     },
 
+    // List all developers (for Clients page)
+    getAllDevelopers: async (req, res) => {
+        try {
+            const developers = await CRMModel.getAllDevelopers();
+            res.json({ success: true, developers });
+        } catch (error) {
+            console.error('Error fetching developers:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch developers' });
+        }
+    },
+
     // Handle the submission of a site visit request
     createVisitRequest: async (req, res) => {
         try {
@@ -1113,6 +1124,173 @@ const CRMController = {
             res.status(500).json({ 
                 success: false,
                 error: "Failed to fetch developer details" 
+            });
+        }
+    },
+
+    // Handle inquiry submission
+    submitInquiry: async (req, res) => {
+        try {
+            const { name, surname, email, contact, message } = req.body;
+
+            // Validate required fields
+            if (!name || !surname || !email || !contact || !message) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "All fields are required" 
+                });
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Please enter a valid email address" 
+                });
+            }
+
+            // Validate phone number format
+            const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+            if (!phoneRegex.test(contact)) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Please enter a valid phone number" 
+                });
+            }
+
+            // Store inquiry in database
+            const inquiryId = await CRMModel.storeInquiry({
+                name,
+                surname,
+                email,
+                contact,
+                message
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Inquiry submitted successfully",
+                inquiryId 
+            });
+
+        } catch (error) {
+            console.error("Error submitting inquiry:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to submit inquiry. Please try again later." 
+            });
+        }
+    },
+
+    // Get all inquiries
+    getAllInquiries: async (req, res) => {
+        try {
+            const inquiries = await CRMModel.getAllInquiries();
+            res.json({
+                success: true,
+                inquiries: inquiries
+            });
+        } catch (error) {
+            console.error("Error fetching inquiries:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to fetch inquiries" 
+            });
+        }
+    },
+
+    // Delete inquiry
+    deleteInquiry: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            if (!id) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Inquiry ID is required" 
+                });
+            }
+
+            await CRMModel.deleteInquiry(id);
+            res.json({ 
+                success: true, 
+                message: "Inquiry deleted successfully" 
+            });
+        } catch (error) {
+            console.error("Error deleting inquiry:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to delete inquiry" 
+            });
+        }
+    },
+
+    // Get sales marketing coordinators
+    getSalesMarketingCoordinators: async (req, res) => {
+        try {
+            const coordinators = await CRMModel.getSalesMarketingCoordinators();
+            res.json({
+                success: true,
+                coordinators: coordinators
+            });
+        } catch (error) {
+            console.error("Error fetching coordinators:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to fetch coordinators" 
+            });
+        }
+    },
+
+    // Assign coordinator to inquiry
+    assignCoordinator: async (req, res) => {
+        try {
+            const { inquiryId, coordinatorId } = req.body;
+
+            if (!inquiryId || !coordinatorId) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Inquiry ID and Coordinator ID are required" 
+                });
+            }
+
+            await CRMModel.assignCoordinator(inquiryId, coordinatorId);
+            res.json({ 
+                success: true, 
+                message: "Coordinator assigned successfully" 
+            });
+        } catch (error) {
+            console.error("Error assigning coordinator:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to assign coordinator" 
+            });
+        }
+    },
+
+    // Get coordinator performance statistics
+    getCoordinatorPerformance: async (req, res) => {
+        try {
+            const { coordinatorId } = req.params;
+
+            if (!coordinatorId) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Coordinator ID is required" 
+                });
+            }
+
+            const performance = await CRMModel.getCoordinatorPerformance(coordinatorId);
+            res.json({ 
+                success: true, 
+                performance 
+            });
+        } catch (error) {
+            console.error("Error fetching coordinator performance:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to fetch coordinator performance" 
             });
         }
     }

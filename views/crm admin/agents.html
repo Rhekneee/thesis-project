@@ -101,6 +101,155 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        /* Agent Card Styles */
+        .agent-card {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .agent-card .card-body {
+            padding: 20px;
+        }
+
+        .agent-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .agent-info {
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+
+        .agent-info i {
+            width: 20px;
+            margin-right: 8px;
+            color: #007bff;
+        }
+
+        .see-more-btn {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        /* Performance Modal Styles */
+        .performance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .stat-total { color: #007bff; }
+        .stat-completed { color: #28a745; }
+        .stat-cancelled { color: #dc3545; }
+        .stat-assigned { color: #ffc107; }
+        .stat-pending { color: #6c757d; }
+
+        /* Decision Support Analytics Styles */
+        .decision-support {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+
+        .analytics-content {
+            display: grid;
+            gap: 15px;
+        }
+
+        .analytics-item {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+        }
+
+        .analytics-item.high-performance { border-left-color: #28a745; }
+        .analytics-item.moderate-performance { border-left-color: #ffc107; }
+        .analytics-item.low-performance { border-left-color: #dc3545; }
+        .analytics-item.neutral { border-left-color: #6c757d; }
+
+        .analytics-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analytics-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .performance-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .indicator-excellent { background: #d4edda; color: #155724; }
+        .indicator-good { background: #fff3cd; color: #856404; }
+        .indicator-poor { background: #f8d7da; color: #721c24; }
+        .indicator-neutral { background: #e2e3e5; color: #383d41; }
+
+        /* Performance Chart Styles */
+        .performance-chart {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #17a2b8;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
     </style>
 </head>
 
@@ -198,8 +347,8 @@
                 </li>
                 <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
                 <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>
-                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
-                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Coodnators</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
                 <!-- Properties Section with sub-options -->
                  <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
@@ -246,21 +395,10 @@
 
 
 
-            <!-- Agent Table -->
-            <table class="table agents-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon" id="sortId"></i></th>
-                        <th onclick="sortTable(1)">Name <i class="fas fa-sort sort-icon" id="sortName"></i></th>
-                        <th onclick="sortTable(2)">Email <i class="fas fa-sort sort-icon" id="sortEmail"></i></th>
-                        <th onclick="sortTable(3)">Phone <i class="fas fa-sort sort-icon" id="sortPhone"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="agentsList">
-                    <!-- Agent rows will be dynamically inserted here -->
-                </tbody>
-            </table>
+            <!-- Agent Cards -->
+            <div class="row" id="agentsList">
+                <!-- Agent cards will be dynamically inserted here -->
+            </div>
 
             <!-- Showing entries message -->
             <div id="entriesMessage">
@@ -301,20 +439,26 @@
                 </div>
             </div>
 
-            <!-- Delete Confirmation Modal -->
-            <div class="modal fade" id="deleteAgentModal" tabindex="-1" aria-labelledby="deleteAgentModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
+            <!-- Performance Modal -->
+            <div class="modal fade" id="performanceModal" tabindex="-1" aria-labelledby="performanceModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="deleteAgentModalLabel">Confirm Deletion</h5>
+                            <h5 class="modal-title" id="performanceModalLabel">Coordinator Performance</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p>Are you sure you want to delete this agent?</p>
+                            <div id="performanceContent">
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading performance data...</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
@@ -331,23 +475,30 @@
 <script>
 
 
-    let agents = [
-        { id: 1, name: 'John Doe', email: 'johndoe@example.com', phone: '123-456-7890' },
-        { id: 2, name: 'Jane Smith', email: 'janesmith@example.com', phone: '987-654-3210' },
-        { id: 3, name: 'David Lee', email: 'davidlee@example.com', phone: '555-123-4567' },
-        { id: 4, name: 'Alice Johnson', email: 'alicej@example.com', phone: '444-789-0123' },
-        { id: 5, name: 'Michael Brown', email: 'michaelb@example.com', phone: '333-555-7890' },
-        { id: 6, name: 'Emily Davis', email: 'emilyd@example.com', phone: '222-888-1234' },
-        { id: 7, name: 'James Wilson', email: 'jamesw@example.com', phone: '111-234-5678' },
-        { id: 8, name: 'Mary Taylor', email: 'maryt@example.com', phone: '999-111-2222' }
-    ];
-
-    let itemsPerPage = 5;
+    let agents = [];
+    let itemsPerPage = 6;
     let currentPage = 1;
     let currentSortDirection = 'asc';
-    let agentToDelete = null;
-    let agentToEdit = null;
     let filteredAgents = null;
+
+    // Fetch coordinators from API
+    async function fetchAgents() {
+        try {
+            const res = await fetch('/crm/api/coordinators');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'Failed to load coordinators');
+            agents = data.coordinators.map(coordinator => ({
+                id: coordinator.employee_id,
+                name: coordinator.full_name,
+                email: coordinator.email,
+                phone: coordinator.contact,
+                position: coordinator.position
+            }));
+            renderAgents();
+        } catch (e) {
+            console.error('Failed to fetch coordinators:', e);
+        }
+    }
 
     function renderAgents() {
         const list = filteredAgents || agents;
@@ -359,75 +510,192 @@
         const currentAgents = list.slice(start, end);
 
         currentAgents.forEach(agent => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${agent.id}</td>
-                <td>${agent.name}</td>
-                <td>${agent.email}</td>
-                <td>${agent.phone}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="editAgent(${agent.id})">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="confirmDelete(${agent.id})">Delete</button>
-                </td>
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+            col.innerHTML = `
+                <div class="card agent-card">
+                    <div class="card-body">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-info">
+                            <i class="fas fa-envelope"></i>
+                            ${agent.email}
+                        </div>
+                        <div class="agent-info">
+                            <i class="fas fa-phone"></i>
+                            ${agent.phone || 'No phone number'}
+                        </div>
+                        <div class="agent-info">
+                            <i class="fas fa-briefcase"></i>
+                            ${agent.position}
+                        </div>
+                        <div class="agent-info">
+                            <i class="fas fa-id-badge"></i>
+                            ID: ${agent.id}
+                        </div>
+                        <button class="btn btn-primary see-more-btn" onclick="showPerformance(${agent.id}, '${agent.name}')">
+                            <i class="fas fa-chart-line"></i> See More
+                        </button>
+                    </div>
+                </div>
             `;
-            agentsList.appendChild(row);
+            agentsList.appendChild(col);
         });
 
         renderPagination();
         updateEntriesMessage();
     }
 
-    function editAgent(agentId) {
-        agentToEdit = agentId;
-        const agent = agents.find(agent => agent.id === agentId);
-        if (agent) {
-            document.getElementById('agentName').value = agent.name;
-            document.getElementById('agentEmail').value = agent.email;
-            document.getElementById('agentPhone').value = agent.phone;
-            document.getElementById('addAgentModalLabel').textContent = 'Edit Agent';
-            $('#addAgentModal').modal('show');
-        }
-    }
-
-    document.getElementById('agentForm').addEventListener('submit', function (event) {
-        event.preventDefault();
-        const agentName = document.getElementById('agentName').value;
-        const agentEmail = document.getElementById('agentEmail').value;
-        const agentPhone = document.getElementById('agentPhone').value;
-
-        if (agentToEdit) {
-            const agent = agents.find(agent => agent.id === agentToEdit);
-            if (agent) {
-                agent.name = agentName;
-                agent.email = agentEmail;
-                agent.phone = agentPhone;
+    // Show coordinator performance
+    async function showPerformance(coordinatorId, coordinatorName) {
+        document.getElementById('performanceModalLabel').textContent = `${coordinatorName} - Performance`;
+        
+        // Show loading state
+        document.getElementById('performanceContent').innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading performance data...</p>
+            </div>
+        `;
+        
+        $('#performanceModal').modal('show');
+        
+        try {
+            const res = await fetch(`/crm/api/coordinators/${coordinatorId}/performance`);
+            const data = await res.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load performance data');
             }
-        } else {
-            const newAgent = {
-                id: agents.length + 1,
-                name: agentName,
-                email: agentEmail,
-                phone: agentPhone
-            };
-            agents.push(newAgent);
+            
+            const perf = data.performance;
+            const completionRate = perf.total_inquiries > 0 ? 
+                Math.round((perf.completed_inquiries / perf.total_inquiries) * 100) : 0;
+            
+            document.getElementById('performanceContent').innerHTML = `
+                <div class="performance-stats">
+                    <div class="stat-card">
+                        <div class="stat-number stat-total">${perf.total_inquiries}</div>
+                        <div class="stat-label">Total Inquiries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number stat-completed">${perf.completed_inquiries}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number stat-cancelled">${perf.cancelled_inquiries}</div>
+                        <div class="stat-label">Cancelled</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number stat-assigned">${perf.assigned_inquiries}</div>
+                        <div class="stat-label">Assigned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number stat-pending">${perf.pending_inquiries}</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                </div>
+                <div class="performance-chart">
+                    <h5 class="mb-3"><i class="fas fa-chart-pie"></i> Performance Visualization</h5>
+                    <div class="chart-container">
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="decision-support">
+                    <h5 class="mb-3"><i class="fas fa-brain"></i> Decision Support Analytics</h5>
+                    <div class="analytics-content">
+                        ${generateAnalytics(perf)}
+                    </div>
+                </div>
+            `;
+            
+            // Create the performance chart
+            createPerformanceChart(perf);
+        } catch (error) {
+            console.error('Error loading performance:', error);
+            document.getElementById('performanceContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Failed to load performance data. Please try again.
+                </div>
+            `;
         }
-
-        $('#addAgentModal').modal('hide');
-        agentToEdit = null;
-        renderAgents();
-    });
-
-    function confirmDelete(agentId) {
-        agentToDelete = agentId;
-        $('#deleteAgentModal').modal('show');
     }
 
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-        agents = agents.filter(agent => agent.id !== agentToDelete);
-        filteredAgents = filteredAgents ? filteredAgents.filter(agent => agent.id !== agentToDelete) : null;
-        $('#deleteAgentModal').modal('hide');
-        renderAgents();
-    });
+    // Create performance visualization chart
+    function createPerformanceChart(perf) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (window.performanceChartInstance) {
+            window.performanceChartInstance.destroy();
+        }
+        
+        const data = {
+            labels: ['Completed', 'Cancelled', 'Assigned', 'Pending'],
+            datasets: [{
+                data: [
+                    perf.completed_inquiries,
+                    perf.cancelled_inquiries,
+                    perf.assigned_inquiries,
+                    perf.pending_inquiries
+                ],
+                backgroundColor: [
+                    '#28a745',  // Green for completed
+                    '#dc3545',  // Red for cancelled
+                    '#ffc107',  // Yellow for assigned
+                    '#6c757d'   // Gray for pending
+                ],
+                borderColor: [
+                    '#1e7e34',
+                    '#bd2130',
+                    '#e0a800',
+                    '#495057'
+                ],
+                borderWidth: 2,
+                hoverOffset: 10
+            }]
+        };
+        
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = perf.total_inquiries;
+                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                duration: 2000
+            }
+        };
+        
+        window.performanceChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: options
+        });
+    }
 
     function updateEntriesMessage() {
         const list = filteredAgents || agents;
@@ -506,7 +774,283 @@
         renderAgents();
     }
 
-    renderAgents();
+    // Generate decision support analytics
+    function generateAnalytics(perf) {
+        const total = perf.total_inquiries;
+        const completed = perf.completed_inquiries;
+        const cancelled = perf.cancelled_inquiries;
+        const assigned = perf.assigned_inquiries;
+        const pending = perf.pending_inquiries;
+        
+        let analytics = '';
+        
+        if (total === 0) {
+            analytics = `
+                <div class="analytics-item neutral">
+                    <div class="analytics-title">
+                        <i class="fas fa-info-circle"></i>
+                        No Performance Data Available
+                        <span class="performance-indicator indicator-neutral">NEW</span>
+                    </div>
+                    <div class="analytics-description">
+                        This coordinator has not been assigned any inquiries yet. Monitor their performance once they start handling inquiries.
+                    </div>
+                </div>
+            `;
+        } else {
+            const completionRate = Math.round((completed / total) * 100);
+            const cancellationRate = Math.round((cancelled / total) * 100);
+            const activeRate = Math.round(((completed + cancelled) / total) * 100);
+            
+            // Completion Performance Analysis
+            if (completionRate >= 80) {
+                analytics += `
+                    <div class="analytics-item high-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-trophy"></i>
+                            Excellent Completion Rate
+                            <span class="performance-indicator indicator-excellent">EXCELLENT</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator shows exceptional performance with ${completionRate}% completion rate. 
+                            They consistently follow through on assigned inquiries and maintain high customer satisfaction.
+                        </div>
+                    </div>
+                `;
+            } else if (completionRate >= 60) {
+                analytics += `
+                    <div class="analytics-item moderate-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-thumbs-up"></i>
+                            Good Completion Rate
+                            <span class="performance-indicator indicator-good">GOOD</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator maintains a solid ${completionRate}% completion rate. 
+                            Consider providing additional support or training to help them reach higher performance levels.
+                        </div>
+                    </div>
+                `;
+            } else if (completionRate >= 40) {
+                analytics += `
+                    <div class="analytics-item low-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Low Completion Rate
+                            <span class="performance-indicator indicator-poor">NEEDS IMPROVEMENT</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator has a ${completionRate}% completion rate, which is below expectations. 
+                            Immediate intervention and additional training may be required.
+                        </div>
+                    </div>
+                `;
+            } else {
+                analytics += `
+                    <div class="analytics-item low-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-times-circle"></i>
+                            Critical Performance Issue
+                            <span class="performance-indicator indicator-poor">CRITICAL</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator has a very low ${completionRate}% completion rate. 
+                            Consider reassigning their current workload and providing intensive training or support.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Cancellation Analysis
+            if (cancellationRate > 30) {
+                analytics += `
+                    <div class="analytics-item low-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            High Cancellation Rate
+                            <span class="performance-indicator indicator-poor">CONCERN</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator has a ${cancellationRate}% cancellation rate, which may indicate issues with 
+                            customer communication, follow-up processes, or inquiry handling quality.
+                        </div>
+                    </div>
+                `;
+            } else if (cancellationRate > 15) {
+                analytics += `
+                    <div class="analytics-item moderate-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-info-circle"></i>
+                            Moderate Cancellation Rate
+                            <span class="performance-indicator indicator-good">MONITOR</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator has a ${cancellationRate}% cancellation rate. 
+                            Monitor their inquiry handling process and provide guidance on customer retention strategies.
+                        </div>
+                    </div>
+                `;
+            } else {
+                analytics += `
+                    <div class="analytics-item high-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-check-circle"></i>
+                            Low Cancellation Rate
+                            <span class="performance-indicator indicator-excellent">EXCELLENT</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator maintains a low ${cancellationRate}% cancellation rate, 
+                            indicating strong customer relationship management and inquiry handling skills.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Workload Analysis
+            if (pending > assigned * 0.5) {
+                analytics += `
+                    <div class="analytics-item moderate-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-clock"></i>
+                            High Pending Workload
+                            <span class="performance-indicator indicator-good">MONITOR</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator has ${pending} pending inquiries out of ${assigned} assigned. 
+                            Consider workload distribution or additional support to prevent bottlenecks.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Overall Performance Summary
+            if (completionRate >= 70 && cancellationRate <= 20) {
+                analytics += `
+                    <div class="analytics-item high-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-star"></i>
+                            Overall Performance Summary
+                            <span class="performance-indicator indicator-excellent">TOP PERFORMER</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator demonstrates excellent overall performance with high completion rates and low cancellations. 
+                            Consider them for leadership roles or additional responsibilities.
+                        </div>
+                    </div>
+                `;
+            } else if (completionRate >= 50 && cancellationRate <= 30) {
+                analytics += `
+                    <div class="analytics-item moderate-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-chart-line"></i>
+                            Overall Performance Summary
+                            <span class="performance-indicator indicator-good">STABLE PERFORMER</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator shows consistent performance. Focus on targeted improvements to enhance their effectiveness.
+                        </div>
+                    </div>
+                `;
+            } else {
+                analytics += `
+                    <div class="analytics-item low-performance">
+                        <div class="analytics-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Overall Performance Summary
+                            <span class="performance-indicator indicator-poor">NEEDS ATTENTION</span>
+                        </div>
+                        <div class="analytics-description">
+                            This coordinator requires immediate attention and support. Consider additional training, 
+                            mentoring, or workload adjustment to improve their performance.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        return analytics;
+    }
+
+    fetchAgents();
+
+    // Hide coordinator-only sections for sales_marketing_coordinator
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔍 DEBUG: Starting coordinator hiding script...');
+        
+        // Function to hide coordinator items
+        function hideCoordinatorItems() {
+            console.log('🔍 DEBUG: Executing hideCoordinatorItems function...');
+            
+            // Try coordinator-only class first
+            const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+            console.log('🔍 DEBUG: Found coordinator-only items:', coordinatorOnlyItems.length);
+            
+            coordinatorOnlyItems.forEach((item, index) => {
+                console.log(`🔍 DEBUG: Removing coordinator-only item ${index}:`, item.textContent.trim());
+                item.style.display = 'none';
+                item.remove();
+            });
+            
+            // Also try to find by text content as backup
+            const allNavItems = document.querySelectorAll('.nav-item');
+            console.log('🔍 DEBUG: Checking all nav items:', allNavItems.length);
+            
+            allNavItems.forEach((item, index) => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes('job posting') || text.includes('coordinators') || text.includes('coodnators')) {
+                    console.log(`🔍 DEBUG: Removing by text content: "${text}"`);
+                    item.style.display = 'none';
+                    item.remove();
+                }
+            });
+            
+            // Final verification
+            setTimeout(() => {
+                const remainingItems = document.querySelectorAll('.nav-item');
+                console.log('🔍 DEBUG: Remaining nav items after removal:', remainingItems.length);
+                remainingItems.forEach((item, index) => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes('job posting') || text.includes('coordinators') || text.includes('coodnators')) {
+                        console.log(`🔍 DEBUG: STILL FOUND AFTER REMOVAL: "${text}"`);
+                    }
+                });
+            }, 100);
+        }
+        
+        // Try to hide immediately
+        hideCoordinatorItems();
+        
+        // Also try after a short delay
+        setTimeout(hideCoordinatorItems, 100);
+        
+        fetch('/api/profile')
+            .then(response => {
+                console.log('🔍 DEBUG: Profile API response received:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('🔍 DEBUG: Profile API data:', data);
+                console.log('🔍 DEBUG: User role is:', data?.role_name);
+                if (data && data.role_name === 'sales_marketing_coordinator') {
+                    console.log('🔍 DEBUG: User is sales_marketing_coordinator, hiding items...');
+                    hideCoordinatorItems();
+                } else {
+                    console.log('🔍 DEBUG: User role is not sales_marketing_coordinator:', data?.role_name);
+                }
+            })
+            .catch(error => {
+                console.log('🔍 DEBUG: Could not fetch user profile:', error);
+                // Fallback: try to hide anyway if API fails
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                if (coordinatorOnlyItems.length > 0) {
+                    console.log('🔍 DEBUG: API failed, hiding coordinator sections as fallback');
+                    coordinatorOnlyItems.forEach(item => {
+                        item.style.display = 'none';
+                        item.remove();
+                    });
+                }
+            });
+    });
 </script>
     
 </body>

@@ -3161,8 +3161,6 @@ const HRModel = {
     // Check if user needs pre-onboarding
     checkIfUserNeedsPreOnboarding: async (userId) => {
         try {
-            console.log('🔍 Checking if user needs pre-onboarding for user ID:', userId);
-            
             // First check if user exists and get onboarding status with role info
             const [userResult] = await db.query(`
                 SELECT u.id, u.onboarding_completed, u.role_id, r.name as role_name, e.employee_id
@@ -3173,21 +3171,13 @@ const HRModel = {
             `, [userId]);
             
             if (userResult.length === 0) {
-                console.log('❌ User not found');
                 return { needsOnboarding: false, reason: 'User not found' };
             }
             
             const user = userResult[0];
-            console.log('🔍 User details:', {
-                onboarding_completed: user.onboarding_completed,
-                role_id: user.role_id,
-                role_name: user.role_name,
-                employee_id: user.employee_id
-            });
             
             // If onboarding is already completed, no need for pre-onboarding
             if (user.onboarding_completed === 1) {
-                console.log('✅ User has completed onboarding');
                 return { needsOnboarding: false, reason: 'Onboarding already completed' };
             }
             
@@ -3195,13 +3185,11 @@ const HRModel = {
             // These roles typically don't need pre-onboarding
             const externalRoles = ['developer', 'supplier', 'client', 'vendor'];
             if (externalRoles.includes(user.role_name?.toLowerCase())) {
-                console.log('✅ User is external (role: ' + user.role_name + '), no pre-onboarding required');
                 return { needsOnboarding: false, reason: 'External user - no pre-onboarding required' };
             }
             
             // If user has no employee_id, they might be an external user or invalid
             if (!user.employee_id) {
-                console.log('⚠️ User has no employee_id but is not marked as external');
                 // Mark them as completed to avoid blocking
                 await db.query(`
                     UPDATE users SET onboarding_completed = 1 WHERE id = ?
@@ -3217,15 +3205,11 @@ const HRModel = {
             `, [user.employee_id]);
             
             const hasDocuments = documentsResult[0].document_count > 0;
-            console.log('🔍 Has pre-onboarding documents:', hasDocuments);
             
             // If no documents exist, this might be a new employee who needs documents initialized
             if (!hasDocuments) {
-                console.log('⚠️ No pre-onboarding documents found - checking if this is a new employee');
-                
                 // Check if this is a new employee (onboarding_completed = 0)
                 if (user.onboarding_completed === 0) {
-                    console.log('✅ New employee detected - needs pre-onboarding');
                     return { 
                         needsOnboarding: true, 
                         reason: 'New employee - pre-onboarding required',
@@ -3235,7 +3219,6 @@ const HRModel = {
                     };
                 } else {
                     // This is a legacy employee (onboarding_completed = 1 but no documents)
-                    console.log('⚠️ Legacy employee detected - marking as completed');
                     await db.query(`
                         UPDATE users SET onboarding_completed = 1 WHERE id = ?
                     `, [userId]);
@@ -3255,8 +3238,6 @@ const HRModel = {
             const { total_documents, approved_documents } = completionResult[0];
             const isComplete = total_documents > 0 && total_documents === approved_documents;
             
-            console.log('🔍 Document completion status:', { total_documents, approved_documents, isComplete });
-            
             if (isComplete) {
                 // All documents are approved, mark onboarding as completed
                 await db.query(`
@@ -3266,7 +3247,6 @@ const HRModel = {
             }
             
             // User needs pre-onboarding
-            console.log('✅ User needs pre-onboarding');
             return { 
                 needsOnboarding: true, 
                 reason: 'Pre-onboarding required',
@@ -3276,7 +3256,7 @@ const HRModel = {
             };
             
         } catch (error) {
-            console.error("❌ Error checking if user needs pre-onboarding:", error);
+            console.error("Error checking if user needs pre-onboarding:", error);
             throw error;
         }
     },
@@ -4646,11 +4626,12 @@ const HRModel = {
         );
         
         const idApproved = idRows[0].count > 0;
-        
+        // Relaxed eligibility: send onboarding email as soon as at least one valid ID (or any non-contract doc) is approved.
+        // Previously: eligible only when contractApproved && idApproved
         return {
             contractApproved,
             idApproved,
-            eligible: contractApproved && idApproved
+            eligible: idApproved
         };
     },
 
@@ -4673,19 +4654,35 @@ const HRModel = {
                 const { email, employee_id, user_id } = rows[0];
                 const { sendOnboardingApprovalNotification } = require('../../../utils/emailService');
                 
-                // Send the onboarding approval email
-                await sendOnboardingApprovalNotification(email, employee_id, 'default123');
-                if (process.env.NODE_ENV === 'development') {
-                    console.debug(`✅ Onboarding approval email sent to ${email} for employee ${employee_id}`);
-                }
-                
-                // Mark onboarding as completed in users table
-                await db.query(
-                    `UPDATE users SET onboarding_completed = 1 WHERE id = ?`,
+                // Get the current temporary password from the database
+                const [passwordRows] = await db.query(
+                    `SELECT password FROM users WHERE id = ?`,
                     [user_id]
                 );
-                if (process.env.NODE_ENV === 'development') {
-                    console.debug(`✅ Onboarding marked as completed for user ${user_id} (employee ${employee_id})`);
+                
+                if (passwordRows && passwordRows[0]) {
+                    const currentHashedPassword = passwordRows[0].password;
+                    
+                    // Send the onboarding approval email with instructions about password
+                    await sendOnboardingApprovalNotification(email, employee_id, 'default123');
+                    if (process.env.NODE_ENV === 'development') {
+                        console.debug(`✅ Onboarding approval email sent to ${email} for employee ${employee_id}`);
+                    }
+                    
+                    // Update password to default123 for permanent account
+                    const bcrypt = require('bcrypt');
+                    const defaultPassword = 'default123';
+                    const saltRounds = 10;
+                    const newHashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+                    
+                    await db.query(
+                        `UPDATE users SET password = ?, onboarding_completed = 1 WHERE id = ?`,
+                        [newHashedPassword, user_id]
+                    );
+                    
+                    if (process.env.NODE_ENV === 'development') {
+                        console.debug(`✅ Password updated to default123 and onboarding marked as completed for user ${user_id} (employee ${employee_id})`);
+                    }
                 }
                 
                 return true;

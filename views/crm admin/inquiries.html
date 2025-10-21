@@ -154,8 +154,8 @@
                 </li>
                 <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
                 <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>
-                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
-                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Coodnators</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
                 <!-- Properties Section with sub-options -->
                  <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
@@ -206,11 +206,10 @@
                             <th onclick="sortTable(1)">Name <i class="fas fa-sort sort-icon"></i></th>
                             <th onclick="sortTable(2)">Email <i class="fas fa-sort sort-icon"></i></th>
                             <th onclick="sortTable(3)">Contact <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(4)">Property <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(5)">Preferred Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(6)">Pickup <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(7)">Agent <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(8)">Status <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(4)">Message <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(5)">Assigned To <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(7)">Date Submitted <i class="fas fa-sort sort-icon"></i></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -245,63 +244,33 @@
         </div>
     </div>
 
-    <!-- Assign Agent Modal -->
-    <div class="modal fade" id="assignAgentModal" tabindex="-1" aria-labelledby="assignAgentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+
+    <!-- Assign Coordinator Modal -->
+    <div class="modal fade" id="assignCoordinatorModal" tabindex="-1" aria-labelledby="assignCoordinatorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="assignAgentModalLabel">Assign Agent</h5>
+                    <h5 class="modal-title" id="assignCoordinatorModalLabel">Assign Sales Marketing Coordinator</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="agentSelect">Select Agent:</label>
-                    <select id="agentSelect" class="form-select">
-                        <option value="Mark">Mark</option>
-                        <option value="Jean">Jean</option>
-                        <option value="Mike">Mike</option>
-                        <option value="Anne">Anne</option>
-                    </select>
+                    <div class="mb-3">
+                        <label class="form-label">Select Coordinator:</label>
+                        <div id="coordinatorsList" class="list-group">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="assignAgentButton">Assign Agent</button>
+                                <p class="mt-2">Loading coordinators...</p>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Assign Confirmation Modal -->
-    <div class="modal fade" id="assignConfirmationModal" tabindex="-1" aria-labelledby="assignConfirmationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="assignConfirmationModalLabel">Confirm Agent Assignment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure to assign this agent?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmAssignAgentButton">Confirm</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Message Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmationModalLabel">Agent Assigned</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    The agent has been successfully assigned and the status is now set to "Pending".
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="confirmAssignCoordinator" disabled>
+                        <i class="fas fa-check"></i> Assign Coordinator
+                    </button>
                 </div>
             </div>
         </div>
@@ -314,43 +283,87 @@
 
     <script>
        
-        let inquiries = [
-            { id: 1, name: 'Alice', email: 'alice@mail.com', contact: '09171234567', property: 'Lot A', date: '2025-05-01', pickup: 'Buendia', agent: 'Mark', status: 'New' },
-            { id: 2, name: 'Bob', email: 'bob@mail.com', contact: '09281234567', property: 'Unit B', date: '2025-05-02', pickup: 'Ayala', agent: 'Jean', status: 'Confirmed' },
-            { id: 3, name: 'Charlie', email: 'charlie@mail.com', contact: '09391234567', property: 'House C', date: '2025-05-03', pickup: 'Ortigas', agent: 'Mike', status: 'Done' },
-            { id: 4, name: 'Diana', email: 'diana@mail.com', contact: '09181234567', property: 'Unit D', date: '2025-05-04', pickup: 'C5', agent: 'Anne', status: 'New' }
-        ];
-
+        let inquiries = [];
         let filteredInquiries = null;
         let itemsPerPage = 5;
         let currentPage = 1;
         let currentSortDirection = 'asc';
         let inquiryToDelete = null;
-        let inquiryToAssignAgent = null;
+
+        // Fetch inquiries from backend
+        async function fetchInquiries() {
+            try {
+                const response = await fetch('/crm/api/inquiries');
+                const data = await response.json();
+                
+                if (data.success) {
+                    inquiries = data.inquiries;
+                    renderInquiries();
+                } else {
+                    console.error('Failed to fetch inquiries:', data.error);
+                    showError('Failed to load inquiries');
+                }
+            } catch (error) {
+                console.error('Error fetching inquiries:', error);
+                showError('Network error. Please try again.');
+            }
+        }
+
+        function showError(message) {
+            const inquiryList = document.getElementById('inquiryList');
+            inquiryList.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> ${message}
+                    </td>
+                </tr>
+            `;
+        }
 
         function renderInquiries() {
             const list = filteredInquiries || inquiries;
             const inquiryList = document.getElementById('inquiryList');
             inquiryList.innerHTML = '';
+            
+            if (list.length === 0) {
+                inquiryList.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">
+                            <i class="fas fa-inbox"></i> No inquiries found
+                        </td>
+                    </tr>
+                `;
+                updateEntriesMessage();
+                renderPagination();
+                return;
+            }
+
             const start = (currentPage - 1) * itemsPerPage;
             const end = currentPage * itemsPerPage;
             const currentInquiries = list.slice(start, end);
 
             currentInquiries.forEach(q => {
                 const row = document.createElement('tr');
+                const statusBadge = q.status === 'Assigned' ? 
+                    '<span class="badge bg-success">Assigned</span>' : 
+                    '<span class="badge bg-warning">Pending</span>';
+                
                 row.innerHTML = `
                     <td>${q.id}</td>
-                    <td>${q.name}</td>
+                    <td>${q.full_name}</td>
                     <td>${q.email}</td>
                     <td>${q.contact}</td>
-                    <td>${q.property}</td>
-                    <td>${q.date}</td>
-                    <td>${q.pickup}</td>
-                    <td>${q.agent}</td>
-                    <td>${q.status}</td>
+                    <td class="text-truncate" style="max-width: 200px;" title="${q.message}">${q.message}</td>
+                    <td>${q.assigned_coordinator_name || '<span class="text-muted">Not assigned</span>'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${q.created_at}</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${q.id})">Delete</button>
-                        <button class="btn btn-primary btn-sm" onclick="showAssignAgentModal(${q.id})">Assign Agent</button>
+                        <button class="btn btn-primary btn-sm me-1" onclick="showAssignCoordinatorModal(${q.id})">
+                            <i class="fas fa-user-plus"></i> Assign
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${q.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </td>
                 `;
                 inquiryList.appendChild(row);
@@ -360,51 +373,67 @@
             updateEntriesMessage();
         }
 
-        function showAssignAgentModal(inquiryId) {
-            inquiryToAssignAgent = inquiryId;
-            $('#assignAgentModal').modal('show');
-        }
-
-        document.getElementById('assignAgentButton').addEventListener('click', function () {
-            $('#assignConfirmationModal').modal('show'); // Show the confirmation message before assigning
-        });
-
-        document.getElementById('confirmAssignAgentButton').addEventListener('click', function () {
-            const selectedAgent = document.getElementById('agentSelect').value;
-            inquiries = inquiries.map(inquiry => {
-                if (inquiry.id === inquiryToAssignAgent) {
-                    inquiry.agent = selectedAgent;
-                    inquiry.status = 'Pending'; // Change status to Pending
-                }
-                return inquiry;
-            });
-            inquiryToAssignAgent = null;
-            $('#assignConfirmationModal').modal('hide'); // Hide the confirmation message modal
-            $('#assignAgentModal').modal('hide'); // Close the agent assign modal
-            $('#confirmationModal').modal('show'); // Show the success message
-            renderInquiries();
-        });
-
         function deleteInquiry(inquiryId) {
-            // Store the inquiryId to be deleted
             inquiryToDelete = inquiryId;
-            // Show the delete confirmation modal
             $('#deleteModal').modal('show');
         }
 
-        document.getElementById('confirmDelete').addEventListener('click', function () {
-            // Proceed with deleting the inquiry
+        document.getElementById('confirmDelete').addEventListener('click', async function () {
+            try {
+                const response = await fetch(`/crm/api/inquiries/${inquiryToDelete}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Remove from local array
             inquiries = inquiries.filter(inquiry => inquiry.id !== inquiryToDelete);
             filteredInquiries = null;
-            inquiryToDelete = null; // Reset the inquiry to be deleted
+                    inquiryToDelete = null;
             $('#deleteModal').modal('hide');
             renderInquiries();
+                    
+                    // Show success message
+                    showSuccessMessage('Inquiry deleted successfully');
+                } else {
+                    showError('Failed to delete inquiry: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error deleting inquiry:', error);
+                showError('Network error. Please try again.');
+            }
         });
+
+        function showSuccessMessage(message) {
+            // Create a temporary success alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle"></i> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
 
         function filterInquiries() {
             const term = document.getElementById('searchBar').value.toLowerCase().trim();
             filteredInquiries = term
-                ? inquiries.filter(q => q.name.toLowerCase().includes(term))
+                ? inquiries.filter(q => 
+                    q.full_name.toLowerCase().includes(term) ||
+                    q.email.toLowerCase().includes(term) ||
+                    q.contact.toLowerCase().includes(term) ||
+                    q.message.toLowerCase().includes(term)
+                  )
                 : null;
             currentPage = 1;
             renderInquiries();
@@ -444,7 +473,7 @@
         }
 
         function sortTable(colIndex) {
-            const keys = ['id', 'name', 'email', 'contact', 'property', 'date', 'pickup', 'agent', 'status'];
+            const keys = ['id', 'full_name', 'email', 'contact', 'message', 'assigned_coordinator_name', 'status', 'created_at'];
             const list = filteredInquiries || inquiries;
 
             const key = keys[colIndex];
@@ -470,8 +499,220 @@
             renderInquiries();
         }
 
-        // Initial render
+        // Coordinator assignment functionality
+        let inquiryToAssign = null;
+        let selectedCoordinatorId = null;
+        let coordinators = [];
+
+        // Show assign coordinator modal
+        async function showAssignCoordinatorModal(inquiryId) {
+            inquiryToAssign = inquiryId;
+            selectedCoordinatorId = null;
+            
+            // Reset modal state
+            document.getElementById('confirmAssignCoordinator').disabled = true;
+            document.getElementById('coordinatorsList').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading coordinators...</p>
+                </div>
+            `;
+            
+            // Show modal
+            $('#assignCoordinatorModal').modal('show');
+            
+            // Fetch coordinators
+            await fetchCoordinators();
+        }
+
+        // Fetch coordinators from backend
+        async function fetchCoordinators() {
+            try {
+                const response = await fetch('/crm/api/coordinators');
+                const data = await response.json();
+                
+                if (data.success) {
+                    coordinators = data.coordinators;
+                    renderCoordinatorsList();
+                } else {
+                    document.getElementById('coordinatorsList').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Failed to load coordinators: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching coordinators:', error);
+                document.getElementById('coordinatorsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Network error. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        // Render coordinators list
+        function renderCoordinatorsList() {
+            const coordinatorsList = document.getElementById('coordinatorsList');
+            
+            if (coordinators.length === 0) {
+                coordinatorsList.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> No sales marketing coordinators found.
+                    </div>
+                `;
+                return;
+            }
+
+            coordinatorsList.innerHTML = '';
+            
+            coordinators.forEach(coordinator => {
+                const coordinatorItem = document.createElement('div');
+                coordinatorItem.className = 'list-group-item list-group-item-action';
+                coordinatorItem.style.cursor = 'pointer';
+                coordinatorItem.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${coordinator.full_name}</h6>
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-envelope"></i> ${coordinator.email}<br>
+                                <i class="fas fa-phone"></i> ${coordinator.contact}<br>
+                                <i class="fas fa-briefcase"></i> ${coordinator.position}
+                            </p>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="coordinatorSelect" 
+                                   value="${coordinator.employee_id}" id="coordinator_${coordinator.employee_id}">
+                            <label class="form-check-label" for="coordinator_${coordinator.employee_id}">
+                                Select
+                            </label>
+                        </div>
+                    </div>
+                `;
+                
+                // Add click handler
+                coordinatorItem.addEventListener('click', function(e) {
+                    if (e.target.type !== 'radio') {
+                        const radio = coordinatorItem.querySelector('input[type="radio"]');
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change'));
+                    }
+                });
+                
+                // Add radio change handler
+                const radio = coordinatorItem.querySelector('input[type="radio"]');
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedCoordinatorId = this.value;
+                        document.getElementById('confirmAssignCoordinator').disabled = false;
+                        
+                        // Remove active class from all items
+                        document.querySelectorAll('.list-group-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        
+                        // Add active class to selected item
+                        coordinatorItem.classList.add('active');
+                    }
+                });
+                
+                coordinatorsList.appendChild(coordinatorItem);
+            });
+        }
+
+        // Confirm coordinator assignment
+        document.getElementById('confirmAssignCoordinator').addEventListener('click', async function() {
+            if (!selectedCoordinatorId || !inquiryToAssign) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/crm/api/assign-coordinator', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inquiryId: inquiryToAssign,
+                        coordinatorId: selectedCoordinatorId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update local data
+                    const coordinator = coordinators.find(c => c.employee_id == selectedCoordinatorId);
+                    const inquiry = inquiries.find(i => i.id == inquiryToAssign);
+                    if (inquiry) {
+                        inquiry.assigned_to = selectedCoordinatorId;
+                        inquiry.assigned_coordinator_name = coordinator.full_name;
+                        inquiry.status = 'Assigned';
+                    }
+                    
+                    $('#assignCoordinatorModal').modal('hide');
         renderInquiries();
+                    showSuccessMessage('Coordinator assigned successfully');
+                } else {
+                    showError('Failed to assign coordinator: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error assigning coordinator:', error);
+                showError('Network error. Please try again.');
+            }
+        });
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchInquiries();
+        });
+
+        // Handle coordinator-only sections visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: Starting coordinator visibility script...');
+            
+            // Function to show coordinator items (for non-coordinators)
+            function showCoordinatorItems() {
+                console.log('🔍 DEBUG: Showing coordinator items for non-coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+            
+            // Function to hide coordinator items (for coordinators)
+            function hideCoordinatorItems() {
+                console.log('🔍 DEBUG: Keeping coordinator items hidden for coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+            }
+            
+            fetch('/api/profile')
+                .then(response => {
+                    console.log('🔍 DEBUG: Profile API response received:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('🔍 DEBUG: Profile API data:', data);
+                    console.log('🔍 DEBUG: User role is:', data?.role_name);
+                    if (data && data.role_name === 'sales_marketing_coordinator') {
+                        console.log('🔍 DEBUG: User is sales_marketing_coordinator, keeping items hidden');
+                        hideCoordinatorItems();
+                    } else {
+                        console.log('🔍 DEBUG: User role is not sales_marketing_coordinator, showing items');
+                        showCoordinatorItems();
+                    }
+                })
+                .catch(error => {
+                    console.log('🔍 DEBUG: Could not fetch user profile:', error);
+                    // Fallback: keep items hidden if API fails (safer default)
+                    hideCoordinatorItems();
+                });
+        });
     </script>
 </body>
 
