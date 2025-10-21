@@ -9,6 +9,28 @@ const CRMModel = {
         return rows[0].count > 0;
     },
 
+    // Developers: list all developer accounts
+    getAllDevelopers: async () => {
+        const query = `
+            SELECT 
+                id,
+                username,
+                email,
+                contact_number,
+                first_name,
+                middle_name,
+                surname,
+                position,
+                company_name,
+                status,
+                DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM developer_accounts
+            ORDER BY created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
     // Store the site visit request in the database
     storeVisitRequest: async (data) => {
         const query = `
@@ -80,9 +102,16 @@ const CRMModel = {
         }
 
         // Get total count for pagination
-        const countQuery = query.replace('jp.*, p.position_name, p.salary, r.name as role_name, r.id as role_id', 'COUNT(*) as total');
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM job_postings jp
+            JOIN positions p ON jp.position_id = p.position_id
+            JOIN roles r ON p.role_id = r.id
+            WHERE 1=1
+            ${search ? 'AND (p.position_name LIKE ? OR r.name LIKE ? OR jp.location LIKE ?)' : ''}
+        `;
         const [countResult] = await db.execute(countQuery, params);
-        const total = countResult[0].total;
+        const total = countResult[0]?.total || 0;
 
         // Add pagination and ordering
         query += ` ORDER BY jp.date_posted DESC LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
@@ -595,6 +624,105 @@ const CRMModel = {
     deleteVirtualHotspot: async (id) => {
         const query = "DELETE FROM virtual_hotspots WHERE id = ?";
         await db.execute(query, [id]);
+    },
+
+    // Inquiry Management Methods
+    storeInquiry: async (data) => {
+        const query = `
+            INSERT INTO inquiries (name, surname, email, contact, message, created_at)
+            VALUES (?, ?, ?, ?, ?, NOW())
+        `;
+        const [result] = await db.execute(query, [
+            data.name,
+            data.surname,
+            data.email,
+            data.contact,
+            data.message
+        ]);
+        return result.insertId;
+    },
+
+    getAllInquiries: async () => {
+        const query = `
+            SELECT 
+                i.id,
+                CONCAT(i.name, ' ', i.surname) as full_name,
+                i.name,
+                i.surname,
+                i.email,
+                i.contact,
+                i.message,
+                i.assigned_to,
+                i.status,
+                e.full_name as assigned_coordinator_name,
+                DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i') as created_at
+            FROM inquiries i
+            LEFT JOIN employees e ON i.assigned_to = e.employee_id
+            ORDER BY i.created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    deleteInquiry: async (id) => {
+        const query = "DELETE FROM inquiries WHERE id = ?";
+        await db.execute(query, [id]);
+    },
+
+    // Get sales marketing coordinators
+    getSalesMarketingCoordinators: async () => {
+        const query = `
+            SELECT 
+                e.employee_id,
+                e.full_name,
+                e.email,
+                e.contact,
+                r.name as position
+            FROM employees e
+            JOIN roles r ON e.role_id = r.id
+            JOIN users u ON e.user_id = u.id
+            WHERE r.name = 'sales_marketing_coordinator' 
+            AND e.is_deleted = 0
+            AND u.is_active = 1
+            ORDER BY e.full_name
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    // Assign coordinator to inquiry
+    assignCoordinator: async (inquiryId, coordinatorId) => {
+        const query = `
+            UPDATE inquiries 
+            SET assigned_to = ?, status = 'Assigned' 
+            WHERE id = ?
+        `;
+        await db.execute(query, [coordinatorId, inquiryId]);
+    },
+
+    // Get coordinator performance statistics
+    getCoordinatorPerformance: async (coordinatorId) => {
+        const query = `
+            SELECT 
+                COUNT(*) as total_inquiries,
+                COALESCE(SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END), 0) as completed_inquiries,
+                COALESCE(SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END), 0) as cancelled_inquiries,
+                COALESCE(SUM(CASE WHEN status = 'Assigned' THEN 1 ELSE 0 END), 0) as assigned_inquiries,
+                COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) as pending_inquiries
+            FROM inquiries 
+            WHERE assigned_to = ?
+        `;
+        const [rows] = await db.execute(query, [coordinatorId]);
+        const result = rows[0] || {};
+        
+        // Ensure all values are numbers, not null
+        return {
+            total_inquiries: parseInt(result.total_inquiries) || 0,
+            completed_inquiries: parseInt(result.completed_inquiries) || 0,
+            cancelled_inquiries: parseInt(result.cancelled_inquiries) || 0,
+            assigned_inquiries: parseInt(result.assigned_inquiries) || 0,
+            pending_inquiries: parseInt(result.pending_inquiries) || 0
+        };
     }
 };
 

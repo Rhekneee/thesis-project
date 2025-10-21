@@ -123,4 +123,19 @@ router.post('/virtual-tour/hotspots', CRMController.createVirtualHotspot);
 router.put('/virtual-tour/hotspots/:id', CRMController.updateVirtualHotspot);
 router.delete('/virtual-tour/hotspots/:id', CRMController.deleteVirtualHotspot);
 
+// Inquiry submission route
+router.post('/submit-inquiry', CRMController.submitInquiry);
+
+// Inquiry management routes
+router.get('/api/inquiries', CRMController.getAllInquiries);
+router.delete('/api/inquiries/:id', CRMController.deleteInquiry);
+
+// Coordinator assignment routes
+router.get('/api/coordinators', CRMController.getSalesMarketingCoordinators);
+router.post('/api/assign-coordinator', CRMController.assignCoordinator);
+router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoordinatorPerformance);
+
+// Developers (Clients page)
+router.get('/api/developers', CRMController.getAllDevelopers);
+
 module.exports = router;

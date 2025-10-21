@@ -17,7 +17,7 @@ const ProfileModel = {
                             e.employee_id, e.full_name, e.birthday, e.address, e.contact,
                             e.educational_background, e.employment_status,
                             e.emergency_contact_name, e.emergency_contact_relationship, e.emergency_contact_phone,
-                            e.profile_picture, r.role_name, d.department_name
+                            e.profile_picture, r.name AS role_name, d.name AS department_name
                         FROM users u
                         LEFT JOIN employees e ON u.id = e.user_id
                         LEFT JOIN roles r ON e.role_id = r.id

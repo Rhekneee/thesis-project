@@ -101,6 +101,52 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        /* Client Card Styles */
+        .client-card {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .client-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .client-card .card-body {
+            padding: 20px;
+        }
+
+        .client-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .client-info {
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+
+        .client-info i {
+            width: 20px;
+            margin-right: 8px;
+            color: #007bff;
+        }
+
+        .client-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .client-actions .btn {
+            flex: 1;
+        }
     </style>
 </head>
 
@@ -198,8 +244,8 @@
                 </li>
                 <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
                 <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>
-                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
-                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Coodnators</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
                 <!-- Properties Section with sub-options -->
                  <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
@@ -251,21 +297,10 @@
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClientModal">Add Client</button>
             </div>
 
-            <!-- Client Table -->
-            <table class="table clients-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon" id="sortId"></i></th>
-                        <th onclick="sortTable(1)">Name <i class="fas fa-sort sort-icon" id="sortName"></i></th>
-                        <th onclick="sortTable(2)">Email <i class="fas fa-sort sort-icon" id="sortEmail"></i></th>
-                        <th onclick="sortTable(3)">Phone <i class="fas fa-sort sort-icon" id="sortPhone"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="clientsList">
-                    <!-- Client rows will be dynamically inserted here -->
-                </tbody>
-            </table>
+            <!-- Client Cards -->
+            <div class="row" id="clientsList">
+                <!-- Client cards will be dynamically inserted here -->
+            </div>
 
             <!-- Showing entries message -->
             <div id="entriesMessage">
@@ -338,16 +373,23 @@
        // JavaScript for toggling the sidebar visibility
       
 
-        let clients = [
-            { id: 1, name: 'Robert Brown', email: 'robertb@example.com', phone: '123-456-7890' },
-            { id: 2, name: 'Lily Adams', email: 'lilya@example.com', phone: '987-654-3210' },
-            { id: 3, name: 'Michael Johnson', email: 'michaelj@example.com', phone: '555-123-4567' },
-            { id: 4, name: 'Sophia Wilson', email: 'sophiaw@example.com', phone: '444-789-0123' },
-            { id: 5, name: 'Emma Taylor', email: 'emmat@example.com', phone: '333-555-7890' },
-            { id: 6, name: 'William Smith', email: 'williams@example.com', phone: '222-888-1234' },
-            { id: 7, name: 'James Wilson', email: 'jamesw@example.com', phone: '111-234-5678' },
-            { id: 8, name: 'Olivia Davis', email: 'oliviad@example.com', phone: '999-111-2222' }
-        ];
+        let clients = [];
+        async function fetchClients() {
+            try {
+                const res = await fetch('/crm/api/developers');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Failed to load developers');
+                clients = data.developers.map((d, idx) => ({
+                    id: d.id,
+                    name: d.first_name && d.surname ? `${d.first_name} ${d.surname}` : (d.username || 'Unknown'),
+                    email: d.email,
+                    phone: d.contact_number || '',
+                }));
+                renderClients();
+            } catch (e) {
+                console.error('Failed to fetch clients:', e);
+            }
+        }
 
         let itemsPerPage = 5;
         let currentPage = 1;
@@ -366,18 +408,36 @@
             const currentClients = list.slice(start, end);
 
             currentClients.forEach(client => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${client.id}</td>
-                    <td>${client.name}</td>
-                    <td>${client.email}</td>
-                    <td>${client.phone}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="editClient(${client.id})">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(${client.id})">Delete</button>
-                    </td>
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                col.innerHTML = `
+                    <div class="card client-card">
+                        <div class="card-body">
+                            <div class="client-name">${client.name}</div>
+                            <div class="client-info">
+                                <i class="fas fa-envelope"></i>
+                                ${client.email}
+                            </div>
+                            <div class="client-info">
+                                <i class="fas fa-phone"></i>
+                                ${client.phone || 'No phone number'}
+                            </div>
+                            <div class="client-info">
+                                <i class="fas fa-id-badge"></i>
+                                ID: ${client.id}
+                            </div>
+                            <div class="client-actions">
+                                <button class="btn btn-warning btn-sm" onclick="editClient(${client.id})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="confirmDelete(${client.id})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
-                clientsList.appendChild(row);
+                clientsList.appendChild(col);
             });
 
             renderPagination();
@@ -513,7 +573,52 @@
             renderClients();
         }
 
-        renderClients();
+        fetchClients();
+
+        // Handle coordinator-only sections visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: Starting coordinator visibility script...');
+            
+            // Function to show coordinator items (for non-coordinators)
+            function showCoordinatorItems() {
+                console.log('🔍 DEBUG: Showing coordinator items for non-coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+            
+            // Function to hide coordinator items (for coordinators)
+            function hideCoordinatorItems() {
+                console.log('🔍 DEBUG: Keeping coordinator items hidden for coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+            }
+            
+            fetch('/api/profile')
+                .then(response => {
+                    console.log('🔍 DEBUG: Profile API response received:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('🔍 DEBUG: Profile API data:', data);
+                    console.log('🔍 DEBUG: User role is:', data?.role_name);
+                    if (data && data.role_name === 'sales_marketing_coordinator') {
+                        console.log('🔍 DEBUG: User is sales_marketing_coordinator, keeping items hidden');
+                        hideCoordinatorItems();
+                    } else {
+                        console.log('🔍 DEBUG: User role is not sales_marketing_coordinator, showing items');
+                        showCoordinatorItems();
+                    }
+                })
+                .catch(error => {
+                    console.log('🔍 DEBUG: Could not fetch user profile:', error);
+                    // Fallback: keep items hidden if API fails (safer default)
+                    hideCoordinatorItems();
+                });
+        });
     </script>
     
 </body>
