@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        
+        #content {
+            margin-left: 250px; /* Match sidebar width */
+            margin-top: 60px; /* Match topbar height */
+            padding: 20px;
+            min-height: calc(100vh - 60px); /* Full height minus topbar */
+            background-color: #f8f9fa;
+            transition: margin-left 0.3s;
+        }
+
+        #content h2 {
+            font-size: 28px;
+        }
+
+         /* Styling for the table */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: rgb(0, 0, 0);
+        }
+
+        .btn-action {
+            margin-right: 5px;
+        }
+
+        .btn-action i {
+            font-size: 16px;
+        }
+
+        /* Search bar styling */
+        #searchBar {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease; /* Smooth transition on color change */
+        }
+
+        .sort-icon.active {
+            color: #007bff; /* Change this to your preferred active color */
+        }
+
+        .sort-icon:hover {
+            color: #0056b3; /* Optional: Hover effect */
+        }
+
+        /* Flexbox styling for search and entries per page */
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-container .form-select,
+        .search-container .form-control {
+            width: auto;
+            margin-left: 10px;
+        }
+
+        .search-container label {
+            margin-bottom: 0; /* Fix spacing */
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Modal and Form Styling */
+        /* Make only the edit modal large; others inherit default/smaller widths */
+        #editRoleModal .modal-dialog {
+            max-width: 1000px;
+            margin: 1.75rem auto;
+        }
+
+        .modal-content {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 1.25rem;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-section h3 {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.9rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            transition: border-color 0.15s ease-in-out;
+        }
+
+        .form-control:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .btn-submit {
+            background-color: #28a745;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .btn-submit:hover {
+            background-color: #218838;
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Additional styling for roles tables */
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border-radius: 8px 8px 0 0 !important;
+            padding: 1rem 1.5rem;
+        }
+
+        .card-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .table th {
+            background-color: #343a40;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 1rem 0.75rem;
+        }
+
+        .table td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            border-color: #dee2e6;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .btn-action {
+            margin: 0 2px;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-sm {
+            font-size: 0.875rem;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error state */
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        /* Success state */
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        /* Clean Tab Styling */
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .nav-tabs .nav-link {
+            border: 1px solid transparent;
+            border-top-left-radius: 0.375rem;
+            border-top-right-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: #495057;
+            background-color: transparent;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border-color: #e9ecef #e9ecef #dee2e6;
+            background-color: #f8f9fa;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #495057;
+            background-color: #fff;
+            border-color: #dee2e6 #dee2e6 #fff;
+            border-bottom-color: transparent;
+        }
+
+        .nav-tabs .nav-link i {
+            margin-right: 0.5rem;
+        }
+
+        /* Card Header Tabs */
+        .card-header-tabs {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            padding: 0;
+        }
+
+        .tab-pane {
+            padding: 1.5rem 0;
+        }
+
+        /* Enhanced Button Groups */
+        .btn-group .btn {
+            border-radius: 0.375rem;
+            margin-right: 0.25rem;
+        }
+
+        .btn-group .btn:last-child {
+            margin-right: 0;
+        }
+
+        /* Professional Badges */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        /* Enhanced Table Styling */
+        .table th i {
+            margin-right: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        /* Employee Details Styling */
+        .employee-profile {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .employee-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .employee-info h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .employee-info .employee-id {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .main-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .personal-info-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .info-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .info-section h5 {
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .info-item i {
+            width: 20px;
+            color: #6c757d;
+            margin-right: 12px;
+        }
+
+        .info-item span {
+            color: #495057;
+        }
+
+        /* Attendance Section */
+        .attendance-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .attendance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .attendance-filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .attendance-filters select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .attendance-filters label {
+            font-weight: 500;
+            color: #555;
+            margin: 0;
+        }
+
+        .attendance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-card.present {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .stat-card.late {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        .stat-card.absent {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .chart-wrapper {
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .employee-profile {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .main-content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .attendance-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .chart-wrapper {
+                width: 250px;
+                height: 250px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+    <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
+    </div>
+    <ul class="list-unstyled">
+        <li class="nav-item">
+            <a class="nav-item active" href="/hr/hr_admin">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance</span>
+            </a>
+            <ul class="collapse" id="Attendance">
+                <li class="nav-item">
+                    <a href="/hr/hr_daily_attendance">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Daily Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_history_attendance">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Attendance Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_leave_request">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Request Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/hr/hr_work_adjustment">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Work Adjustment</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Payroll Management</span>
+            </a>
+            <ul class="collapse" id="Payroll">
+                <li class="nav-item"><a href="/hr/hr_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a></li>
+                <li class="nav-item"><a href="/hr/hr_salary_deduction"><i class="fas fa-file-invoice-dollar"></i> Salary Deduction</a></li>
+                <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Employee Management</span>
+            </a>
+            <ul class="collapse" id="Employee">
+                <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>Recruitment</span>
+            </a>
+            <ul class="collapse" id="Recruitment">
+                <li class="nav-item"><a href="/hr/hr_applicants"><i class="fas fa-list"></i> Applicants</a></li>
+                <li class="nav-item"><a href="/hr/hr_interview"><i class="fas fa-calendar-check"></i> Interview</a></li>
+            </ul>
+        </li>    
+        <li class="nav-item">
+            <a href="/hr/developers_approval">
+                <i class="fas fa-users"></i>
+                <span>Developers Approval</span>
+            </a>
+        </li>
+    </ul>
+    <!-- Move Logout outside the main ul -->
+    <div class="logout-container">
+        <a href="/logout" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+    </div>
+</div>
+        <!-- Main content area -->
+    <div id="content">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <button class="btn btn-outline-secondary" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to Employee List
+            </button>
+        </div>
+
+        <!-- Employee Details Card -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-user"></i> Employee Details</h4>
+            </div>
+            <div class="card-body">
+                <div id="employeeDetailsContent">
+                    <div class="text-center">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-2">Loading employee details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script>
+        // Dynamically set API_URL based on current origin
+        const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/hr' 
+        : `${window.location.origin}/hr`;
+
+        // Get employee ID from URL parameters
+        function getEmployeeIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('employee_id');
+        }
+
+        // Go back to employee list
+        function goBack() {
+            window.location.href = '/hr/hr_employee_list';
+        }
+
+        // Load employee details
+        async function loadEmployeeDetails() {
+            const employeeId = getEmployeeIdFromUrl();
+            if (!employeeId) {
+                document.getElementById('employeeDetailsContent').innerHTML = 
+                    '<div class="alert alert-danger">No employee ID provided</div>';
+                return;
+            }
+
+            // Store employee ID globally for period filtering
+            currentEmployeeId = employeeId;
+
+            try {
+                // Load employee data and attendance data in parallel
+                const [employeeResponse, attendanceResponse] = await Promise.all([
+                    fetch(`${API_URL}/employees/${employeeId}`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    }),
+                    fetch(`${API_URL}/employees/${employeeId}/attendance-summary`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                ]);
+
+                if (!employeeResponse.ok) {
+                    throw new Error(`HTTP error! status: ${employeeResponse.status}`);
+                }
+
+                const employee = await employeeResponse.json();
+                let attendanceData = null;
+
+                if (attendanceResponse.ok) {
+                    attendanceData = await attendanceResponse.json();
+                    currentAttendanceData = attendanceData;
+                } else {
+                    console.warn('Could not load attendance data:', attendanceResponse.status);
+                }
+
+                displayEmployeeDetails(employee, attendanceData);
+            } catch (error) {
+                console.error('Error loading employee details:', error);
+                document.getElementById('employeeDetailsContent').innerHTML = 
+                    '<div class="alert alert-danger">Error loading employee details</div>';
+            }
+        }
+
+        // Display employee details
+        function displayEmployeeDetails(employee, attendanceData) {
+            const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+            const avatarSrc = employee.profile_picture ? `/uploads/profile_pictures/${employee.profile_picture}` : '/hr/default-profile-picture';
+            
+            // Generate attendance section
+            const attendanceSection = generateAttendanceSection(attendanceData);
+            
+            const content = `
+                <div class="employee-profile">
+                    <img class="employee-avatar-large" src="${avatarSrc}" alt="${safe(employee.full_name)}" onerror="this.src='/hr/default-profile-picture'" />
+                    <div class="employee-info">
+                        <h3>${safe(employee.full_name)}</h3>
+                        <div class="employee-id">Employee ID: ${safe(employee.employee_id)}</div>
+                        <div class="info-item">
+                            <i class="fas fa-user-tag"></i>
+                            <span><strong>Position:</strong> ${safe(employee.role_name)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-building"></i>
+                            <span><strong>Department:</strong> ${safe(employee.department_name)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-id-card"></i>
+                            <span><strong>Status:</strong> ${employee.is_deleted ? 'Archived' : 'Active'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-content-grid">
+                    <div class="personal-info-section">
+                        <h5><i class="fas fa-user"></i> Personal Information</h5>
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <span><strong>Email:</strong> ${safe(employee.email)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <span><strong>Contact:</strong> ${safe(employee.contact)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span><strong>Address:</strong> ${safe(employee.address)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-birthday-cake"></i>
+                            <span><strong>Birthday:</strong> ${safe(employee.birthday)}</span>
+                        </div>
+                    </div>
+
+                    ${attendanceSection}
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-section">
+                        <h5><i class="fas fa-briefcase"></i> Employment Details</h5>
+                        <div class="info-item">
+                            <i class="fas fa-id-card"></i>
+                            <span><strong>Employment Status:</strong> ${safe(employee.employment_status)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span><strong>Education:</strong> ${safe(employee.educational_background)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span><strong>Date Created:</strong> ${safe(employee.created_at)}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h5><i class="fas fa-phone-alt"></i> Emergency Contact</h5>
+                        <div class="info-item">
+                            <i class="fas fa-user"></i>
+                            <span><strong>Name:</strong> ${safe(employee.emergency_contact_name)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-heart"></i>
+                            <span><strong>Relationship:</strong> ${safe(employee.emergency_contact_relationship)}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <span><strong>Phone:</strong> ${safe(employee.emergency_contact_phone)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('employeeDetailsContent').innerHTML = content;
+
+            // Create pie chart if attendance data is available
+            if (attendanceData) {
+                createAttendancePieChart(attendanceData);
+            }
+        }
+
+        // Generate attendance section HTML
+        function generateAttendanceSection(attendanceData) {
+            if (!attendanceData) {
+                return `
+                    <div class="attendance-section">
+                        <div class="attendance-header">
+                            <h5><i class="fas fa-calendar-check"></i> Attendance Summary</h5>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No attendance data available
+                        </div>
+                    </div>
+                `;
+            }
+
+            const { present = 0, late = 0, absent = 0, total = 0 } = attendanceData;
+            const presentPercentage = total > 0 ? Math.round((present / total) * 100) : 0;
+            const latePercentage = total > 0 ? Math.round((late / total) * 100) : 0;
+            const absentPercentage = total > 0 ? Math.round((absent / total) * 100) : 0;
+
+            return `
+                <div class="attendance-section">
+                    <div class="attendance-header">
+                        <h5><i class="fas fa-calendar-check"></i> Attendance Summary</h5>
+                        <span class="badge bg-primary">Total: ${total} days</span>
+                    </div>
+                    
+                    <div class="attendance-filters">
+                        <label for="attendancePeriod">Period:</label>
+                        <select id="attendancePeriod" onchange="changeAttendancePeriod()">
+                            <option value="all">All Time</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                            <option value="last_week">Last Week</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="last_year">Last Year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="attendance-stats">
+                        <div class="stat-card present">
+                            <div class="stat-number" style="color: #28a745;">${present}</div>
+                            <div class="stat-label">Present (${presentPercentage}%)</div>
+                        </div>
+                        <div class="stat-card late">
+                            <div class="stat-number" style="color: #ffc107;">${late}</div>
+                            <div class="stat-label">Late (${latePercentage}%)</div>
+                        </div>
+                        <div class="stat-card absent">
+                            <div class="stat-number" style="color: #dc3545;">${absent}</div>
+                            <div class="stat-label">Absent (${absentPercentage}%)</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Global variables for attendance data
+        let currentEmployeeId = null;
+        let currentAttendanceData = null;
+        let attendanceChart = null;
+
+        // Change attendance period
+        async function changeAttendancePeriod() {
+            const periodSelect = document.getElementById('attendancePeriod');
+            const selectedPeriod = periodSelect.value;
+            
+            console.log('🔍 [DEBUG] Period changed to:', selectedPeriod);
+            
+            if (!currentEmployeeId) {
+                console.log('🔍 [DEBUG] No currentEmployeeId available');
+                return;
+            }
+            
+            try {
+                // Show loading state
+                const attendanceSection = document.querySelector('.attendance-section');
+                if (attendanceSection) {
+                    attendanceSection.style.opacity = '0.6';
+                }
+                
+                console.log('🔍 [DEBUG] Making API call to:', `${API_URL}/employees/${currentEmployeeId}/attendance-summary?period=${selectedPeriod}`);
+                
+                // Fetch attendance data for the selected period
+                const response = await fetch(`${API_URL}/employees/${currentEmployeeId}/attendance-summary?period=${selectedPeriod}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                console.log('🔍 [DEBUG] API response status:', response.status);
+                
+                if (response.ok) {
+                    const attendanceData = await response.json();
+                    console.log('🔍 [DEBUG] Received attendance data:', attendanceData);
+                    currentAttendanceData = attendanceData;
+                    
+                    // Update the attendance section
+                    updateAttendanceSection(attendanceData);
+                    
+                    // Update the pie chart
+                    updateAttendanceChart(attendanceData);
+                } else {
+                    console.error('Failed to fetch attendance data for period:', selectedPeriod);
+                }
+            } catch (error) {
+                console.error('Error changing attendance period:', error);
+            } finally {
+                // Remove loading state
+                const attendanceSection = document.querySelector('.attendance-section');
+                if (attendanceSection) {
+                    attendanceSection.style.opacity = '1';
+                }
+            }
+        }
+
+        // Update attendance section with new data
+        function updateAttendanceSection(attendanceData) {
+            const { present = 0, late = 0, absent = 0, total = 0 } = attendanceData;
+            const presentPercentage = total > 0 ? Math.round((present / total) * 100) : 0;
+            const latePercentage = total > 0 ? Math.round((late / total) * 100) : 0;
+            const absentPercentage = total > 0 ? Math.round((absent / total) * 100) : 0;
+            
+            // Update the badge
+            const badge = document.querySelector('.attendance-header .badge');
+            if (badge) {
+                badge.textContent = `Total: ${total} days`;
+            }
+            
+            // Update stat cards
+            const statCards = document.querySelectorAll('.stat-card');
+            if (statCards.length >= 3) {
+                statCards[0].querySelector('.stat-number').textContent = present;
+                statCards[0].querySelector('.stat-label').textContent = `Present (${presentPercentage}%)`;
+                
+                statCards[1].querySelector('.stat-number').textContent = late;
+                statCards[1].querySelector('.stat-label').textContent = `Late (${latePercentage}%)`;
+                
+                statCards[2].querySelector('.stat-number').textContent = absent;
+                statCards[2].querySelector('.stat-label').textContent = `Absent (${absentPercentage}%)`;
+            }
+        }
+
+        // Update attendance chart with new data
+        function updateAttendanceChart(attendanceData) {
+            const { present = 0, late = 0, absent = 0 } = attendanceData;
+            
+            if (attendanceChart) {
+                attendanceChart.data.datasets[0].data = [present, late, absent];
+                attendanceChart.update();
+            } else {
+                createAttendancePieChart(attendanceData);
+            }
+        }
+
+        // Create pie chart using Chart.js
+        function createAttendancePieChart(attendanceData) {
+            const { present = 0, late = 0, absent = 0 } = attendanceData;
+            
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            attendanceChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Present', 'Late', 'Absent'],
+                    datasets: [{
+                        data: [present, late, absent],
+                        backgroundColor: [
+                            '#28a745', // Green for present
+                            '#ffc107', // Yellow for late
+                            '#dc3545'  // Red for absent
+                        ],
+                        borderColor: [
+                            '#1e7e34',
+                            '#e0a800',
+                            '#bd2130'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load employee details when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEmployeeDetails();
+        });
+       </script>
+    
+   
+
+</body>
+
+</html>

@@ -38,6 +38,37 @@ const upload = multer({
     }
 }).single('profile_picture');
 
+// Configure multer for construction worker picture uploads
+const constructionWorkerStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'construction_workers');
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename: construction-worker_timestamp.extension
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, `construction-worker-${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+});
+
+const constructionWorkerUpload = multer({
+    storage: constructionWorkerStorage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept only image files (case-insensitive)
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+            return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+    }
+}).single('picture');
+
 const HRController = {
     // 🔹 Add a new employee (Manager Only)
     addEmployee: async (req, res) => {
@@ -190,6 +221,53 @@ const HRController = {
         }
     },
 
+    // 🔹 Update employee role (from edit modal)
+    updateEmployeeRole: async (req, res) => {
+        try {
+            const { id, role_name, salary, department_id } = req.body;
+            if (!id) return res.status(400).json({ error: 'Missing role id' });
+            await HRModel.updateEmployeeRole({ id, role_name, salary, department_id });
+            res.json({ success: true });
+        } catch (e) {
+            console.error('❌ updateEmployeeRole failed:', e);
+            res.status(500).json({ error: 'Failed to update role' });
+        }
+    },
+
+    // 🔹 Update construction role (from edit modal)
+    updateConstructionRole: async (req, res) => {
+        try {
+            const { id, role_name, daily_rate, department_id } = req.body;
+            if (!id) return res.status(400).json({ error: 'Missing construction role id' });
+            await HRModel.updateConstructionRole({ id, role_name, daily_rate, department_id });
+            res.json({ success: true });
+        } catch (e) {
+            console.error('❌ updateConstructionRole failed:', e);
+            res.status(500).json({ error: 'Failed to update construction role' });
+        }
+    },
+    // 🔹 Get departments for dropdown
+    getDepartments: async (req, res) => {
+        try {
+            const rows = await HRModel.getAllDepartments();
+            res.json(rows);
+        } catch (e) {
+            console.error('❌ getDepartments failed:', e);
+            res.status(500).json({ error: 'Failed to fetch departments' });
+        }
+    },
+
+    // Check payroll status for role changes effectiveness
+    checkPayrollStatus: async (req, res) => {
+        try {
+            const payrollStatus = await HRModel.checkPayrollStatus();
+            res.json(payrollStatus);
+        } catch (error) {
+            console.error("❌ [checkPayrollStatus] Error checking payroll status:", error.message || error);
+            res.status(500).json({ error: "Failed to check payroll status" });
+        }
+    },
+
     // Get all documents with status 'uploaded' (pending verification)
     getAllPendingOnboardingDocuments: async (req, res) => {
         try {
@@ -325,6 +403,23 @@ const HRController = {
         } catch (error) {
             console.error("❌ [getRoles] Error fetching roles:", error.message || error);
             res.status(500).json({ error: "Failed to fetch roles" });
+        }
+    },
+
+    // 🔹 Get all construction roles with basic salary information
+    getConstructionRoles: async (req, res) => {
+        try {
+            const constructionRoles = await HRModel.getAllConstructionRoles();
+
+            if (!constructionRoles || constructionRoles.length === 0) {
+                console.warn("⚠️ [getConstructionRoles] No construction roles found in the system.");
+                return res.status(404).json({ error: "No construction roles found in the system" });
+            }
+
+            res.json(constructionRoles);
+        } catch (error) {
+            console.error("❌ [getConstructionRoles] Error fetching construction roles:", error.message || error);
+            res.status(500).json({ error: "Failed to fetch construction roles" });
         }
     },
 
@@ -1754,14 +1849,52 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 });
             }
 
-            // Validate payroll data structure
+            // Validate payroll data structure (with normalization before checks)
             const requiredFields = ['employee_id', 'start_date', 'end_date', 'days_present', 'days_absent', 
                                   'total_hours', 'overtime_hours', 'monthly_salary', 'total_deductions', 
                                   'absence_deduction', 'net_pay'];
             
             for (const record of payrollData) {
+                // Normalize numeric fields to prevent type/format issues from the client
+                const coerceNumber = (v) => {
+                    if (v === null || v === undefined) return 0;
+                    if (typeof v === 'number') return v;
+                    const s = String(v).trim();
+                    // If value looks like concatenated numbers (e.g., "0100.00450.00"), split and sum
+                    const parts = s.match(/\d+(?:\.\d+)?/g);
+                    if (parts && parts.length > 1 && s.replace(/\d|\.|\s/g, '').length === 0) {
+                        return parts.reduce((sum, p) => sum + parseFloat(p || '0'), 0);
+                    }
+                    const n = parseFloat(s);
+                    return isNaN(n) ? 0 : n;
+                };
+                
+                record.total_hours = coerceNumber(record.total_hours);
+                record.overtime_hours = coerceNumber(record.overtime_hours);
+                record.monthly_salary = coerceNumber(record.monthly_salary);
+                record.semi_monthly_payout = coerceNumber(record.semi_monthly_payout);
+                record.daily_rate = coerceNumber(record.daily_rate);
+                record.absence_deduction = coerceNumber(record.absence_deduction);
+                record.total_deductions = coerceNumber(record.total_deductions);
+                
+                // If net_pay is missing or null, recompute server-side for safety
+                if (record.net_pay === null || record.net_pay === undefined || record.net_pay === '') {
+                    record.net_pay = record.monthly_salary - record.total_deductions - record.absence_deduction;
+                }
+                // Ensure net_pay is numeric
+                record.net_pay = coerceNumber(record.net_pay);
+
+                // Debug: Log the record to see what fields are present
+                console.log(`Validating record for employee ${record.employee_id}:`, {
+                    employee_id: record.employee_id,
+                    has_net_pay: 'net_pay' in record,
+                    net_pay_value: record.net_pay,
+                    all_fields: Object.keys(record)
+                });
+                
                 for (const field of requiredFields) {
                     if (record[field] === undefined || record[field] === null) {
+                        console.error(`Missing field ${field} for employee ${record.employee_id}:`, record);
                         return res.status(400).json({ 
                             message: `Missing required field: ${field} in payroll record for employee ${record.employee_id}` 
                         });
@@ -3837,6 +3970,172 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ success: false, error: 'Failed to get payroll approval progress' });
         }
     },
+
+    // Employee attendance summary for pie chart
+    getEmployeeAttendanceSummary: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            const { period = 'all' } = req.query;
+            const summary = await HRModel.getEmployeeAttendanceSummary(employeeId, { period });
+            res.json(summary);
+        } catch (error) {
+            console.error('Error getting employee attendance summary:', error);
+            res.status(500).json({ error: 'Failed to get attendance summary' });
+        }
+    },
+
+    // Employee attendance history
+    getEmployeeAttendanceHistory: async (req, res) => {
+        try {
+            const { employeeId } = req.params;
+            const { page = 1, limit = 20, startDate, endDate, period = 'all' } = req.query;
+            const history = await HRModel.getEmployeeAttendanceHistory(employeeId, {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                startDate,
+                endDate,
+                period
+            });
+            res.json(history);
+        } catch (error) {
+            console.error('Error getting employee attendance history:', error);
+            res.status(500).json({ error: 'Failed to get attendance history' });
+        }
+    },
+
+    // ========== CONSTRUCTION WORKERS CONTROLLERS ==========
+
+    getAllConstructionWorkers: async (req, res) => {
+        try {
+            const workers = await HRModel.getAllConstructionWorkers();
+            res.json(workers);
+        } catch (error) {
+            console.error('Error getting all construction workers:', error);
+            res.status(500).json({ error: 'Failed to get construction workers' });
+        }
+    },
+
+    getConstructionWorkerById: async (req, res) => {
+        try {
+            const { workerId } = req.params;
+            const worker = await HRModel.getConstructionWorkerById(workerId);
+            
+            if (!worker) {
+                return res.status(404).json({ error: 'Construction worker not found' });
+            }
+            
+            res.json(worker);
+        } catch (error) {
+            console.error('Error getting construction worker by ID:', error);
+            res.status(500).json({ error: 'Failed to get construction worker' });
+        }
+    },
+
+    addConstructionWorker: async (req, res) => {
+        try {
+            const workerData = req.body;
+            
+            // Add picture filename if uploaded
+            if (req.file) {
+                workerData.picture = req.file.filename;
+            }
+            
+            // Validate required fields
+            const requiredFields = ['firstname', 'lastname', 'role_id', 'project_id'];
+            for (const field of requiredFields) {
+                if (!workerData[field]) {
+                    return res.status(400).json({ error: `Missing required field: ${field}` });
+                }
+            }
+
+            const newWorker = await HRModel.addConstructionWorker(workerData);
+            res.status(201).json(newWorker);
+        } catch (error) {
+            console.error('Error adding construction worker:', error);
+            
+            // Check for specific error types
+            if (error.message === 'No available manpower for this role in the selected project') {
+                return res.status(400).json({ error: 'No available manpower for this role in the selected project' });
+            }
+            
+            // Handle multer errors
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+            }
+            
+            if (error.message === 'Only image files are allowed!') {
+                return res.status(400).json({ error: 'Only image files (JPG, PNG, GIF) are allowed.' });
+            }
+            
+            res.status(500).json({ error: 'Failed to add construction worker' });
+        }
+    },
+
+    updateConstructionWorker: async (req, res) => {
+        try {
+            const { workerId } = req.params;
+            const workerData = req.body;
+            
+            const updated = await HRModel.updateConstructionWorker(workerId, workerData);
+            
+            if (!updated) {
+                return res.status(404).json({ error: 'Construction worker not found' });
+            }
+            
+            res.json({ message: 'Construction worker updated successfully' });
+        } catch (error) {
+            console.error('Error updating construction worker:', error);
+            res.status(500).json({ error: 'Failed to update construction worker' });
+        }
+    },
+
+    deleteConstructionWorker: async (req, res) => {
+        try {
+            const { workerId } = req.params;
+            
+            const deleted = await HRModel.deleteConstructionWorker(workerId);
+            
+            if (!deleted) {
+                return res.status(404).json({ error: 'Construction worker not found' });
+            }
+            
+            res.json({ message: 'Construction worker deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting construction worker:', error);
+            res.status(500).json({ error: 'Failed to delete construction worker' });
+        }
+    },
+
+    getAllConstructionRoles: async (req, res) => {
+        try {
+            const roles = await HRModel.getAllConstructionRoles();
+            res.json(roles);
+        } catch (error) {
+            console.error('Error getting all construction roles:', error);
+            res.status(500).json({ error: 'Failed to get construction roles' });
+        }
+    },
+
+    getAllProjects: async (req, res) => {
+        try {
+            const projects = await HRModel.getAllProjects();
+            res.json(projects);
+        } catch (error) {
+            console.error('Error getting all projects:', error);
+            res.status(500).json({ error: 'Failed to get projects' });
+        }
+    },
+
+    getProjectLaborRoles: async (req, res) => {
+        try {
+            const { projectId } = req.params;
+            const roles = await HRModel.getProjectLaborRoles(projectId);
+            res.json(roles);
+        } catch (error) {
+            console.error('Error getting project labor roles:', error);
+            res.status(500).json({ error: 'Failed to get project labor roles' });
+        }
+    },
 };
 
-module.exports = HRController;
+module.exports = { HRController, constructionWorkerUpload };
