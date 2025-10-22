@@ -867,6 +867,8 @@
                     </a>
                     <ul class="collapse" id="Employee">
                         <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
+                        <li class="nav-item"><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
                         <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
                         <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
                         <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
@@ -3604,6 +3606,11 @@
         const entriesSelect = document.getElementById('payrollEntriesSelect');
         if (entriesSelect) {
             payrollPaginationState.pageSize = parseInt(entriesSelect.value) || 10;
+            // Bind change once
+            if (!entriesSelect.dataset.bound) {
+                entriesSelect.addEventListener('change', handlePayrollEntriesChange);
+                entriesSelect.dataset.bound = '1';
+            }
         }
         
         // Show pagination container
@@ -3615,6 +3622,13 @@
         // Render pagination
         renderPayrollPagination();
         updatePayrollEntriesMessage();
+
+        // Bind pagination click handler once
+        const pagination = document.getElementById('payrollPagination');
+        if (pagination && !pagination.dataset.bound) {
+            pagination.addEventListener('click', handlePayrollPaginationClick);
+            pagination.dataset.bound = '1';
+        }
     }
 
     // Show specific page of payroll data
@@ -3680,7 +3694,7 @@
         // Previous button
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${payrollPaginationState.currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<a class="page-link" href="#" data-page="${payrollPaginationState.currentPage - 1}">Previous</a>`;
+        prevLi.innerHTML = `<a class="page-link" href="javascript:void(0)" data-page="${payrollPaginationState.currentPage - 1}">Previous</a>`;
         pagination.appendChild(prevLi);
         
         // Page numbers
@@ -3696,7 +3710,7 @@
         if (startPage > 1) {
             const firstLi = document.createElement('li');
             firstLi.className = 'page-item';
-            firstLi.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
+            firstLi.innerHTML = `<a class="page-link" href="javascript:void(0)" data-page="1">1</a>`;
             pagination.appendChild(firstLi);
             
             if (startPage > 2) {
@@ -3711,7 +3725,7 @@
         for (let i = startPage; i <= endPage; i++) {
             const pageLi = document.createElement('li');
             pageLi.className = `page-item ${i === payrollPaginationState.currentPage ? 'active' : ''}`;
-            pageLi.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            pageLi.innerHTML = `<a class="page-link" href="javascript:void(0)" data-page="${i}">${i}</a>`;
             pagination.appendChild(pageLi);
         }
         
@@ -3726,14 +3740,14 @@
             
             const lastLi = document.createElement('li');
             lastLi.className = 'page-item';
-            lastLi.innerHTML = `<a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>`;
+            lastLi.innerHTML = `<a class="page-link" href="javascript:void(0)" data-page="${totalPages}">${totalPages}</a>`;
             pagination.appendChild(lastLi);
         }
         
         // Next button
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${payrollPaginationState.currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<a class="page-link" href="#" data-page="${payrollPaginationState.currentPage + 1}">Next</a>`;
+        nextLi.innerHTML = `<a class="page-link" href="javascript:void(0)" data-page="${payrollPaginationState.currentPage + 1}">Next</a>`;
         pagination.appendChild(nextLi);
     }
 

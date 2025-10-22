@@ -101,11 +101,11 @@ const ManufacturingModel = {
         SELECT 
           l.labor_id,
           l.worker_type_id,
-          ct.name AS worker_type_name,
+          cr.role_name AS worker_type_name,
           l.manpower_per_unit,
           l.unit_description
         FROM labor l
-        JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
         WHERE l.proposal_id = ?
         ORDER BY l.labor_id ASC
       `;
@@ -143,11 +143,11 @@ const ManufacturingModel = {
       SELECT 
         l.labor_id,
         l.worker_type_id,
-        ct.name AS worker_type_name,
+        cr.role_name AS worker_type_name,
         l.manpower_per_unit,
         l.unit_description
       FROM labor l
-      JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+      JOIN construction_roles cr ON cr.id = l.worker_type_id
       WHERE l.proposal_id = ?
       ORDER BY l.labor_id ASC
     `;
@@ -176,12 +176,44 @@ const ManufacturingModel = {
     await db.execute(query, [laborId]);
   },
 
+  // LABOR: update project_id when contract becomes active
+  updateLaborWithProjectId: async (contractId, projectId) => {
+    try {
+      // Get the proposal_id from the contract
+      const contractQuery = `SELECT proposal_id FROM contracts WHERE contract_id = ?`;
+      const [contractRows] = await db.execute(contractQuery, [contractId]);
+      
+      if (contractRows.length === 0) {
+        console.error('Contract not found:', contractId);
+        return;
+      }
+      
+      const proposalId = contractRows[0].proposal_id;
+      
+      // Update all labor records for this proposal with the new project_id
+      const updateQuery = `
+        UPDATE labor 
+        SET project_id = ?
+        WHERE proposal_id = ?
+      `;
+      
+      const [result] = await db.execute(updateQuery, [projectId, proposalId]);
+      
+      console.log(`✅ Updated ${result.affectedRows} labor records with project_id ${projectId} for proposal ${proposalId}`);
+      
+      return result.affectedRows;
+    } catch (error) {
+      console.error('❌ Error updating labor with project_id:', error);
+      throw error;
+    }
+  },
+
   // WORKER TYPES: list
   getWorkerTypes: async () => {
     const query = `
-      SELECT worker_type_id, name, description
-      FROM construction_types
-      ORDER BY name ASC
+      SELECT id as worker_type_id, role_name as name, daily_rate as description
+      FROM construction_roles
+      ORDER BY role_name ASC
     `;
     const [rows] = await db.execute(query);
     return rows;
@@ -458,11 +490,11 @@ const ManufacturingModel = {
         SELECT 
           l.labor_id,
           l.worker_type_id,
-          ct.name AS worker_type_name,
+          cr.role_name AS worker_type_name,
           l.manpower_per_unit,
           l.unit_description
         FROM labor l
-        JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
         WHERE l.proposal_id = ?
         ORDER BY l.labor_id ASC
       `;
@@ -497,7 +529,12 @@ const ManufacturingModel = {
     await db.execute(query, [signaturePath, contractId]);
     
     // Create project record when contract becomes active
-    await ManufacturingModel.createProjectFromContract(contractId);
+    const projectId = await ManufacturingModel.createProjectFromContract(contractId);
+    
+    // Update labor records with the new project_id
+    if (projectId) {
+      await ManufacturingModel.updateLaborWithProjectId(contractId, projectId);
+    }
   },
 
   // Create project record from active contract

@@ -294,6 +294,13 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_construction_payroll.html')); // Adjusted path
   }); 
 
+  app.get('/hr/hr_employee_roles', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_roles.html')); // Adjusted path
+  });
+  app.get('/hr/hr_employee_details', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_details.html')); // Adjusted path
+  });
+
   // Removed HR payroll forecasting route
   
 // ====================
