@@ -149,13 +149,21 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
   });
   
-  // Virtual Tour Portal (CRM Admin)
+  // Virtual Tour Portal (CRM Admin) - Restricted to general_foreman only
   app.get('/crm/virtual_tour_dashboard', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_portal.html'));
   });
 
-  // Virtual Tour Location Detail (CRM Admin)
+  // Virtual Tour Location Detail (CRM Admin) - Restricted to general_foreman only
   app.get('/crm/virtual_tour_location_detail', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
   });
   
@@ -377,10 +385,25 @@ const htmlRoutes = (app) => {
   app.get('/manufacturing/manufacturing_overtime', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_overtime.html')); // Adjusted path
   }); 
-  
 
+  // Virtual Tour Portal (Manufacturing) - Restricted to general_foreman only
+  app.get('/manufacturing/virtual_tour_dashboard', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/manufacturing/manufacturing_dashboard');
+    }
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_portal.html'));
+  });
+
+  // Virtual Tour Location Detail (Manufacturing) - Restricted to general_foreman only
+  app.get('/manufacturing/virtual_tour_location_detail', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/manufacturing/manufacturing_dashboard');
+    }
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
+  });
   
-// ====================
   //   finance Routes
   // ====================  
 

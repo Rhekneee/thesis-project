@@ -486,6 +486,11 @@
                                 </div>
                                 <small class="text-muted">Blink Status: <span id="blinkProgressText">Waiting for blink...</span></small>
                             </div>
+                            <div class="text-center">
+                                <button id="manualBlinkBtn" class="btn btn-outline-primary btn-sm" style="display: none;">
+                                    <i class="fas fa-eye"></i> I Blinked - Verify Now
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Controls -->
@@ -932,6 +937,7 @@
             document.getElementById('blinkProgressText').textContent = 'Waiting for blink...';
             document.getElementById('blinkCountdown').textContent = '';
             document.getElementById('blinkInstruction').textContent = '';
+            document.getElementById('manualBlinkBtn').style.display = 'none';
         }
 
         function startBlinkVerification() {
@@ -969,9 +975,9 @@
             blinkDetectionInterval = setInterval(() => {
                 blinkDetectionTime += 100;
                 
-                // Simulate blink detection (random for demo)
+                // Simulate blink detection (more reliable for demo)
                 // In reality, this would analyze video frames for eye closure
-                if (Math.random() < 0.02 && !blinkDetected) { // 2% chance per 100ms
+                if (Math.random() < 0.05 && !blinkDetected) { // 5% chance per 100ms (increased from 2%)
                     detectBlink();
                 }
                 
@@ -979,6 +985,13 @@
                     endBlinkDetection(false);
                 }
             }, 100);
+            
+            // Show manual blink button after 3 seconds
+            setTimeout(() => {
+                if (!blinkDetected) {
+                    document.getElementById('manualBlinkBtn').style.display = 'inline-block';
+                }
+            }, 3000);
         }
 
         function detectBlink() {
@@ -1150,6 +1163,18 @@
                 showAttendanceModal("Error completing attendance", true);
             }
         }
+
+        // Manual blink button event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const manualBlinkBtn = document.getElementById('manualBlinkBtn');
+            if (manualBlinkBtn) {
+                manualBlinkBtn.addEventListener('click', function() {
+                    if (!blinkDetected) {
+                        detectBlink();
+                    }
+                });
+            }
+        });
 
         // On page load, fetch the employee ID and load attendance data
         window.onload = async () => {

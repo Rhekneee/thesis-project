@@ -657,9 +657,14 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 console.log('🔍 Performing radius check for facial verification flow...');
                 
                 // Do radius check only (without recording attendance)
-                const officeLat = 14.329643700546274;
-                const officeLng = 120.94080148408072;
+                const officeLat = 14.343520567632279;
+                const officeLng = 120.97961883168472;
                 const allowedRadius = 500;
+
+                
+                // const officeLat = 14.343520567632279;
+                // const officeLng = 120.97961883168472;
+                // const allowedRadius = 500;
                 
                 // Calculate distance
                 const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
@@ -795,8 +800,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                     bestMatch = similarity;
                 }
                 
-                // Set threshold to 0.02 for practical use (2%)
-                if (similarity >= 0.02) {
+                // Set threshold to 0.6 for secure verification (60% similarity required)
+                if (similarity >= 0.6) {
                     matched = true;
                     break;
                 }
@@ -806,12 +811,12 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 console.log('❌ Face verification failed. Best match score:', bestMatch);
                 let errorMessage = 'Face verification failed. ';
                 
-                if (bestMatch < 0.01) {
-                    errorMessage += 'Please ensure your face is clearly visible and well-lit.';
-                } else if (bestMatch < 0.015) {
-                    errorMessage += 'Please position your face directly in front of the camera.';
+                if (bestMatch < 0.3) {
+                    errorMessage += 'Face not recognized. Please ensure you are the enrolled employee and your face is clearly visible.';
+                } else if (bestMatch < 0.5) {
+                    errorMessage += 'Face similarity is low. Please position your face directly in front of the camera with good lighting.';
                 } else {
-                    errorMessage += 'Face similarity is too low. Please try again with better lighting.';
+                    errorMessage += 'Face verification failed. Please try again or contact HR if this persists.';
                 }
                 
                 return res.status(401).json({ 
