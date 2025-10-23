@@ -841,8 +841,12 @@ const HRModel = {
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
         console.log('🔍 Check-in attempt:', { userId, checkInTime, date, userLat, userLng });
         
-        const officeLat = 14.329643700546274;
-        const officeLng = 120.94080148408072;
+        // const officeLat = 14.329643700546274;
+        // const officeLng = 120.94080148408072;
+        // const allowedRadius = 500;
+
+        const officeLat = 14.343520567632279
+        const officeLng = 120.97961883168472
         const allowedRadius = 500;
     
         try {
