@@ -463,4 +463,21 @@
     router.get('/projects', authMiddleware.verifySession, HRController.getAllProjects);
     router.get('/projects/:projectId/labor-roles', authMiddleware.verifySession, HRController.getProjectLaborRoles);
 
+    // Pending construction workers management
+    router.get('/pending-construction-workers', authMiddleware.verifySession, HRController.getPendingConstructionWorkers);
+    router.post('/construction-workers/:workerId/approve', authMiddleware.verifySession, HRController.approveConstructionWorker);
+    router.post('/construction-workers/:workerId/reject', authMiddleware.verifySession, HRController.rejectConstructionWorker);
+    
+    // Active construction workers with QR codes for printing
+    router.get('/active-construction-workers-qr', authMiddleware.verifySession, HRController.getActiveConstructionWorkersWithQR);
+
+    // ========== CONSTRUCTION PAYROLL ROUTES ==========
+
+    // Construction payroll management
+    router.post('/construction-payroll/generate', authMiddleware.verifySession, HRController.generateConstructionPayroll);
+    router.post('/construction-payroll/save', authMiddleware.verifySession, HRController.saveConstructionPayroll);
+    router.get('/construction-payroll', authMiddleware.verifySession, HRController.getConstructionPayroll);
+    router.put('/construction-payroll/status', authMiddleware.verifySession, HRController.updateConstructionPayrollStatus);
+    router.delete('/construction-payroll', authMiddleware.verifySession, HRController.deleteConstructionPayroll);
+
     module.exports = router;

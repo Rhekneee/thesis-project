@@ -350,6 +350,122 @@
             }
         }
 
+        /* QR Card Styles */
+        .qr-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            page-break-inside: avoid;
+        }
+
+        .qr-card-header {
+            margin-bottom: 15px;
+        }
+
+        .qr-card-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 10px;
+            border: 3px solid #0052a5;
+        }
+
+        .qr-card-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .qr-card-position {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .qr-card-project {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .qr-card-code {
+            font-size: 12px;
+            color: #0052a5;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .qr-code-image {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+        }
+
+        .print-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .print-button:hover {
+            background-color: #218838;
+        }
+
+        .qr-card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .qr-card-actions .btn {
+            font-size: 11px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .qr-card-actions .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .qr-card-actions .btn i {
+            margin-right: 4px;
+        }
+
+        @media print {
+            .qr-card {
+                width: 3.5in;
+                height: 4.5in;
+                margin: 0.25in;
+                border: 1px solid #000;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -569,28 +685,110 @@
 
                 <!-- Construction Tab -->
                 <div class="tab-pane fade" id="construction" role="tabpanel" aria-labelledby="construction-tab">
-                    <!-- Construction Management Buttons -->
-                    <div class="d-flex justify-content-between mb-3">
-                        <div class="d-flex" style="gap:10px;">
-                            <button class="btn btn-primary" onclick="addConstructionWorker()">
-                                <i class="fas fa-plus"></i> Add Construction Worker
+                    <!-- Construction Tab Navigation -->
+                    <ul class="nav nav-tabs mb-3" id="constructionSubTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="pending-construction-tab" data-bs-toggle="tab" data-bs-target="#pending-construction" type="button" role="tab" aria-controls="pending-construction" aria-selected="true">
+                                <i class="fas fa-clock"></i> Pending Approval
                             </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="active-construction-tab" data-bs-toggle="tab" data-bs-target="#active-construction" type="button" role="tab" aria-controls="active-construction" aria-selected="false">
+                                <i class="fas fa-check-circle"></i> Active Workers
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="printable-qr-tab" data-bs-toggle="tab" data-bs-target="#printable-qr" type="button" role="tab" aria-controls="printable-qr" aria-selected="false">
+                                <i class="fas fa-qrcode"></i> Printable QR Codes
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Construction Sub Tab Content -->
+                    <div class="tab-content" id="constructionSubTabContent">
+                        <!-- Pending Construction Workers Tab -->
+                        <div class="tab-pane fade show active" id="pending-construction" role="tabpanel" aria-labelledby="pending-construction-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5><i class="fas fa-clock text-warning"></i> Pending Construction Workers</h5>
+                                <span class="badge bg-warning" id="pendingCount">0</span>
+                            </div>
+
+                            <!-- Pending Workers Table -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Photo</th>
+                                            <th>Name</th>
+                                            <th>Role</th>
+                                            <th>Project</th>
+                                            <th>Contact</th>
+                                            <th>Date Submitted</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pendingWorkersTableBody">
+                                        <!-- Pending workers will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Empty state for pending workers -->
+                            <div id="pendingWorkersEmpty" class="text-center py-5" style="display: none;">
+                                <i class="fas fa-clock text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No Pending Construction Workers</h5>
+                                <p class="text-muted">All construction workers have been processed.</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Construction Workers Grid -->
-                    <div id="constructionWorkersCards" class="employee-grid">
-                        <!-- Construction worker cards will be dynamically inserted here -->
-                    </div>
+                        <!-- Active Construction Workers Tab -->
+                        <div class="tab-pane fade" id="active-construction" role="tabpanel" aria-labelledby="active-construction-tab">
+                            <!-- Construction Management Buttons -->
+                            <div class="d-flex justify-content-between mb-3">
+                                <div class="d-flex" style="gap:10px;">
+                                    <button class="btn btn-primary" onclick="addConstructionWorker()">
+                                        <i class="fas fa-plus"></i> Add Construction Worker
+                                    </button>
+                                </div>
+                            </div>
 
-                    <!-- Construction Pagination -->
-                    <div id="constructionEntriesMessage">
-                        <span id="constructionShowingEntries"></span>
-                        <nav>
-                            <ul class="pagination" id="constructionPaginationControls">
-                                <!-- Construction pagination buttons will be dynamically inserted here -->
-                            </ul>
-                        </nav>
+                            <!-- Construction Workers Grid -->
+                            <div id="constructionWorkersCards" class="employee-grid">
+                                <!-- Construction worker cards will be dynamically inserted here -->
+                            </div>
+
+                            <!-- Construction Pagination -->
+                            <div id="constructionEntriesMessage">
+                                <span id="constructionShowingEntries"></span>
+                                <nav>
+                                    <ul class="pagination" id="constructionPaginationControls">
+                                        <!-- Construction pagination buttons will be dynamically inserted here -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+
+                        <!-- Printable QR Codes Tab -->
+                        <div class="tab-pane fade" id="printable-qr" role="tabpanel" aria-labelledby="printable-qr-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5><i class="fas fa-qrcode text-primary"></i> Printable QR Code ID Cards</h5>
+                                <button class="btn btn-success" onclick="printAllQRCards()">
+                                    <i class="fas fa-print"></i> Print All Cards
+                                </button>
+                            </div>
+
+                            <!-- QR Cards Grid -->
+                            <div id="qrCardsGrid" class="row">
+                                <!-- QR cards will be dynamically inserted here -->
+                            </div>
+
+                            <!-- Empty state for QR cards -->
+                            <div id="qrCardsEmpty" class="text-center py-5" style="display: none;">
+                                <i class="fas fa-qrcode text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No QR Codes Available</h5>
+                                <p class="text-muted">No active construction workers with QR codes found.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -706,6 +904,84 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal for Approving Construction Worker -->
+            <div class="modal fade" id="approveConfirmationModal" tabindex="-1" aria-labelledby="approveConfirmationModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="approveConfirmationModalLabel">
+                                <i class="fas fa-check-circle text-success"></i> Approve Construction Worker
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <i class="fas fa-question-circle text-warning" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                                <h5>Are you sure you want to approve this construction worker?</h5>
+                                <p class="text-muted">This action will:</p>
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success"></i> Activate the worker</li>
+                                    <li><i class="fas fa-qrcode text-primary"></i> Generate a unique QR code</li>
+                                    <li><i class="fas fa-id-card text-info"></i> Create printable ID card</li>
+                                </ul>
+                                <div class="alert alert-info">
+                                    <strong>Worker Details:</strong>
+                                    <div id="approveWorkerDetails"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                                <i class="fas fa-check"></i> Approve Worker
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Modal for Approved Construction Worker -->
+            <div class="modal fade" id="approveSuccessModal" tabindex="-1" aria-labelledby="approveSuccessModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="approveSuccessModalLabel">
+                                <i class="fas fa-check-circle"></i> Worker Approved Successfully!
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center">
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                                <h4 class="text-success">Construction Worker Approved!</h4>
+                                <p class="text-muted">The worker has been successfully approved and is now active.</p>
+                                
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-qrcode"></i> QR Code Generated</h6>
+                                    <p class="mb-0">A unique QR code has been created for attendance tracking.</p>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-id-card"></i> ID Card Ready</h6>
+                                    <p class="mb-0">You can now print the worker's ID card from the "Printable QR Codes" tab.</p>
+                                </div>
+                                
+                                <div class="d-flex justify-content-center gap-2 mt-3">
+                                    <button type="button" class="btn btn-primary" onclick="goToPrintableQR()">
+                                        <i class="fas fa-qrcode"></i> View QR Cards
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times"></i> Close
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1854,6 +2130,830 @@
             }
         }
 
+        // ========== PENDING CONSTRUCTION WORKERS FUNCTIONS ==========
+        
+        // Global variables for pending construction workers
+        let pendingConstructionWorkers = [];
+        let activeConstructionWorkersWithQR = [];
+
+        // Load pending construction workers
+        async function loadPendingConstructionWorkers() {
+            try {
+                const response = await fetch(`${API_URL}/pending-construction-workers`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    pendingConstructionWorkers = await response.json();
+                    displayPendingConstructionWorkers();
+                    updatePendingCount();
+                } else {
+                    console.error('Failed to load pending construction workers');
+                }
+            } catch (error) {
+                console.error('Error loading pending construction workers:', error);
+            }
+        }
+
+        // Display pending construction workers in table
+        function displayPendingConstructionWorkers() {
+            const tableBody = document.getElementById('pendingWorkersTableBody');
+            const emptyState = document.getElementById('pendingWorkersEmpty');
+            
+            tableBody.innerHTML = '';
+
+            if (pendingConstructionWorkers.length === 0) {
+                tableBody.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            tableBody.style.display = 'table-row-group';
+            emptyState.style.display = 'none';
+
+            pendingConstructionWorkers.forEach(worker => {
+                const row = document.createElement('tr');
+                const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+                const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+                
+                row.innerHTML = `
+                    <td>
+                        <img src="${worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture'}" 
+                             alt="${fullName}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                    </td>
+                    <td>
+                        <div>
+                            <strong>${fullName}</strong>
+                            <br>
+                            <small class="text-muted">ID: ${worker.id}</small>
+                        </div>
+                    </td>
+                    <td>${safe(worker.role_name)}</td>
+                    <td>${safe(worker.project_name)}</td>
+                    <td>${safe(worker.contact_number)}</td>
+                    <td>
+                        <small>${new Date(worker.created_at).toLocaleDateString()}</small>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-success btn-sm" onclick="approveConstructionWorker(${worker.id})" title="Approve">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectConstructionWorker(${worker.id})" title="Reject">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update pending count badge
+        function updatePendingCount() {
+            const badge = document.getElementById('pendingCount');
+            badge.textContent = pendingConstructionWorkers.length;
+        }
+
+        // Approve construction worker
+        async function approveConstructionWorker(workerId) {
+            // Find the worker details
+            const worker = pendingConstructionWorkers.find(w => w.id === workerId);
+            if (!worker) {
+                alert('Worker not found');
+                return;
+            }
+
+            // Populate worker details in confirmation modal
+            const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+            const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+            
+            document.getElementById('approveWorkerDetails').innerHTML = `
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Name:</strong> ${fullName}<br>
+                        <strong>Role:</strong> ${safe(worker.role_name)}<br>
+                        <strong>Project:</strong> ${safe(worker.project_name)}
+                    </div>
+                    <div class="col-6">
+                        <strong>Contact:</strong> ${safe(worker.contact_number)}<br>
+                        <strong>ID:</strong> ${worker.id}<br>
+                        <strong>Submitted:</strong> ${new Date(worker.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `;
+
+            // Show confirmation modal
+            const confirmModal = new bootstrap.Modal(document.getElementById('approveConfirmationModal'));
+            confirmModal.show();
+
+            // Set up confirm button handler
+            document.getElementById('confirmApproveBtn').onclick = async () => {
+                try {
+                    // Disable button to prevent double-clicking
+                    document.getElementById('confirmApproveBtn').disabled = true;
+                    document.getElementById('confirmApproveBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...';
+
+                    const response = await fetch(`${API_URL}/construction-workers/${workerId}/approve`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        // Hide confirmation modal
+                        confirmModal.hide();
+                        
+                        // Show success modal
+                        const successModal = new bootstrap.Modal(document.getElementById('approveSuccessModal'));
+                        successModal.show();
+                        
+                        // Reload data
+                        loadPendingConstructionWorkers();
+                        loadConstructionWorkers();
+                    } else {
+                        const error = await response.json();
+                        alert(`Failed to approve construction worker: ${error.error}`);
+                    }
+                } catch (error) {
+                    console.error('Error approving construction worker:', error);
+                    alert('Error approving construction worker');
+                } finally {
+                    // Re-enable button
+                    document.getElementById('confirmApproveBtn').disabled = false;
+                    document.getElementById('confirmApproveBtn').innerHTML = '<i class="fas fa-check"></i> Approve Worker';
+                }
+            };
+        }
+
+        // Reject construction worker
+        async function rejectConstructionWorker(workerId) {
+            if (confirm('Are you sure you want to reject this construction worker? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`${API_URL}/construction-workers/${workerId}/reject`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        alert('Construction worker rejected successfully!');
+                        loadPendingConstructionWorkers(); // Reload pending list
+                    } else {
+                        const error = await response.json();
+                        alert(`Failed to reject construction worker: ${error.error}`);
+                    }
+                } catch (error) {
+                    console.error('Error rejecting construction worker:', error);
+                    alert('Error rejecting construction worker');
+                }
+            }
+        }
+
+        // ========== QR CODE FUNCTIONS ==========
+        
+        // Load active construction workers with QR codes
+        async function loadActiveConstructionWorkersWithQR() {
+            try {
+                const response = await fetch(`${API_URL}/active-construction-workers-qr`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    activeConstructionWorkersWithQR = await response.json();
+                    displayQRCards();
+                } else {
+                    console.error('Failed to load active construction workers with QR');
+                }
+            } catch (error) {
+                console.error('Error loading active construction workers with QR:', error);
+            }
+        }
+
+        // Display QR cards
+        function displayQRCards() {
+            const container = document.getElementById('qrCardsGrid');
+            const emptyState = document.getElementById('qrCardsEmpty');
+            
+            container.innerHTML = '';
+
+            if (activeConstructionWorkersWithQR.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'flex';
+            container.style.flexWrap = 'wrap';
+            container.style.gap = '20px';
+            emptyState.style.display = 'none';
+
+            activeConstructionWorkersWithQR.forEach(worker => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'qr-card';
+                
+                const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+                const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+                
+                cardDiv.innerHTML = `
+                    <div class="qr-card-header">
+                        <img src="${worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture'}" 
+                             alt="${fullName}" class="qr-card-photo">
+                        <div class="qr-card-name">${fullName}</div>
+                        <div class="qr-card-position">${safe(worker.role_name)}</div>
+                        <div class="qr-card-project">${safe(worker.project_name)}</div>
+                        <div class="qr-card-code">ID: ${worker.unique_code}</div>
+                    </div>
+                    <div class="qr-code-image">
+                        <img src="/uploads/${worker.qr_code_path}" alt="QR Code" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <div class="qr-card-actions">
+                        <button class="btn btn-info btn-sm" onclick="viewQRCode(${worker.id})" title="View QR Code">
+                            <i class="fas fa-eye"></i> View QR
+                        </button>
+                    </div>
+                `;
+                container.appendChild(cardDiv);
+            });
+        }
+
+        // Print individual QR card
+        function printQRCard(workerId) {
+            const worker = activeConstructionWorkersWithQR.find(w => w.id === workerId);
+            if (!worker) return;
+
+            const printWindow = window.open('', '_blank');
+            const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+            const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>ID Card - ${fullName}</title>
+                    <style>
+                        @page {
+                            size: 3.5in 4.5in;
+                            margin: 0;
+                        }
+                        body {
+                            margin: 0;
+                            padding: 0;
+                            font-family: Arial, sans-serif;
+                            background: linear-gradient(180deg, #0052a5 0%, #000000 100%);
+                            width: 3.5in;
+                            height: 4.5in;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        .card-container {
+                            background: white;
+                            margin: 0.1in;
+                            padding: 0.15in;
+                            border-radius: 0.1in;
+                            width: calc(100% - 0.2in);
+                            height: calc(100% - 0.2in);
+                            display: flex;
+                            flex-direction: column;
+                            box-shadow: 0 0 0.1in rgba(0,0,0,0.3);
+                        }
+                        .header {
+                            background: #0052a5;
+                            color: white;
+                            text-align: center;
+                            padding: 0.1in;
+                            margin: -0.15in -0.15in 0.1in -0.15in;
+                            border-radius: 0.1in 0.1in 0 0;
+                            position: relative;
+                        }
+                        .logo-area {
+                            position: absolute;
+                            top: 0.05in;
+                            left: 0.1in;
+                            width: 0.3in;
+                            height: 0.3in;
+                            background: url('/image/mdb-removebg-preview.png') no-repeat center;
+                            background-size: contain;
+                        }
+                        .company-name {
+                            font-size: 14pt;
+                            font-weight: bold;
+                            margin: 0;
+                        }
+                        .card-title {
+                            font-size: 10pt;
+                            margin: 0.05in 0 0 0;
+                        }
+                        .content {
+                            flex: 1;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: flex-start;
+                        }
+                        .employee-info {
+                            display: flex;
+                            align-items: flex-start;
+                            margin-bottom: 0.1in;
+                        }
+                        .photo {
+                            width: 0.8in;
+                            height: 0.8in;
+                            border-radius: 50%;
+                            border: 3px solid #0052a5;
+                            margin-right: 0.1in;
+                            object-fit: cover;
+                            background: #f0f0f0;
+                        }
+                        .details {
+                            flex: 1;
+                        }
+                        .name {
+                            font-size: 12pt;
+                            font-weight: bold;
+                            margin: 0 0 0.05in 0;
+                            color: #333;
+                        }
+                        .detail {
+                            font-size: 9pt;
+                            margin: 0.02in 0;
+                            color: #666;
+                        }
+                        .qr-section {
+                            text-align: center;
+                            margin-top: 0.1in;
+                            padding: 0.1in;
+                            background: #f8f9fa;
+                            border-radius: 0.05in;
+                        }
+                        .qr-code {
+                            width: 1.2in;
+                            height: 1.2in;
+                            border: 2px solid #0052a5;
+                            margin: 0 auto;
+                            background: white;
+                        }
+                        .qr-label {
+                            font-size: 8pt;
+                            color: #0052a5;
+                            margin-top: 0.05in;
+                            font-weight: bold;
+                        }
+                        .footer {
+                            text-align: center;
+                            font-size: 8pt;
+                            color: #999;
+                            margin-top: 0.05in;
+                            border-top: 1px solid #eee;
+                            padding-top: 0.05in;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="card-container">
+                        <div class="header">
+                            <div class="logo-area"></div>
+                            <div class="company-name">MDB CONSTRUCTION</div>
+                            <div class="card-title">EMPLOYEE ID CARD</div>
+                        </div>
+                        <div class="content">
+                            <div class="employee-info">
+                                <img src="${worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture'}" 
+                                     alt="${fullName}" class="photo">
+                                <div class="details">
+                                    <div class="name">${fullName}</div>
+                                    <div class="detail">Position: ${safe(worker.role_name)}</div>
+                                    <div class="detail">Project: ${safe(worker.project_name)}</div>
+                                    <div class="detail">ID: ${worker.unique_code}</div>
+                                </div>
+                            </div>
+                            <div class="qr-section">
+                                <img src="/uploads/${worker.qr_code_path}" alt="QR Code" class="qr-code">
+                                <div class="qr-label">SCAN FOR ATTENDANCE</div>
+                            </div>
+                        </div>
+                        <div class="footer">Valid Employee ID Card</div>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Print all QR cards
+        function printAllQRCards() {
+            if (activeConstructionWorkersWithQR.length === 0) {
+                alert('No QR cards available to print');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            let html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>All Construction Worker ID Cards</title>
+                    <style>
+                        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                        .qr-card {
+                            width: 3.5in;
+                            height: 4.5in;
+                            border: 2px solid #000;
+                            padding: 20px;
+                            margin: 0.25in;
+                            text-align: center;
+                            display: inline-block;
+                            vertical-align: top;
+                            page-break-inside: avoid;
+                        }
+                        .qr-card-photo {
+                            width: 80px;
+                            height: 80px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            margin: 0 auto 10px;
+                            border: 3px solid #0052a5;
+                        }
+                        .qr-card-name {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #333;
+                            margin-bottom: 5px;
+                        }
+                        .qr-card-position {
+                            font-size: 14px;
+                            color: #666;
+                            margin-bottom: 5px;
+                        }
+                        .qr-card-project {
+                            font-size: 12px;
+                            color: #888;
+                            margin-bottom: 15px;
+                        }
+                        .qr-card-code {
+                            font-size: 12px;
+                            color: #0052a5;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                        }
+                        .qr-code-image {
+                            width: 120px;
+                            height: 120px;
+                            margin: 0 auto;
+                            border: 1px solid #ddd;
+                        }
+                    </style>
+                </head>
+                <body>
+            `;
+
+            activeConstructionWorkersWithQR.forEach(worker => {
+                const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+                const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+
+                html += `
+                    <div class="qr-card">
+                        <div>
+                            <img src="${worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture'}" 
+                                 alt="${fullName}" class="qr-card-photo">
+                            <div class="qr-card-name">${fullName}</div>
+                            <div class="qr-card-position">${safe(worker.role_name)}</div>
+                            <div class="qr-card-project">${safe(worker.project_name)}</div>
+                            <div class="qr-card-code">ID: ${worker.unique_code}</div>
+                        </div>
+                        <div class="qr-code-image">
+                            <img src="/uploads/${worker.qr_code_path}" alt="QR Code" style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                </body>
+                </html>
+            `;
+
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Navigate to printable QR tab
+        function goToPrintableQR() {
+            // Hide success modal first
+            const successModal = bootstrap.Modal.getInstance(document.getElementById('approveSuccessModal'));
+            if (successModal) {
+                successModal.hide();
+            }
+            
+            // Switch to printable QR tab
+            const printableTab = document.getElementById('printable-qr-tab');
+            const tab = new bootstrap.Tab(printableTab);
+            tab.show();
+            
+            // Load QR codes
+            loadActiveConstructionWorkersWithQR();
+        }
+
+        // View QR Code in modal - EXACT layout as print/download
+        function viewQRCode(workerId) {
+            const worker = activeConstructionWorkersWithQR.find(w => w.id === workerId);
+            if (!worker) return;
+
+            const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+            const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+
+            // Create modal HTML with exact layout
+            const modalHtml = `
+                <div class="modal fade" id="viewQRModal" tabindex="-1" aria-labelledby="viewQRModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewQRModalLabel">
+                                    <i class="fas fa-qrcode"></i> ID Card Preview - ${fullName}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="id-card-preview" style="
+                                    background: linear-gradient(180deg, #0052a5 0%, #000000 100%);
+                                    width: 350px;
+                                    height: 380px;
+                                    margin: 20px auto;
+                                    position: relative;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                ">
+                                    <!-- White content area -->
+                                    <div style="
+                                        background: white;
+                                        margin: 10px;
+                                        padding: 15px;
+                                        height: calc(100% - 20px);
+                                        border-radius: 4px;
+                                    ">
+                                        <!-- Header -->
+                                        <div style="
+                                            background: #0052a5;
+                                            color: white;
+                                            text-align: center;
+                                            padding: 10px;
+                                            margin: -15px -15px 10px -15px;
+                                            border-radius: 4px 4px 0 0;
+                                        ">
+                                            <div style="font-size: 14pt; font-weight: bold; margin: 0;">MDB CONSTRUCTION</div>
+                                            <div style="font-size: 10pt; margin: 5px 0 0 0;">EMPLOYEE ID CARD</div>
+                                        </div>
+                                        
+                                        <!-- Employee Info -->
+                                        <div style="display: flex; align-items: flex-start; margin-bottom: 10px;">
+                                            <img src="${worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture'}" 
+                                                 alt="${fullName}" 
+                                                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #0052a5; margin-right: 10px; object-fit: cover;">
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 12pt; font-weight: bold; color: #333; margin-bottom: 5px;">${fullName}</div>
+                                                <div style="font-size: 9pt; color: #666; margin: 2px 0;">Position: ${safe(worker.role_name)}</div>
+                                                <div style="font-size: 9pt; color: #666; margin: 2px 0;">Project: ${safe(worker.project_name)}</div>
+                                                <div style="font-size: 9pt; color: #666; margin: 2px 0;">ID: ${worker.unique_code}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- QR Section -->
+                                        <div style="text-align: center; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                            <img src="/uploads/${worker.qr_code_path}" alt="QR Code" style="width: 120px; height: 120px; border: 2px solid #0052a5; background: white;">
+                                            <div style="font-size: 8pt; color: #0052a5; margin-top: 5px; font-weight: bold;">SCAN FOR ATTENDANCE</div>
+                                        </div>
+                                        
+                                        <!-- Footer -->
+                                        <div style="text-align: center; font-size: 8pt; color: #999; margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
+                                            Valid Employee ID Card
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-success me-2" onclick="downloadQRCode(${worker.id})">
+                                        <i class="fas fa-download"></i> Download Card
+                                    </button>
+                                    <button class="btn btn-primary" onclick="printQRCard(${worker.id})">
+                                        <i class="fas fa-print"></i> Print ID Card
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('viewQRModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('viewQRModal'));
+            modal.show();
+
+            // Clean up modal when hidden
+            document.getElementById('viewQRModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+
+        // Download QR Code
+        function downloadQRCode(workerId) {
+            const worker = activeConstructionWorkersWithQR.find(w => w.id === workerId);
+            if (!worker) return;
+
+            const fullName = `${worker.firstname || ''} ${worker.middlename || ''} ${worker.lastname || ''}`.trim();
+            const safe = (v) => (v === null || v === undefined || v === '' ? 'N/A' : v);
+            const fileName = `ID_Card_${fullName.replace(/\s+/g, '_')}_${worker.unique_code}.png`;
+
+            // Create a canvas to generate the ID card image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size for ID card (3.5" x 3.8" at 300 DPI) - more compact
+            canvas.width = 1050; // 3.5 inches * 300 DPI
+            canvas.height = 1140; // 3.8 inches * 300 DPI - reduced height
+
+            // Load images and create ID card
+            loadImagesAndCreateIDCard(ctx, canvas.width, canvas.height, worker, fullName, safe, fileName);
+        }
+
+        // Load images and create ID card
+        function loadImagesAndCreateIDCard(ctx, width, height, worker, fullName, safe, fileName) {
+            const qrImage = new Image();
+            const photoImage = new Image();
+            let loadedCount = 0;
+            const totalImages = 2;
+
+            function checkAllLoaded() {
+                loadedCount++;
+                if (loadedCount === totalImages) {
+                    // All images loaded, create the ID card
+                    createIDCardDesign(ctx, width, height, worker, fullName, safe, qrImage, photoImage);
+                    
+                    // Convert canvas to blob and download
+                    const canvas = ctx.canvas;
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        
+                        alert(`ID Card downloaded as: ${fileName}`);
+                    }, 'image/png');
+                }
+            }
+
+            // Load QR code image
+            qrImage.onload = checkAllLoaded;
+            qrImage.onerror = function() {
+                console.error('Failed to load QR code image');
+                checkAllLoaded(); // Continue even if QR fails
+            };
+            qrImage.src = `/uploads/${worker.qr_code_path}`;
+
+            // Load photo image
+            photoImage.onload = checkAllLoaded;
+            photoImage.onerror = function() {
+                console.error('Failed to load photo image');
+                checkAllLoaded(); // Continue even if photo fails
+            };
+            photoImage.src = worker.picture ? `/uploads/construction_workers/${worker.picture}` : '/hr/default-profile-picture';
+        }
+
+        // Create ID card design - EXACT match to print layout
+        function createIDCardDesign(ctx, width, height, worker, fullName, safe, qrImage, photoImage) {
+            // Background gradient (blue to black) - same as print
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#0052a5'); // Blue
+            gradient.addColorStop(1, '#000000'); // Black
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // White content area - same margins as print (0.1in = 30px at 300 DPI)
+            const contentPadding = 30; // 0.1in margin
+            const contentWidth = width - (contentPadding * 2);
+            const contentHeight = height - (contentPadding * 2);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(contentPadding, contentPadding, contentWidth, contentHeight);
+
+            // Header section - exact match to print
+            const headerHeight = 90; // 0.3in = 90px
+            ctx.fillStyle = '#0052a5';
+            ctx.fillRect(contentPadding, contentPadding, contentWidth, headerHeight);
+
+            // Logo area (small logo in top-left)
+            const logoSize = 30; // 0.1in = 30px
+            const logoX = contentPadding + 15;
+            const logoY = contentPadding + 15;
+            // Note: Logo would be drawn here if we had the image loaded
+
+            // Company title - exact font sizes as print
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 42px Arial'; // 14pt = 42px
+            ctx.textAlign = 'center';
+            ctx.fillText('MDB CONSTRUCTION', width / 2, contentPadding + 35);
+
+            // Employee ID text
+            ctx.font = 'bold 30px Arial'; // 10pt = 30px
+            ctx.fillText('EMPLOYEE ID CARD', width / 2, contentPadding + 65);
+
+            // Employee info section - exact layout as print
+            const employeeInfoY = contentPadding + headerHeight + 15; // 0.05in = 15px
+            
+            // Photo area - exact size as print (0.8in = 240px)
+            const photoSize = 240; // 0.8in = 240px
+            const photoX = contentPadding + 30; // 0.1in = 30px
+            const photoY = employeeInfoY;
+            
+            // Photo background circle
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.arc(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw photo image
+            if (photoImage && photoImage.complete) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 0, 2 * Math.PI);
+                ctx.clip();
+                ctx.drawImage(photoImage, photoX, photoY, photoSize, photoSize);
+                ctx.restore();
+            }
+
+            // Photo border - exact as print
+            ctx.strokeStyle = '#0052a5';
+            ctx.lineWidth = 9; // 3px border
+            ctx.stroke();
+
+            // Employee details - exact positioning as print
+            const detailsX = photoX + photoSize + 30; // 0.1in = 30px
+            const detailsY = photoY + 60; // 0.2in = 60px
+            
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 36px Arial'; // 12pt = 36px
+            ctx.textAlign = 'left';
+            ctx.fillText(fullName, detailsX, detailsY);
+
+            ctx.font = '27px Arial'; // 9pt = 27px
+            ctx.fillText(`Position: ${safe(worker.role_name)}`, detailsX, detailsY + 45); // 0.15in = 45px
+            ctx.fillText(`Project: ${safe(worker.project_name)}`, detailsX, detailsY + 90); // 0.3in = 90px
+            ctx.fillText(`ID: ${worker.unique_code}`, detailsX, detailsY + 135); // 0.45in = 135px
+
+            // QR section - exact positioning as print
+            const qrSectionY = detailsY + 180; // 0.6in = 180px from details start
+            const qrSize = 360; // 1.2in = 360px
+            const qrX = (width - qrSize) / 2;
+            const qrY = qrSectionY + 30; // 0.1in padding
+
+            // QR Code background - exact as print
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30);
+
+            // Draw QR code image
+            if (qrImage && qrImage.complete) {
+                ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+            }
+
+            // QR Code border - exact as print
+            ctx.strokeStyle = '#0052a5';
+            ctx.lineWidth = 6; // 2px border
+            ctx.strokeRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30);
+
+            // QR Code text - exact as print
+            ctx.fillStyle = '#0052a5';
+            ctx.font = 'bold 24px Arial'; // 8pt = 24px
+            ctx.textAlign = 'center';
+            ctx.fillText('SCAN FOR ATTENDANCE', width / 2, qrY - 30);
+
+            // Footer - exact positioning as print
+            ctx.font = '24px Arial'; // 8pt = 24px
+            ctx.fillStyle = '#999999';
+            ctx.fillText('Valid Employee ID Card', width / 2, qrY + qrSize + 60); // 0.2in = 60px
+        }
+
         // Initialize construction workers when construction tab is shown
         document.addEventListener('DOMContentLoaded', function() {
             // Load construction workers when construction tab is clicked
@@ -1861,6 +2961,25 @@
                 if (constructionWorkers.length === 0) {
                     loadConstructionWorkers();
                 }
+                // Always load pending workers when construction tab is shown
+                loadPendingConstructionWorkers();
+            });
+
+            // Load pending workers when pending sub-tab is shown
+            document.getElementById('pending-construction-tab').addEventListener('shown.bs.tab', function() {
+                loadPendingConstructionWorkers();
+            });
+
+            // Load active workers when active sub-tab is shown
+            document.getElementById('active-construction-tab').addEventListener('shown.bs.tab', function() {
+                if (constructionWorkers.length === 0) {
+                    loadConstructionWorkers();
+                }
+            });
+
+            // Load QR codes when printable QR sub-tab is shown
+            document.getElementById('printable-qr-tab').addEventListener('shown.bs.tab', function() {
+                loadActiveConstructionWorkersWithQR();
             });
 
             // Load dropdowns when modal is shown

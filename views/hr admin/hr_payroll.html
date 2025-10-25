@@ -1255,6 +1255,93 @@
                     </div>
                 </div>
 
+                <!-- Submit Payroll Confirmation Modal -->
+                <div class="modal fade" id="submitConstructionPayrollModal" tabindex="-1" aria-labelledby="submitConstructionPayrollModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="submitConstructionPayrollModalLabel">
+                                    <i class="fas fa-check-circle text-success me-2"></i>Confirm Payroll Submission
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Review Before Submitting:</strong>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Payroll Period:</strong><br>
+                                        <span id="confirmPayrollPeriod">—</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Total Workers:</strong><br>
+                                        <span id="confirmTotalWorkers">—</span>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <strong>Total Payroll Amount:</strong><br>
+                                        <span id="confirmTotalAmount" class="text-success fw-bold">—</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Status:</strong><br>
+                                        <span class="badge bg-warning">Pending</span>
+                                    </div>
+                                </div>
+                                <hr>
+                                <p class="mb-0">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    Are you sure you want to submit this payroll? This action will save all payroll records to the database.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </button>
+                                <button type="button" class="btn btn-success" id="confirmSubmitConstructionPayroll">
+                                    <i class="fas fa-save me-2"></i>Yes, Submit Payroll
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Modal -->
+                <div class="modal fade" id="constructionPayrollSuccessModal" tabindex="-1" aria-labelledby="constructionPayrollSuccessModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="constructionPayrollSuccessModalLabel">
+                                    <i class="fas fa-check-circle me-2"></i>Success!
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                                </div>
+                                <h4 class="text-success mb-3">Payroll Submitted Successfully!</h4>
+                                <div class="alert alert-success">
+                                    <strong>Payroll Details:</strong><br>
+                                    <span id="successPayrollPeriod">—</span><br>
+                                    <span id="successTotalWorkers">—</span><br>
+                                    <span id="successTotalAmount">—</span>
+                                </div>
+                                <p class="text-muted mb-0">
+                                    The payroll has been saved to the database and is now pending approval.
+                                </p>
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                                    <i class="fas fa-check me-2"></i>Continue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Add/Edit Modal -->
                 <div class="modal fade" id="recordModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
@@ -2930,50 +3017,235 @@
         }
     }
 
-    // Handlers for construction payroll controls (UI only)
-    function handleGenerateConstructionPayroll() {
+    // ========== BACKEND INTEGRATION FOR CONSTRUCTION PAYROLL ==========
+
+    // Load construction payroll records
+    async function loadConstructionPayroll(status = null) {
+        try {
+            const url = status ? `/hr/construction-payroll?status=${status}` : '/hr/construction-payroll';
+            const response = await fetch(url, { credentials: 'include' });
+            const result = await response.json();
+            
+            if (result.success) {
+                // Transform backend data to frontend format
+                constructionState.records = result.records.map(record => ({
+                    id: record.id,
+                    lastName: record.lastname,
+                    firstName: record.firstname,
+                    position: record.role_name,
+                    workedHours: record.total_hours,
+                    baseSalary: record.daily_rate,
+                    days: record.days_present,
+                    totalSalary: record.net_salary,
+                    status: record.status.charAt(0).toUpperCase() + record.status.slice(1),
+                    project_name: record.project_name,
+                    payroll_start: record.payroll_start,
+                    payroll_end: record.payroll_end
+                }));
+                constructionState.filtered = [];
+                applyConstructionFilters();
+            } else {
+                showConstructionAlert('danger', 'Failed to load payroll records');
+            }
+        } catch (error) {
+            console.error('Error loading construction payroll:', error);
+            showConstructionAlert('danger', 'Failed to load payroll records');
+        }
+    }
+
+    // Generate construction payroll (preview only - not saved to database)
+    async function generateConstructionPayroll() {
+        if (!constructionState.periodStart || !constructionState.periodEnd) {
+            showConstructionAlert('warning', 'Please select a payroll period first');
+            return;
+        }
+
         const btn = document.getElementById('generateConstructionPayroll');
         const original = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
         btn.disabled = true;
-        setTimeout(() => {
-            // Toggle buttons similar to HR page behavior
-            document.getElementById('submitConstructionPayroll').style.display = 'inline-block';
-            document.getElementById('cancelConstructionPayroll').style.display = 'inline-block';
-            document.getElementById('generateConstructionPayroll').style.display = 'none';
-            const label = document.getElementById('periodLabel')?.textContent || '';
-            showConstructionAlert('success', `Construction payroll preview generated for <strong>${label}</strong> (temporary UI).`);
-            btn.innerHTML = original;
+
+        try {
+            const response = await fetch('/hr/construction-payroll/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    payrollStart: constructionState.periodStart.toISOString().split('T')[0],
+                    payrollEnd: constructionState.periodEnd.toISOString().split('T')[0]
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Transform backend data to frontend format (preview only)
+                constructionState.records = result.records.map(record => ({
+                    id: record.worker_id, // Temporary ID for preview
+                    lastName: record.worker_name.split(' ').slice(-1)[0],
+                    firstName: record.worker_name.split(' ').slice(0, -1).join(' '),
+                    position: record.role_name,
+                    workedHours: record.total_hours,
+                    baseSalary: record.daily_rate,
+                    days: record.days_present,
+                    totalSalary: record.net_salary,
+                    status: 'Pending',
+                    project_name: record.project_name,
+                    payroll_start: record.payroll_start,
+                    payroll_end: record.payroll_end,
+                    // Store original data for saving
+                    _originalData: record
+                }));
+
+                // Change Generate button to Submit button
+                btn.innerHTML = '<i class="fas fa-save"></i> Submit Payroll';
+                btn.id = 'submitConstructionPayroll';
+                btn.onclick = submitConstructionPayroll;
+                
+                // Show cancel button
+                document.getElementById('cancelConstructionPayroll').style.display = 'inline-block';
+
+                constructionState.filtered = [];
+                applyConstructionFilters();
+                showConstructionAlert('success', `Payroll preview generated for ${result.totalWorkers} workers. Total: ${peso(result.totalPayroll)}. Click "Submit Payroll" to save.`);
+            } else {
+                showConstructionAlert('danger', result.error || 'Failed to generate payroll');
+            }
+        } catch (error) {
+            console.error('Error generating payroll:', error);
+            showConstructionAlert('danger', 'Failed to generate payroll');
+        } finally {
             btn.disabled = false;
-        }, 600);
+        }
     }
 
-    function handleSubmitConstructionPayroll() {
-        const btn = document.getElementById('submitConstructionPayroll');
+    // Submit construction payroll (show confirmation modal first)
+    function submitConstructionPayroll() {
+        // Calculate totals for confirmation modal
+        const totalWorkers = constructionState.records.length;
+        const totalAmount = constructionState.records.reduce((sum, record) => sum + record.totalSalary, 0);
+        const periodStart = constructionState.periodStart ? constructionState.periodStart.toLocaleDateString() : '—';
+        const periodEnd = constructionState.periodEnd ? constructionState.periodEnd.toLocaleDateString() : '—';
+        const periodText = `${periodStart} - ${periodEnd}`;
+
+        // Update confirmation modal content
+        document.getElementById('confirmPayrollPeriod').textContent = periodText;
+        document.getElementById('confirmTotalWorkers').textContent = totalWorkers;
+        document.getElementById('confirmTotalAmount').textContent = peso(totalAmount);
+
+        // Show confirmation modal
+        new bootstrap.Modal(document.getElementById('submitConstructionPayrollModal')).show();
+    }
+
+    // Actually submit payroll to database (called from confirmation modal)
+    async function confirmSubmitConstructionPayroll() {
+        const btn = document.getElementById('confirmSubmitConstructionPayroll');
         const original = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
         btn.disabled = true;
-        setTimeout(() => {
-            showConstructionAlert('success', 'Construction payroll submitted (temporary UI).');
-            document.getElementById('submitConstructionPayroll').style.display = 'none';
-            document.getElementById('cancelConstructionPayroll').style.display = 'none';
-            document.getElementById('generateConstructionPayroll').style.display = 'inline-block';
+
+        try {
+            // Extract original data for saving
+            const payrollRecords = constructionState.records.map(record => record._originalData).filter(Boolean);
+
+            const response = await fetch('/hr/construction-payroll/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ payrollRecords })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Hide confirmation modal
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('submitConstructionPayrollModal'));
+                if (confirmModal) confirmModal.hide();
+
+                // Show success modal
+                showSuccessModal();
+                
+                // Reset button back to Generate Payroll
+                const submitBtn = document.getElementById('submitConstructionPayroll');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
+                    submitBtn.id = 'generateConstructionPayroll';
+                    submitBtn.onclick = generateConstructionPayroll;
+                }
+                
+                // Hide cancel button
+                document.getElementById('cancelConstructionPayroll').style.display = 'none';
+                
+                // Reload pending payroll
+                loadConstructionPayroll('pending');
+            } else {
+                showConstructionAlert('danger', result.error || 'Failed to submit payroll');
+            }
+        } catch (error) {
+            console.error('Error submitting payroll:', error);
+            showConstructionAlert('danger', 'Failed to submit payroll');
+        } finally {
             btn.innerHTML = original;
             btn.disabled = false;
-        }, 600);
+        }
     }
 
-    function handleCancelConstructionPayroll() {
+    // Show success modal
+    function showSuccessModal() {
+        const totalWorkers = constructionState.records.length;
+        const totalAmount = constructionState.records.reduce((sum, record) => sum + record.totalSalary, 0);
+        const periodStart = constructionState.periodStart ? constructionState.periodStart.toLocaleDateString() : '—';
+        const periodEnd = constructionState.periodEnd ? constructionState.periodEnd.toLocaleDateString() : '—';
+        const periodText = `${periodStart} - ${periodEnd}`;
+
+        // Update success modal content
+        document.getElementById('successPayrollPeriod').textContent = `Period: ${periodText}`;
+        document.getElementById('successTotalWorkers').textContent = `Workers: ${totalWorkers}`;
+        document.getElementById('successTotalAmount').textContent = `Total: ${peso(totalAmount)}`;
+
+        // Show success modal
+        new bootstrap.Modal(document.getElementById('constructionPayrollSuccessModal')).show();
+    }
+
+    // Cancel construction payroll
+    function cancelConstructionPayroll() {
         new bootstrap.Modal(document.getElementById('cancelConstructionPayrollModal')).show();
     }
 
+    // Confirm cancel construction payroll
     function confirmCancelConstructionPayroll() {
-        showConstructionAlert('success', 'Construction payroll cancelled.');
-        document.getElementById('submitConstructionPayroll').style.display = 'none';
+        constructionState.records = [];
+        constructionState.filtered = [];
+        applyConstructionFilters();
+        
+        // Reset button back to Generate Payroll
+        const submitBtn = document.getElementById('submitConstructionPayroll');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-file-invoice"></i> Generate Payroll';
+            submitBtn.id = 'generateConstructionPayroll';
+            submitBtn.onclick = generateConstructionPayroll;
+        }
+        
+        // Hide cancel button
         document.getElementById('cancelConstructionPayroll').style.display = 'none';
-        document.getElementById('generateConstructionPayroll').style.display = 'inline-block';
+        
         const modal = bootstrap.Modal.getInstance(document.getElementById('cancelConstructionPayrollModal'));
         if (modal) modal.hide();
+        
+        showConstructionAlert('info', 'Payroll generation cancelled');
+    }
+
+    // Handlers for construction payroll controls (updated with backend integration)
+    function handleGenerateConstructionPayroll() {
+        generateConstructionPayroll();
+    }
+
+    function handleSubmitConstructionPayroll() {
+        submitConstructionPayroll();
+    }
+
+    function handleCancelConstructionPayroll() {
+        cancelConstructionPayroll();
     }
 
     // ===== Weekly period helpers (Mon–Sat, Sunday OFF) =====
@@ -3109,22 +3381,7 @@
         periodEnd: null
     };
 
-    // Sample data for construction payroll
-    const constructionSampleData = [
-        { lastName: 'Santos', firstName: 'Juan', position: 'Mason', workedHours: 88, baseSalary: 120, status: 'Approved' },
-        { lastName: 'Cruz', firstName: 'Maria', position: 'Electrician', workedHours: 92.5, baseSalary: 150, status: 'Pending' },
-        { lastName: 'Reyes', firstName: 'Pedro', position: 'Carpenter', workedHours: 76, baseSalary: 130, status: 'Approved' },
-        { lastName: 'Dela Rosa', firstName: 'Ana', position: 'Painter', workedHours: 64, baseSalary: 110, status: 'On Hold' },
-        { lastName: 'Garcia', firstName: 'Luis', position: 'Foreman', workedHours: 100, baseSalary: 200, status: 'Approved' },
-        { lastName: 'Lopez', firstName: 'Carmen', position: 'Welder', workedHours: 82, baseSalary: 140, status: 'Pending' },
-        { lastName: 'Mendoza', firstName: 'Rico', position: 'Laborer', workedHours: 70, baseSalary: 100, status: 'Approved' },
-        { lastName: 'Torres', firstName: 'Elena', position: 'Surveyor', workedHours: 96, baseSalary: 180, status: 'Approved' }
-    ].map(r => ({
-        ...r,
-        // Cap days to max 6 (Mon–Sat); Sunday is OFF
-        days: Math.min(6, Math.floor((Number(r.workedHours) || 0) / 8)),
-        totalSalary: r.workedHours * r.baseSalary
-    }));
+    // Sample data removed - will be loaded from backend
 
     function peso(amount) {
         const n = isNaN(amount) || amount === '' || amount === null ? 0 : Number(amount);
@@ -3477,10 +3734,10 @@
 
     // Initialize construction payroll when tab is shown
     function initializeConstructionPayroll() {
-        constructionState.records = [...constructionSampleData];
+        constructionState.records = [];
         constructionState.filtered = [];
         attachConstructionEvents();
-        applyConstructionFilters();
+        loadConstructionPayroll('pending'); // Load pending payroll by default
 
         // Initialize calendar and weekly selection (Mon–Sat)
         const today = new Date();
@@ -3499,6 +3756,8 @@
                 this.classList.add('active');
                 const icon = this.getAttribute('data-icon');
                 const text = this.textContent.trim();
+                const action = this.getAttribute('data-action');
+                
                 const selectedAction = document.getElementById('constructionSelectedAction');
                 const actionsButton = document.getElementById('constructionPayrollActions');
                 if (selectedAction) selectedAction.textContent = text;
@@ -3506,7 +3765,13 @@
                     const iconElement = actionsButton.querySelector('i');
                     if (iconElement) iconElement.className = `fas ${icon}`;
                 }
-                showConstructionAlert('info', `${text} (temporary UI)`);
+                
+                // Load payroll based on action
+                if (action === 'pending') {
+                    loadConstructionPayroll('pending');
+                } else if (action === 'approved') {
+                    loadConstructionPayroll('approved');
+                }
             });
         });
 
@@ -3520,6 +3785,10 @@
         if (submitBtn) submitBtn.addEventListener('click', handleSubmitConstructionPayroll);
         if (cancelBtn) cancelBtn.addEventListener('click', handleCancelConstructionPayroll);
         if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', confirmCancelConstructionPayroll);
+
+        // Add event listener for confirmation modal button
+        const confirmSubmitBtn = document.getElementById('confirmSubmitConstructionPayroll');
+        if (confirmSubmitBtn) confirmSubmitBtn.addEventListener('click', confirmSubmitConstructionPayroll);
 
         // Month navigation
         const prevMonth = document.getElementById('prevMonth');
