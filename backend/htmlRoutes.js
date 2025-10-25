@@ -403,7 +403,17 @@ const htmlRoutes = (app) => {
     }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
   });
-  
+
+  app.get('/manufacturing/manufacturing_add_construction', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_add_construction.html')); // Adjusted path
+  });
+
+  app.get('/manufacturing/manufacturing_construction_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_construction_attendance.html')); // Adjusted path
+  });
+
+
+  // ====================
   //   finance Routes
   // ====================  
 

@@ -656,15 +656,9 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             if (facialVerification === true || facialVerification === 'true') {
                 console.log('🔍 Performing radius check for facial verification flow...');
                 
-                // Do radius check only (without recording attendance)
-                const officeLat = 14.343520567632279;
-                const officeLng = 120.97961883168472;
+                const officeLat = 14.327791594318544;
+                const officeLng = 120.94059104947334;
                 const allowedRadius = 500;
-
-                
-                // const officeLat = 14.343520567632279;
-                // const officeLng = 120.97961883168472;
-                // const allowedRadius = 500;
                 
                 // Calculate distance
                 const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
@@ -800,8 +794,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                     bestMatch = similarity;
                 }
                 
-                // Set threshold to 0.6 for secure verification (60% similarity required)
-                if (similarity >= 0.6) {
+                // Set threshold to 0.03 for practical use (3% similarity required)
+                if (similarity >= 0.03) {
                     matched = true;
                     break;
                 }
@@ -811,9 +805,9 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 console.log('❌ Face verification failed. Best match score:', bestMatch);
                 let errorMessage = 'Face verification failed. ';
                 
-                if (bestMatch < 0.3) {
+                if (bestMatch < 0.03) {
                     errorMessage += 'Face not recognized. Please ensure you are the enrolled employee and your face is clearly visible.';
-                } else if (bestMatch < 0.5) {
+                } else if (bestMatch < 0.1) {
                     errorMessage += 'Face similarity is low. Please position your face directly in front of the camera with good lighting.';
                 } else {
                     errorMessage += 'Face verification failed. Please try again or contact HR if this persists.';
@@ -4141,6 +4135,225 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             res.status(500).json({ error: 'Failed to get project labor roles' });
         }
     },
+
+    // Get pending construction workers
+    getPendingConstructionWorkers: async (req, res) => {
+        try {
+            const workers = await HRModel.getPendingConstructionWorkers();
+            res.json(workers);
+        } catch (error) {
+            console.error('Error getting pending construction workers:', error);
+            res.status(500).json({ error: 'Failed to get pending construction workers' });
+        }
+    },
+
+    // Approve construction worker
+    approveConstructionWorker: async (req, res) => {
+        try {
+            const { workerId } = req.params;
+            
+            const approved = await HRModel.approveConstructionWorker(workerId);
+            
+            if (!approved) {
+                return res.status(404).json({ error: 'Pending construction worker not found' });
+            }
+            
+            res.json({ message: 'Construction worker approved successfully' });
+        } catch (error) {
+            console.error('Error approving construction worker:', error);
+            res.status(500).json({ error: 'Failed to approve construction worker' });
+        }
+    },
+
+    // Reject construction worker
+    rejectConstructionWorker: async (req, res) => {
+        try {
+            const { workerId } = req.params;
+            
+            const rejected = await HRModel.rejectConstructionWorker(workerId);
+            
+            if (!rejected) {
+                return res.status(404).json({ error: 'Pending construction worker not found' });
+            }
+            
+            res.json({ message: 'Construction worker rejected successfully' });
+        } catch (error) {
+            console.error('Error rejecting construction worker:', error);
+            res.status(500).json({ error: 'Failed to reject construction worker' });
+        }
+    },
+
+    // Get active construction workers with QR codes for printing
+    getActiveConstructionWorkersWithQR: async (req, res) => {
+        try {
+            const workers = await HRModel.getActiveConstructionWorkersWithQR();
+            res.json(workers);
+        } catch (error) {
+            console.error('Error getting active construction workers with QR:', error);
+            res.status(500).json({ error: 'Failed to get active construction workers with QR' });
+        }
+    },
+
+    // ========== CONSTRUCTION PAYROLL CONTROLLERS ==========
+
+    // Generate construction payroll
+    generateConstructionPayroll: async (req, res) => {
+        try {
+            const { payrollStart, payrollEnd } = req.body;
+
+            if (!payrollStart || !payrollEnd) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Payroll start and end dates are required' 
+                });
+            }
+
+            // Validate date format
+            const startDate = new Date(payrollStart);
+            const endDate = new Date(payrollEnd);
+
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Invalid date format' 
+                });
+            }
+
+            if (startDate >= endDate) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Start date must be before end date' 
+                });
+            }
+
+            const payrollRecords = await HRModel.generateConstructionPayroll(payrollStart, payrollEnd);
+
+            res.json({
+                success: true,
+                message: 'Construction payroll generated successfully',
+                records: payrollRecords,
+                totalWorkers: payrollRecords.length,
+                totalPayroll: payrollRecords.reduce((sum, record) => sum + record.net_salary, 0)
+            });
+        } catch (error) {
+            console.error('Error generating construction payroll:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to generate construction payroll' 
+            });
+        }
+    },
+
+    // Save construction payroll
+    saveConstructionPayroll: async (req, res) => {
+        try {
+            const { payrollRecords } = req.body;
+
+            if (!payrollRecords || !Array.isArray(payrollRecords)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Payroll records are required' 
+                });
+            }
+
+            await HRModel.saveConstructionPayroll(payrollRecords);
+
+            res.json({
+                success: true,
+                message: 'Construction payroll saved successfully'
+            });
+        } catch (error) {
+            console.error('Error saving construction payroll:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to save construction payroll' 
+            });
+        }
+    },
+
+    // Get construction payroll records
+    getConstructionPayroll: async (req, res) => {
+        try {
+            const { status, limit = 100 } = req.query;
+
+            const records = await HRModel.getConstructionPayroll(status, parseInt(limit));
+
+            res.json({
+                success: true,
+                records,
+                totalRecords: records.length
+            });
+        } catch (error) {
+            console.error('Error getting construction payroll:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to get construction payroll records' 
+            });
+        }
+    },
+
+    // Update construction payroll status
+    updateConstructionPayrollStatus: async (req, res) => {
+        try {
+            const { payrollIds, status } = req.body;
+            const approvedBy = req.session.user?.id;
+
+            if (!payrollIds || !Array.isArray(payrollIds) || !status) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Payroll IDs and status are required' 
+                });
+            }
+
+            const validStatuses = ['pending', 'approved', 'released'];
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Invalid status. Must be pending, approved, or released' 
+                });
+            }
+
+            await HRModel.updateConstructionPayrollStatus(payrollIds, status, approvedBy);
+
+            res.json({
+                success: true,
+                message: `Construction payroll status updated to ${status} successfully`
+            });
+        } catch (error) {
+            console.error('Error updating construction payroll status:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to update construction payroll status' 
+            });
+        }
+    },
+
+    // Delete construction payroll records
+    deleteConstructionPayroll: async (req, res) => {
+        try {
+            const { payrollIds } = req.body;
+
+            if (!payrollIds || !Array.isArray(payrollIds)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Payroll IDs are required' 
+                });
+            }
+
+            await HRModel.deleteConstructionPayroll(payrollIds);
+
+            res.json({
+                success: true,
+                message: 'Construction payroll records deleted successfully'
+            });
+        } catch (error) {
+            console.error('Error deleting construction payroll:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to delete construction payroll records' 
+            });
+        }
+    }
 };
 
 module.exports = { HRController, constructionWorkerUpload };

@@ -1,5 +1,8 @@
 const db = require("../../../db");
 const bcrypt = require('bcrypt');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 
 // Add a function to fix existing plain text passwords
 const fixPlainTextPasswords = async () => {
@@ -841,13 +844,11 @@ const HRModel = {
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
         console.log('🔍 Check-in attempt:', { userId, checkInTime, date, userLat, userLng });
         
-        // const officeLat = 14.329643700546274;
-        // const officeLng = 120.94080148408072;
-        // const allowedRadius = 500;
-
-        const officeLat = 14.343520567632279
-        const officeLng = 120.97961883168472
+        const officeLat = 14.327791594318544;
+        const officeLng = 120.94059104947334;
         const allowedRadius = 500;
+
+        
     
         try {
             // Check if the user is within the allowed radius
@@ -5616,6 +5617,468 @@ const HRModel = {
             throw error;
         }
     },
+
+    // Get pending construction workers (inactive status)
+    getPendingConstructionWorkers: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.picture,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.created_at,
+                    cr.role_name,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                WHERE cw.status = 'inactive'
+                ORDER BY cw.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting pending construction workers:', error);
+            throw error;
+        }
+    },
+
+    // Approve construction worker (change status from inactive to active)
+    approveConstructionWorker: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            // Generate unique code and QR code
+            const uniqueCode = await HRModel.generateUniqueCode();
+            const qrCodePath = await HRModel.generateQRCode(uniqueCode, workerId);
+            
+            const [result] = await db.query(`
+                UPDATE construction_workers 
+                SET status = 'active', unique_code = ?, qr_code_path = ?
+                WHERE id = ? AND status = 'inactive'
+            `, [uniqueCode, qrCodePath, workerId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error approving construction worker:', error);
+            throw error;
+        }
+    },
+
+    // Generate unique code for construction worker
+    generateUniqueCode: async () => {
+        const db = require('../../../db');
+        let uniqueCode;
+        let isUnique = false;
+        
+        while (!isUnique) {
+            // Generate a random 8-character alphanumeric code
+            uniqueCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+            
+            // Check if code already exists
+            const [existing] = await db.query(`
+                SELECT id FROM construction_workers WHERE unique_code = ?
+            `, [uniqueCode]);
+            
+            if (existing.length === 0) {
+                isUnique = true;
+            }
+        }
+        
+        return uniqueCode;
+    },
+
+    // Generate QR code for construction worker
+    generateQRCode: async (uniqueCode, workerId) => {
+        try {
+            // Create QR code directory if it doesn't exist
+            const qrDir = path.join(__dirname, '../../../uploads/qr_codes');
+            if (!fs.existsSync(qrDir)) {
+                fs.mkdirSync(qrDir, { recursive: true });
+            }
+            
+            // Generate QR code data
+            const qrData = JSON.stringify({
+                type: 'construction_worker',
+                id: workerId,
+                code: uniqueCode,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Generate QR code file path
+            const fileName = `qr_${workerId}_${uniqueCode}.png`;
+            const filePath = path.join(qrDir, fileName);
+            
+            // Generate QR code image
+            await QRCode.toFile(filePath, qrData, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+            
+            // Return relative path for database storage
+            return `qr_codes/${fileName}`;
+        } catch (error) {
+            console.error('❌ Error generating QR code:', error);
+            throw error;
+        }
+    },
+
+    // Get active construction workers with QR codes for printing
+    getActiveConstructionWorkersWithQR: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.picture,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.unique_code,
+                    cw.qr_code_path,
+                    cw.created_at,
+                    cr.role_name,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                WHERE cw.status = 'active' AND cw.qr_code_path IS NOT NULL
+                ORDER BY cw.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting active construction workers with QR:', error);
+            throw error;
+        }
+    },
+
+    // Reject construction worker (delete from database)
+    rejectConstructionWorker: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            // Start transaction to ensure data consistency
+            const connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Get worker details before deletion
+                const [workerRows] = await connection.query(`
+                    SELECT project_id, role_id FROM construction_workers WHERE id = ? AND status = 'inactive'
+                `, [workerId]);
+
+                if (workerRows.length === 0) {
+                    throw new Error('Pending construction worker not found');
+                }
+
+                const { project_id, role_id } = workerRows[0];
+
+                // Delete construction worker
+                const [deleteResult] = await connection.query(`
+                    DELETE FROM construction_workers WHERE id = ? AND status = 'inactive'
+                `, [workerId]);
+
+                if (deleteResult.affectedRows === 0) {
+                    throw new Error('Failed to reject construction worker');
+                }
+
+                // Increase manpower_per_unit back in labor table
+                await connection.query(`
+                    UPDATE labor 
+                    SET manpower_per_unit = manpower_per_unit + 1
+                    WHERE project_id = ? AND worker_type_id = ?
+                `, [project_id, role_id]);
+
+                await connection.commit();
+                return true;
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('❌ Error rejecting construction worker:', error);
+            throw error;
+        }
+    },
+
+  // ========== CONSTRUCTION PAYROLL METHODS ==========
+
+  // Generate construction payroll for a period
+  generateConstructionPayroll: async (payrollStart, payrollEnd) => {
+    try {
+      // Get all active construction workers
+      const [workers] = await db.query(`
+        SELECT 
+          cw.id as worker_id,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cw.role_id,
+          cr.role_name,
+          cr.daily_rate,
+          cw.project_id,
+          p.project_name
+        FROM construction_workers cw
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+        WHERE cw.status = 'active'
+        ORDER BY cw.lastname, cw.firstname
+      `);
+
+      const payrollRecords = [];
+
+      for (const worker of workers) {
+        // Calculate days present and absent
+        const { daysPresent, daysAbsent, totalHours, overtimeHours } = await HRModel.calculateWorkerAttendance(
+          worker.worker_id, 
+          payrollStart, 
+          payrollEnd
+        );
+
+        // Calculate salary components
+        const basicSalary = daysPresent * worker.daily_rate;
+        const overtimePay = overtimeHours * (worker.daily_rate / 8); // Overtime rate = daily_rate / 8 hours
+        const salaryBeforeDeductions = basicSalary + overtimePay;
+        const netSalary = salaryBeforeDeductions; // No deductions for now
+
+        payrollRecords.push({
+          worker_id: worker.worker_id,
+          role_id: worker.role_id,
+          daily_rate: worker.daily_rate,
+          days_present: daysPresent,
+          days_absent: daysAbsent,
+          total_hours: totalHours,
+          overtime_hours: overtimeHours,
+          basic_salary: basicSalary,
+          overtime_pay: overtimePay,
+          salary_before_deductions: salaryBeforeDeductions,
+          net_salary: netSalary,
+          payroll_start: payrollStart,
+          payroll_end: payrollEnd,
+          status: 'pending',
+          worker_name: `${worker.firstname} ${worker.middlename} ${worker.lastname}`.trim(),
+          role_name: worker.role_name,
+          project_name: worker.project_name
+        });
+      }
+
+      return payrollRecords;
+    } catch (error) {
+      console.error('❌ Error generating construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Calculate worker attendance for a period
+  calculateWorkerAttendance: async (workerId, startDate, endDate) => {
+    try {
+      // Get attendance records for the period
+      const [attendanceRecords] = await db.query(`
+        SELECT 
+          attendance_date,
+          time_in,
+          time_out,
+          status
+        FROM attendance_construction
+        WHERE worker_id = ? 
+        AND attendance_date BETWEEN ? AND ?
+        ORDER BY attendance_date
+      `, [workerId, startDate, endDate]);
+
+      let daysPresent = 0;
+      let daysAbsent = 0;
+      let totalHours = 0;
+      let overtimeHours = 0;
+
+      // Generate all dates in the period
+      const dates = [];
+      const currentDate = new Date(startDate);
+      const endDateObj = new Date(endDate);
+
+      while (currentDate <= endDateObj) {
+        // Skip Sundays (rest days)
+        if (currentDate.getDay() !== 0) {
+          dates.push(new Date(currentDate));
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Check each working day
+      for (const date of dates) {
+        const dateStr = date.toISOString().split('T')[0];
+        const record = attendanceRecords.find(r => r.attendance_date.toISOString().split('T')[0] === dateStr);
+
+        if (record && record.time_in && record.status === 'present') {
+          daysPresent++;
+          
+          // Calculate hours worked
+          if (record.time_out) {
+            const timeIn = new Date(record.time_in);
+            const timeOut = new Date(record.time_out);
+            const hoursWorked = (timeOut - timeIn) / (1000 * 60 * 60); // Convert to hours
+            
+            totalHours += hoursWorked;
+            
+            // Calculate overtime (hours over 8)
+            if (hoursWorked > 8) {
+              overtimeHours += hoursWorked - 8;
+            }
+          }
+        } else {
+          daysAbsent++;
+        }
+      }
+
+      return {
+        daysPresent,
+        daysAbsent,
+        totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimal places
+        overtimeHours: Math.round(overtimeHours * 100) / 100
+      };
+    } catch (error) {
+      console.error('❌ Error calculating worker attendance:', error);
+      throw error;
+    }
+  },
+
+  // Save construction payroll records
+  saveConstructionPayroll: async (payrollRecords) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Insert payroll records
+        for (const record of payrollRecords) {
+          await connection.query(`
+            INSERT INTO construction_payroll (
+              worker_id, role_id, daily_rate, days_present, days_absent,
+              total_hours, overtime_hours, basic_salary, overtime_pay,
+              salary_before_deductions, net_salary, payroll_start, payroll_end, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            record.worker_id, record.role_id, record.daily_rate, record.days_present, record.days_absent,
+            record.total_hours, record.overtime_hours, record.basic_salary, record.overtime_pay,
+            record.salary_before_deductions, record.net_salary, record.payroll_start, record.payroll_end, record.status
+          ]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error saving construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Get construction payroll records
+  getConstructionPayroll: async (status = null, limit = 100) => {
+    try {
+      let query = `
+        SELECT 
+          cp.*,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cr.role_name,
+          p.project_name
+        FROM construction_payroll cp
+        LEFT JOIN construction_workers cw ON cp.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cp.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+      `;
+
+      const params = [];
+      if (status) {
+        query += ` WHERE cp.status = ?`;
+        params.push(status);
+      }
+
+      query += ` ORDER BY cp.created_at DESC LIMIT ?`;
+      params.push(limit);
+
+      const [rows] = await db.query(query, params);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Update construction payroll status
+  updateConstructionPayrollStatus: async (payrollIds, status, approvedBy = null) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        for (const payrollId of payrollIds) {
+          await connection.query(`
+            UPDATE construction_payroll 
+            SET status = ?, approved_by = ?, updated_at = NOW()
+            WHERE id = ?
+          `, [status, approvedBy, payrollId]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error updating construction payroll status:', error);
+      throw error;
+    }
+  },
+
+  // Delete construction payroll records
+  deleteConstructionPayroll: async (payrollIds) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        for (const payrollId of payrollIds) {
+          await connection.query(`DELETE FROM construction_payroll WHERE id = ?`, [payrollId]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error deleting construction payroll:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = HRModel;

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { ManufacturingController, projectUpload, signatureUpload } = require("../controller/manu.controller");
+const { ManufacturingController, projectUpload, signatureUpload, constructionWorkerUpload } = require("../controller/manu.controller");
 
 // Project Routes
 router.post('/projects', projectUpload.fields([
@@ -57,5 +57,29 @@ router.post('/negotiate-cost', ManufacturingController.negotiateCost);
 router.get('/notifications/unread', ManufacturingController.getUnreadNotifications);
 router.post('/notifications/:id/read', ManufacturingController.markNotificationAsRead);
 router.post('/notifications/read-all', ManufacturingController.markAllNotificationsAsRead);
+
+// ========== CONSTRUCTION WORKERS ROUTES ==========
+
+// Construction workers CRUD operations
+router.get('/construction-workers', ManufacturingController.getAllConstructionWorkers);
+router.get('/construction-workers/:workerId', ManufacturingController.getConstructionWorkerById);
+router.post('/construction-workers', constructionWorkerUpload, ManufacturingController.addConstructionWorker);
+router.put('/construction-workers/:workerId', ManufacturingController.updateConstructionWorker);
+router.delete('/construction-workers/:workerId', ManufacturingController.deleteConstructionWorker);
+
+// Supporting data for construction workers
+router.get('/construction-roles', ManufacturingController.getAllConstructionRoles);
+router.get('/projects', ManufacturingController.getAllProjects);
+router.get('/projects/:projectId/labor-roles', ManufacturingController.getProjectLaborRoles);
+router.get('/projects/:projectId/planning-labor-roles', ManufacturingController.getLaborRolesForPlanningProjects);
+
+// ========== ATTENDANCE ROUTES ==========
+
+// QR code scanning and attendance recording
+router.post('/attendance/scan-qr', ManufacturingController.scanQRCode);
+router.post('/attendance/record', ManufacturingController.recordAttendance);
+router.get('/attendance/worker/:workerId', ManufacturingController.getWorkerAttendance);
+router.get('/attendance/project/:projectId', ManufacturingController.getProjectAttendance);
+router.get('/attendance/today', ManufacturingController.getTodayAttendance);
 
 module.exports = router;

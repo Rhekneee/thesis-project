@@ -459,6 +459,14 @@
                             </small>
                         </div>
                         
+                        <!-- Camera Selection -->
+                        <div class="camera-selection mb-3">
+                            <label for="cameraSelect" class="form-label">Select Camera:</label>
+                            <select id="cameraSelect" class="form-select mb-2">
+                                <option value="">Loading cameras...</option>
+                            </select>
+                        </div>
+
                         <!-- Camera Section -->
                         <div class="camera-section mb-3">
                             <video id="faceVideo" width="320" height="240" autoplay muted style="border: 2px solid #007bff; border-radius: 8px; display: none;"></video>
@@ -552,6 +560,38 @@
                 });
             }
         });
+
+        // Function to load available cameras
+        async function loadAvailableCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '<option value="">Select a camera...</option>';
+                
+                availableCameras = videoDevices;
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Auto-select first camera if only one available
+                if (videoDevices.length === 1) {
+                    selectedCameraId = videoDevices[0].deviceId;
+                    cameraSelect.value = selectedCameraId;
+                }
+                
+                console.log('Available cameras:', videoDevices);
+            } catch (error) {
+                console.error('Error loading cameras:', error);
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '<option value="">Error loading cameras</option>';
+            }
+        }
 
         // Function to get user location (latitude and longitude)
         function getUserLocation() {
@@ -675,6 +715,8 @@
         let currentStream = null;
         let currentUserId = null;
         let currentAttendanceData = null;
+        let availableCameras = [];
+        let selectedCameraId = null;
         
         // Blink verification variables
         let blinkVerificationActive = false;
@@ -888,13 +930,22 @@
                 const captureBtn = document.getElementById('captureFace');
                 const stopBtn = document.getElementById('stopCamera');
                 const statusDiv = document.getElementById('faceVerificationStatus');
+                const cameraSelect = document.getElementById('cameraSelect');
 
-                // Request camera access
+                // Check if camera is selected
+                if (!cameraSelect.value) {
+                    statusDiv.innerHTML = '<div class="verification-error"><i class="fas fa-exclamation-triangle"></i> Please select a camera first</div>';
+                    return;
+                }
+
+                selectedCameraId = cameraSelect.value;
+
+                // Request camera access with selected device
                 currentStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
+                        deviceId: { exact: selectedCameraId },
                         width: 320, 
-                        height: 240,
-                        facingMode: 'user' // Front camera
+                        height: 240
                     } 
                 });
 
@@ -1164,7 +1215,7 @@
             }
         }
 
-        // Manual blink button event listener
+        // Manual blink button event listener and camera initialization
         document.addEventListener('DOMContentLoaded', function() {
             const manualBlinkBtn = document.getElementById('manualBlinkBtn');
             if (manualBlinkBtn) {
@@ -1174,6 +1225,18 @@
                     }
                 });
             }
+
+            // Camera selection change event listener
+            const cameraSelect = document.getElementById('cameraSelect');
+            if (cameraSelect) {
+                cameraSelect.addEventListener('change', function() {
+                    selectedCameraId = this.value;
+                    console.log('Camera selected:', selectedCameraId);
+                });
+            }
+
+            // Load available cameras on page load
+            loadAvailableCameras();
         });
 
         // On page load, fetch the employee ID and load attendance data
