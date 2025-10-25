@@ -1,6 +1,6 @@
     const express = require('express');
     const router = express.Router();
-    const HRController = require('../controller/hr.controller.js');
+    const { HRController, constructionWorkerUpload } = require('../controller/hr.controller.js');
     const authMiddleware = require('../middleware/hrAuthMiddleware.js');
     const HRModel = require('../model/hr.model.js');
     const Notifications = require('../../../models/notification.model');
@@ -95,6 +95,7 @@
 
     // 🔹 Permission Management
     router.get('/roles', authMiddleware.verifySession, HRController.getRoles);    // Get all roles/permissions
+    router.get('/construction-roles', authMiddleware.verifySession, HRController.getConstructionRoles);    // Get all construction roles with salary
     
  // Route to handle soft delete or restore employee
     router.put('/employee/archive/:employeeId', authMiddleware.verifySession, HRController.softDeleteOrRestoreEmployee);
@@ -421,5 +422,62 @@
 
     // Payroll approval progress
     router.get('/payroll/approval-progress', authMiddleware.verifySession, HRController.getPayrollApprovalProgress);
+
+    // Dropdown data
+    router.get('/departments', authMiddleware.verifySession, HRController.getDepartments);
+    router.get('/payroll-status', authMiddleware.verifySession, HRController.checkPayrollStatus);
+
+    // Edit endpoints from modal (non-destructive additions)
+    router.put('/roles/update', authMiddleware.verifySession, HRController.updateEmployeeRole);
+    router.put('/construction-roles/update', authMiddleware.verifySession, HRController.updateConstructionRole);
+
+    // Employee attendance summary and history
+    router.get('/employees/:employeeId/attendance-summary', authMiddleware.verifySession, HRController.getEmployeeAttendanceSummary);
+    router.get('/employees/:employeeId/attendance-history', authMiddleware.verifySession, HRController.getEmployeeAttendanceHistory);
+
+    // Add error handling middleware for multer
+    const handleMulterError = (err, req, res, next) => {
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+            }
+            return res.status(400).json({ error: 'File upload error: ' + err.message });
+        }
+        if (err.message === 'Only image files are allowed!') {
+            return res.status(400).json({ error: 'Only image files (JPG, PNG, GIF) are allowed.' });
+        }
+        next(err);
+    };
+
+    // ========== CONSTRUCTION WORKERS ROUTES ==========
+    
+    // Construction workers CRUD operations
+    router.get('/construction-workers', authMiddleware.verifySession, HRController.getAllConstructionWorkers);
+    router.get('/construction-workers/:workerId', authMiddleware.verifySession, HRController.getConstructionWorkerById);
+    router.post('/construction-workers', authMiddleware.verifySession, constructionWorkerUpload, handleMulterError, HRController.addConstructionWorker);
+    router.put('/construction-workers/:workerId', authMiddleware.verifySession, HRController.updateConstructionWorker);
+    router.delete('/construction-workers/:workerId', authMiddleware.verifySession, HRController.deleteConstructionWorker);
+
+    // Supporting data for construction workers
+    router.get('/construction-roles', authMiddleware.verifySession, HRController.getAllConstructionRoles);
+    router.get('/projects', authMiddleware.verifySession, HRController.getAllProjects);
+    router.get('/projects/:projectId/labor-roles', authMiddleware.verifySession, HRController.getProjectLaborRoles);
+
+    // Pending construction workers management
+    router.get('/pending-construction-workers', authMiddleware.verifySession, HRController.getPendingConstructionWorkers);
+    router.post('/construction-workers/:workerId/approve', authMiddleware.verifySession, HRController.approveConstructionWorker);
+    router.post('/construction-workers/:workerId/reject', authMiddleware.verifySession, HRController.rejectConstructionWorker);
+    
+    // Active construction workers with QR codes for printing
+    router.get('/active-construction-workers-qr', authMiddleware.verifySession, HRController.getActiveConstructionWorkersWithQR);
+
+    // ========== CONSTRUCTION PAYROLL ROUTES ==========
+
+    // Construction payroll management
+    router.post('/construction-payroll/generate', authMiddleware.verifySession, HRController.generateConstructionPayroll);
+    router.post('/construction-payroll/save', authMiddleware.verifySession, HRController.saveConstructionPayroll);
+    router.get('/construction-payroll', authMiddleware.verifySession, HRController.getConstructionPayroll);
+    router.put('/construction-payroll/status', authMiddleware.verifySession, HRController.updateConstructionPayrollStatus);
+    router.delete('/construction-payroll', authMiddleware.verifySession, HRController.deleteConstructionPayroll);
 
     module.exports = router;

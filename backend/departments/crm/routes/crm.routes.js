@@ -5,6 +5,17 @@ const fs = require('fs');
 // Import the correct controller and multer upload handler
 const { CRMController, upload, developerUpload, handlePropertyUpload, virtualLocationUpload, virtualSceneUpload } = require("../controller/crm.controller");
 
+// Middleware to check if user is general_foreman
+const checkGeneralForemanRole = (req, res, next) => {
+    if (!req.session?.user) {
+        return res.status(401).json({ message: "Unauthorized! Please log in first." });
+    }
+    if (req.session.user.role_name !== 'general_foreman') {
+        return res.status(403).json({ message: "Access denied: General Foreman role required." });
+    }
+    next();
+};
+
 // Add route to serve default profile picture
 router.get('/default-profile-picture', (req, res) => {
     const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads', 'profile_pictures');
@@ -107,16 +118,35 @@ router.get('/developer/check-session', (req, res) => {
 });
 
 // Virtual Tour: Locations
-router.get('/virtual-tour/locations', CRMController.listVirtualLocations);
-router.get('/virtual-tour/locations/:id', CRMController.getVirtualLocationById);
-router.post('/virtual-tour/locations', virtualLocationUpload, CRMController.createVirtualLocation);
+router.get('/virtual-tour/locations', checkGeneralForemanRole, CRMController.listVirtualLocations);
+router.get('/virtual-tour/locations/:id', checkGeneralForemanRole, CRMController.getVirtualLocationById);
+router.post('/virtual-tour/locations', checkGeneralForemanRole, virtualLocationUpload, CRMController.createVirtualLocation);
 
 // Virtual Tour: Scenes
-router.get('/virtual-tour/scenes/:location_id', CRMController.getVirtualScenesByLocation);
-router.post('/virtual-tour/scenes', virtualSceneUpload, CRMController.createVirtualScene);
+router.get('/virtual-tour/scenes/:location_id', checkGeneralForemanRole, CRMController.getVirtualScenesByLocation);
+router.post('/virtual-tour/scenes', checkGeneralForemanRole, virtualSceneUpload, CRMController.createVirtualScene);
+router.put('/virtual-tour/scenes/:id', checkGeneralForemanRole, virtualSceneUpload, CRMController.updateVirtualScene);
+router.delete('/virtual-tour/scenes/:id', checkGeneralForemanRole, CRMController.deleteVirtualScene);
 
 // Virtual Tour: Hotspots
-router.get('/virtual-tour/hotspots/:scene_id', CRMController.getVirtualHotspotsByScene);
-router.post('/virtual-tour/hotspots', CRMController.createVirtualHotspot);
+router.get('/virtual-tour/hotspots/:scene_id', checkGeneralForemanRole, CRMController.getVirtualHotspotsByScene);
+router.post('/virtual-tour/hotspots', checkGeneralForemanRole, CRMController.createVirtualHotspot);
+router.put('/virtual-tour/hotspots/:id', checkGeneralForemanRole, CRMController.updateVirtualHotspot);
+router.delete('/virtual-tour/hotspots/:id', checkGeneralForemanRole, CRMController.deleteVirtualHotspot);
+
+// Inquiry submission route
+router.post('/submit-inquiry', CRMController.submitInquiry);
+
+// Inquiry management routes
+router.get('/api/inquiries', CRMController.getAllInquiries);
+router.delete('/api/inquiries/:id', CRMController.deleteInquiry);
+
+// Coordinator assignment routes
+router.get('/api/coordinators', CRMController.getSalesMarketingCoordinators);
+router.post('/api/assign-coordinator', CRMController.assignCoordinator);
+router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoordinatorPerformance);
+
+// Developers (Clients page)
+router.get('/api/developers', CRMController.getAllDevelopers);
 
 module.exports = router;

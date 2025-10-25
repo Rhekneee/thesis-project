@@ -1,5 +1,8 @@
 const db = require("../../../db");
 const bcrypt = require('bcrypt');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 
 // Add a function to fix existing plain text passwords
 const fixPlainTextPasswords = async () => {
@@ -39,6 +42,123 @@ const HRModel = {
             return result.insertId;
         } catch (error) {
             console.error("❌ Error saving employee face:", error);
+            throw error;
+        }
+    },
+
+    // 🔹 Get all departments (id, name)
+    getAllDepartments: async () => {
+        try {
+            const [rows] = await db.query(`SELECT id, name FROM departments ORDER BY name`);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error fetching departments:', error);
+            throw error;
+        }
+    },
+
+    // 🔹 Get position_id for an employee based on their role_id
+    getPositionIdByEmployeeId: async (employeeId) => {
+        try {
+            const [rows] = await db.query(`
+                SELECT p.position_id, p.salary as basic_salary
+                FROM employees e
+                JOIN positions p ON e.role_id = p.role_id
+                WHERE e.employee_id = ?
+            `, [employeeId]);
+            
+            return rows.length > 0 ? rows[0] : null;
+        } catch (error) {
+            console.error("❌ [getPositionIdByEmployeeId] Error fetching position:", error.message || error);
+            throw error;
+        }
+    },
+
+    // 🔹 Get position_id and basic_salary for multiple employees
+    getPositionDataForEmployees: async (employeeIds) => {
+        try {
+            if (!employeeIds || employeeIds.length === 0) {
+                return {};
+            }
+            
+            const placeholders = employeeIds.map(() => '?').join(',');
+            const [rows] = await db.query(`
+                SELECT e.employee_id, p.position_id, p.salary as basic_salary
+                FROM employees e
+                JOIN positions p ON e.role_id = p.role_id
+                WHERE e.employee_id IN (${placeholders})
+            `, employeeIds);
+            
+            // Convert to object for easy lookup
+            const positionData = {};
+            rows.forEach(row => {
+                positionData[row.employee_id] = {
+                    position_id: row.position_id,
+                    basic_salary: row.basic_salary
+                };
+            });
+            
+            return positionData;
+        } catch (error) {
+            console.error("❌ [getPositionDataForEmployees] Error fetching position data:", error.message || error);
+            throw error;
+        }
+    },
+
+    // 🔹 Check payroll status for role changes effectiveness
+    checkPayrollStatus: async () => {
+        try {
+            // Get current date
+            const currentDate = new Date();
+            const currentDateStr = currentDate.toISOString().split('T')[0];
+            
+            // Check if there's an active payroll period (current date falls within any period)
+            const [activePeriods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as payroll_count,
+                    COUNT(CASE WHEN p.status IN ('pending', 'approved', 'released') THEN 1 END) as active_payroll_count
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                WHERE pp.start_date <= ? AND pp.end_date >= ?
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+                LIMIT 1
+            `, [currentDateStr, currentDateStr]);
+            
+            // Check if there are any pending/approved payroll entries for current period
+            const [pendingPayrolls] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM payroll p
+                JOIN payroll_periods pp ON p.payroll_period_id = pp.id
+                WHERE pp.start_date <= ? AND pp.end_date >= ?
+                AND p.status IN ('pending', 'approved', 'released')
+            `, [currentDateStr, currentDateStr]);
+            
+            // Get the most recent payroll period (regardless of current date)
+            const [recentPeriods] = await db.query(`
+                SELECT 
+                    pp.*,
+                    COUNT(p.id) as payroll_count,
+                    COUNT(CASE WHEN p.status IN ('pending', 'approved', 'released') THEN 1 END) as active_payroll_count
+                FROM payroll_periods pp
+                LEFT JOIN payroll p ON pp.id = p.payroll_period_id
+                GROUP BY pp.id
+                ORDER BY pp.created_at DESC
+                LIMIT 1
+            `);
+            
+            const result = {
+                hasActivePeriod: activePeriods.length > 0,
+                hasPendingPayroll: pendingPayrolls[0].count > 0,
+                currentPeriod: activePeriods[0] || null,
+                recentPeriod: recentPeriods[0] || null,
+                effectiveImmediately: activePeriods.length === 0 || pendingPayrolls[0].count === 0
+            };
+            
+            return result;
+        } catch (error) {
+            console.error("❌ [checkPayrollStatus] Error checking payroll status:", error.message || error);
             throw error;
         }
     },
@@ -398,16 +518,129 @@ const HRModel = {
         }
     },
 
-    // 🔹 Get all permissions
+    // 🔹 Get all permissions with salary and position information (excluding supplier and developer)
     getAllRoles: async () => {
         try {
-            const query = "SELECT id, name FROM roles WHERE name!='Owner'";
+            const query = `
+                SELECT 
+                    r.id,
+                    r.name as role_name,
+                    d.name as department_name,
+                    p.salary as daily_rate
+                FROM roles r
+                LEFT JOIN departments d ON r.department_id = d.id
+                LEFT JOIN positions p ON r.id = p.role_id
+                WHERE r.name != 'Owner' 
+                AND r.name != 'Supplier' 
+                AND r.name != 'Developer'
+                ORDER BY r.name
+            `;
     
             const [roles] = await db.query(query);
     
-            return roles;
+            // Process roles to handle construction workers salary range
+            const processedRoles = await Promise.all(roles.map(async (role) => {
+                if (role.role_name === 'constructual_workers' || role.role_name.toLowerCase().includes('constructual')) {
+                    // Get salary range from construction_roles table for constructual_workers
+                    const rangeQuery = `
+                        SELECT 
+                            MIN(daily_rate) as min_rate,
+                            MAX(daily_rate) as max_rate
+                        FROM construction_roles 
+                        WHERE role_name = 'constructual_workers'
+                    `;
+                    const [rangeResult] = await db.query(rangeQuery);
+                    
+                    if (rangeResult.length > 0 && rangeResult[0].min_rate && rangeResult[0].max_rate) {
+                        role.daily_rate = `${rangeResult[0].min_rate}-${rangeResult[0].max_rate}`;
+                    } else {
+                        // Default range if no data found
+                        role.daily_rate = '500-900';
+                    }
+                }
+                return role;
+            }));
+    
+            return processedRoles;
         } catch (error) {
             console.error("❌ [getAllRoles] Error during role fetch:", error.message || error);
+            throw error;
+        }
+    },
+
+    // 🔹 Get all construction roles from construction_roles table
+    getAllConstructionRoles: async () => {
+        try {
+            const query = `
+                SELECT 
+                    cr.id as construction_role_id,
+                    cr.role_name,
+                    cr.daily_rate,
+                    d.name as department_name,
+                    cr.date_created
+                FROM construction_roles cr
+                LEFT JOIN departments d ON cr.department_id = d.id
+                ORDER BY cr.role_name
+            `;
+    
+            const [constructionRoles] = await db.query(query);
+    
+            return constructionRoles;
+        } catch (error) {
+            console.error("❌ [getAllConstructionRoles] Error during construction roles fetch:", error.message || error);
+            throw error;
+        }
+    },
+
+    // 🔹 Update an employee role (roles + positions)
+    updateEmployeeRole: async ({ id, role_name, salary, department_id }) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Update roles table
+            const updates = [];
+            const values = [];
+            if (role_name !== undefined && role_name !== null) { updates.push('name = ?'); values.push(role_name); }
+            if (department_id) { updates.push('department_id = ?'); values.push(department_id); }
+            if (updates.length > 0) {
+                values.push(id);
+                await connection.query(`UPDATE roles SET ${updates.join(', ')} WHERE id = ?`, values);
+            }
+
+            // If salary is a single numeric value, update positions linked to this role
+            if (salary !== undefined && salary !== null) {
+                const numeric = String(salary).trim();
+                if (!numeric.includes('-') && !isNaN(Number(numeric))) {
+                    await connection.query(`UPDATE positions SET salary = ? WHERE role_id = ?`, [Number(numeric), id]);
+                }
+            }
+
+            await connection.commit();
+            connection.release();
+            return true;
+        } catch (error) {
+            await connection.rollback();
+            connection.release();
+            console.error('❌ Error updating employee role:', error);
+            throw error;
+        }
+    },
+
+    // 🔹 Update a construction role
+    updateConstructionRole: async ({ id, role_name, daily_rate, department_id }) => {
+        try {
+            const updates = [];
+            const values = [];
+            if (role_name !== undefined && role_name !== null) { updates.push('role_name = ?'); values.push(role_name); }
+            if (daily_rate !== undefined && daily_rate !== null && !isNaN(Number(String(daily_rate).trim()))) { updates.push('daily_rate = ?'); values.push(Number(String(daily_rate).trim())); }
+            if (department_id) { updates.push('department_id = ?'); values.push(department_id); }
+            if (updates.length === 0) return false;
+            values.push(id);
+            await db.query(`UPDATE construction_roles SET ${updates.join(', ')} WHERE id = ?`, values);
+            return true;
+        } catch (error) {
+            console.error('❌ Error updating construction role:', error);
             throw error;
         }
     },
@@ -611,9 +844,11 @@ const HRModel = {
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
         console.log('🔍 Check-in attempt:', { userId, checkInTime, date, userLat, userLng });
         
-        const officeLat = 14.329643700546274;
-        const officeLng = 120.94080148408072;
+        const officeLat = 14.327791594318544;
+        const officeLng = 120.94059104947334;
         const allowedRadius = 500;
+
+        
     
         try {
             // Check if the user is within the allowed radius
@@ -1206,6 +1441,8 @@ const HRModel = {
             const [rows] = await db.query(
                 `SELECT 
                     p.*, 
+                    p.position_id,
+                    p.basic_salary_snapshot,
                     e.full_name,  
                     r.name AS position,
                     DATE_FORMAT(p.payroll_date, '%Y-%m-%d') as payroll_date
@@ -1234,6 +1471,8 @@ const HRModel = {
             const [rows] = await db.query(
                 `SELECT 
                     p.*,
+                    p.position_id,
+                    p.basic_salary_snapshot,
                     e.full_name,
                     r.name AS position,
                     pos.salary AS base_salary
@@ -3161,8 +3400,6 @@ const HRModel = {
     // Check if user needs pre-onboarding
     checkIfUserNeedsPreOnboarding: async (userId) => {
         try {
-            console.log('🔍 Checking if user needs pre-onboarding for user ID:', userId);
-            
             // First check if user exists and get onboarding status with role info
             const [userResult] = await db.query(`
                 SELECT u.id, u.onboarding_completed, u.role_id, r.name as role_name, e.employee_id
@@ -3173,21 +3410,13 @@ const HRModel = {
             `, [userId]);
             
             if (userResult.length === 0) {
-                console.log('❌ User not found');
                 return { needsOnboarding: false, reason: 'User not found' };
             }
             
             const user = userResult[0];
-            console.log('🔍 User details:', {
-                onboarding_completed: user.onboarding_completed,
-                role_id: user.role_id,
-                role_name: user.role_name,
-                employee_id: user.employee_id
-            });
             
             // If onboarding is already completed, no need for pre-onboarding
             if (user.onboarding_completed === 1) {
-                console.log('✅ User has completed onboarding');
                 return { needsOnboarding: false, reason: 'Onboarding already completed' };
             }
             
@@ -3195,13 +3424,11 @@ const HRModel = {
             // These roles typically don't need pre-onboarding
             const externalRoles = ['developer', 'supplier', 'client', 'vendor'];
             if (externalRoles.includes(user.role_name?.toLowerCase())) {
-                console.log('✅ User is external (role: ' + user.role_name + '), no pre-onboarding required');
                 return { needsOnboarding: false, reason: 'External user - no pre-onboarding required' };
             }
             
             // If user has no employee_id, they might be an external user or invalid
             if (!user.employee_id) {
-                console.log('⚠️ User has no employee_id but is not marked as external');
                 // Mark them as completed to avoid blocking
                 await db.query(`
                     UPDATE users SET onboarding_completed = 1 WHERE id = ?
@@ -3217,15 +3444,11 @@ const HRModel = {
             `, [user.employee_id]);
             
             const hasDocuments = documentsResult[0].document_count > 0;
-            console.log('🔍 Has pre-onboarding documents:', hasDocuments);
             
             // If no documents exist, this might be a new employee who needs documents initialized
             if (!hasDocuments) {
-                console.log('⚠️ No pre-onboarding documents found - checking if this is a new employee');
-                
                 // Check if this is a new employee (onboarding_completed = 0)
                 if (user.onboarding_completed === 0) {
-                    console.log('✅ New employee detected - needs pre-onboarding');
                     return { 
                         needsOnboarding: true, 
                         reason: 'New employee - pre-onboarding required',
@@ -3235,7 +3458,6 @@ const HRModel = {
                     };
                 } else {
                     // This is a legacy employee (onboarding_completed = 1 but no documents)
-                    console.log('⚠️ Legacy employee detected - marking as completed');
                     await db.query(`
                         UPDATE users SET onboarding_completed = 1 WHERE id = ?
                     `, [userId]);
@@ -3255,8 +3477,6 @@ const HRModel = {
             const { total_documents, approved_documents } = completionResult[0];
             const isComplete = total_documents > 0 && total_documents === approved_documents;
             
-            console.log('🔍 Document completion status:', { total_documents, approved_documents, isComplete });
-            
             if (isComplete) {
                 // All documents are approved, mark onboarding as completed
                 await db.query(`
@@ -3266,7 +3486,6 @@ const HRModel = {
             }
             
             // User needs pre-onboarding
-            console.log('✅ User needs pre-onboarding');
             return { 
                 needsOnboarding: true, 
                 reason: 'Pre-onboarding required',
@@ -3276,7 +3495,7 @@ const HRModel = {
             };
             
         } catch (error) {
-            console.error("❌ Error checking if user needs pre-onboarding:", error);
+            console.error("Error checking if user needs pre-onboarding:", error);
             throw error;
         }
     },
@@ -4074,7 +4293,7 @@ const HRModel = {
         try {
             // Get payroll entry
             const [payrollEntry] = await db.query(`
-                SELECT * FROM payroll WHERE id = ? AND employee_id = ?
+                SELECT *, position_id, basic_salary_snapshot FROM payroll WHERE id = ? AND employee_id = ?
             `, [payrollId, employeeId]);
 
             if (payrollEntry.length === 0) {
@@ -4287,6 +4506,8 @@ const HRModel = {
             const [entries] = await db.query(`
             SELECT 
                     p.*,
+                    p.position_id,
+                    p.basic_salary_snapshot,
                 e.full_name,
                 r.name as position,
                     e.profile_picture
@@ -4518,29 +4739,40 @@ const HRModel = {
 
     // Update existing payroll generation to use periods
     insertPayrollRecordsWithPeriod: async (records, periodId) => {
-        const values = records.map(r => [
-            r.employee_id,
-            new Date().toISOString().split('T')[0], // payroll_date (current date)
-            r.days_present,
-            r.days_absent,
-            r.total_hours || 0,
-            r.overtime_hours || 0,
-            r.monthly_salary || 0,
-            r.total_deductions || 0,
-            r.absence_deduction || 0,
-            r.net_pay || 0,
-            r.payroll_period || '',
-            r.status || 'pending',
-            r.monthly_salary || 0,
-            periodId // payroll_period_id
-        ]);
-
         try {
-            console.log('Inserting payroll records (no start/end dates) with period ID:', periodId);
+            // Get employee IDs from records
+            const employeeIds = records.map(r => r.employee_id);
+            
+            // Get position data for all employees
+            const positionData = await HRModel.getPositionDataForEmployees(employeeIds);
+            
+            const values = records.map(r => {
+                const posData = positionData[r.employee_id] || {};
+                return [
+                    r.employee_id,
+                    posData.position_id || null, // position_id
+                    posData.basic_salary || r.monthly_salary || 0, // basic_salary_snapshot
+                    new Date().toISOString().split('T')[0], // payroll_date (current date)
+                    r.days_present,
+                    r.days_absent,
+                    r.total_hours || 0,
+                    r.overtime_hours || 0,
+                    r.monthly_salary || 0,
+                    r.total_deductions || 0,
+                    r.absence_deduction || 0,
+                    r.net_pay || 0,
+                    r.payroll_period || '',
+                    r.status || 'pending',
+                    r.monthly_salary || 0,
+                    periodId // payroll_period_id
+                ];
+            });
+
+            console.log('Inserting payroll records with position data and period ID:', periodId);
 
             const [result] = await db.query(
                 `INSERT INTO payroll 
-                 (employee_id, payroll_date, days_present, 
+                 (employee_id, position_id, basic_salary_snapshot, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
                   absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id)
                  VALUES ?`, [values]
@@ -4646,11 +4878,12 @@ const HRModel = {
         );
         
         const idApproved = idRows[0].count > 0;
-        
+        // Relaxed eligibility: send onboarding email as soon as at least one valid ID (or any non-contract doc) is approved.
+        // Previously: eligible only when contractApproved && idApproved
         return {
             contractApproved,
             idApproved,
-            eligible: contractApproved && idApproved
+            eligible: idApproved
         };
     },
 
@@ -4673,19 +4906,35 @@ const HRModel = {
                 const { email, employee_id, user_id } = rows[0];
                 const { sendOnboardingApprovalNotification } = require('../../../utils/emailService');
                 
-                // Send the onboarding approval email
-                await sendOnboardingApprovalNotification(email, employee_id, 'default123');
-                if (process.env.NODE_ENV === 'development') {
-                    console.debug(`✅ Onboarding approval email sent to ${email} for employee ${employee_id}`);
-                }
-                
-                // Mark onboarding as completed in users table
-                await db.query(
-                    `UPDATE users SET onboarding_completed = 1 WHERE id = ?`,
+                // Get the current temporary password from the database
+                const [passwordRows] = await db.query(
+                    `SELECT password FROM users WHERE id = ?`,
                     [user_id]
                 );
-                if (process.env.NODE_ENV === 'development') {
-                    console.debug(`✅ Onboarding marked as completed for user ${user_id} (employee ${employee_id})`);
+                
+                if (passwordRows && passwordRows[0]) {
+                    const currentHashedPassword = passwordRows[0].password;
+                    
+                    // Send the onboarding approval email with instructions about password
+                    await sendOnboardingApprovalNotification(email, employee_id, 'default123');
+                    if (process.env.NODE_ENV === 'development') {
+                        console.debug(`✅ Onboarding approval email sent to ${email} for employee ${employee_id}`);
+                    }
+                    
+                    // Update password to default123 for permanent account
+                    const bcrypt = require('bcrypt');
+                    const defaultPassword = 'default123';
+                    const saltRounds = 10;
+                    const newHashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+                    
+                    await db.query(
+                        `UPDATE users SET password = ?, onboarding_completed = 1 WHERE id = ?`,
+                        [newHashedPassword, user_id]
+                    );
+                    
+                    if (process.env.NODE_ENV === 'development') {
+                        console.debug(`✅ Password updated to default123 and onboarding marked as completed for user ${user_id} (employee ${employee_id})`);
+                    }
                 }
                 
                 return true;
@@ -4843,6 +5092,993 @@ const HRModel = {
             return { approved: 0, remaining: 100, totalPeriods: 0 };
         }
     },
+
+    // Get employee attendance summary for pie chart
+    getEmployeeAttendanceSummary: async (employeeId, options = {}) => {
+        const db = require('../../../db');
+        try {
+            const { period = 'all' } = options;
+            
+            // Convert employee_id to user_id if needed
+            const [employeeCheck] = await db.query(`
+                SELECT user_id, employee_id 
+                FROM employees 
+                WHERE employee_id = ? OR user_id = ?
+            `, [employeeId, employeeId]);
+            
+            let actualUserId = employeeId;
+            if (employeeCheck.length > 0) {
+                actualUserId = employeeCheck[0].user_id;
+            }
+            
+            // Build date filter based on period
+            let whereClause = 'WHERE user_id = ?';
+            let queryParams = [actualUserId];
+            
+            // Add period-based date filters
+            const now = new Date();
+            let periodStart, periodEnd;
+
+            switch (period.toLowerCase()) {
+                case 'week':
+                    // Current week (Monday to Sunday)
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    periodStart = startOfWeek.toISOString().split('T')[0];
+                    
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    periodEnd = endOfWeek.toISOString().split('T')[0];
+                    break;
+
+                case 'month':
+                    // Current month
+                    periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                    break;
+
+                case 'year':
+                    // Current year
+                    periodStart = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                    break;
+
+                case 'last_week':
+                    // Previous week
+                    const lastWeekStart = new Date(now);
+                    lastWeekStart.setDate(now.getDate() - now.getDay() - 6); // Previous Monday
+                    lastWeekStart.setHours(0, 0, 0, 0);
+                    periodStart = lastWeekStart.toISOString().split('T')[0];
+                    
+                    const lastWeekEnd = new Date(lastWeekStart);
+                    lastWeekEnd.setDate(lastWeekStart.getDate() + 6); // Previous Sunday
+                    lastWeekEnd.setHours(23, 59, 59, 999);
+                    periodEnd = lastWeekEnd.toISOString().split('T')[0];
+                    break;
+
+                case 'last_month':
+                    // Previous month
+                    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    periodStart = lastMonth.toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+                    break;
+
+                case 'last_year':
+                    // Previous year
+                    periodStart = new Date(now.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+                    break;
+
+                default:
+                    // 'all' - no date filtering
+                    break;
+            }
+
+            // Apply period-based filters if not 'all'
+            if (period !== 'all' && periodStart && periodEnd) {
+                whereClause += ' AND date >= ? AND date <= ?';
+                queryParams.push(periodStart, periodEnd);
+            }
+            
+            // Get the detailed counts
+            const [rows] = await db.query(`
+                SELECT 
+                    COUNT(CASE WHEN status = 'Present' THEN 1 END) as present,
+                    COUNT(CASE WHEN status = 'Late' THEN 1 END) as late,
+                    COUNT(CASE WHEN status = 'Absent' THEN 1 END) as absent,
+                    COUNT(*) as total
+                FROM attendance 
+                ${whereClause}
+            `, queryParams);
+            
+            const result = rows[0] || { present: 0, late: 0, absent: 0, total: 0 };
+            
+            return {
+                present: parseInt(result.present) || 0,
+                late: parseInt(result.late) || 0,
+                absent: parseInt(result.absent) || 0,
+                total: parseInt(result.total) || 0
+            };
+        } catch (error) {
+            console.error('❌ Error getting employee attendance summary:', error);
+            throw error;
+        }
+    },
+
+    // Get employee attendance history with pagination and date filtering
+    getEmployeeAttendanceHistory: async (employeeId, options = {}) => {
+        const db = require('../../../db');
+        try {
+            const { page = 1, limit = 20, startDate, endDate, period = 'all' } = options;
+            const offset = (page - 1) * limit;
+
+            let whereClause = 'WHERE user_id = ?';
+            let queryParams = [employeeId];
+
+            // Add period-based date filters
+            const now = new Date();
+            let periodStart, periodEnd;
+
+            switch (period.toLowerCase()) {
+                case 'week':
+                    // Current week (Monday to Sunday)
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    periodStart = startOfWeek.toISOString().split('T')[0];
+                    
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    periodEnd = endOfWeek.toISOString().split('T')[0];
+                    break;
+
+                case 'month':
+                    // Current month
+                    periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                    break;
+
+                case 'year':
+                    // Current year
+                    periodStart = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                    break;
+
+                case 'last_week':
+                    // Previous week
+                    const lastWeekStart = new Date(now);
+                    lastWeekStart.setDate(now.getDate() - now.getDay() - 6); // Previous Monday
+                    lastWeekStart.setHours(0, 0, 0, 0);
+                    periodStart = lastWeekStart.toISOString().split('T')[0];
+                    
+                    const lastWeekEnd = new Date(lastWeekStart);
+                    lastWeekEnd.setDate(lastWeekStart.getDate() + 6); // Previous Sunday
+                    lastWeekEnd.setHours(23, 59, 59, 999);
+                    periodEnd = lastWeekEnd.toISOString().split('T')[0];
+                    break;
+
+                case 'last_month':
+                    // Previous month
+                    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    periodStart = lastMonth.toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+                    break;
+
+                case 'last_year':
+                    // Previous year
+                    periodStart = new Date(now.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+                    periodEnd = new Date(now.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+                    break;
+
+                default:
+                    // Custom date range or all records
+                    if (startDate) {
+                        whereClause += ' AND date >= ?';
+                        queryParams.push(startDate);
+                    }
+                    if (endDate) {
+                        whereClause += ' AND date <= ?';
+                        queryParams.push(endDate);
+                    }
+                    break;
+            }
+
+            // Apply period-based filters if not 'all'
+            if (period !== 'all' && periodStart && periodEnd) {
+                whereClause += ' AND date >= ? AND date <= ?';
+                queryParams.push(periodStart, periodEnd);
+            }
+
+            // Get total count
+            const [countRows] = await db.query(`
+                SELECT COUNT(*) as total 
+                FROM attendance 
+                ${whereClause}
+            `, queryParams);
+
+            const totalRecords = countRows[0].total;
+
+            // Get paginated records
+            const [rows] = await db.query(`
+                SELECT 
+                    attendance_id,
+                    user_id,
+                    date,
+                    time_in,
+                    time_out,
+                    status,
+                    hours_worked,
+                    overtime_hours,
+                    notes,
+                    created_at,
+                    updated_at
+                FROM attendance 
+                ${whereClause}
+                ORDER BY date DESC, created_at DESC
+                LIMIT ? OFFSET ?
+            `, [...queryParams, limit, offset]);
+
+            return {
+                data: rows,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalRecords / limit),
+                    totalRecords: totalRecords,
+                    limit: limit,
+                    hasNextPage: page < Math.ceil(totalRecords / limit),
+                    hasPrevPage: page > 1
+                },
+                period: {
+                    type: period,
+                    startDate: periodStart || startDate,
+                    endDate: periodEnd || endDate
+                }
+            };
+        } catch (error) {
+            console.error('❌ Error getting employee attendance history:', error);
+            throw error;
+        }
+    },
+
+    // ========== CONSTRUCTION WORKERS METHODS ==========
+    
+    getAllConstructionWorkers: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.picture,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.created_at,
+                    cr.role_name,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                ORDER BY cw.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting all construction workers:', error);
+            throw error;
+        }
+    },
+
+    getConstructionWorkerById: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.created_at,
+                    cr.role_name,
+                    cr.daily_rate,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                WHERE cw.id = ?
+            `, [workerId]);
+            return rows[0] || null;
+        } catch (error) {
+            console.error('❌ Error getting construction worker by ID:', error);
+            throw error;
+        }
+    },
+
+    addConstructionWorker: async (workerData) => {
+        const db = require('../../../db');
+        try {
+            const {
+                firstname,
+                middlename,
+                lastname,
+                contact_number,
+                role_id,
+                project_id,
+                picture,
+                status = 'active'
+            } = workerData;
+
+            // Set date_hired to today's date automatically
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+            // Start transaction to ensure data consistency
+            const connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Insert construction worker
+                const [result] = await connection.query(`
+                    INSERT INTO construction_workers (
+                        firstname, middlename, lastname, contact_number,
+                        role_id, project_id, picture, date_hired, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    firstname, middlename, lastname, contact_number,
+                    role_id, project_id, picture || null, today, status
+                ]);
+
+                const workerId = result.insertId;
+
+                // Decrease manpower_per_unit in labor table
+                const [updateResult] = await connection.query(`
+                    UPDATE labor 
+                    SET manpower_per_unit = manpower_per_unit - 1
+                    WHERE project_id = ? AND worker_type_id = ? AND manpower_per_unit > 0
+                `, [project_id, role_id]);
+
+                if (updateResult.affectedRows === 0) {
+                    throw new Error('No available manpower for this role in the selected project');
+                }
+
+                await connection.commit();
+
+                return {
+                    id: workerId,
+                    ...workerData,
+                    date_hired: today
+                };
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('❌ Error adding construction worker:', error);
+            throw error;
+        }
+    },
+
+    updateConstructionWorker: async (workerId, workerData) => {
+        const db = require('../../../db');
+        try {
+            const {
+                firstname,
+                middlename,
+                lastname,
+                contact_number,
+                role_id,
+                project_id,
+                date_hired,
+                status
+            } = workerData;
+
+            const [result] = await db.query(`
+                UPDATE construction_workers 
+                SET 
+                    firstname = ?,
+                    middlename = ?,
+                    lastname = ?,
+                    contact_number = ?,
+                    role_id = ?,
+                    project_id = ?,
+                    date_hired = ?,
+                    status = ?
+                WHERE id = ?
+            `, [
+                firstname, middlename, lastname, contact_number,
+                role_id, project_id, date_hired, status, workerId
+            ]);
+
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error updating construction worker:', error);
+            throw error;
+        }
+    },
+
+    deleteConstructionWorker: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            // Start transaction to ensure data consistency
+            const connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Get worker details before deletion
+                const [workerRows] = await connection.query(`
+                    SELECT project_id, role_id FROM construction_workers WHERE id = ?
+                `, [workerId]);
+
+                if (workerRows.length === 0) {
+                    throw new Error('Construction worker not found');
+                }
+
+                const { project_id, role_id } = workerRows[0];
+
+                // Delete construction worker
+                const [deleteResult] = await connection.query(`
+                    DELETE FROM construction_workers WHERE id = ?
+                `, [workerId]);
+
+                if (deleteResult.affectedRows === 0) {
+                    throw new Error('Failed to delete construction worker');
+                }
+
+                // Increase manpower_per_unit back in labor table
+                await connection.query(`
+                    UPDATE labor 
+                    SET manpower_per_unit = manpower_per_unit + 1
+                    WHERE project_id = ? AND worker_type_id = ?
+                `, [project_id, role_id]);
+
+                await connection.commit();
+                return true;
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('❌ Error deleting construction worker:', error);
+            throw error;
+        }
+    },
+
+    getAllConstructionRoles: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    id,
+                    role_name,
+                    daily_rate,
+                    department_id
+                FROM construction_roles
+                ORDER BY role_name ASC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting all construction roles:', error);
+            throw error;
+        }
+    },
+
+    getAllProjects: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    p.id,
+                    p.project_name,
+                    p.start_date,
+                    p.end_date,
+                    p.status,
+                    p.created_at
+                FROM projects p
+                WHERE p.status = 'planning'
+                ORDER BY p.project_name ASC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting all projects:', error);
+            throw error;
+        }
+    },
+
+    getProjectLaborRoles: async (projectId) => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT DISTINCT
+                    l.worker_type_id,
+                    cr.role_name as worker_type_name,
+                    l.manpower_per_unit
+                FROM labor l
+                JOIN construction_roles cr ON cr.id = l.worker_type_id
+                WHERE l.project_id = ? AND l.manpower_per_unit > 0
+                ORDER BY cr.role_name ASC
+            `, [projectId]);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting project labor roles:', error);
+            throw error;
+        }
+    },
+
+    // Get pending construction workers (inactive status)
+    getPendingConstructionWorkers: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.picture,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.created_at,
+                    cr.role_name,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                WHERE cw.status = 'inactive'
+                ORDER BY cw.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting pending construction workers:', error);
+            throw error;
+        }
+    },
+
+    // Approve construction worker (change status from inactive to active)
+    approveConstructionWorker: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            // Generate unique code and QR code
+            const uniqueCode = await HRModel.generateUniqueCode();
+            const qrCodePath = await HRModel.generateQRCode(uniqueCode, workerId);
+            
+            const [result] = await db.query(`
+                UPDATE construction_workers 
+                SET status = 'active', unique_code = ?, qr_code_path = ?
+                WHERE id = ? AND status = 'inactive'
+            `, [uniqueCode, qrCodePath, workerId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('❌ Error approving construction worker:', error);
+            throw error;
+        }
+    },
+
+    // Generate unique code for construction worker
+    generateUniqueCode: async () => {
+        const db = require('../../../db');
+        let uniqueCode;
+        let isUnique = false;
+        
+        while (!isUnique) {
+            // Generate a random 8-character alphanumeric code
+            uniqueCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+            
+            // Check if code already exists
+            const [existing] = await db.query(`
+                SELECT id FROM construction_workers WHERE unique_code = ?
+            `, [uniqueCode]);
+            
+            if (existing.length === 0) {
+                isUnique = true;
+            }
+        }
+        
+        return uniqueCode;
+    },
+
+    // Generate QR code for construction worker
+    generateQRCode: async (uniqueCode, workerId) => {
+        try {
+            // Create QR code directory if it doesn't exist
+            const qrDir = path.join(__dirname, '../../../uploads/qr_codes');
+            if (!fs.existsSync(qrDir)) {
+                fs.mkdirSync(qrDir, { recursive: true });
+            }
+            
+            // Generate QR code data
+            const qrData = JSON.stringify({
+                type: 'construction_worker',
+                id: workerId,
+                code: uniqueCode,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Generate QR code file path
+            const fileName = `qr_${workerId}_${uniqueCode}.png`;
+            const filePath = path.join(qrDir, fileName);
+            
+            // Generate QR code image
+            await QRCode.toFile(filePath, qrData, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+            
+            // Return relative path for database storage
+            return `qr_codes/${fileName}`;
+        } catch (error) {
+            console.error('❌ Error generating QR code:', error);
+            throw error;
+        }
+    },
+
+    // Get active construction workers with QR codes for printing
+    getActiveConstructionWorkersWithQR: async () => {
+        const db = require('../../../db');
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    cw.id,
+                    cw.picture,
+                    cw.firstname,
+                    cw.middlename,
+                    cw.lastname,
+                    cw.contact_number,
+                    cw.role_id,
+                    cw.project_id,
+                    cw.date_hired,
+                    cw.status,
+                    cw.unique_code,
+                    cw.qr_code_path,
+                    cw.created_at,
+                    cr.role_name,
+                    p.project_name
+                FROM construction_workers cw
+                LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                WHERE cw.status = 'active' AND cw.qr_code_path IS NOT NULL
+                ORDER BY cw.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('❌ Error getting active construction workers with QR:', error);
+            throw error;
+        }
+    },
+
+    // Reject construction worker (delete from database)
+    rejectConstructionWorker: async (workerId) => {
+        const db = require('../../../db');
+        try {
+            // Start transaction to ensure data consistency
+            const connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Get worker details before deletion
+                const [workerRows] = await connection.query(`
+                    SELECT project_id, role_id FROM construction_workers WHERE id = ? AND status = 'inactive'
+                `, [workerId]);
+
+                if (workerRows.length === 0) {
+                    throw new Error('Pending construction worker not found');
+                }
+
+                const { project_id, role_id } = workerRows[0];
+
+                // Delete construction worker
+                const [deleteResult] = await connection.query(`
+                    DELETE FROM construction_workers WHERE id = ? AND status = 'inactive'
+                `, [workerId]);
+
+                if (deleteResult.affectedRows === 0) {
+                    throw new Error('Failed to reject construction worker');
+                }
+
+                // Increase manpower_per_unit back in labor table
+                await connection.query(`
+                    UPDATE labor 
+                    SET manpower_per_unit = manpower_per_unit + 1
+                    WHERE project_id = ? AND worker_type_id = ?
+                `, [project_id, role_id]);
+
+                await connection.commit();
+                return true;
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('❌ Error rejecting construction worker:', error);
+            throw error;
+        }
+    },
+
+  // ========== CONSTRUCTION PAYROLL METHODS ==========
+
+  // Generate construction payroll for a period
+  generateConstructionPayroll: async (payrollStart, payrollEnd) => {
+    try {
+      // Get all active construction workers
+      const [workers] = await db.query(`
+        SELECT 
+          cw.id as worker_id,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cw.role_id,
+          cr.role_name,
+          cr.daily_rate,
+          cw.project_id,
+          p.project_name
+        FROM construction_workers cw
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+        WHERE cw.status = 'active'
+        ORDER BY cw.lastname, cw.firstname
+      `);
+
+      const payrollRecords = [];
+
+      for (const worker of workers) {
+        // Calculate days present and absent
+        const { daysPresent, daysAbsent, totalHours, overtimeHours } = await HRModel.calculateWorkerAttendance(
+          worker.worker_id, 
+          payrollStart, 
+          payrollEnd
+        );
+
+        // Calculate salary components
+        const basicSalary = daysPresent * worker.daily_rate;
+        const overtimePay = overtimeHours * (worker.daily_rate / 8); // Overtime rate = daily_rate / 8 hours
+        const salaryBeforeDeductions = basicSalary + overtimePay;
+        const netSalary = salaryBeforeDeductions; // No deductions for now
+
+        payrollRecords.push({
+          worker_id: worker.worker_id,
+          role_id: worker.role_id,
+          daily_rate: worker.daily_rate,
+          days_present: daysPresent,
+          days_absent: daysAbsent,
+          total_hours: totalHours,
+          overtime_hours: overtimeHours,
+          basic_salary: basicSalary,
+          overtime_pay: overtimePay,
+          salary_before_deductions: salaryBeforeDeductions,
+          net_salary: netSalary,
+          payroll_start: payrollStart,
+          payroll_end: payrollEnd,
+          status: 'pending',
+          worker_name: `${worker.firstname} ${worker.middlename} ${worker.lastname}`.trim(),
+          role_name: worker.role_name,
+          project_name: worker.project_name
+        });
+      }
+
+      return payrollRecords;
+    } catch (error) {
+      console.error('❌ Error generating construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Calculate worker attendance for a period
+  calculateWorkerAttendance: async (workerId, startDate, endDate) => {
+    try {
+      // Get attendance records for the period
+      const [attendanceRecords] = await db.query(`
+        SELECT 
+          attendance_date,
+          time_in,
+          time_out,
+          status
+        FROM attendance_construction
+        WHERE worker_id = ? 
+        AND attendance_date BETWEEN ? AND ?
+        ORDER BY attendance_date
+      `, [workerId, startDate, endDate]);
+
+      let daysPresent = 0;
+      let daysAbsent = 0;
+      let totalHours = 0;
+      let overtimeHours = 0;
+
+      // Generate all dates in the period
+      const dates = [];
+      const currentDate = new Date(startDate);
+      const endDateObj = new Date(endDate);
+
+      while (currentDate <= endDateObj) {
+        // Skip Sundays (rest days)
+        if (currentDate.getDay() !== 0) {
+          dates.push(new Date(currentDate));
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Check each working day
+      for (const date of dates) {
+        const dateStr = date.toISOString().split('T')[0];
+        const record = attendanceRecords.find(r => r.attendance_date.toISOString().split('T')[0] === dateStr);
+
+        if (record && record.time_in && record.status === 'present') {
+          daysPresent++;
+          
+          // Calculate hours worked
+          if (record.time_out) {
+            const timeIn = new Date(record.time_in);
+            const timeOut = new Date(record.time_out);
+            const hoursWorked = (timeOut - timeIn) / (1000 * 60 * 60); // Convert to hours
+            
+            totalHours += hoursWorked;
+            
+            // Calculate overtime (hours over 8)
+            if (hoursWorked > 8) {
+              overtimeHours += hoursWorked - 8;
+            }
+          }
+        } else {
+          daysAbsent++;
+        }
+      }
+
+      return {
+        daysPresent,
+        daysAbsent,
+        totalHours: Math.round(totalHours * 100) / 100, // Round to 2 decimal places
+        overtimeHours: Math.round(overtimeHours * 100) / 100
+      };
+    } catch (error) {
+      console.error('❌ Error calculating worker attendance:', error);
+      throw error;
+    }
+  },
+
+  // Save construction payroll records
+  saveConstructionPayroll: async (payrollRecords) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Insert payroll records
+        for (const record of payrollRecords) {
+          await connection.query(`
+            INSERT INTO construction_payroll (
+              worker_id, role_id, daily_rate, days_present, days_absent,
+              total_hours, overtime_hours, basic_salary, overtime_pay,
+              salary_before_deductions, net_salary, payroll_start, payroll_end, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            record.worker_id, record.role_id, record.daily_rate, record.days_present, record.days_absent,
+            record.total_hours, record.overtime_hours, record.basic_salary, record.overtime_pay,
+            record.salary_before_deductions, record.net_salary, record.payroll_start, record.payroll_end, record.status
+          ]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error saving construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Get construction payroll records
+  getConstructionPayroll: async (status = null, limit = 100) => {
+    try {
+      let query = `
+        SELECT 
+          cp.*,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cr.role_name,
+          p.project_name
+        FROM construction_payroll cp
+        LEFT JOIN construction_workers cw ON cp.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cp.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+      `;
+
+      const params = [];
+      if (status) {
+        query += ` WHERE cp.status = ?`;
+        params.push(status);
+      }
+
+      query += ` ORDER BY cp.created_at DESC LIMIT ?`;
+      params.push(limit);
+
+      const [rows] = await db.query(query, params);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting construction payroll:', error);
+      throw error;
+    }
+  },
+
+  // Update construction payroll status
+  updateConstructionPayrollStatus: async (payrollIds, status, approvedBy = null) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        for (const payrollId of payrollIds) {
+          await connection.query(`
+            UPDATE construction_payroll 
+            SET status = ?, approved_by = ?, updated_at = NOW()
+            WHERE id = ?
+          `, [status, approvedBy, payrollId]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error updating construction payroll status:', error);
+      throw error;
+    }
+  },
+
+  // Delete construction payroll records
+  deleteConstructionPayroll: async (payrollIds) => {
+    try {
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        for (const payrollId of payrollIds) {
+          await connection.query(`DELETE FROM construction_payroll WHERE id = ?`, [payrollId]);
+        }
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error deleting construction payroll:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = HRModel;

@@ -1031,52 +1031,6 @@
                             </div>
                         </div>
 
-                        <!-- Owners Supply Section (only for approved_by_mfg) -->
-                        <div id="ownersSupplySection" class="col-12" style="display: none;">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-4">
-                                    <h6 class="card-title mb-4">
-                                        <i class="fas fa-boxes me-2 text-primary"></i>Owners Supply
-                                    </h6>
-                                    <!-- Input row -->
-                                    <div class="row g-2 align-items-end mb-3">
-                                        <div class="col-md-5">
-                                            <label class="form-label">Material Name</label>
-                                            <input type="text" class="form-control" id="supplyNameInput" placeholder="e.g., Steel Bar">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Unit</label>
-                                            <input type="text" class="form-control" id="supplyUnitInput" placeholder="e.g., pcs, kg">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Quantity</label>
-                                            <input type="number" class="form-control" id="supplyQtyInput" min="1" placeholder="0">
-                                        </div>
-                                        <div class="col-md-2 d-grid">
-                                            <button type="button" class="btn btn-success" onclick="addSupplyRowView()">
-                                                <i class="fas fa-plus me-1"></i>Add
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Table -->
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-striped" id="ownersSupplyTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>Name</th>
-                                                    <th>Unit</th>
-                                                    <th>Quantity</th>
-                                                    <th>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="ownersSupplyTbody"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Manufacturing Labor and Cost Section -->
                         <div id="manufacturingLaborSection" class="col-12" style="display: none;">
                             <div class="card border-0 shadow-sm">
@@ -1103,21 +1057,108 @@
                                         <div class="col-md-6">
                                             <div class="info-group">
                                                 <label class="form-label text-muted">Final Estimated Cost (Whole Project)</label>
-                                                <p id="inlineFinalEstimatedCost" class="info-value fw-bold text-success"></p>
+                                                <p id="inlineFinalEstimatedCost" class="info-value fw-bold text-success mb-0"></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 d-flex justify-content-end align-items-end">
+                                            <button id="negotiateCostBtn" class="btn btn-warning btn-sm fw-bold" onclick="openNegotiateCostModal()" style="display: none;">
+                                                <i class="fas fa-handshake me-1"></i>Negotiate Cost
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Owners Supply Section (only for approved_by_mfg) -->
+                        <div id="ownersSupplySection" class="col-12" style="display: none;">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <h6 class="card-title mb-4">
+                                        <i class="fas fa-boxes me-2 text-primary"></i>Owners Supply
+                                    </h6>
+
+                                    <!-- Tabs -->
+                                    <ul class="nav nav-tabs" id="ownersSupplyTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="add-os-tab" data-bs-toggle="tab" data-bs-target="#add-os-pane" type="button" role="tab" aria-controls="add-os-pane" aria-selected="true">Add Owners Supply</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="actual-os-tab" data-bs-toggle="tab" data-bs-target="#actual-os-pane" type="button" role="tab" aria-controls="actual-os-pane" aria-selected="false">Actual Owners Supply</button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content pt-3" id="ownersSupplyTabsContent">
+                                        <!-- Add OS Pane -->
+                                        <div class="tab-pane fade show active" id="add-os-pane" role="tabpanel" aria-labelledby="add-os-tab">
+                                            <!-- Input row -->
+                                            <div class="row g-2 align-items-end mb-3">
+                                                <div class="col-md-5">
+                                                    <label class="form-label">Material Name</label>
+                                                    <input type="text" class="form-control" id="inlineSupplyNameInput" placeholder="e.g., Steel Bar">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Unit</label>
+                                                    <input type="text" class="form-control" id="inlineSupplyUnitInput" placeholder="e.g., pcs, kg">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Quantity</label>
+                                                    <input type="text" class="form-control" id="inlineSupplyQtyInput" placeholder="0" oninput="handleQtyInput(this)">
+                                                </div>
+                                                <div class="col-md-2 d-grid">
+                                                    <button type="button" class="btn btn-success" onclick="addSupplyRowView()">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Temp Table -->
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-striped" id="ownersSupplyTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Name</th>
+                                                            <th>Unit</th>
+                                                            <th>Quantity</th>
+                                                            <th>Status</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="ownersSupplyTbody"></tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="d-flex justify-content-end mt-2">
+                                                <button type="button" class="btn btn-primary" onclick="submitOwnersSupply()" id="ownersSupplySubmitBtn">
+                                                    <i class="fas fa-paper-plane me-1"></i>Submit Owners Supply
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Actual OS Pane -->
+                                        <div class="tab-pane fade" id="actual-os-pane" role="tabpanel" aria-labelledby="actual-os-tab">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Name</th>
+                                                            <th>Unit</th>
+                                                            <th>Quantity</th>
+                                                            <th>Status</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="ownersSupplyActualTbody"></tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="button" class="btn btn-primary" id="submitOwnersSupplyBtn" style="display:none;" onclick="submitOwnersSupply()">
-                            <i class="fas fa-paper-plane me-1"></i>Submit
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1141,10 +1182,7 @@
                                     <label for="projectName" class="form-label">Project Name</label>
                                     <input type="text" class="form-control" id="projectName" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="projectLocation" class="form-label">Location</label>
-                                    <input type="text" class="form-control" id="projectLocation" required>
-                                </div>
+                                
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -1155,6 +1193,35 @@
                             </div>
                         </div>
                         
+                        <!-- Location fields: Province (full width), then City/Municipality & Barangay side-by-side -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="projectProvince" class="form-label">Province (Philippines)</label>
+                                    <input type="text" class="form-control" id="projectProvince" list="provinceList" placeholder="Type to search province..." autocomplete="off" required>
+                                    <datalist id="provinceList"></datalist>
+                                    <input type="hidden" id="projectProvinceCode">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="projectMunicipality" class="form-label">City/Municipality</label>
+                                    <input type="text" class="form-control" id="projectMunicipality" list="municipalityList" placeholder="Select a province first" autocomplete="off" disabled required>
+                                    <datalist id="municipalityList"></datalist>
+                                    <input type="hidden" id="projectMunicipalityCode">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="projectBarangay" class="form-label">Barangay</label>
+                                    <input type="text" class="form-control" id="projectBarangay" list="barangayList" placeholder="Select municipality/city first" autocomplete="off" disabled required>
+                                    <datalist id="barangayList"></datalist>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3">
@@ -1168,13 +1235,18 @@
                         <div class="row mt-4">
                             <div class="col-12">
                                 <hr class="my-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-file-alt me-2"></i>Blueprint Documents
+                                <h5 class="mb-3 d-flex align-items-center justify-content-between">
+                                    <span><i class="fas fa-file-alt me-2"></i>Blueprint Documents</span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addBlueprintInput()">
+                                        <i class="fas fa-plus me-1"></i>Add+
+                                    </button>
                                 </h5>
-                                <div class="mb-3">
-                                    <label for="projectBlueprints" class="form-label">Upload Blueprint Files</label>
-                                    <input type="file" class="form-control" id="projectBlueprints" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png">
-                                    <small class="text-muted">You can upload multiple blueprint files (PDF, DWG, JPG, PNG)</small>
+                                <div id="blueprintsContainer">
+                                    <div class="mb-3 blueprint-input">
+                                        <label class="form-label">Upload Blueprint Files</label>
+                                        <input type="file" class="form-control" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png">
+                                        <small class="text-muted">You can upload multiple blueprint files (PDF, DWG, JPG, PNG)</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1363,6 +1435,56 @@
         </div>
     </div>
 
+    <!-- Owners Supply Confirmation Modal -->
+    <div class="modal fade" id="ownersSupplyConfirmModal" tabindex="-1" aria-labelledby="ownersSupplyConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ownersSupplyConfirmModalLabel">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Owners Supply Submission
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to submit the listed owners supply entries?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmOwnersSupplyBtn">
+                        <i class="fas fa-paper-plane me-2"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Project Confirmation Modal -->
+    <div class="modal fade" id="addProjectConfirmModal" tabindex="-1" aria-labelledby="addProjectConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProjectConfirmModalLabel">
+                        <i class="fas fa-question-circle me-2"></i>Confirm Submission
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to submit this project proposal?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmAddProjectBtn">
+                        <i class="fas fa-paper-plane me-2"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Warning Message Modal -->
     <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1427,7 +1549,81 @@
         </div>
     </div>
 
+    <!-- Negotiate Cost Modal -->
+    <div class="modal fade" id="negotiateCostModal" tabindex="-1" aria-labelledby="negotiateCostModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="negotiateCostModalLabel">
+                        <i class="fas fa-handshake me-2 text-warning"></i>Negotiate Project Cost
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p class="text-muted">You can propose a different cost for this project. The manufacturing team will review your counter-offer.</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Estimated Cost</label>
+                        <p id="currentCostDisplay" class="form-control-plaintext fw-bold text-success"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Cost Discussion <span class="text-danger">*</span></label>
+                        <div class="mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="negotiationReason" id="reason1" value="Can we discuss more about the cost?">
+                                <label class="form-check-label" for="reason1">
+                                    Can we discuss more about the cost?
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="negotiationReason" id="reason2" value="Budget constraints require cost adjustment">
+                                <label class="form-check-label" for="reason2">
+                                    Budget constraints require cost adjustment
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="negotiationReason" id="reason3" value="Market conditions have changed">
+                                <label class="form-check-label" for="reason3">
+                                    Market conditions have changed
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="negotiationReason" id="reason4" value="Need to review project scope and pricing">
+                                <label class="form-check-label" for="reason4">
+                                    Need to review project scope and pricing
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="negotiationReason" id="reason5" value="other">
+                                <label class="form-check-label" for="reason5">
+                                    Other (please specify)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="otherReasonDiv" style="display: none;">
+                        <label for="otherReason" class="form-label">Please specify your reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3" placeholder="Please explain your specific reason for cost discussion..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="submitCostNegotiation()">
+                        <i class="fas fa-paper-plane me-1"></i>Submit Negotiation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // PSGC endpoints (Philippines administrative units)
+        const PSGC_BASE = 'https://psgc.gitlab.io/api';
+        const PSGC_PROVINCES = `${PSGC_BASE}/provinces/`;
+        const PSGC_CITIES_BY_PROVINCE = (code) => `${PSGC_BASE}/provinces/${code}/cities-municipalities/`;
+        const PSGC_BARANGAYS_BY_CITYMUN = (code) => `${PSGC_BASE}/cities-municipalities/${code}/barangays/`;
+
         // Set the correct API URL
         const API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:4000/manufacturing'
@@ -1515,11 +1711,7 @@
                                     <i class="fas fa-check"></i>
                                 </button>
                                         ` : ''}
-                                    ${project.status === 'pending' ? `
-                                            <button class="action-btn send-btn" onclick="sendProject(${project.proposal_id})" title="Send to Manufacturing">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                                    ` : ''}
+                                    
                                     ${project.status === 'contract_generated' ? `
                                             <button class="action-btn contract-btn" onclick="viewContractForProject(${project.proposal_id})" title="See Contract">
                                     <i class="fas fa-file-contract"></i>
@@ -1545,12 +1737,36 @@
         }
 
         // Handle project submission
-        document.getElementById('submitProjectBtn').addEventListener('click', async function() {
+        // Wire the submit button to open confirmation modal
+        document.getElementById('submitProjectBtn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('addProjectConfirmModal'));
+            modal.show();
+        });
+
+        // On confirm, perform the actual submission
+        document.getElementById('confirmAddProjectBtn').addEventListener('click', async function() {
+            // Close the confirm modal first
+            const confirmModal = bootstrap.Modal.getInstance(document.getElementById('addProjectConfirmModal'));
+            if (confirmModal) confirmModal.hide();
+
             const name = document.getElementById('projectName').value;
-            const location = document.getElementById('projectLocation').value;
+            const province = document.getElementById('projectProvince').value;
+            const provinceCode = document.getElementById('projectProvinceCode').value;
+            const muni = document.getElementById('projectMunicipality').value;
+            const muniCode = document.getElementById('projectMunicipalityCode').value;
+            const brgy = document.getElementById('projectBarangay').value;
             const blocks = document.getElementById('projectBlocks').value;
             const description = document.getElementById('projectDescription').value;
-            const blueprintFiles = document.getElementById('projectBlueprints').files;
+            // Collect all blueprint files from all blueprint inputs
+            const blueprintInputs = document.querySelectorAll('#blueprintsContainer input[type="file"]');
+            const collectedBlueprintFiles = [];
+            blueprintInputs.forEach(input => {
+                if (input.files && input.files.length) {
+                    for (let i = 0; i < input.files.length; i++) {
+                        collectedBlueprintFiles.push(input.files[i]);
+                    }
+                }
+            });
             
             const developerId = await getCurrentDeveloperId();
             if (!developerId) {
@@ -1559,9 +1775,19 @@
             }
 
             // Validate required fields
-            if (!name || !location || !blocks || !description) {
+            if (!name || !province || !muni || !blocks || !description) {
                 alert('Please fill in all required fields');
                 return;
+            }
+
+            // Optional: barangay validation only if available list populated
+            const brgyList = document.getElementById('barangayList');
+            if (brgy && brgyList && brgyList.children.length > 0) {
+                const valid = Array.from(brgyList.children).some(o => o.value.toLowerCase() === brgy.trim().toLowerCase());
+                if (!valid) {
+                    alert('Please select a valid barangay from the list');
+                    return;
+                }
             }
 
             // Validate blocks is a positive number
@@ -1572,14 +1798,18 @@
 
             const formData = new FormData();
             formData.append('project_name', name);
-            formData.append('location', location);
+            // Compose location as one string: Barangay, City/Municipality, Province (barangay optional)
+            const composedLocation = brgy ? `${brgy}, ${muni}, ${province}` : `${muni}, ${province}`;
+            formData.append('location', composedLocation);
+            if (muniCode) formData.append('municipality_code', muniCode);
+            if (provinceCode) formData.append('province_code', provinceCode);
             formData.append('blocks', blocks);
             formData.append('description', description);
             formData.append('developer_id', developerId);
 
-            // Add blueprint files
-            for (let i = 0; i < blueprintFiles.length; i++) {
-                formData.append('blueprint_files', blueprintFiles[i]);
+            // Add all collected blueprint files
+            for (let i = 0; i < collectedBlueprintFiles.length; i++) {
+                formData.append('blueprint_files', collectedBlueprintFiles[i]);
             }
 
             try {
@@ -1594,11 +1824,15 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Project proposal submitted successfully!');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
-                    modal.hide();
+                    const addModal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
+                    if (addModal) addModal.hide();
                     document.getElementById('addProjectForm').reset();
                     await fetchAndDisplayProjects();
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    document.getElementById('successMessage').textContent = 'Project proposal submitted successfully!';
+                    successModal.show();
+                    setTimeout(() => successModal.hide(), 1800);
             } else {
                     alert('Failed to submit project proposal: ' + (data.error || 'Unknown error'));
                 }
@@ -1659,8 +1893,19 @@
                                 style: 'currency', 
                                 currency: 'PHP' 
                             }).format(project.estimated_cost);
+                        
+                        // Show negotiate cost button if project has estimation and is not yet contracted
+                        const negotiateBtn = document.getElementById('negotiateCostBtn');
+                        if (project.status !== 'contract_generated' && project.status !== 'developer_approved') {
+                            negotiateBtn.style.display = 'inline-block';
+                            negotiateBtn.setAttribute('data-project-id', project.proposal_id);
+                            negotiateBtn.setAttribute('data-current-cost', project.estimated_cost);
+                        } else {
+                            negotiateBtn.style.display = 'none';
+                        }
                     } else {
                         document.getElementById('inlineFinalEstimatedCost').textContent = '-';
+                        document.getElementById('negotiateCostBtn').style.display = 'none';
                     }
                     
                     // Show inline details and scroll to it
@@ -1778,7 +2023,28 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             fetchAndDisplayProjects();
+            initPhilippineLocationControls();
         });
+
+        // Add another blueprint input block
+        function addBlueprintInput() {
+            const container = document.getElementById('blueprintsContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mb-3 blueprint-input';
+            wrapper.innerHTML = `
+                <div class="d-flex gap-2 align-items-end">
+                    <div class="flex-grow-1">
+                        <label class="form-label">Upload Blueprint Files</label>
+                        <input type="file" class="form-control" multiple accept=".pdf,.dwg,.jpg,.jpeg,.png">
+                        <small class="text-muted">You can upload multiple blueprint files (PDF, DWG, JPG, PNG)</small>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger" onclick="this.closest('.blueprint-input').remove()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(wrapper);
+        }
 
         // Handle filter change
         function handleFilterChange() {
@@ -1786,52 +2052,248 @@
             fetchAndDisplayProjects(filter);
         }
 
+        // Initialize province, municipality/city and barangay controls
+        async function initPhilippineLocationControls() {
+            const provInput = document.getElementById('projectProvince');
+            const provList = document.getElementById('provinceList');
+            const provCodeHidden = document.getElementById('projectProvinceCode');
+            const muniInput = document.getElementById('projectMunicipality');
+            const muniList = document.getElementById('municipalityList');
+            const muniCodeHidden = document.getElementById('projectMunicipalityCode');
+            const brgyInput = document.getElementById('projectBarangay');
+            const brgyList = document.getElementById('barangayList');
+
+            try {
+                // Load all provinces first
+                const resProv = await fetch(PSGC_PROVINCES);
+                const provinces = await resProv.json();
+                provList.innerHTML = '';
+                provinces.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.name;
+                    opt.setAttribute('data-code', item.code);
+                    provList.appendChild(opt);
+                });
+
+                // Province selection -> load cities/municipalities
+                provInput.addEventListener('input', async () => {
+                    const typed = provInput.value.trim().toLowerCase();
+                    let matchedCode = '';
+                    for (const opt of provList.children) {
+                        if (opt.value.toLowerCase() === typed) { matchedCode = opt.getAttribute('data-code'); break; }
+                    }
+                    provCodeHidden.value = matchedCode || '';
+                    // Reset dependent fields
+                    muniInput.value = '';
+                    muniCodeHidden.value = '';
+                    muniList.innerHTML = '';
+                    brgyInput.value = '';
+                    brgyList.innerHTML = '';
+                    muniInput.disabled = !matchedCode;
+                    brgyInput.disabled = true;
+                    if (matchedCode) await loadCitiesForProvince(matchedCode, muniList);
+                });
+
+                // Municipality selection -> load barangays
+                muniInput.addEventListener('input', () => {
+                    const typed = muniInput.value.trim().toLowerCase();
+                    let matchedCode = '';
+                    for (const opt of muniList.children) {
+                        if (opt.value.toLowerCase() === typed) { matchedCode = opt.getAttribute('data-code'); break; }
+                    }
+                    muniCodeHidden.value = matchedCode || '';
+                    brgyInput.value = '';
+                    brgyList.innerHTML = '';
+                    brgyInput.disabled = !matchedCode;
+                    if (matchedCode) loadBarangaysForMunicipality(matchedCode, brgyList);
+                });
+
+            } catch (e) {
+                console.error('Failed to load Philippine municipalities/cities:', e);
+            }
+        }
+
+        async function loadCitiesForProvince(provCode, muniList) {
+            try {
+                const res = await fetch(PSGC_CITIES_BY_PROVINCE(provCode));
+                const cities = await res.json();
+                muniList.innerHTML = '';
+                cities.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.name;
+                    opt.setAttribute('data-code', item.code);
+                    muniList.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load cities/municipalities:', e);
+            }
+        }
+
+        async function loadBarangaysForMunicipality(muniCode, brgyList) {
+            try {
+                const res = await fetch(PSGC_BARANGAYS_BY_CITYMUN(muniCode));
+                const barangays = await res.json();
+                brgyList.innerHTML = '';
+                barangays.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.name;
+                    brgyList.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load barangays:', e);
+            }
+        }
+
         // Handle entries per page change
         function setEntriesPerPage() {
             fetchAndDisplayProjects();
         }
 
-        // Function to display supply materials in view modal
+        // Function to get badge class for status
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Pending': return 'bg-warning';
+                case 'Delivered': return 'bg-info';
+                case 'Released': return 'bg-primary';
+                case 'Received': return 'bg-success';
+                case 'Consumed': return 'bg-secondary';
+                default: return 'bg-warning';
+            }
+        }
+
+        // Function to display supply materials in view/inline: temp vs actual
         function renderOwnersSupplyTable(supplyMaterials) {
-            const tbody = document.getElementById('ownersSupplyTbody');
-            tbody.innerHTML = '';
-            if (!supplyMaterials || supplyMaterials.length === 0) return;
+            const tempTbody = document.getElementById('ownersSupplyTbody');
+            if (tempTbody) tempTbody.innerHTML = '';
+            const actualTbody = document.getElementById('ownersSupplyActualTbody');
+            if (actualTbody) actualTbody.innerHTML = '';
+
+            // If no actual supply, show a friendly placeholder
+            if (!supplyMaterials || supplyMaterials.length === 0) {
+                if (actualTbody) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td colspan="4" class="text-center text-muted py-3">
+                            <i class="fas fa-box-open me-2"></i>No owners supply found
+                        </td>
+                    `;
+                    actualTbody.appendChild(tr);
+                }
+                return;
+            }
+
+            const target = actualTbody || tempTbody;
             supplyMaterials.forEach(material => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${material.material_name}</td>
                     <td>${material.unit || ''}</td>
                     <td>${material.quantity}</td>
+                    <td><span class="badge ${getStatusBadgeClass(material.status)}">${material.status || 'Pending'}</span></td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="deleteSupply('${material.supply_id}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 `;
-                tbody.appendChild(tr);
+                target.appendChild(tr);
             });
         }
 
         // Add a row to the owners supply input table (not persisted yet)
         function addSupplyRowView() {
-            const name = document.getElementById('supplyNameInput').value.trim();
-            const unit = document.getElementById('supplyUnitInput').value.trim();
-            const qty = parseInt(document.getElementById('supplyQtyInput').value, 10);
-            if (!name || !qty || qty < 1) { alert('Enter name and a valid quantity'); return; }
-            const tbody = document.getElementById('ownersSupplyTbody');
+            const nameInput = document.getElementById('inlineSupplyNameInput') || document.getElementById('supplyNameInput');
+            const unitInput = document.getElementById('inlineSupplyUnitInput') || document.getElementById('supplyUnitInput');
+            const qtyInput = document.getElementById('inlineSupplyQtyInput') || document.getElementById('supplyQtyInput');
+            
+            const name = nameInput ? nameInput.value.trim() : '';
+            const unit = unitInput ? unitInput.value.trim() : '';
+            const qtyRaw = qtyInput ? qtyInput.value.trim() : '';
+            
+            // Normalize quantity - remove all non-digit characters except decimal point
+            const qtyStr = qtyRaw.replace(/[^0-9.]/g, '');
+            const qty = parseFloat(qtyStr);
+            
+            // More detailed validation
+            if (!name) { alert('Please enter a material name'); return; }
+            if (!qtyRaw) { alert('Please enter a quantity'); return; }
+            if (isNaN(qty)) { alert('Please enter a valid number for quantity'); return; }
+            if (qty <= 0) { alert('Quantity must be greater than 0'); return; }
+            // Resolve correct Owners Supply table body depending on visible context (inline or modal)
+            const tbody = document.querySelector('#projectDetailsInline #ownersSupplyTbody') 
+                || document.querySelector('#viewProjectModal #ownersSupplyTbody') 
+                || document.getElementById('ownersSupplyTbody');
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td data-name>${name}</td>
                 <td data-unit>${unit}</td>
                 <td data-qty>${qty}</td>
+                <td><span class="badge bg-warning">Pending</span></td>
                 <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="editSupplyRowView(this)"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
-            document.getElementById('supplyNameInput').value = '';
-            document.getElementById('supplyUnitInput').value = '';
-            document.getElementById('supplyQtyInput').value = '';
+            // Clear input fields only if they exist
+            const nameEl = document.getElementById('inlineSupplyNameInput') || document.getElementById('supplyNameInput');
+            const unitEl = document.getElementById('inlineSupplyUnitInput') || document.getElementById('supplyUnitInput');
+            const qtyEl = document.getElementById('inlineSupplyQtyInput') || document.getElementById('supplyQtyInput');
+            if (nameEl) nameEl.value = '';
+            if (unitEl) unitEl.value = '';
+            if (qtyEl) qtyEl.value = '';
+        }
+
+        // Format quantity input with spaces as thousand separators while typing
+        function handleQtyInput(inputEl) {
+            const cursorPos = inputEl.selectionStart;
+            const raw = inputEl.value.replace(/\s/g, '').replace(/,/g, '');
+            if (raw === '') { inputEl.value = ''; return; }
+            if (!/^\d*(\.\d*)?$/.test(raw)) { return; }
+            const parts = raw.split('.');
+            const intPart = parts[0];
+            const decPart = parts[1] !== undefined ? '.' + parts[1] : '';
+            const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            inputEl.value = withSpaces + decPart;
+            // Best effort to keep cursor near end
+            inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+        }
+
+        // Edit an owners supply temp row: prefill inputs and remove row
+        function editSupplyRowView(btn) {
+            const tr = btn.closest('tr');
+            if (!tr) return;
+            const nameEl = tr.querySelector('td[data-name]');
+            const unitEl = tr.querySelector('td[data-unit]');
+            const qtyEl = tr.querySelector('td[data-qty]');
+
+            const nameInput = document.getElementById('inlineSupplyNameInput') || document.getElementById('supplyNameInput');
+            const unitInput = document.getElementById('inlineSupplyUnitInput') || document.getElementById('supplyUnitInput');
+            const qtyInput = document.getElementById('inlineSupplyQtyInput') || document.getElementById('supplyQtyInput');
+
+            if (!nameInput || !unitInput || !qtyInput) {
+                alert('Input fields not found. Please ensure the Owners Supply form is visible.');
+                return;
+            }
+
+            if (nameEl) nameInput.value = nameEl.textContent.trim();
+            if (unitEl) unitInput.value = unitEl.textContent.trim();
+            if (qtyEl) {
+                const qtyValue = qtyEl.textContent.trim();
+                // Format the quantity with spaces for display
+                const numericValue = qtyValue.replace(/[^0-9.]/g, '');
+                const parts = numericValue.split('.');
+                const intPart = parts[0];
+                const decPart = parts[1] !== undefined ? '.' + parts[1] : '';
+                const formattedValue = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + decPart;
+                qtyInput.value = formattedValue;
+            }
+
+            // Focus for convenience
+            nameInput.focus();
+
+            // Remove the row so it can be re-added after edits
+            tr.remove();
         }
 
         // Function to add a new supply material row
@@ -1874,8 +2336,27 @@
             }
         }
 
-        // Submit owners supply (create rows)
-        async function submitOwnersSupply() {
+        // Wire owners supply submit button to confirmation modal
+        (function wireOwnersSupplySubmit() {
+            const btn = document.getElementById('ownersSupplySubmitBtn');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const modal = new bootstrap.Modal(document.getElementById('ownersSupplyConfirmModal'));
+                    modal.show();
+                });
+            }
+            const confirmBtn = document.getElementById('confirmOwnersSupplyBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', async function() {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('ownersSupplyConfirmModal'));
+                    if (modal) modal.hide();
+                    await submitOwnersSupplyInternal();
+                });
+            }
+        })();
+
+        // Internal: Submit owners supply (create rows)
+        async function submitOwnersSupplyInternal() {
             try {
                 const developerId = await getCurrentDeveloperId();
                 if (!developerId) { alert('Session expired. Please log in again.'); return; }
@@ -1899,9 +2380,21 @@
                     });
                     if (!resp.ok) throw new Error('Failed to submit material');
                 }
-                alert('Owners supply submitted successfully.');
                 // Refresh details
                 await viewProject(projectId);
+                // Clear temp table and switch to Actual tab
+                const tempTbody = document.getElementById('ownersSupplyTbody');
+                if (tempTbody) tempTbody.innerHTML = '';
+                const actualTab = document.getElementById('actual-os-tab');
+                if (actualTab) {
+                    const tab = new bootstrap.Tab(actualTab);
+                    tab.show();
+                }
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                document.getElementById('successMessage').textContent = 'Owners supply submitted successfully!';
+                successModal.show();
+                setTimeout(() => successModal.hide(), 1600);
             } catch (e) {
                 console.error(e);
                 alert('Failed to submit owners supply.');
@@ -2582,6 +3075,113 @@
             } catch (error) {
                 console.error('Error activating contract:', error);
                 alert('Failed to activate contract. Please try again.');
+            }
+        }
+
+        // Negotiate Cost Functions
+        function openNegotiateCostModal() {
+            const btn = document.getElementById('negotiateCostBtn');
+            const projectId = btn.getAttribute('data-project-id');
+            const currentCost = btn.getAttribute('data-current-cost');
+            
+            // Display current cost in modal
+            document.getElementById('currentCostDisplay').textContent = 
+                new Intl.NumberFormat('en-PH', { 
+                    style: 'currency', 
+                    currency: 'PHP' 
+                }).format(currentCost);
+            
+            // Clear previous values
+            const radioButtons = document.querySelectorAll('input[name="negotiationReason"]');
+            radioButtons.forEach(radio => radio.checked = false);
+            // Clear other reason field if it exists
+            const otherReasonField = document.getElementById('otherReason');
+            if (otherReasonField) {
+                otherReasonField.value = '';
+            }
+            
+            const otherReasonDiv = document.getElementById('otherReasonDiv');
+            if (otherReasonDiv) {
+                otherReasonDiv.style.display = 'none';
+            }
+            
+            // Add event listeners for radio buttons
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const otherReasonDiv = document.getElementById('otherReasonDiv');
+                    if (otherReasonDiv) {
+                        if (this.value === 'other') {
+                            otherReasonDiv.style.display = 'block';
+                        } else {
+                            otherReasonDiv.style.display = 'none';
+                        }
+                    }
+                });
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('negotiateCostModal'));
+            modal.show();
+        }
+
+        async function submitCostNegotiation() {
+            const projectId = document.getElementById('negotiateCostBtn').getAttribute('data-project-id');
+            const currentCost = document.getElementById('negotiateCostBtn').getAttribute('data-current-cost');
+            
+            // Get selected reason
+            const selectedReason = document.querySelector('input[name="negotiationReason"]:checked');
+            if (!selectedReason) {
+                alert('Please select a reason for cost discussion.');
+                return;
+            }
+            
+            let finalReason = selectedReason.value;
+            if (selectedReason.value === 'other') {
+                const otherReasonField = document.getElementById('otherReason');
+                if (!otherReasonField) {
+                    alert('Please specify your reason.');
+                    return;
+                }
+                const otherReason = otherReasonField.value.trim();
+                if (!otherReason) {
+                    alert('Please specify your reason in the text area.');
+                    return;
+                }
+                finalReason = otherReason;
+            }
+            
+            try {
+                const response = await fetch('/manufacturing/negotiate-cost', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        project_id: projectId,
+                        current_cost: parseInt(currentCost),
+                        reason: finalReason
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('negotiateCostModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    alert('Cost discussion request submitted successfully! The manufacturing team will contact you soon.');
+                    
+                    // Refresh project details
+                    await fetchAndDisplayProjects();
+                } else {
+                    alert('Failed to submit cost discussion request: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Error submitting cost negotiation:', error);
+                alert('Failed to submit cost discussion request. Please try again.');
             }
         }
 

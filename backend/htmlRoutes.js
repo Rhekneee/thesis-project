@@ -95,7 +95,12 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'add_properties.html')); // Adjusted path
   });
 
+  // Restrict Agents page for sales_marketing_coordinator
   app.get('/crm/agents', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName === 'sales_marketing_coordinator') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'agents.html')); // Adjusted path
   });
 
@@ -135,17 +140,30 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_leave_request.html')); // Adjusted path
   });
 
+  // Restrict Job Posting page for sales_marketing_coordinator
   app.get('/crm/job_posting', (req, res) => {    
+    const roleName = req.session?.user?.role_name;
+    if (roleName === 'sales_marketing_coordinator') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
   });
   
-  // Virtual Tour Portal (CRM Admin)
+  // Virtual Tour Portal (CRM Admin) - Restricted to general_foreman only
   app.get('/crm/virtual_tour_dashboard', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_portal.html'));
   });
 
-  // Virtual Tour Location Detail (CRM Admin)
+  // Virtual Tour Location Detail (CRM Admin) - Restricted to general_foreman only
   app.get('/crm/virtual_tour_location_detail', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/crm/crm_admin');
+    }
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
   });
   
@@ -284,6 +302,13 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_construction_payroll.html')); // Adjusted path
   }); 
 
+  app.get('/hr/hr_employee_roles', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_roles.html')); // Adjusted path
+  });
+  app.get('/hr/hr_employee_details', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_details.html')); // Adjusted path
+  });
+
   // Removed HR payroll forecasting route
   
 // ====================
@@ -360,10 +385,35 @@ const htmlRoutes = (app) => {
   app.get('/manufacturing/manufacturing_overtime', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_overtime.html')); // Adjusted path
   }); 
-  
 
-  
-// ====================
+  // Virtual Tour Portal (Manufacturing) - Restricted to general_foreman only
+  app.get('/manufacturing/virtual_tour_dashboard', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/manufacturing/manufacturing_dashboard');
+    }
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_portal.html'));
+  });
+
+  // Virtual Tour Location Detail (Manufacturing) - Restricted to general_foreman only
+  app.get('/manufacturing/virtual_tour_location_detail', (req, res) => {
+    const roleName = req.session?.user?.role_name;
+    if (roleName !== 'general_foreman') {
+      return res.redirect('/manufacturing/manufacturing_dashboard');
+    }
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
+  });
+
+  app.get('/manufacturing/manufacturing_add_construction', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_add_construction.html')); // Adjusted path
+  });
+
+  app.get('/manufacturing/manufacturing_construction_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'manufacturing', 'manufacturing_construction_attendance.html')); // Adjusted path
+  });
+
+
+  // ====================
   //   finance Routes
   // ====================  
 

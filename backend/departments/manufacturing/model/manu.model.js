@@ -101,11 +101,11 @@ const ManufacturingModel = {
         SELECT 
           l.labor_id,
           l.worker_type_id,
-          ct.name AS worker_type_name,
+          cr.role_name AS worker_type_name,
           l.manpower_per_unit,
           l.unit_description
         FROM labor l
-        JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
         WHERE l.proposal_id = ?
         ORDER BY l.labor_id ASC
       `;
@@ -143,11 +143,11 @@ const ManufacturingModel = {
       SELECT 
         l.labor_id,
         l.worker_type_id,
-        ct.name AS worker_type_name,
+        cr.role_name AS worker_type_name,
         l.manpower_per_unit,
         l.unit_description
       FROM labor l
-      JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+      JOIN construction_roles cr ON cr.id = l.worker_type_id
       WHERE l.proposal_id = ?
       ORDER BY l.labor_id ASC
     `;
@@ -176,12 +176,44 @@ const ManufacturingModel = {
     await db.execute(query, [laborId]);
   },
 
+  // LABOR: update project_id when contract becomes active
+  updateLaborWithProjectId: async (contractId, projectId) => {
+    try {
+      // Get the proposal_id from the contract
+      const contractQuery = `SELECT proposal_id FROM contracts WHERE contract_id = ?`;
+      const [contractRows] = await db.execute(contractQuery, [contractId]);
+      
+      if (contractRows.length === 0) {
+        console.error('Contract not found:', contractId);
+        return;
+      }
+      
+      const proposalId = contractRows[0].proposal_id;
+      
+      // Update all labor records for this proposal with the new project_id
+      const updateQuery = `
+        UPDATE labor 
+        SET project_id = ?
+        WHERE proposal_id = ?
+      `;
+      
+      const [result] = await db.execute(updateQuery, [projectId, proposalId]);
+      
+      console.log(`✅ Updated ${result.affectedRows} labor records with project_id ${projectId} for proposal ${proposalId}`);
+      
+      return result.affectedRows;
+    } catch (error) {
+      console.error('❌ Error updating labor with project_id:', error);
+      throw error;
+    }
+  },
+
   // WORKER TYPES: list
   getWorkerTypes: async () => {
     const query = `
-      SELECT worker_type_id, name, description
-      FROM construction_types
-      ORDER BY name ASC
+      SELECT id as worker_type_id, role_name as name, daily_rate as description
+      FROM construction_roles
+      ORDER BY role_name ASC
     `;
     const [rows] = await db.execute(query);
     return rows;
@@ -458,11 +490,11 @@ const ManufacturingModel = {
         SELECT 
           l.labor_id,
           l.worker_type_id,
-          ct.name AS worker_type_name,
+          cr.role_name AS worker_type_name,
           l.manpower_per_unit,
           l.unit_description
         FROM labor l
-        JOIN construction_types ct ON ct.worker_type_id = l.worker_type_id
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
         WHERE l.proposal_id = ?
         ORDER BY l.labor_id ASC
       `;
@@ -497,7 +529,12 @@ const ManufacturingModel = {
     await db.execute(query, [signaturePath, contractId]);
     
     // Create project record when contract becomes active
-    await ManufacturingModel.createProjectFromContract(contractId);
+    const projectId = await ManufacturingModel.createProjectFromContract(contractId);
+    
+    // Update labor records with the new project_id
+    if (projectId) {
+      await ManufacturingModel.updateLaborWithProjectId(contractId, projectId);
+    }
   },
 
   // Create project record from active contract
@@ -813,6 +850,477 @@ const ManufacturingModel = {
       throw new Error('Failed to mark materials as received');
     } finally {
       connection.release();
+    }
+  },
+
+  // ========== CONSTRUCTION WORKERS METHODS ==========
+  
+  getAllConstructionWorkers: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          cw.id,
+          cw.picture,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cw.contact_number,
+          cw.role_id,
+          cw.project_id,
+          cw.date_hired,
+          cw.status,
+          cw.created_at,
+          cr.role_name,
+          p.project_name
+        FROM construction_workers cw
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+        ORDER BY cw.created_at DESC
+      `);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting all construction workers:', error);
+      throw error;
+    }
+  },
+
+  getConstructionWorkerById: async (workerId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          cw.id,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cw.contact_number,
+          cw.role_id,
+          cw.project_id,
+          cw.date_hired,
+          cw.status,
+          cw.created_at,
+          cr.role_name,
+          cr.daily_rate,
+          p.project_name
+        FROM construction_workers cw
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+        WHERE cw.id = ?
+      `, [workerId]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error('❌ Error getting construction worker by ID:', error);
+      throw error;
+    }
+  },
+
+  addConstructionWorker: async (workerData) => {
+    try {
+      const {
+        firstname,
+        middlename,
+        lastname,
+        contact_number,
+        role_id,
+        project_id,
+        picture,
+        status = 'inactive'
+      } = workerData;
+
+      // Set date_hired to today's date automatically
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+      // Start transaction to ensure data consistency
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Insert construction worker
+        const [result] = await connection.query(`
+          INSERT INTO construction_workers (
+            firstname, middlename, lastname, contact_number,
+            role_id, project_id, picture, date_hired, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          firstname, middlename, lastname, contact_number,
+          role_id, project_id, picture || null, today, status
+        ]);
+
+        const workerId = result.insertId;
+
+        // Decrease manpower_per_unit in labor table
+        const [updateResult] = await connection.query(`
+          UPDATE labor 
+          SET manpower_per_unit = manpower_per_unit - 1
+          WHERE project_id = ? AND worker_type_id = ? AND manpower_per_unit > 0
+        `, [project_id, role_id]);
+
+        if (updateResult.affectedRows === 0) {
+          throw new Error('No available manpower for this role in the selected project');
+        }
+
+        await connection.commit();
+
+        return {
+          id: workerId,
+          ...workerData,
+          date_hired: today
+        };
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error adding construction worker:', error);
+      throw error;
+    }
+  },
+
+  updateConstructionWorker: async (workerId, workerData) => {
+    try {
+      const {
+        firstname,
+        middlename,
+        lastname,
+        contact_number,
+        role_id,
+        project_id,
+        date_hired,
+        status
+      } = workerData;
+
+      const [result] = await db.query(`
+        UPDATE construction_workers 
+        SET 
+          firstname = ?,
+          middlename = ?,
+          lastname = ?,
+          contact_number = ?,
+          role_id = ?,
+          project_id = ?,
+          date_hired = ?,
+          status = ?
+        WHERE id = ?
+      `, [
+        firstname, middlename, lastname, contact_number,
+        role_id, project_id, date_hired, status, workerId
+      ]);
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('❌ Error updating construction worker:', error);
+      throw error;
+    }
+  },
+
+  deleteConstructionWorker: async (workerId) => {
+    try {
+      // Start transaction to ensure data consistency
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Get worker details before deletion
+        const [workerRows] = await connection.query(`
+          SELECT project_id, role_id FROM construction_workers WHERE id = ?
+        `, [workerId]);
+
+        if (workerRows.length === 0) {
+          throw new Error('Construction worker not found');
+        }
+
+        const { project_id, role_id } = workerRows[0];
+
+        // Delete construction worker
+        const [deleteResult] = await connection.query(`
+          DELETE FROM construction_workers WHERE id = ?
+        `, [workerId]);
+
+        if (deleteResult.affectedRows === 0) {
+          throw new Error('Failed to delete construction worker');
+        }
+
+        // Increase manpower_per_unit back in labor table
+        await connection.query(`
+          UPDATE labor 
+          SET manpower_per_unit = manpower_per_unit + 1
+          WHERE project_id = ? AND worker_type_id = ?
+        `, [project_id, role_id]);
+
+        await connection.commit();
+        return true;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error('❌ Error deleting construction worker:', error);
+      throw error;
+    }
+  },
+
+  getAllConstructionRoles: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          id,
+          role_name,
+          daily_rate,
+          department_id
+        FROM construction_roles
+        ORDER BY role_name ASC
+      `);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting all construction roles:', error);
+      throw error;
+    }
+  },
+
+  getAllProjects: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          p.id,
+          p.project_name,
+          p.start_date,
+          p.end_date,
+          p.status,
+          p.created_at
+        FROM projects p
+        WHERE p.status = 'planning'
+        ORDER BY p.project_name ASC
+      `);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting all projects:', error);
+      throw error;
+    }
+  },
+
+  getProjectLaborRoles: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT DISTINCT
+          l.worker_type_id,
+          cr.role_name as worker_type_name,
+          l.manpower_per_unit
+        FROM labor l
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
+        WHERE l.project_id = ? AND l.manpower_per_unit > 0
+        ORDER BY cr.role_name ASC
+      `, [projectId]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting project labor roles:', error);
+      throw error;
+    }
+  },
+
+  // Get labor roles for projects with planning status
+  getLaborRolesForPlanningProjects: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT DISTINCT
+          l.worker_type_id,
+          cr.role_name as worker_type_name,
+          l.manpower_per_unit,
+          p.project_name
+        FROM labor l
+        JOIN construction_roles cr ON cr.id = l.worker_type_id
+        JOIN projects p ON l.project_id = p.id
+        WHERE l.project_id = ? 
+        AND p.status = 'planning' 
+        AND l.manpower_per_unit > 0
+        ORDER BY cr.role_name ASC
+      `, [projectId]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting labor roles for planning projects:', error);
+      throw error;
+    }
+  },
+
+  // ========== ATTENDANCE METHODS ==========
+
+  // Get construction worker by QR code
+  getConstructionWorkerByQRCode: async (qrData) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          cw.id,
+          cw.picture,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cw.contact_number,
+          cw.role_id,
+          cw.project_id,
+          cw.date_hired,
+          cw.status,
+          cw.unique_code,
+          cw.qr_code_path,
+          cw.created_at,
+          cr.role_name,
+          p.project_name
+        FROM construction_workers cw
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON cw.project_id = p.id
+        WHERE cw.unique_code = ? AND cw.status = 'active'
+      `, [qrData]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error('❌ Error getting construction worker by QR code:', error);
+      throw error;
+    }
+  },
+
+  // Check if worker already has attendance record for today
+  checkTodayAttendance: async (workerId) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const [rows] = await db.query(`
+        SELECT * FROM attendance_construction 
+        WHERE worker_id = ? AND attendance_date = ?
+      `, [workerId, today]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error('❌ Error checking today attendance:', error);
+      throw error;
+    }
+  },
+
+  // Record attendance (time in)
+  recordTimeIn: async (workerId, projectId) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const now = new Date();
+      
+      // Check if already has attendance record for today
+      const existingRecord = await ManufacturingModel.checkTodayAttendance(workerId);
+      
+      if (existingRecord) {
+        throw new Error('Attendance already recorded for today');
+      }
+
+      const [result] = await db.query(`
+        INSERT INTO attendance_construction (
+          worker_id, project_id, attendance_date, time_in, status
+        ) VALUES (?, ?, ?, ?, 'present')
+      `, [workerId, projectId, today, now]);
+
+      return result.insertId;
+    } catch (error) {
+      console.error('❌ Error recording time in:', error);
+      throw error;
+    }
+  },
+
+  // Record attendance (time out)
+  recordTimeOut: async (workerId) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const now = new Date();
+      
+      const [result] = await db.query(`
+        UPDATE attendance_construction 
+        SET time_out = ?
+        WHERE worker_id = ? AND attendance_date = ? AND time_out IS NULL
+      `, [now, workerId, today]);
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('❌ Error recording time out:', error);
+      throw error;
+    }
+  },
+
+  // Get attendance records for a worker
+  getWorkerAttendanceRecords: async (workerId, limit = 30) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          ar.*,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          p.project_name
+        FROM attendance_construction ar
+        JOIN construction_workers cw ON ar.worker_id = cw.id
+        LEFT JOIN projects p ON ar.project_id = p.id
+        WHERE ar.worker_id = ?
+        ORDER BY ar.attendance_date DESC
+        LIMIT ?
+      `, [workerId, limit]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting worker attendance records:', error);
+      throw error;
+    }
+  },
+
+  // Get all attendance records for a project
+  getProjectAttendanceRecords: async (projectId, date = null) => {
+    try {
+      let query = `
+        SELECT 
+          ar.*,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cr.role_name,
+          p.project_name
+        FROM attendance_construction ar
+        JOIN construction_workers cw ON ar.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON ar.project_id = p.id
+        WHERE ar.project_id = ?
+      `;
+      
+      const params = [projectId];
+      
+      if (date) {
+        query += ` AND ar.attendance_date = ?`;
+        params.push(date);
+      }
+      
+      query += ` ORDER BY ar.attendance_date DESC, ar.time_in ASC`;
+      
+      const [rows] = await db.query(query, params);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting project attendance records:', error);
+      throw error;
+    }
+  },
+
+  // Get all attendance records for today (all projects)
+  getTodayAttendanceRecords: async (date) => {
+    try {
+      const query = `
+        SELECT 
+          ar.*,
+          cw.firstname,
+          cw.middlename,
+          cw.lastname,
+          cr.role_name,
+          p.project_name
+        FROM attendance_construction ar
+        JOIN construction_workers cw ON ar.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        LEFT JOIN projects p ON ar.project_id = p.id
+        WHERE ar.attendance_date = ?
+        ORDER BY ar.time_in ASC
+      `;
+      
+      const [rows] = await db.query(query, [date]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting today attendance records:', error);
+      throw error;
     }
   }
 };

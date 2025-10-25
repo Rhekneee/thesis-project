@@ -373,10 +373,11 @@
             background: rgba(37, 99, 235, 0.8);
             border: 2px solid white;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 28px; /* Increased from 20px */
+            height: 28px; /* Increased from 20px */
             cursor: pointer;
             transition: all 0.3s ease;
+            /* Removed position: fixed - Pannellum handles positioning */
         }
 
         .custom-hotspot:hover {
@@ -386,9 +387,9 @@
         }
 
         .custom-hotspot::before {
-            content: "→";
+            content: "↑"; /* Changed from → to ↑ (upward arrow) */
             color: white;
-            font-size: 12px;
+            font-size: 16px; /* Increased from 12px to match larger hotspot */
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -684,7 +685,7 @@
                 <i class="fas fa-vr-cardboard me-1"></i>
                 Scenes
             </button>
-            <a class="btn btn-outline-secondary btn-sm" href="/crm/virtual_tour_dashboard">
+            <a class="btn btn-outline-secondary btn-sm" href="/manufacturing/virtual_tour_dashboard">
                 <i class="fas fa-arrow-left me-1"></i>
                 Back to Portal
             </a>
@@ -850,14 +851,44 @@
                             
                             <div class="col-12" id="linkOptions" style="display: none;">
                                 <div class="mb-3">
-                                    <label for="targetSceneName" class="form-label">Target Scene Name</label>
+                                    <label class="form-label">Target Scene Selection</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="targetSceneOption" id="existingSceneOption" value="existing" checked>
+                                        <label class="form-check-label" for="existingSceneOption">
+                                            Choose from existing scenes
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="targetSceneOption" id="newSceneOption" value="new">
+                                        <label class="form-check-label" for="newSceneOption">
+                                            Upload new scene
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Existing Scene Selection -->
+                                <div id="existingSceneSection">
+                                    <div class="mb-3">
+                                        <label for="targetSceneSelect" class="form-label">Select Existing Scene</label>
+                                        <select id="targetSceneSelect" class="form-select">
+                                            <option value="">Loading scenes...</option>
+                                        </select>
+                                        <div class="form-text">Choose from scenes already created in this location</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- New Scene Upload -->
+                                <div id="newSceneSection" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="targetSceneName" class="form-label">New Scene Name</label>
                                     <input type="text" id="targetSceneName" class="form-control" placeholder="e.g., Living Room, Kitchen, Bedroom">
                                     <div class="form-text">Name for the new scene</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="targetSceneImage" class="form-label">Target Scene Image</label>
+                                        <label for="targetSceneImage" class="form-label">New Scene Image</label>
                                     <input type="file" id="targetSceneImage" class="form-control" accept="image/jpeg,image/jpg,image/png">
-                                    <div class="form-text">Upload the 360° image for the target scene</div>
+                                        <div class="form-text">Upload the 360° image for the new scene</div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -934,6 +965,221 @@
         </div>
     </div>
 
+    <!-- Edit Scene Modal -->
+    <div class="modal fade" id="editSceneModal" tabindex="-1" aria-labelledby="editSceneModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSceneModalLabel">
+                        <i class="fas fa-edit me-2"></i>Edit Scene
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editSceneForm" enctype="multipart/form-data">
+                        <input type="hidden" id="editSceneId" name="scene_id">
+                        
+                        <!-- Scene Details Section -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Scene Details
+                                </h6>
+                            </div>
+                            <div class="col-12">
+                                <label for="editSceneName" class="form-label">Scene Name</label>
+                                <input type="text" id="editSceneName" class="form-control" placeholder="e.g., Living Room, Kitchen, Bedroom" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="editSceneImage" class="form-label">360° Image</label>
+                                <input type="file" id="editSceneImage" class="form-control" accept="image/jpeg,image/jpg,image/png">
+                                <div class="form-text">Upload a new 360° panoramic image (JPEG, JPG, or PNG). Leave empty to keep current image.</div>
+                                <div id="currentImageInfo" class="alert alert-info mt-2" style="display: none;">
+                                    <i class="fas fa-image me-2"></i>
+                                    <strong>Current Image:</strong> <span id="currentImageName"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editScenePitch" class="form-label">Initial Pitch</label>
+                                <input type="number" id="editScenePitch" class="form-control" step="0.1" min="-90" max="90" placeholder="0">
+                                <div class="form-text">Initial vertical viewing angle</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editSceneYaw" class="form-label">Initial Yaw</label>
+                                <input type="number" id="editSceneYaw" class="form-control" step="0.1" min="-180" max="180" placeholder="0">
+                                <div class="form-text">Initial horizontal viewing angle</div>
+                            </div>
+                        </div>
+
+                        <!-- Hotspot Management Section -->
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="fas fa-crosshairs me-2"></i>Hotspot Management
+                                </h6>
+                            </div>
+                            
+                            <!-- 360° Viewer for Hotspot Positioning -->
+                            <div class="col-12" id="editViewerSection" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">360° Scene Viewer</h6>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" id="editResetViewBtn" title="Reset View">
+                                                <i class="fas fa-home"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" id="editFullscreenBtn" title="Fullscreen">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="editPannellumViewer" style="width: 100%; height: 400px; border-radius: 0 0 8px 8px;"></div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-mouse-pointer me-2"></i>
+                                    <strong>Instructions:</strong> Click and drag to navigate the 360° scene. Click on the image to position hotspots.
+                                </div>
+                            </div>
+
+                            <!-- Hotspots List -->
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Current Hotspots</h6>
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="showAddHotspotInEditModal()">
+                                            <i class="fas fa-plus me-1"></i>Add Hotspot
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="editHotspotsList">
+                                            <div class="text-center text-muted py-3">
+                                                <i class="fas fa-crosshairs fa-2x mb-2"></i>
+                                                <p class="mb-0">No hotspots added yet</p>
+                                                <small>Click "Add Hotspot" to create interactive points</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateScene()">
+                        <i class="fas fa-save me-1"></i>Update Scene
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Hotspot Modal -->
+    <div class="modal fade" id="editHotspotModal" tabindex="-1" aria-labelledby="editHotspotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editHotspotModalLabel">
+                        <i class="fas fa-edit me-2"></i>Edit Hotspot
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editHotspotForm">
+                        <input type="hidden" id="editHotspotId" name="hotspot_id">
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="editHotspotType" class="form-label">Hotspot Type</label>
+                                <select id="editHotspotType" class="form-select" required onchange="toggleEditHotspotOptions()">
+                                    <option value="">Select type...</option>
+                                    <option value="link">Link to Another Scene</option>
+                                    <option value="info">Information Popup</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12" id="editLinkOptions" style="display: none;">
+                                <div class="mb-3">
+                                    <label class="form-label">Target Scene Selection</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="editTargetSceneOption" id="editExistingSceneOption" value="existing" checked>
+                                        <label class="form-check-label" for="editExistingSceneOption">
+                                            Choose from existing scenes
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="editTargetSceneOption" id="editNewSceneOption" value="new">
+                                        <label class="form-check-label" for="editNewSceneOption">
+                                            Upload new scene
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Existing Scene Selection -->
+                                <div id="editExistingSceneSection">
+                                    <div class="mb-3">
+                                        <label for="editTargetSceneSelect" class="form-label">Select Existing Scene</label>
+                                        <select id="editTargetSceneSelect" class="form-select">
+                                            <option value="">Loading scenes...</option>
+                                        </select>
+                                        <div class="form-text">Choose from scenes already created in this location</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- New Scene Upload -->
+                                <div id="editNewSceneSection" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="editTargetSceneName" class="form-label">New Scene Name</label>
+                                        <input type="text" id="editTargetSceneName" class="form-control" placeholder="e.g., Living Room, Kitchen, Bedroom">
+                                        <div class="form-text">Name for the new scene</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="editTargetSceneImage" class="form-label">New Scene Image</label>
+                                        <input type="file" id="editTargetSceneImage" class="form-control" accept="image/jpeg,image/jpg,image/png">
+                                        <div class="form-text">Upload the 360° image for the new scene</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12" id="editInfoOptions" style="display: none;">
+                                <label for="editInfoText" class="form-label">Information Text</label>
+                                <textarea id="editInfoText" class="form-control" rows="4" placeholder="Enter information to display when hotspot is clicked..."></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="editHotspotTooltip" class="form-label">Tooltip (Hover Text)</label>
+                                <input type="text" id="editHotspotTooltip" class="form-control" placeholder="Text shown when hovering over hotspot" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="editHotspotPitch" class="form-label">Pitch Position</label>
+                                <input type="number" id="editHotspotPitch" class="form-control" step="0.1" min="-90" max="90" required readonly>
+                                <div class="form-text">Vertical position (set by drag & drop)</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="editHotspotYaw" class="form-label">Yaw Position</label>
+                                <input type="number" id="editHotspotYaw" class="form-control" step="0.1" min="-180" max="180" required readonly>
+                                <div class="form-text">Horizontal position (set by drag & drop)</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                   <div class="modal-footer">
+                       <button type="button" class="btn btn-warning" onclick="enterMoveHotspotMode()">
+                           <i class="fas fa-arrows-alt me-1"></i>Move Hotspot
+                       </button>
+                       <button type="button" class="btn btn-danger" onclick="deleteCurrentEditingHotspot()">
+                           <i class="fas fa-trash me-1"></i>Delete Hotspot
+                       </button>
+                       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Pannellum JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
@@ -961,15 +1207,31 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 404) {
                     throw new Error('Location not found');
+                    } else {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
                 }
 
                 const data = await response.json();
+                
+                if (!data.location) {
+                    throw new Error('Location data not available');
+                }
+                
                 currentLocation = data.location;
                 displayLocationDetail(data.location);
             } catch (error) {
                 console.error('Error loading location:', error);
+                
+                // Only show error if it's actually a location loading issue
+                if (error.message.includes('Location not found') || error.message.includes('Location data not available')) {
                 showError();
+                } else {
+                    console.log('Non-critical error during location loading, continuing...');
+                    // Don't show error for network issues or other non-critical errors
+                }
             }
         }
 
@@ -1034,8 +1296,15 @@
 
         // Show error state
         function showError() {
+            // Don't show error if we're in edit modal - the modal should handle its own errors
+            const isInEditModal = document.getElementById('editSceneModal') && document.getElementById('editSceneModal').classList.contains('show');
+            
+            if (!isInEditModal) {
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('errorState').style.display = 'block';
+            } else {
+                console.log('Skipping main page error display - edit modal is open');
+            }
         }
 
         // Action functions (placeholders for future functionality)
@@ -1076,6 +1345,9 @@
             }
 
             try {
+                // Prevent any URL changes during the operation
+                const currentUrl = window.location.href;
+                
                 const formData = new FormData();
                 formData.append('scene_name', sceneName);
                 formData.append('image', sceneImage);
@@ -1106,11 +1378,18 @@
                 alert('Scene added successfully!');
                 
                 // Refresh scenes list
+                console.log('Refreshing scenes list after new scene upload...');
                 await loadScenes();
+                console.log('Scenes list refreshed');
                 
             } catch (error) {
                 console.error('Error saving scene:', error);
                 alert('Failed to save scene. Please try again.');
+                
+                // Ensure URL stays the same even if there's an error
+                if (window.location.href !== currentUrl) {
+                    window.history.replaceState(null, null, currentUrl);
+                }
             }
         }
 
@@ -1118,18 +1397,34 @@
         async function loadScenes() {
             try {
                 const locationId = getLocationIdFromUrl();
+                if (!locationId) {
+                    console.log('No location ID available, skipping scene loading');
+                    return;
+                }
+                
                 const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
                     credentials: 'include'
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to load scenes');
+                    if (response.status === 404) {
+                        console.log('No scenes found for location');
+                        displayScenes([]);
+                        return;
+                    }
+                    throw new Error(`Failed to load scenes: ${response.status}`);
                 }
 
                 const data = await response.json();
                 displayScenes(data.scenes || []);
+                
+                // Auto-preview first scene if scenes panel is closed and scenes exist
+                if (data.scenes && data.scenes.length > 0 && !document.getElementById('scenesPanel').classList.contains('open')) {
+                    await previewScene(data.scenes[0]);
+                }
             } catch (error) {
                 console.error('Error loading scenes:', error);
+                // Don't display error state for scenes, just show empty list
                 displayScenes([]);
             }
         }
@@ -1141,11 +1436,11 @@
             const hotspotsButton = document.getElementById('hotspotsButton');
 
             if (scenes.length === 0) {
-                noScenesMessage.style.display = 'block';
-                hotspotsButton.classList.remove('active');
+                if (noScenesMessage) noScenesMessage.style.display = 'block';
+                if (hotspotsButton) hotspotsButton.classList.remove('active');
             } else {
-                noScenesMessage.style.display = 'none';
-                hotspotsButton.classList.add('active');
+                if (noScenesMessage) noScenesMessage.style.display = 'none';
+                if (hotspotsButton) hotspotsButton.classList.add('active');
 
                 container.innerHTML = '';
                 
@@ -1161,6 +1456,7 @@
         async function createSceneTile(scene) {
             const tile = document.createElement('div');
             tile.className = 'scene-tile';
+            tile.setAttribute('data-scene-id', scene.id); // Add data attribute for easy identification
             tile.onclick = (e) => {
                 // Don't trigger preview if clicking on dropdown
                 if (!e.target.closest('.scene-dropdown')) {
@@ -1193,9 +1489,19 @@
                 `;
             } else {
                 hotspotsHtml = hotspots.map(hotspot => `
-                    <div class="hotspot-item">
-                        <i class="fas fa-${hotspot.type === 'link' ? 'link' : 'info-circle'}"></i>
+                    <div class="hotspot-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-${hotspot.type === 'link' ? 'link' : 'info-circle'} me-2"></i>
                         <span>${hotspot.tooltip}</span>
+                        </div>
+                        <div class="hotspot-actions">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editHotspot(${hotspot.id})" title="Edit Hotspot">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteHotspotFromTile(${hotspot.id})" title="Delete Hotspot">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             }
@@ -1223,12 +1529,92 @@
             return tile;
         }
 
+        // Update scene tile hotspots display
+        async function updateSceneTileHotspots(sceneId) {
+            const tile = document.querySelector(`[data-scene-id="${sceneId}"]`);
+            if (!tile) {
+                console.log('Scene tile not found for scene ID:', sceneId);
+                return;
+            }
+            
+            try {
+                // Check if URL protection is active and restore if needed
+                restoreProtectedUrl();
+                
+                const response = await fetch(`/crm/virtual-tour/hotspots/${sceneId}`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    console.error('Failed to load hotspots for scene tile update');
+                    restoreProtectedUrl();
+                    return;
+                }
+                
+                const data = await response.json();
+                const hotspots = data.hotspots || [];
+                console.log('Updating scene tile hotspots for scene:', sceneId, 'hotspots:', hotspots);
+                
+                // Update hotspots HTML
+                let hotspotsHtml = '';
+                if (hotspots.length === 0) {
+                    hotspotsHtml = `
+                        <div class="hotspot-item">
+                            <i class="fas fa-crosshairs"></i>
+                            <span>No hotspots added yet</span>
+                        </div>
+                    `;
+                } else {
+                    hotspotsHtml = hotspots.map(hotspot => `
+                        <div class="hotspot-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-${hotspot.type === 'link' ? 'link' : 'info-circle'} me-2"></i>
+                                <span>${hotspot.tooltip}</span>
+                            </div>
+                            <div class="hotspot-actions">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editHotspot(${hotspot.id})" title="Edit Hotspot">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteHotspotFromTile(${hotspot.id})" title="Delete Hotspot">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Update the hotspots list in the tile
+                const hotspotsList = tile.querySelector('.hotspots-list');
+                if (hotspotsList) {
+                    hotspotsList.innerHTML = hotspotsHtml;
+                    console.log('Updated scene tile hotspots HTML:', hotspotsHtml);
+                } else {
+                    console.error('Hotspots list element not found in scene tile');
+                }
+                
+                // Check URL again after the update
+                restoreProtectedUrl();
+                
+            } catch (error) {
+                console.error('Error updating scene tile hotspots:', error);
+                
+                // Restore URL even if there's an error
+                restoreProtectedUrl();
+            }
+        }
+
         // Pannellum Variables
         let currentScene = null;
         let viewer = null;
         let hotspotMode = false;
         let hotspotPosition = null;
         let sceneHotspots = [];
+        let isSavingHotspot = false; // prevent double insert
+
+        // Edit Modal Variables
+        let editViewer = null;
+        let editSceneHotspots = [];
+        let editHotspotMode = false;
 
         // Preview scene in main area using Pannellum
         async function previewScene(scene) {
@@ -1266,32 +1652,48 @@
                 // Load hotspots for this scene
                 await loadSceneHotspots(scene.id);
                 initializePannellumViewer(scene);
+                
+                // Update hotspots count in preview
+                document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
             } else {
                 // Clear viewer if no image
                 if (viewer) {
                     viewer.destroy();
                     viewer = null;
                 }
+                document.getElementById('scenePreviewHotspots').textContent = '0 Hotspots';
             }
         }
 
         // Load hotspots for a scene
         async function loadSceneHotspots(sceneId) {
             try {
+                console.log('Loading hotspots for scene:', sceneId);
+                
+                // Check if URL protection is active and restore if needed
+                restoreProtectedUrl();
+                
                 const response = await fetch(`/crm/virtual-tour/hotspots/${sceneId}`, {
                     credentials: 'include'
                 });
 
                 if (!response.ok) {
+                    console.error('Failed to load hotspots, response status:', response.status);
                     throw new Error('Failed to load hotspots');
                 }
 
                 const data = await response.json();
                 sceneHotspots = data.hotspots || [];
-                console.log('Loaded hotspots for scene:', sceneId, sceneHotspots);
+                console.log('Loaded hotspots for scene:', sceneId, 'hotspots count:', sceneHotspots.length, 'hotspots:', sceneHotspots);
+                
+                // Check URL again after the fetch
+                restoreProtectedUrl();
             } catch (error) {
                 console.error('Error loading hotspots:', error);
                 sceneHotspots = [];
+                
+                // Restore URL even if there's an error
+                restoreProtectedUrl();
             }
         }
 
@@ -1312,10 +1714,26 @@
                     text: hotspot.tooltip,
                     cssClass: 'custom-hotspot',
                     clickHandlerFunc: function() {
+                        console.log('Hotspot clicked:', hotspot);
+                        
+                        // Disable hotspot interactions during move mode
+                        if (hotspotMoveMode) {
+                            console.log('Hotspot interactions disabled during move mode');
+                            return;
+                        }
+                        
                         if (hotspot.type === 'link' && hotspot.target_scene_id) {
-                            navigateToScene(hotspot.target_scene_id);
+                            console.log('Navigating to target scene:', hotspot.target_scene_id);
+                            // Navigate without sudden movements
+                            navigateToSceneSmoothly(hotspot.target_scene_id);
                         } else if (hotspot.type === 'info') {
+                            console.log('Showing info popup');
                             alert(hotspot.info_text || hotspot.tooltip);
+                        } else {
+                            console.log('Hotspot type or target_scene_id missing:', {
+                                type: hotspot.type,
+                                target_scene_id: hotspot.target_scene_id
+                            });
                         }
                     }
                 };
@@ -1337,8 +1755,20 @@
                 pitch: scene.pitch || 0,
                 yaw: scene.yaw || 0,
                 hotSpots: pannellumHotspots,
+                // Stable view settings
+                doubleClickZoom: false,
+                mouseZoom: true,
+                keyboardZoom: true,
+                // Prevent sudden movements and zooms
+                transition: false,
+                orientationOnByDefault: false,
+                // Disable auto-zoom behaviors
+                autoRotateInactivityDelay: -1,
+                autoRotateStopDelay: -1,
                 onLoad: function() {
                     console.log('Pannellum viewer loaded successfully with hotspots:', pannellumHotspots);
+                    // Update hotspots count after viewer loads
+                    document.getElementById('scenePreviewHotspots').textContent = `${pannellumHotspots.length} Hotspots`;
                 },
                 onError: function(error) {
                     console.error('Pannellum viewer error:', error);
@@ -1353,7 +1783,7 @@
                     `Pitch: ${currentPitch}°, Yaw: ${currentYaw}°`;
             });
 
-            // Listen for mouse clicks when in hotspot mode
+            // Listen for mouse clicks when in hotspot mode or move mode
             viewer.on('mousedown', function(event) {
                 if (hotspotMode) {
                     const pitch = viewer.getPitch();
@@ -1372,11 +1802,88 @@
                     
                     // Load available scenes for linking
                     loadAvailableScenes();
+                } else if (hotspotMoveMode) {
+                    // Handle hotspot positioning during move mode
+                    const pitch = viewer.getPitch();
+                    const yaw = viewer.getYaw();
+                    
+                    console.log('Hotspot position set during move mode:', { pitch, yaw });
+                    
+                    // Update the form fields with new position
+                    document.getElementById('editHotspotPitch').value = Math.round(pitch * 100) / 100;
+                    document.getElementById('editHotspotYaw').value = Math.round(yaw * 100) / 100;
+                    
+                    // Show visual feedback that position was captured
+                    const confirmBtn = document.querySelector('#confirmPositionBtn');
+                    if (confirmBtn) {
+                        confirmBtn.innerHTML = '<i class="fas fa-check"></i> Position Set!';
+                        confirmBtn.style.background = '#28a745';
+                        setTimeout(() => {
+                            confirmBtn.innerHTML = '<i class="fas fa-check"></i>';
+                            confirmBtn.style.background = '';
+                        }, 1000);
+                    }
                 }
             });
         }
 
-        // Navigate to target scene when hotspot is clicked
+        // Navigate to target scene smoothly without sudden movements
+        async function navigateToSceneSmoothly(targetSceneId) {
+            try {
+                console.log('Smoothly navigating to scene:', targetSceneId);
+                
+                // Fetch scenes data to find the target scene
+                const locationId = getLocationIdFromUrl();
+                console.log('Location ID:', locationId);
+                
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                console.log('Available scenes:', scenes);
+                
+                // Find the target scene in the scenes list
+                const targetScene = scenes.find(scene => scene.id == targetSceneId);
+                if (!targetScene) {
+                    console.error('Target scene not found:', targetSceneId);
+                    console.error('Available scene IDs:', scenes.map(s => s.id));
+                    return;
+                }
+                
+                console.log('Found target scene:', targetScene);
+
+                // Update current scene
+                currentScene = targetScene;
+
+                // Load hotspots for the new scene
+                await loadSceneHotspots(targetSceneId);
+
+                // Update scene preview info
+                document.getElementById('scenePreviewTitle').textContent = targetScene.scene_name;
+                document.getElementById('scenePreviewTitleOverlay').textContent = targetScene.scene_name;
+                document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+
+                // Reinitialize the viewer with the new scene
+                console.log('Reinitializing viewer with new scene');
+                initializePannellumViewer(targetScene);
+
+                // Update scene tiles to show active scene
+                // Note: loadScenes() removed to avoid DOM errors during navigation
+
+                console.log('Smooth navigation completed to scene:', targetSceneId);
+
+            } catch (error) {
+                console.error('Error in smooth scene navigation:', error);
+            }
+        }
+
+        // Navigate to target scene when hotspot is clicked (legacy function)
         async function navigateToScene(targetSceneId) {
             try {
                 // Get all scenes to find the target scene
@@ -1397,6 +1904,21 @@
                 if (targetScene) {
                     // Preview the target scene
                     await previewScene(targetScene);
+                    
+                    // If scenes panel is closed, open it to show the navigation
+                    const panel = document.getElementById('scenesPanel');
+                    const container = document.querySelector('.main-container');
+                    const scenesBtn = document.getElementById('scenesBtn');
+                    const locationsBtn = document.getElementById('locationsBtn');
+                    
+                    if (!panel.classList.contains('open')) {
+                        panel.classList.add('open');
+                        container.classList.add('scenes-open');
+                        scenesBtn.classList.remove('btn-outline-secondary');
+                        scenesBtn.classList.add('btn-primary');
+                        locationsBtn.classList.remove('btn-outline-primary');
+                        locationsBtn.classList.add('btn-outline-secondary');
+                    }
                 } else {
                     alert('Target scene not found');
                 }
@@ -1451,13 +1973,501 @@
         }
 
         // Scene management functions
-        function editScene(sceneId) {
-            alert(`Edit scene functionality for scene ID: ${sceneId}`);
+        async function editScene(sceneId) {
+            try {
+                // Find the scene data
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                const scene = scenes.find(s => s.id == sceneId);
+
+                if (!scene) {
+                    alert('Scene not found');
+                    return;
+                }
+
+                // Populate the edit form
+                document.getElementById('editSceneId').value = scene.id;
+                document.getElementById('editSceneName').value = scene.scene_name;
+                document.getElementById('editScenePitch').value = scene.pitch || 0;
+                document.getElementById('editSceneYaw').value = scene.yaw || 0;
+                
+                // Show current image info
+                if (scene.image_path) {
+                    document.getElementById('currentImageName').textContent = scene.image_path;
+                    document.getElementById('currentImageInfo').style.display = 'block';
+                } else {
+                    document.getElementById('currentImageInfo').style.display = 'none';
+                }
+
+                // Clear the file input
+                document.getElementById('editSceneImage').value = '';
+
+                // Load hotspots for this scene
+                await loadEditSceneHotspots(sceneId);
+                
+                // Initialize the 360° viewer in edit modal if image exists
+                if (scene.image_path) {
+                    initializeEditPannellumViewer(scene);
+                    document.getElementById('editViewerSection').style.display = 'block';
+                } else {
+                    document.getElementById('editViewerSection').style.display = 'none';
+                }
+
+                // Display hotspots list
+                displayEditHotspots();
+
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('editSceneModal'));
+                modal.show();
+
+                // Reset hotspot mode when modal is closed
+                document.getElementById('editSceneModal').addEventListener('hidden.bs.modal', function() {
+                    editHotspotMode = false;
+                    if (editViewer) {
+                        const container = document.getElementById('editPannellumViewer');
+                        container.style.cursor = 'grab';
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading scene for edit:', error);
+                alert('Failed to load scene data for editing');
+            }
         }
 
-        function deleteScene(sceneId) {
-            if (confirm('Are you sure you want to delete this scene?')) {
-                alert(`Delete scene functionality for scene ID: ${sceneId}`);
+        // Update scene
+        async function updateScene() {
+            const sceneId = document.getElementById('editSceneId').value;
+            const sceneName = document.getElementById('editSceneName').value.trim();
+            const sceneImage = document.getElementById('editSceneImage').files[0];
+            const pitch = parseFloat(document.getElementById('editScenePitch').value) || 0;
+            const yaw = parseFloat(document.getElementById('editSceneYaw').value) || 0;
+
+            if (!sceneName) {
+                alert('Please enter a scene name');
+                return;
+            }
+
+            try {
+                // Prevent any URL changes during the operation
+                const currentUrl = window.location.href;
+                
+                const formData = new FormData();
+                formData.append('scene_id', sceneId);
+                formData.append('scene_name', sceneName);
+                formData.append('pitch', pitch);
+                formData.append('yaw', yaw);
+                
+                // Only append image if a new one is selected
+                if (sceneImage) {
+                    formData.append('image', sceneImage);
+                }
+
+                const response = await fetch(`/crm/virtual-tour/scenes/${sceneId}`, {
+                    method: 'PUT',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to update scene');
+                }
+
+                const result = await response.json();
+                console.log('Scene update response:', result);
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editSceneModal'));
+                modal.hide();
+
+                // Reset form
+                document.getElementById('editSceneForm').reset();
+
+                // Show success message
+                alert('Scene updated successfully!');
+
+                // Refresh scenes list
+                await loadScenes();
+
+                // If this was the currently previewed scene, update the preview
+                if (currentScene && currentScene.id == sceneId) {
+                    try {
+                        // Update the current scene data from the form
+                        const updatedScene = {
+                            id: sceneId,
+                            scene_name: document.getElementById('editSceneName').value,
+                            pitch: parseFloat(document.getElementById('editScenePitch').value) || 0,
+                            yaw: parseFloat(document.getElementById('editSceneYaw').value) || 0,
+                            image_path: document.getElementById('currentImageName').textContent,
+                            created_at: currentScene.created_at // Keep original date
+                        };
+                        
+                        // Update the current scene reference
+                        currentScene = updatedScene;
+                        
+                        // Reload hotspots and reinitialize the main viewer
+                        await loadSceneHotspots(sceneId);
+                        initializePannellumViewer(updatedScene);
+                        
+                        // Update the scene preview info
+                        document.getElementById('scenePreviewTitle').textContent = updatedScene.scene_name;
+                        document.getElementById('scenePreviewTitleOverlay').textContent = updatedScene.scene_name;
+                        document.getElementById('scenePreviewAngles').textContent = `Pitch: ${updatedScene.pitch}°, Yaw: ${updatedScene.yaw}°`;
+                        document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+                        
+                    } catch (error) {
+                        console.error('Error updating main viewer after scene update:', error);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error updating scene:', error);
+                alert(`Failed to update scene: ${error.message}`);
+                
+                // Ensure URL stays the same even if there's an error
+                if (window.location.href !== currentUrl) {
+                    window.history.replaceState(null, null, currentUrl);
+                }
+            }
+        }
+
+        async function deleteScene(sceneId) {
+            if (confirm('Are you sure you want to delete this scene? This will also delete all associated hotspots and cannot be undone.')) {
+                try {
+                    // Prevent any URL changes during the operation
+                    const currentUrl = window.location.href;
+                    
+                    const response = await fetch(`/crm/virtual-tour/scenes/${sceneId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || 'Failed to delete scene');
+                    }
+
+                    const result = await response.json();
+                    console.log('Scene deletion response:', result);
+
+                    // Show success message
+                    alert('Scene deleted successfully!');
+
+                    // Refresh scenes list
+                    await loadScenes();
+
+                    // If this was the currently previewed scene, clear the preview
+                    if (currentScene && currentScene.id == sceneId) {
+                        // Clear the preview
+                        const nothingPreview = document.getElementById('nothingPreview');
+                        const scenePreview = document.getElementById('scenePreview');
+                        
+                        nothingPreview.style.display = 'block';
+                        scenePreview.classList.remove('active');
+                        
+                        // Destroy the viewer
+                        if (viewer) {
+                            viewer.destroy();
+                            viewer = null;
+                        }
+                        
+                        currentScene = null;
+                        sceneHotspots = [];
+                    }
+
+                } catch (error) {
+                    console.error('Error deleting scene:', error);
+                    alert(`Failed to delete scene: ${error.message}`);
+                    
+                    // Ensure URL stays the same even if there's an error
+                    if (window.location.href !== currentUrl) {
+                        window.history.replaceState(null, null, currentUrl);
+                    }
+                }
+            }
+        }
+
+        // Edit Modal Hotspot Functions
+        async function loadEditSceneHotspots(sceneId) {
+            try {
+                const response = await fetch(`/crm/virtual-tour/hotspots/${sceneId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    console.log('Failed to load hotspots for edit modal, using empty array');
+                    editSceneHotspots = [];
+                    return;
+                }
+
+                const data = await response.json();
+                editSceneHotspots = data.hotspots || [];
+                console.log('Loaded hotspots for edit modal:', editSceneHotspots);
+            } catch (error) {
+                console.error('Error loading hotspots for edit modal:', error);
+                editSceneHotspots = [];
+                // Don't show any error messages - just use empty array
+            }
+        }
+
+        function initializeEditPannellumViewer(scene) {
+            // Destroy existing viewer if it exists
+            if (editViewer) {
+                editViewer.destroy();
+            }
+
+            // Convert hotspots to Pannellum format
+            const pannellumHotspots = editSceneHotspots.map(hotspot => {
+                const hotspotConfig = {
+                    pitch: hotspot.pitch,
+                    yaw: hotspot.yaw,
+                    type: 'info',
+                    text: hotspot.tooltip,
+                    cssClass: 'custom-hotspot',
+                    clickHandlerFunc: function() {
+                        if (hotspot.type === 'link' && hotspot.target_scene_id) {
+                            alert(`This hotspot links to scene ID: ${hotspot.target_scene_id}`);
+                        } else if (hotspot.type === 'info') {
+                            alert(hotspot.info_text || hotspot.tooltip);
+                        }
+                    }
+                };
+
+                return hotspotConfig;
+            });
+
+            editViewer = pannellum.viewer('editPannellumViewer', {
+                type: 'equirectangular',
+                panorama: `/uploads/virtual_scenes/${scene.image_path}`,
+                autoLoad: true,
+                autoRotate: 0,
+                compass: true,
+                northOffset: 0,
+                showControls: false,
+                hfov: 100,
+                minHfov: 50,
+                maxHfov: 120,
+                pitch: scene.pitch || 0,
+                yaw: scene.yaw || 0,
+                hotSpots: pannellumHotspots,
+                // Stable view settings
+                doubleClickZoom: false,
+                mouseZoom: true,
+                keyboardZoom: true,
+                // Prevent sudden movements and zooms
+                transition: false,
+                orientationOnByDefault: false,
+                // Disable auto-zoom behaviors
+                autoRotateInactivityDelay: -1,
+                autoRotateStopDelay: -1,
+                onLoad: function() {
+                    console.log('Edit Pannellum viewer loaded successfully');
+                },
+                onError: function(error) {
+                    console.error('Edit Pannellum viewer error:', error);
+                }
+            });
+
+            // Add event listeners for edit modal controls
+            document.getElementById('editResetViewBtn').onclick = function() {
+                editViewer.setPitch(scene.pitch || 0);
+                editViewer.setYaw(scene.yaw || 0);
+                editViewer.setHfov(100);
+            };
+
+            document.getElementById('editFullscreenBtn').onclick = function() {
+                editViewer.toggleFullscreen();
+            };
+
+            // Listen for clicks to position hotspots
+            editViewer.on('mousedown', function(event) {
+                if (editHotspotMode) {
+                    const pitch = editViewer.getPitch();
+                    const yaw = editViewer.getYaw();
+                    
+                    // Set hotspot position for the add hotspot modal
+                    document.getElementById('hotspotPitch').value = Math.round(pitch * 100) / 100;
+                    document.getElementById('hotspotYaw').value = Math.round(yaw * 100) / 100;
+                    
+                    // Show the add hotspot modal
+                    showAddHotspotInEditModal();
+                }
+            });
+        }
+
+        function displayEditHotspots() {
+            const container = document.getElementById('editHotspotsList');
+            
+            if (editSceneHotspots.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-crosshairs fa-2x mb-2"></i>
+                        <p class="mb-0">No hotspots added yet</p>
+                        <small>Click "Add Hotspot" to create interactive points</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let hotspotsHtml = '';
+            editSceneHotspots.forEach((hotspot, index) => {
+                hotspotsHtml += `
+                    <div class="hotspot-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-${hotspot.type === 'link' ? 'link' : 'info-circle'} text-primary me-2"></i>
+                                    <strong>${hotspot.tooltip}</strong>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Position:</small><br>
+                                        <span class="badge bg-secondary">Pitch: ${Math.round(hotspot.pitch)}°</span>
+                                        <span class="badge bg-secondary ms-1">Yaw: ${Math.round(hotspot.yaw)}°</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Type:</small><br>
+                                        <span class="badge bg-${hotspot.type === 'link' ? 'success' : 'info'}">${hotspot.type}</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Actions:</small><br>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEditHotspot(${hotspot.id})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = hotspotsHtml;
+        }
+
+        function showAddHotspotInEditModal() {
+            // Enable hotspot mode
+            editHotspotMode = true;
+            
+            // Change cursor to indicate hotspot mode
+            if (editViewer) {
+                const container = document.getElementById('editPannellumViewer');
+                container.style.cursor = 'crosshair';
+            }
+            
+            // Show the add hotspot modal
+            const modal = new bootstrap.Modal(document.getElementById('addHotspotModal'));
+            modal.show();
+        }
+
+        async function deleteEditHotspot(hotspotId) {
+            if (confirm('Are you sure you want to delete this hotspot?')) {
+                try {
+                    // Start URL protection
+                    startUrlProtection();
+                    
+                    const response = await fetch(`/crm/virtual-tour/hotspots/${hotspotId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to delete hotspot');
+                    }
+
+                    // Remove from local array
+                    editSceneHotspots = editSceneHotspots.filter(h => h.id !== hotspotId);
+                    
+                    // Refresh display in edit modal only
+                    displayEditHotspots();
+                    
+                    // Reinitialize viewer with updated hotspots - use existing data only
+                    const sceneId = document.getElementById('editSceneId').value;
+                    if (sceneId && editViewer) {
+                        try {
+                            // Get the current scene data from the form (no API calls)
+                            const sceneName = document.getElementById('editSceneName').value;
+                            const scenePitch = parseFloat(document.getElementById('editScenePitch').value) || 0;
+                            const sceneYaw = parseFloat(document.getElementById('editSceneYaw').value) || 0;
+                            
+                            // Get the image path from the current scene info
+                            const currentImageName = document.getElementById('currentImageName').textContent;
+                            
+                            if (sceneName && currentImageName) {
+                                // Create scene object for reinitialization
+                                const scene = {
+                                    id: sceneId,
+                                    scene_name: sceneName,
+                                    pitch: scenePitch,
+                                    yaw: sceneYaw,
+                                    image_path: currentImageName
+                                };
+                                
+                                initializeEditPannellumViewer(scene);
+                            }
+                        } catch (error) {
+                            console.error('Error reinitializing edit viewer:', error);
+                        }
+                    }
+
+                    alert('Hotspot deleted successfully!');
+                    
+                    // Update the main preview viewer if it's showing the same scene
+                    if (currentScene && currentScene.id == sceneId && viewer) {
+                        try {
+                            // Add a small delay to ensure the deletion is complete in the database
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            
+                            // Reload hotspots for the main viewer
+                            await loadSceneHotspots(sceneId);
+                            console.log('Reloaded hotspots after deletion:', sceneHotspots);
+                            
+                            // Reinitialize the main viewer with updated hotspots
+                            const scene = {
+                                id: sceneId,
+                                scene_name: document.getElementById('editSceneName').value,
+                                pitch: parseFloat(document.getElementById('editScenePitch').value) || 0,
+                                yaw: parseFloat(document.getElementById('editSceneYaw').value) || 0,
+                                image_path: document.getElementById('currentImageName').textContent
+                            };
+                            
+                            initializePannellumViewer(scene);
+                            
+                            // Update the scene preview info with new hotspot count
+                            document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+                            
+                            // Update the scene tile hotspots display
+                            await updateSceneTileHotspots(sceneId);
+                        } catch (error) {
+                            console.error('Error updating main viewer after hotspot deletion:', error);
+                        }
+                    }
+                    
+                    // Stop URL protection after a delay to ensure all operations complete
+                    setTimeout(() => {
+                        stopUrlProtection();
+                    }, 2000);
+                    
+                    // DO NOT refresh the main page scenes or trigger any page reloads
+                    // The edit modal should remain open and functional
+                    
+                } catch (error) {
+                    console.error('Error deleting hotspot:', error);
+                    alert('Failed to delete hotspot');
+                    
+                    // Stop URL protection even if there's an error
+                    stopUrlProtection();
+                }
             }
         }
 
@@ -1502,6 +2512,10 @@
             if (type === 'link') {
                 linkOptions.style.display = 'block';
                 infoOptions.style.display = 'none';
+                
+                // Set default to existing scenes and load them
+                document.getElementById('existingSceneOption').checked = true;
+                handleTargetSceneOptionChange();
             } else if (type === 'info') {
                 linkOptions.style.display = 'none';
                 infoOptions.style.display = 'block';
@@ -1511,14 +2525,73 @@
             }
         }
 
-        // Load available scenes for linking (no longer needed for file upload)
+        // Load available scenes for linking
         async function loadAvailableScenes() {
-            // This function is no longer needed since we're using file upload
-            // Keeping it for compatibility but it does nothing
+            try {
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                
+                // Get current scene ID to exclude it from the dropdown
+                const currentSceneId = currentScene ? currentScene.id : null;
+                
+                // Filter out the current scene from the dropdown
+                const availableScenes = scenes.filter(scene => scene.id != currentSceneId);
+                
+                const select = document.getElementById('targetSceneSelect');
+                select.innerHTML = '';
+                
+                if (availableScenes.length === 0) {
+                    select.innerHTML = '<option value="">No other scenes available</option>';
+                } else {
+                    select.innerHTML = '<option value="">Select a scene...</option>';
+                    availableScenes.forEach(scene => {
+                        const option = document.createElement('option');
+                        option.value = scene.id;
+                        option.textContent = scene.scene_name;
+                        select.appendChild(option);
+                    });
+                }
+                
+                console.log('Loaded available scenes for linking:', availableScenes);
+            } catch (error) {
+                console.error('Error loading available scenes:', error);
+                const select = document.getElementById('targetSceneSelect');
+                select.innerHTML = '<option value="">Error loading scenes</option>';
+            }
+        }
+
+        // Handle radio button changes for target scene options
+        function handleTargetSceneOptionChange() {
+            const existingOption = document.getElementById('existingSceneOption');
+            const newOption = document.getElementById('newSceneOption');
+            const existingSection = document.getElementById('existingSceneSection');
+            const newSection = document.getElementById('newSceneSection');
+            
+            if (existingOption.checked) {
+                existingSection.style.display = 'block';
+                newSection.style.display = 'none';
+                loadAvailableScenes();
+            } else if (newOption.checked) {
+                existingSection.style.display = 'none';
+                newSection.style.display = 'block';
+            }
         }
 
         // Save hotspot
         async function saveHotspot() {
+            if (isSavingHotspot) return; // guard: prevent double submit
+            isSavingHotspot = true;
+            const saveBtn = document.querySelector('#addHotspotModal .btn.btn-primary');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
             const type = document.getElementById('hotspotType').value;
             const tooltip = document.getElementById('hotspotTooltip').value.trim();
             const pitch = document.getElementById('hotspotPitch').value;
@@ -1530,17 +2603,28 @@
             }
             
             if (type === 'link') {
+                const existingOption = document.getElementById('existingSceneOption').checked;
+                const newOption = document.getElementById('newSceneOption').checked;
+                
+                if (existingOption) {
+                    const targetSceneId = document.getElementById('targetSceneSelect').value;
+                    if (!targetSceneId) {
+                        alert('Please select a target scene from the dropdown');
+                        return;
+                    }
+                } else if (newOption) {
                 const targetSceneName = document.getElementById('targetSceneName').value.trim();
                 const targetSceneImage = document.getElementById('targetSceneImage').files[0];
                 
                 if (!targetSceneName) {
-                    alert('Please enter a scene name for the target scene');
+                        alert('Please enter a scene name for the new scene');
                     return;
                 }
                 
                 if (!targetSceneImage) {
-                    alert('Please upload a target scene image for the link');
+                        alert('Please upload a 360° image for the new scene');
                     return;
+                    }
                 }
             }
             
@@ -1553,10 +2637,21 @@
             }
 
             try {
+                // Prevent any URL changes during the operation
+                const currentUrl = window.location.href;
+                
                 let targetSceneId = null;
                 
-                // If it's a link hotspot, first create the target scene
+                // If it's a link hotspot, handle target scene
                 if (type === 'link') {
+                    const existingOption = document.getElementById('existingSceneOption').checked;
+                    
+                    if (existingOption) {
+                        // Use existing scene
+                        targetSceneId = document.getElementById('targetSceneSelect').value;
+                        console.log('Using existing scene ID:', targetSceneId);
+                    } else {
+                        // Create new scene
                     const targetSceneImage = document.getElementById('targetSceneImage').files[0];
                     const targetSceneName = document.getElementById('targetSceneName').value.trim();
                     
@@ -1582,6 +2677,7 @@
                     const sceneResult = await sceneResponse.json();
                     console.log('Scene creation response:', sceneResult);
                     targetSceneId = sceneResult.id;
+                    }
                 }
 
                 // Now create the hotspot
@@ -1638,14 +2734,107 @@
                 }
 
                 // Show success message
-                alert('Hotspot and target scene created successfully!');
+                if (type === 'link') {
+                    const existingOption = document.getElementById('existingSceneOption').checked;
+                    if (existingOption) {
+                        alert('Hotspot linked to existing scene successfully!');
+                    } else {
+                        alert('Hotspot and new target scene created successfully!');
+                    }
+                } else {
+                    alert('Information hotspot created successfully!');
+                }
                 
-                // Reload scenes to show updated hotspots
+                // Check if we're in edit modal first
+                const isInEditModal = document.getElementById('editSceneModal').classList.contains('show');
+                
+                if (isInEditModal) {
+                    // If we're in edit modal, refresh edit modal content AND main viewer
+                    const sceneId = document.getElementById('editSceneId').value;
+                    if (sceneId) {
+                        try {
+                            await loadEditSceneHotspots(sceneId);
+                            displayEditHotspots();
+                            
+                            // Reinitialize edit viewer using current form data instead of fetching
+                            const sceneName = document.getElementById('editSceneName').value;
+                            const scenePitch = parseFloat(document.getElementById('editScenePitch').value) || 0;
+                            const sceneYaw = parseFloat(document.getElementById('editSceneYaw').value) || 0;
+                            const currentImageName = document.getElementById('currentImageName').textContent;
+                            
+                            if (sceneName && currentImageName) {
+                                const scene = {
+                                    id: sceneId,
+                                    scene_name: sceneName,
+                                    pitch: scenePitch,
+                                    yaw: sceneYaw,
+                                    image_path: currentImageName
+                                };
+                                initializeEditPannellumViewer(scene);
+                                
+                                // Also update the main preview viewer if it's showing the same scene
+                                if (currentScene && currentScene.id == sceneId && viewer) {
+                                    try {
+                                        // Reload hotspots for the main viewer
+                                        await loadSceneHotspots(sceneId);
+                                        initializePannellumViewer(scene);
+                                        
+                                        // Update the scene tile hotspots display
+                                        await updateSceneTileHotspots(sceneId);
+                                    } catch (error) {
+                                        console.error('Error updating main viewer after hotspot creation:', error);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error refreshing edit modal after hotspot creation:', error);
+                        }
+                    }
+                } else {
+                    // If we're NOT in edit modal, we're creating hotspot from main viewer
+                    // Update the main viewer with the new hotspot
+                    if (currentScene && viewer) {
+                        try {
+                            // Add a small delay to ensure the hotspot is saved in the database
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            
+                            // Reload hotspots for the main viewer
+                            await loadSceneHotspots(currentScene.id);
+                            console.log('Reloaded hotspots after creation:', sceneHotspots);
+                            
+                            // Reinitialize the main viewer with updated hotspots
+                            initializePannellumViewer(currentScene);
+                            
+                            // Update the scene preview info with new hotspot count
+                            document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+                            
+                            // Update the scene tile hotspots display
+                            await updateSceneTileHotspots(currentScene.id);
+                        } catch (error) {
+                            console.error('Error updating main viewer after hotspot creation:', error);
+                        }
+                    }
+                    
+                    // Also reload main page scenes to update the scene tiles
                 await loadScenes();
+                }
+                
+                // Ensure URL stays the same after the operation
+                if (window.location.href !== currentUrl) {
+                    window.history.replaceState(null, null, currentUrl);
+                }
                 
             } catch (error) {
                 console.error('Error saving hotspot:', error);
                 alert(`Failed to save hotspot: ${error.message}`);
+                
+                // Ensure URL stays the same even if there's an error
+                if (window.location.href !== currentUrl) {
+                    window.history.replaceState(null, null, currentUrl);
+                }
+            } finally {
+                isSavingHotspot = false;
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Hotspot'; }
             }
         }
 
@@ -1658,10 +2847,406 @@
             }
         });
 
+        // Hotspot Editing Variables
+        let editingHotspot = null;
+        let hotspotMoveMode = false;
+        let draggedHotspot = null;
+
+        // Edit hotspot from scene tile
+        async function editHotspot(hotspotId) {
+            try {
+                // Find the hotspot data
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                
+                // Find the hotspot in any scene
+                let hotspotData = null;
+                for (const scene of scenes) {
+                    const hotspotsResponse = await fetch(`/crm/virtual-tour/hotspots/${scene.id}`, {
+                        credentials: 'include'
+                    });
+                    if (hotspotsResponse.ok) {
+                        const hotspotsData = await hotspotsResponse.json();
+                        const hotspot = hotspotsData.hotspots.find(h => h.id == hotspotId);
+                        if (hotspot) {
+                            hotspotData = hotspot;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hotspotData) {
+                    alert('Hotspot not found');
+                    return;
+                }
+
+                editingHotspot = hotspotData;
+
+                // Populate the edit form
+                document.getElementById('editHotspotId').value = hotspotData.id;
+                document.getElementById('editHotspotType').value = hotspotData.type;
+                document.getElementById('editHotspotTooltip').value = hotspotData.tooltip;
+                document.getElementById('editHotspotPitch').value = hotspotData.pitch;
+                document.getElementById('editHotspotYaw').value = hotspotData.yaw;
+
+                // Handle type-specific fields
+                if (hotspotData.type === 'link') {
+                    document.getElementById('editTargetSceneSelect').value = hotspotData.target_scene_id || '';
+                } else if (hotspotData.type === 'info') {
+                    document.getElementById('editInfoText').value = hotspotData.info_text || '';
+                }
+
+                // Toggle appropriate options
+                toggleEditHotspotOptions();
+
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('editHotspotModal'));
+                modal.show();
+
+                // Load available scenes for linking
+                if (hotspotData.type === 'link') {
+                    loadAvailableScenesForEdit();
+                }
+
+            } catch (error) {
+                console.error('Error loading hotspot for edit:', error);
+                alert('Failed to load hotspot data for editing');
+            }
+        }
+
+        // Delete current editing hotspot
+        function deleteCurrentEditingHotspot() {
+            if (editingHotspot && editingHotspot.id) {
+                deleteHotspotFromTile(editingHotspot.id);
+            } else {
+                alert('No hotspot selected for deletion');
+            }
+        }
+
+        // Delete hotspot from scene tile
+        async function deleteHotspotFromTile(hotspotId) {
+            if (confirm('Are you sure you want to delete this hotspot?')) {
+                try {
+                    // Start URL protection
+                    startUrlProtection();
+                    
+                    const response = await fetch(`/crm/virtual-tour/hotspots/${hotspotId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to delete hotspot');
+                    }
+
+                    alert('Hotspot deleted successfully!');
+
+                    // Update the main preview viewer if it's showing the same scene
+                    if (currentScene && viewer) {
+                        try {
+                            // Add a small delay to ensure the deletion is complete in the database
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            
+                            // Reload hotspots for the main viewer
+                            await loadSceneHotspots(currentScene.id);
+                            console.log('Reloaded hotspots after deletion:', sceneHotspots);
+                            
+                            // Reinitialize the main viewer with updated hotspots
+                            initializePannellumViewer(currentScene);
+                            
+                            // Update the scene preview info with new hotspot count
+                            document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+                            
+                            // Update the scene tile hotspots display
+                            await updateSceneTileHotspots(currentScene.id);
+                        } catch (error) {
+                            console.error('Error updating main viewer after hotspot deletion:', error);
+                        }
+                    }
+
+                    // Stop URL protection after a delay
+                    setTimeout(() => {
+                        stopUrlProtection();
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('Error deleting hotspot:', error);
+                    alert('Failed to delete hotspot');
+                    stopUrlProtection();
+                }
+            }
+        }
+
+        // Toggle edit hotspot options based on type
+        function toggleEditHotspotOptions() {
+            const type = document.getElementById('editHotspotType').value;
+            const linkOptions = document.getElementById('editLinkOptions');
+            const infoOptions = document.getElementById('editInfoOptions');
+            
+            if (type === 'link') {
+                linkOptions.style.display = 'block';
+                infoOptions.style.display = 'none';
+            } else if (type === 'info') {
+                linkOptions.style.display = 'none';
+                infoOptions.style.display = 'block';
+            } else {
+                linkOptions.style.display = 'none';
+                infoOptions.style.display = 'none';
+            }
+        }
+
+        // Load available scenes for edit modal
+        async function loadAvailableScenesForEdit() {
+            try {
+                const locationId = getLocationIdFromUrl();
+                const response = await fetch(`/crm/virtual-tour/scenes/${locationId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load scenes');
+                }
+
+                const data = await response.json();
+                const scenes = data.scenes || [];
+                
+                const select = document.getElementById('editTargetSceneSelect');
+                select.innerHTML = '';
+                
+                if (scenes.length === 0) {
+                    select.innerHTML = '<option value="">No scenes available</option>';
+                } else {
+                    select.innerHTML = '<option value="">Select a scene...</option>';
+                    scenes.forEach(scene => {
+                        const option = document.createElement('option');
+                        option.value = scene.id;
+                        option.textContent = scene.scene_name;
+                        select.appendChild(option);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error loading available scenes for edit:', error);
+                const select = document.getElementById('editTargetSceneSelect');
+                select.innerHTML = '<option value="">Error loading scenes</option>';
+            }
+        }
+
+        // Enter move hotspot mode
+        function enterMoveHotspotMode() {
+            if (!editingHotspot || !currentScene) {
+                alert('Please select a scene first');
+                return;
+            }
+
+            // Hide the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editHotspotModal'));
+            modal.hide();
+
+            // Enable hotspot move mode
+            hotspotMoveMode = true;
+            
+            // Change cursor to indicate move mode
+            if (viewer) {
+                const container = document.getElementById('pannellum-viewer');
+                container.style.cursor = 'crosshair';
+            }
+
+            // Reinitialize the viewer to disable hotspot interactions
+            initializePannellumViewer(currentScene);
+
+            // Show move instructions
+            alert('Move mode enabled! Click anywhere on the 360° image to position the hotspot. Hotspot navigation is disabled. Click "Confirm Position" when done.');
+
+            // Add a confirm button to the scene preview controls
+            addConfirmPositionButton();
+        }
+
+        // Add confirm position button
+        function addConfirmPositionButton() {
+            const controls = document.querySelector('.scene-preview-controls');
+            if (!controls.querySelector('#confirmPositionBtn')) {
+                const confirmBtn = document.createElement('button');
+                confirmBtn.id = 'confirmPositionBtn';
+                confirmBtn.innerHTML = '<i class="fas fa-check"></i>';
+                confirmBtn.title = 'Confirm Position';
+                confirmBtn.className = 'btn btn-success btn-sm';
+                confirmBtn.style.marginLeft = '10px';
+                confirmBtn.onclick = confirmHotspotPosition;
+                controls.appendChild(confirmBtn);
+            }
+        }
+
+        // Confirm hotspot position
+        async function confirmHotspotPosition() {
+            if (!hotspotMoveMode || !editingHotspot) {
+                return;
+            }
+
+            try {
+                // Get the new position from the form fields
+                const newPitch = document.getElementById('editHotspotPitch').value;
+                const newYaw = document.getElementById('editHotspotYaw').value;
+
+                if (!newPitch || !newYaw) {
+                    alert('Please set a position by clicking on the 360° image');
+                    return;
+                }
+
+                // Start URL protection
+                startUrlProtection();
+
+                // Prepare update data with ONLY position coordinates
+                const updateData = {
+                    pitch: parseFloat(newPitch),
+                    yaw: parseFloat(newYaw)
+                };
+
+                // Update ONLY the hotspot position coordinates
+                const updateResponse = await fetch(`/crm/virtual-tour/hotspots/${editingHotspot.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData),
+                    credentials: 'include'
+                });
+
+                if (!updateResponse.ok) {
+                    throw new Error('Failed to update hotspot position');
+                }
+
+                // Exit move mode
+                exitMoveHotspotMode();
+
+                // Show success message
+                alert('Hotspot position updated successfully!');
+
+                // Update the main viewer immediately
+                if (currentScene && viewer) {
+                    try {
+                        await loadSceneHotspots(currentScene.id);
+                        initializePannellumViewer(currentScene);
+                        document.getElementById('scenePreviewHotspots').textContent = `${sceneHotspots.length} Hotspots`;
+                        await updateSceneTileHotspots(currentScene.id);
+                    } catch (error) {
+                        console.error('Error updating main viewer after position update:', error);
+                    }
+                }
+
+                // Close the edit modal since position is already updated
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editHotspotModal'));
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Reset form
+                document.getElementById('editHotspotForm').reset();
+
+                // Stop URL protection
+                setTimeout(() => {
+                    stopUrlProtection();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error updating hotspot position:', error);
+                alert(`Failed to update hotspot position: ${error.message}`);
+                stopUrlProtection();
+            }
+        }
+
+        // Exit move hotspot mode
+        function exitMoveHotspotMode() {
+            hotspotMoveMode = false;
+            
+            // Reset cursor
+            if (viewer) {
+                const container = document.getElementById('pannellum-viewer');
+                container.style.cursor = 'grab';
+            }
+
+            // Reinitialize the viewer to re-enable hotspot interactions
+            if (currentScene) {
+                initializePannellumViewer(currentScene);
+            }
+
+            // Remove confirm button
+            const confirmBtn = document.querySelector('#confirmPositionBtn');
+            if (confirmBtn) {
+                confirmBtn.remove();
+            }
+        }
+
+
+        // URL Protection System
+        let urlProtectionActive = false;
+        let protectedUrl = null;
+        
+        function startUrlProtection() {
+            urlProtectionActive = true;
+            protectedUrl = window.location.href;
+            console.log('URL protection started for:', protectedUrl);
+        }
+        
+        function stopUrlProtection() {
+            urlProtectionActive = false;
+            protectedUrl = null;
+            console.log('URL protection stopped');
+        }
+        
+        function restoreProtectedUrl() {
+            if (urlProtectionActive && protectedUrl && window.location.href !== protectedUrl) {
+                console.log('Restoring URL from', window.location.href, 'to', protectedUrl);
+                window.history.replaceState(null, null, protectedUrl);
+            }
+        }
+        
+        // Monitor URL changes
+        let lastUrl = window.location.href;
+        setInterval(function() {
+            if (urlProtectionActive && window.location.href !== lastUrl) {
+                console.log('URL changed from', lastUrl, 'to', window.location.href);
+                restoreProtectedUrl();
+            }
+            lastUrl = window.location.href;
+        }, 100);
+
+        // Prevent any form submissions that might cause redirects
+        document.addEventListener('submit', function(event) {
+            if (urlProtectionActive) {
+                console.log('Preventing form submission to protect URL');
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        });
+        
+        // Prevent any navigation events
+        window.addEventListener('beforeunload', function(event) {
+            if (urlProtectionActive) {
+                console.log('Preventing page unload to protect URL');
+                event.preventDefault();
+                return false;
+            }
+        });
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             loadLocationDetail();
-            loadScenes(); // Load scenes when page loads
+            
+            // Load scenes after location detail is loaded
+            setTimeout(() => {
+                loadScenes();
+            }, 100);
             
             // Add event listeners for header buttons
             document.getElementById('locationsBtn').addEventListener('click', function() {
@@ -1684,7 +3269,12 @@
             });
             
             document.getElementById('scenesBtn').addEventListener('click', toggleScenesPanel);
+            
+            // Add event listeners for hotspot modal radio buttons
+            document.getElementById('existingSceneOption').addEventListener('change', handleTargetSceneOptionChange);
+            document.getElementById('newSceneOption').addEventListener('change', handleTargetSceneOptionChange);
         });
     </script>
 </body>
 </html>
+

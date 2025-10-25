@@ -356,6 +356,8 @@
                 </a>
                 <ul class="collapse" id="Employee">
                     <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                    <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
+                    <li class="nav-item"><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
                     <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
                     <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
                     <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
@@ -457,6 +459,14 @@
                             </small>
                         </div>
                         
+                        <!-- Camera Selection -->
+                        <div class="camera-selection mb-3">
+                            <label for="cameraSelect" class="form-label">Select Camera:</label>
+                            <select id="cameraSelect" class="form-select mb-2">
+                                <option value="">Loading cameras...</option>
+                            </select>
+                        </div>
+
                         <!-- Camera Section -->
                         <div class="camera-section mb-3">
                             <video id="faceVideo" width="320" height="240" autoplay muted style="border: 2px solid #007bff; border-radius: 8px; display: none;"></video>
@@ -483,6 +493,11 @@
                                          role="progressbar" style="width: 0%"></div>
                                 </div>
                                 <small class="text-muted">Blink Status: <span id="blinkProgressText">Waiting for blink...</span></small>
+                            </div>
+                            <div class="text-center">
+                                <button id="manualBlinkBtn" class="btn btn-outline-primary btn-sm" style="display: none;">
+                                    <i class="fas fa-eye"></i> I Blinked - Verify Now
+                                </button>
                             </div>
                         </div>
 
@@ -545,6 +560,38 @@
                 });
             }
         });
+
+        // Function to load available cameras
+        async function loadAvailableCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '<option value="">Select a camera...</option>';
+                
+                availableCameras = videoDevices;
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Auto-select first camera if only one available
+                if (videoDevices.length === 1) {
+                    selectedCameraId = videoDevices[0].deviceId;
+                    cameraSelect.value = selectedCameraId;
+                }
+                
+                console.log('Available cameras:', videoDevices);
+            } catch (error) {
+                console.error('Error loading cameras:', error);
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '<option value="">Error loading cameras</option>';
+            }
+        }
 
         // Function to get user location (latitude and longitude)
         function getUserLocation() {
@@ -668,6 +715,8 @@
         let currentStream = null;
         let currentUserId = null;
         let currentAttendanceData = null;
+        let availableCameras = [];
+        let selectedCameraId = null;
         
         // Blink verification variables
         let blinkVerificationActive = false;
@@ -881,13 +930,22 @@
                 const captureBtn = document.getElementById('captureFace');
                 const stopBtn = document.getElementById('stopCamera');
                 const statusDiv = document.getElementById('faceVerificationStatus');
+                const cameraSelect = document.getElementById('cameraSelect');
 
-                // Request camera access
+                // Check if camera is selected
+                if (!cameraSelect.value) {
+                    statusDiv.innerHTML = '<div class="verification-error"><i class="fas fa-exclamation-triangle"></i> Please select a camera first</div>';
+                    return;
+                }
+
+                selectedCameraId = cameraSelect.value;
+
+                // Request camera access with selected device
                 currentStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
+                        deviceId: { exact: selectedCameraId },
                         width: 320, 
-                        height: 240,
-                        facingMode: 'user' // Front camera
+                        height: 240
                     } 
                 });
 
@@ -930,6 +988,7 @@
             document.getElementById('blinkProgressText').textContent = 'Waiting for blink...';
             document.getElementById('blinkCountdown').textContent = '';
             document.getElementById('blinkInstruction').textContent = '';
+            document.getElementById('manualBlinkBtn').style.display = 'none';
         }
 
         function startBlinkVerification() {
@@ -967,9 +1026,9 @@
             blinkDetectionInterval = setInterval(() => {
                 blinkDetectionTime += 100;
                 
-                // Simulate blink detection (random for demo)
+                // Simulate blink detection (more reliable for demo)
                 // In reality, this would analyze video frames for eye closure
-                if (Math.random() < 0.02 && !blinkDetected) { // 2% chance per 100ms
+                if (Math.random() < 0.05 && !blinkDetected) { // 5% chance per 100ms (increased from 2%)
                     detectBlink();
                 }
                 
@@ -977,6 +1036,13 @@
                     endBlinkDetection(false);
                 }
             }, 100);
+            
+            // Show manual blink button after 3 seconds
+            setTimeout(() => {
+                if (!blinkDetected) {
+                    document.getElementById('manualBlinkBtn').style.display = 'inline-block';
+                }
+            }, 3000);
         }
 
         function detectBlink() {
@@ -1148,6 +1214,30 @@
                 showAttendanceModal("Error completing attendance", true);
             }
         }
+
+        // Manual blink button event listener and camera initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const manualBlinkBtn = document.getElementById('manualBlinkBtn');
+            if (manualBlinkBtn) {
+                manualBlinkBtn.addEventListener('click', function() {
+                    if (!blinkDetected) {
+                        detectBlink();
+                    }
+                });
+            }
+
+            // Camera selection change event listener
+            const cameraSelect = document.getElementById('cameraSelect');
+            if (cameraSelect) {
+                cameraSelect.addEventListener('change', function() {
+                    selectedCameraId = this.value;
+                    console.log('Camera selected:', selectedCameraId);
+                });
+            }
+
+            // Load available cameras on page load
+            loadAvailableCameras();
+        });
 
         // On page load, fetch the employee ID and load attendance data
         window.onload = async () => {

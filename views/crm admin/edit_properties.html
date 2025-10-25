@@ -199,8 +199,8 @@
                 </li>
                 <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
                 <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>   
-                <li class="nav-item"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Agents</span></a></li>
-                <li class="nav-item"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Coodnators</span></a></li>
+                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
                 <!-- Properties Section with sub-options -->
                  <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
@@ -526,6 +526,51 @@
 
         // Load property data when page loads
         document.addEventListener('DOMContentLoaded', fetchPropertyData);
+
+        // Handle coordinator-only sections visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: Starting coordinator visibility script...');
+            
+            // Function to show coordinator items (for non-coordinators)
+            function showCoordinatorItems() {
+                console.log('🔍 DEBUG: Showing coordinator items for non-coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+            
+            // Function to hide coordinator items (for coordinators)
+            function hideCoordinatorItems() {
+                console.log('🔍 DEBUG: Keeping coordinator items hidden for coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+            }
+            
+            fetch('/api/profile')
+                .then(response => {
+                    console.log('🔍 DEBUG: Profile API response received:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('🔍 DEBUG: Profile API data:', data);
+                    console.log('🔍 DEBUG: User role is:', data?.role_name);
+                    if (data && data.role_name === 'sales_marketing_coordinator') {
+                        console.log('🔍 DEBUG: User is sales_marketing_coordinator, keeping items hidden');
+                        hideCoordinatorItems();
+                    } else {
+                        console.log('🔍 DEBUG: User role is not sales_marketing_coordinator, showing items');
+                        showCoordinatorItems();
+                    }
+                })
+                .catch(error => {
+                    console.log('🔍 DEBUG: Could not fetch user profile:', error);
+                    // Fallback: keep items hidden if API fails (safer default)
+                    hideCoordinatorItems();
+                });
+        });
     </script>
 </body>
 

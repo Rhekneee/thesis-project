@@ -3,6 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const pathConfig = require('../../../utils/pathConfig'); // Import path configuration
+const { sendLaborSubmissionNotification } = require('../../../utils/emailService');
+const Notifications = require('../../../models/notification.model');
 
 // Configure multer for project image uploads
 const projectUploadDir = pathConfig.getUploadPath('projects');
@@ -73,6 +75,37 @@ const signatureUpload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit for signature images
   }
 });
+
+// Configure multer for construction worker picture uploads
+const constructionWorkerStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'construction_workers');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename: construction-worker_timestamp.extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `construction-worker-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const constructionWorkerUpload = multer({
+  storage: constructionWorkerStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept only image files (case-insensitive)
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+}).single('picture');
 
 const ManufacturingController = {
   createProject: async (req, res) => {
@@ -788,11 +821,468 @@ const ManufacturingController = {
         error: "Failed to mark materials as received" 
       });
     }
+  },
+
+  // Send labor submission notification email
+  sendLaborSubmissionEmail: async (req, res) => {
+    try {
+      const { project_id, developer_id, estimated_cost } = req.body;
+
+      if (!project_id || !developer_id || !estimated_cost) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Project ID, developer ID, and estimated cost are required" 
+        });
+      }
+
+      // Get project and developer details
+      const project = await ManufacturingModel.getProjectById(project_id);
+      if (!project) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Project not found" 
+        });
+      }
+
+      // Get developer details from the project
+      const developerEmail = project.developer_email;
+      const developerName = project.developer_company;
+
+      if (!developerEmail) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Developer email not found" 
+        });
+      }
+
+      // Send email notification
+      await sendLaborSubmissionNotification(
+        developerEmail,
+        developerName || 'Developer',
+        project.project_name,
+        estimated_cost
+      );
+
+      res.json({
+        success: true,
+        message: "Labor submission notification email sent successfully"
+      });
+
+    } catch (error) {
+      console.error("Error sending labor submission email:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to send labor submission notification email" 
+      });
+    }
+  },
+
+  // Handle cost negotiation from developer
+  negotiateCost: async (req, res) => {
+    try {
+      const { project_id, current_cost, reason } = req.body;
+
+      if (!project_id || !reason) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Project ID and reason are required" 
+        });
+      }
+
+      // Get project details
+      const project = await ManufacturingModel.getProjectById(project_id);
+      if (!project) {
+        return res.status(404).json({ 
+          success: false,
+          error: "Project not found" 
+        });
+      }
+
+      // Check if project is in a negotiable state
+      if (project.status === 'contract_generated' || project.status === 'developer_approved') {
+        return res.status(400).json({ 
+          success: false,
+          error: "Cost discussion is not available for projects in this status" 
+        });
+      }
+
+      // Create notification for manufacturing team
+      const projectCost = project.estimated_cost;
+      
+      await Notifications.create({
+        departmentId: 3, // Manufacturing department ID
+        title: "Cost Discussion Request",
+        message: `Developer "${project.developer_company}" has requested to discuss the cost for project "${project.project_name}". Current cost: ₱${projectCost.toLocaleString()}. Reason: ${reason}`,
+        type: 'warning'
+      });
+
+      res.json({
+        success: true,
+        message: "Cost discussion request submitted successfully. The manufacturing team will contact you soon."
+      });
+
+    } catch (error) {
+      console.error("Error processing cost negotiation:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to process cost discussion request" 
+      });
+    }
+  },
+
+  // Get unread notifications for manufacturing department
+  getUnreadNotifications: async (req, res) => {
+    try {
+      const userId = req.session.user?.id;
+      const departmentId = 3; // Manufacturing department ID
+      
+      const notifications = await Notifications.getUnreadFor({ userId, departmentId, limit: 20 });
+      
+      res.json({
+        success: true,
+        notifications
+      });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch notifications"
+      });
+    }
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (req, res) => {
+    try {
+      const notificationId = req.params.id;
+      
+      const success = await Notifications.markAsRead(notificationId);
+      
+      if (success) {
+        res.json({
+          success: true,
+          message: "Notification marked as read"
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          error: "Notification not found"
+        });
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark notification as read"
+      });
+    }
+  },
+
+  // Mark all notifications as read
+  markAllNotificationsAsRead: async (req, res) => {
+    try {
+      const userId = req.session.user?.id;
+      const departmentId = 3; // Manufacturing department ID
+      
+      const affectedRows = await Notifications.markAllAsRead({ userId, departmentId });
+      
+      res.json({
+        success: true,
+        message: `${affectedRows} notifications marked as read`
+      });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to mark all notifications as read"
+      });
+    }
+  },
+
+  // ========== CONSTRUCTION WORKERS CONTROLLERS ==========
+
+  getAllConstructionWorkers: async (req, res) => {
+    try {
+      const workers = await ManufacturingModel.getAllConstructionWorkers();
+      res.json(workers);
+    } catch (error) {
+      console.error('Error getting all construction workers:', error);
+      res.status(500).json({ error: 'Failed to get construction workers' });
+    }
+  },
+
+  getConstructionWorkerById: async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const worker = await ManufacturingModel.getConstructionWorkerById(workerId);
+      
+      if (!worker) {
+        return res.status(404).json({ error: 'Construction worker not found' });
+      }
+      
+      res.json(worker);
+    } catch (error) {
+      console.error('Error getting construction worker by ID:', error);
+      res.status(500).json({ error: 'Failed to get construction worker' });
+    }
+  },
+
+  addConstructionWorker: async (req, res) => {
+    try {
+      const workerData = req.body;
+      
+      // Add picture filename if uploaded
+      if (req.file) {
+        workerData.picture = req.file.filename;
+      }
+      
+      // Validate required fields
+      const requiredFields = ['firstname', 'lastname', 'role_id', 'project_id'];
+      for (const field of requiredFields) {
+        if (!workerData[field]) {
+          return res.status(400).json({ error: `Missing required field: ${field}` });
+        }
+      }
+
+      const newWorker = await ManufacturingModel.addConstructionWorker(workerData);
+      res.status(201).json(newWorker);
+    } catch (error) {
+      console.error('Error adding construction worker:', error);
+      
+      // Check for specific error types
+      if (error.message === 'No available manpower for this role in the selected project') {
+        return res.status(400).json({ error: 'No available manpower for this role in the selected project' });
+      }
+      
+      // Handle multer errors
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
+      }
+      
+      if (error.message === 'Only image files are allowed!') {
+        return res.status(400).json({ error: 'Only image files (JPG, PNG, GIF) are allowed.' });
+      }
+      
+      res.status(500).json({ error: 'Failed to add construction worker' });
+    }
+  },
+
+  updateConstructionWorker: async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const workerData = req.body;
+      
+      const updated = await ManufacturingModel.updateConstructionWorker(workerId, workerData);
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'Construction worker not found' });
+      }
+      
+      res.json({ message: 'Construction worker updated successfully' });
+    } catch (error) {
+      console.error('Error updating construction worker:', error);
+      res.status(500).json({ error: 'Failed to update construction worker' });
+    }
+  },
+
+  deleteConstructionWorker: async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      
+      const deleted = await ManufacturingModel.deleteConstructionWorker(workerId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Construction worker not found' });
+      }
+      
+      res.json({ message: 'Construction worker deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting construction worker:', error);
+      res.status(500).json({ error: 'Failed to delete construction worker' });
+    }
+  },
+
+  getAllConstructionRoles: async (req, res) => {
+    try {
+      const roles = await ManufacturingModel.getAllConstructionRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error('Error getting all construction roles:', error);
+      res.status(500).json({ error: 'Failed to get construction roles' });
+    }
+  },
+
+  getAllProjects: async (req, res) => {
+    try {
+      const projects = await ManufacturingModel.getAllProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error('Error getting all projects:', error);
+      res.status(500).json({ error: 'Failed to get projects' });
+    }
+  },
+
+  getProjectLaborRoles: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const roles = await ManufacturingModel.getProjectLaborRoles(projectId);
+      res.json(roles);
+    } catch (error) {
+      console.error('Error getting project labor roles:', error);
+      res.status(500).json({ error: 'Failed to get project labor roles' });
+    }
+  },
+
+  // Get labor roles for planning projects
+  getLaborRolesForPlanningProjects: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const roles = await ManufacturingModel.getLaborRolesForPlanningProjects(projectId);
+      res.json(roles);
+    } catch (error) {
+      console.error('Error getting labor roles for planning projects:', error);
+      res.status(500).json({ error: 'Failed to get labor roles for planning projects' });
+    }
+  },
+
+  // ========== ATTENDANCE CONTROLLERS ==========
+
+  // Scan QR code and get worker details
+  scanQRCode: async (req, res) => {
+    try {
+      const { qrData } = req.body;
+      
+      if (!qrData) {
+        return res.status(400).json({ error: 'QR code data is required' });
+      }
+
+      const worker = await ManufacturingModel.getConstructionWorkerByQRCode(qrData);
+      
+      if (!worker) {
+        return res.status(404).json({ error: 'Worker not found or inactive' });
+      }
+
+      // Check if worker already has attendance record for today
+      const todayAttendance = await ManufacturingModel.checkTodayAttendance(worker.id);
+      
+      res.json({
+        success: true,
+        worker: {
+          id: worker.id,
+          name: `${worker.firstname} ${worker.middlename} ${worker.lastname}`.trim(),
+          role: worker.role_name,
+          project: worker.project_name,
+          project_id: worker.project_id,
+          picture: worker.picture,
+          unique_code: worker.unique_code
+        },
+        todayAttendance: todayAttendance ? {
+          time_in: todayAttendance.time_in,
+          time_out: todayAttendance.time_out,
+          status: todayAttendance.status
+        } : null
+      });
+    } catch (error) {
+      console.error('Error scanning QR code:', error);
+      res.status(500).json({ error: 'Failed to scan QR code' });
+    }
+  },
+
+  // Record attendance (time in)
+  recordAttendance: async (req, res) => {
+    try {
+      const { workerId, projectId, action } = req.body;
+      
+      if (!workerId || !projectId || !action) {
+        return res.status(400).json({ error: 'Worker ID, Project ID, and action are required' });
+      }
+
+      if (action === 'time_in') {
+        const attendanceId = await ManufacturingModel.recordTimeIn(workerId, projectId);
+        res.json({
+          success: true,
+          message: 'Time in recorded successfully',
+          attendanceId
+        });
+      } else if (action === 'time_out') {
+        const success = await ManufacturingModel.recordTimeOut(workerId);
+        if (success) {
+          res.json({
+            success: true,
+            message: 'Time out recorded successfully'
+          });
+        } else {
+          res.status(400).json({ error: 'No time in record found for today' });
+        }
+      } else {
+        res.status(400).json({ error: 'Invalid action. Use "time_in" or "time_out"' });
+      }
+    } catch (error) {
+      console.error('Error recording attendance:', error);
+      
+      if (error.message === 'Attendance already recorded for today') {
+        return res.status(400).json({ error: 'Attendance already recorded for today' });
+      }
+      
+      res.status(500).json({ error: 'Failed to record attendance' });
+    }
+  },
+
+  // Get worker attendance records
+  getWorkerAttendance: async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { limit = 30 } = req.query;
+      
+      const records = await ManufacturingModel.getWorkerAttendanceRecords(workerId, parseInt(limit));
+      res.json({
+        success: true,
+        records
+      });
+    } catch (error) {
+      console.error('Error getting worker attendance:', error);
+      res.status(500).json({ error: 'Failed to get worker attendance records' });
+    }
+  },
+
+  // Get project attendance records
+  getProjectAttendance: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { date } = req.query;
+      
+      const records = await ManufacturingModel.getProjectAttendanceRecords(projectId, date);
+      res.json({
+        success: true,
+        records
+      });
+    } catch (error) {
+      console.error('Error getting project attendance:', error);
+      res.status(500).json({ error: 'Failed to get project attendance records' });
+    }
+  },
+
+  // Get all today's attendance records
+  getTodayAttendance: async (req, res) => {
+    try {
+      const { date } = req.query;
+      const targetDate = date || new Date().toISOString().split('T')[0]; // Default to today
+      
+      const records = await ManufacturingModel.getTodayAttendanceRecords(targetDate);
+      res.json({
+        success: true,
+        records
+      });
+    } catch (error) {
+      console.error('Error getting today attendance:', error);
+      res.status(500).json({ error: 'Failed to get today attendance records' });
+    }
   }
 };
 
 module.exports = { 
   ManufacturingController,
   projectUpload,
-  signatureUpload
+  signatureUpload,
+  constructionWorkerUpload
 };

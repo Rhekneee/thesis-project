@@ -124,6 +124,7 @@
             <ul class="collapse" id="Employee">
                 <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
                 <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
+                <li class="nav-item"><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
                 <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
                 <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
                 <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
@@ -587,7 +588,7 @@
             modal.show();
         }
 
-        document.getElementById('btnApproveDoc').addEventListener('click', showApproveDocConfirm);
+        // Event listener will be attached after function definition
 
         document.getElementById('btnConfirmApproveDoc').addEventListener('click', async () => {
             const modalEl = document.getElementById('approveDocConfirmModal');
@@ -696,6 +697,41 @@
         document.getElementById('btnValidateContract').addEventListener('click', showValidateContractConfirm);
 
         let pendingContractId = null;
+        let pendingApproveDocId = null;
+
+        function showApproveDocConfirm() {
+            const group = window.pendingGroups?.[currentGroupIndex];
+            if (!group) return;
+            
+            // Determine current doc from filtered list mapping
+            const effectiveIdx = filteredIndexMap[currentDocIndex] ?? currentDocIndex;
+            const doc = group.docs[effectiveIdx];
+            const docId = getDocId(doc);
+            
+            if (!docId) {
+                // Show result modal instead of alert
+                const body = document.getElementById('actionResultBody');
+                if (body) body.textContent = 'Document ID not found';
+                new bootstrap.Modal(document.getElementById('actionResultModal')).show();
+                return;
+            }
+            
+            pendingApproveDocId = docId;
+            const employeeName = group.full_name || 'this employee';
+            const docType = doc.document_type || 'this document';
+            
+            // Update modal content
+            const nameEl = document.getElementById('approveEmployeeName');
+            const typeEl = document.getElementById('approveDocType');
+            if (nameEl) nameEl.textContent = employeeName;
+            if (typeEl) typeEl.textContent = docType;
+            
+            // Show confirmation modal
+            new bootstrap.Modal(document.getElementById('approveDocConfirmModal')).show();
+        }
+
+        // Attach event listener after function definition
+        document.getElementById('btnApproveDoc').addEventListener('click', showApproveDocConfirm);
 
         function showValidateContractConfirm() {
             const btn = document.getElementById('btnValidateContract');

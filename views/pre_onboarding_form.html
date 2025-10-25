@@ -906,7 +906,77 @@
         </div>
     </div>
 
-    
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">
+                        <i class="fas fa-question-circle me-2 text-warning"></i>
+                        Confirm Document Submission
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-file-upload fa-3x text-primary mb-3"></i>
+                        <h6>Are you sure you want to submit the following documents?</h6>
+                    </div>
+                    <div id="confirmationDocumentList" class="mb-3">
+                        <!-- Documents will be listed here -->
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Once submitted, these documents will be sent for HR review. You can upload additional documents later if needed.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmSubmitBtn">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Documents
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <div class="success-icon mb-3">
+                            <i class="fas fa-check-circle fa-4x text-success"></i>
+                        </div>
+                        <h4 class="text-success mb-3">Documents Submitted Successfully!</h4>
+                        <p class="text-muted mb-4">
+                            Your documents have been submitted for HR review. You will be notified once they are processed.
+                        </p>
+                    </div>
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Next Steps:</strong>
+                        <ul class="list-unstyled mt-2 mb-0">
+                            <li>• Wait for HR to review your documents</li>
+                            <li>• You can upload additional documents if needed</li>
+                            <li>• Check your email for updates</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-success w-100" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-2"></i>Got it!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -949,7 +1019,7 @@
         }
 
         const docPatterns = {
-            valid_id: ['validid','passport','driverlicense','driverlicence','driverslicense','governmentid','govid','idcard','id'],
+            valid_id: ['validid','passport','driverlicense','driverlicence','driverslicense','governmentid','govid','idcard'],
             sss: ['sss','sssid','sssnumber'],
             tin: ['tin','tinid','tinnumber'],
             philhealth: ['philhealth','philhealthid','philhealthnumber'],
@@ -963,7 +1033,9 @@
             // Hard-map exact display strings as well
             if (s === 'sssidnumber') return 'sss';
             if (s === 'tinidnumber') return 'tin';
-            if (s.includes('validid') || s.includes('passport') || s.includes('driverlicense') || s.includes('driverslicense') || s.includes('governmentid') || s === 'id') return 'valid_id';
+            // Special handling for Employment Contract - don't map to other document types
+            if (s.includes('employment') && s.includes('contract')) return 'employment_contract';
+            if (s.includes('validid') || s.includes('passport') || s.includes('driverlicense') || s.includes('driverslicense') || s.includes('governmentid')) return 'valid_id';
             if (s.includes('sss')) return 'sss';
             if (s.includes('tin')) return 'tin';
             if (s.includes('philhealth')) return 'philhealth';
@@ -978,6 +1050,8 @@
             // Hard-map the common database labels
             if (n === 'sssidnumber') return 'sss';
             if (n === 'tinidnumber') return 'tin';
+            // Special handling for Employment Contract - don't map to other document types
+            if (n.includes('employment') && n.includes('contract')) return 'employment_contract';
             for (const [key, patterns] of Object.entries(docPatterns)) {
                 if (patterns.some(p => n.includes(p))) return key;
             }
@@ -992,6 +1066,7 @@
             setupDropdownClose();
             initSignaturePad();
             loadSignaturePreview();
+            setupModalEventListeners();
         });
 
         // Check if user needs to complete onboarding
@@ -1039,11 +1114,59 @@
             form.addEventListener('submit', handleFormSubmission);
         }
 
-        // Handle form submission
-        async function handleFormSubmission(event) {
+        // Setup modal event listeners
+        function setupModalEventListeners() {
+            // Confirmation modal submit button
+            document.getElementById('confirmSubmitBtn').addEventListener('click', submitDocuments);
+        }
+
+        // Handle form submission - show confirmation modal
+        function handleFormSubmission(event) {
             event.preventDefault();
             
-            const submitBtn = document.getElementById('submitBtn');
+            // Check if at least one document is uploaded
+            const uploadedCount = Object.keys(uploadedFiles).length;
+            if (uploadedCount === 0) {
+                alert('Please upload at least one document before submitting');
+                return;
+            }
+            
+            // Show confirmation modal
+            showConfirmationModal();
+        }
+
+        // Show confirmation modal with document list
+        function showConfirmationModal() {
+            const documentList = document.getElementById('confirmationDocumentList');
+            const stagedFiles = Object.keys(uploadedFiles);
+            
+            // Create list of documents to be submitted
+            const documentItems = stagedFiles.map(docType => {
+                const file = uploadedFiles[docType];
+                return `
+                    <div class="d-flex align-items-center justify-content-between p-2 border rounded mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-file-alt text-primary me-2"></i>
+                            <div>
+                                <div class="fw-bold">${docType}</div>
+                                <small class="text-muted">${file.name}</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary">Ready to Submit</span>
+                    </div>
+                `;
+            }).join('');
+            
+            documentList.innerHTML = documentItems;
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            modal.show();
+        }
+
+        // Handle actual document submission
+        async function submitDocuments() {
+            const submitBtn = document.getElementById('confirmSubmitBtn');
             const originalText = submitBtn.innerHTML;
             
             try {
@@ -1112,23 +1235,20 @@
                     // Clear staged files
                     uploadedFiles = {};
 
-                    document.getElementById('completionMessage').style.display = 'block';
-                    document.getElementById('onboardingForm').style.display = 'none';
-
-                    // After 5 seconds, hide the message and return to the submission form
-                    setTimeout(() => {
-                        const msg = document.getElementById('completionMessage');
-                        const formEl = document.getElementById('onboardingForm');
-                        if (msg) msg.style.display = 'none';
-                        if (formEl) {
-                            formEl.style.display = 'block';
-                            // Ensure UI reflects latest completion state
-                            renderDocuments();
-                            updateProgress();
-                            updateSubmitButton();
-                            try { formEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
-                        }
-                    }, 5000);
+                    // Hide confirmation modal and show success modal
+                    const confirmationModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                    if (confirmationModal) {
+                        confirmationModal.hide();
+                    }
+                    
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Update UI to reflect latest completion state
+                    renderDocuments();
+                    updateProgress();
+                    updateSubmitButton();
                 } else {
                     throw new Error('Failed to submit documents');
                 }
@@ -1325,7 +1445,12 @@
                 const key = getDocKeyFromDisplay(d.document_type);
                 return completedDocuments.has(key) || d.status === 'uploaded' || d.status === 'approved';
             }).length;
-            const hasUploadedDocuments = completedCount > 0;
+            
+            // Check if there are any staged files (files selected but not yet submitted)
+            const stagedFilesCount = Object.keys(uploadedFiles).length;
+            
+            // Enable submit button if there are completed documents OR staged files
+            const hasUploadedDocuments = completedCount > 0 || stagedFilesCount > 0;
             
             if (hasUploadedDocuments) {
                 submitBtn.disabled = false;
@@ -1572,6 +1697,7 @@
                 const data = await res.json();
                 let docs = (data.documents || data || []);
                 dbg('existing-docs (per-employee)', docs);
+                console.log('🔍 DEBUG: Per-employee docs from server:', docs);
 
                 existingUploadsByType = {};
                 existingStatusByKey = {};
@@ -1582,6 +1708,13 @@
                     const status = normalizeServerStatus(d.status, d.file_path);
                     const key = getDocKeyFromServer(type);
                     if (!type) return;
+                    
+                    // Skip Employment Contract documents - they shouldn't affect regular document status
+                    if (type.toLowerCase().includes('employment contract')) {
+                        dbg('skipping employment contract from per-employee docs processing', { type, key, status });
+                        return;
+                    }
+                    
                     existingUploadsByType[type] = status;
                     existingStatusByKey[key] = status;
                     if (status === 'uploaded' || status === 'approved') completedDocuments.add(key);
@@ -1594,11 +1727,20 @@
                         const pd = await resPending.json();
                         const all = pd.documents || [];
                         dbg('pending-docs (global)', all);
+                        console.log('🔍 DEBUG: All pending docs from server:', all);
                         const mine = all.filter(x => (x.employee_id || x.employeeId) === currentEmployeeId);
                         dbg('pending-docs (filtered for employee)', mine);
+                        console.log('🔍 DEBUG: Filtered pending docs for current employee:', mine);
                         mine.forEach(x => {
                             const type = x.document_type || x.type || x.name;
                             const key = getDocKeyFromServer(type);
+                            
+                            // Skip Employment Contract documents - they shouldn't affect regular document status
+                            if (type && type.toLowerCase().includes('employment contract')) {
+                                dbg('skipping employment contract from pending docs processing', { type, key });
+                                return;
+                            }
+                            
                             // Upgrade logic: prefer uploaded/approved over pending
                             const prev = existingStatusByKey[key];
                             if (!prev || prev === 'pending') {
@@ -1611,11 +1753,29 @@
 
                 dbg('existingStatusByKey (after merge pending)', existingStatusByKey);
                 dbg('completedDocuments (after merge pending)', Array.from(completedDocuments));
+                console.log('🔍 DEBUG: Final existingStatusByKey:', existingStatusByKey);
+                console.log('🔍 DEBUG: Final completedDocuments:', Array.from(completedDocuments));
 
-                // Merge locally saved completions
+                // Merge locally saved completions - but only if they're confirmed by server data
                 const localKeys = loadLocalCompleted(currentEmployeeId);
                 dbg('localCompleted (from storage)', localKeys);
-                localKeys.forEach(k => { existingStatusByKey[k] = existingStatusByKey[k] || 'uploaded'; completedDocuments.add(k); });
+                
+                // Only trust localStorage if there's server confirmation, otherwise clear it
+                if (Object.keys(existingStatusByKey).length === 0) {
+                    // No server data, clear localStorage to prevent stale data
+                    console.log('🔍 DEBUG: No server data found, clearing localStorage to prevent stale data');
+                    saveLocalCompleted(currentEmployeeId, []);
+                } else {
+                    // Only add localStorage keys that are also confirmed by server
+                    localKeys.forEach(k => { 
+                        if (existingStatusByKey[k]) {
+                            existingStatusByKey[k] = existingStatusByKey[k] || 'uploaded'; 
+                            completedDocuments.add(k); 
+                        } else {
+                            console.log('🔍 DEBUG: Ignoring localStorage key not confirmed by server:', k);
+                        }
+                    });
+                }
                 dbg('completedDocuments (after merge local)', Array.from(completedDocuments));
             } catch (e) {
                 console.warn('Failed to load existing uploads:', e);
