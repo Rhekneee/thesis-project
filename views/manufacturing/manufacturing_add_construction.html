@@ -446,16 +446,19 @@
             }
         }
 
-        // Load projects
+        // Load projects with roles for construction workers
         async function loadProjects() {
             try {
-                const response = await fetch(`${API_URL}/projects`, {
+                const response = await fetch(`${API_URL}/projects-for-construction-workers`, {
                     credentials: 'include'
                 });
                 if (response.ok) {
-                    projects = await response.json();
-                    populateProjectFilter();
-                    populateProjectSelect();
+                    const data = await response.json();
+                    if (data.success && data.projects) {
+                        projects = data.projects;
+                        populateProjectFilter();
+                        populateProjectSelect();
+                    }
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
@@ -621,6 +624,23 @@
             });
         }
 
+        // Populate role select with project roles (from the new endpoint)
+        function populateRoleSelectWithProjectRoles(roles) {
+            const roleSelect = document.getElementById('role_id');
+            roleSelect.innerHTML = '<option value="">Select Role</option>';
+            
+            if (roles.length === 0) {
+                roleSelect.innerHTML += '<option value="" disabled>No available roles for this project</option>';
+                roleSelect.disabled = true;
+                return;
+            }
+            
+            roleSelect.disabled = false;
+            roles.forEach(role => {
+                roleSelect.innerHTML += `<option value="${role.worker_type_id}">${role.worker_type_name} (${role.manpower_per_unit} available)</option>`;
+            });
+        }
+
         // Populate project select in modal
         function populateProjectSelect() {
             const projectSelect = document.getElementById('project_id');
@@ -629,11 +649,23 @@
                 projectSelect.innerHTML += `<option value="${project.id}">${project.project_name}</option>`;
             });
             
+            // Remove existing event listeners by cloning and replacing
+            const newSelect = projectSelect.cloneNode(true);
+            projectSelect.parentNode.replaceChild(newSelect, projectSelect);
+            
             // Add change event listener to load labor roles when project is selected
-            projectSelect.addEventListener('change', function() {
+            newSelect.addEventListener('change', function() {
                 const selectedProjectId = this.value;
                 if (selectedProjectId) {
-                    loadLaborRolesForPlanningProject(selectedProjectId);
+                    // Find the selected project and use its roles
+                    const selectedProject = projects.find(p => p.id == selectedProjectId);
+                    if (selectedProject && selectedProject.roles && selectedProject.roles.length > 0) {
+                        populateRoleSelectWithProjectRoles(selectedProject.roles);
+                    } else {
+                        const roleSelect = document.getElementById('role_id');
+                        roleSelect.innerHTML = '<option value="" disabled>No available roles for this project</option>';
+                        roleSelect.disabled = true;
+                    }
                 } else {
                     // Reset role select if no project is selected
                     const roleSelect = document.getElementById('role_id');

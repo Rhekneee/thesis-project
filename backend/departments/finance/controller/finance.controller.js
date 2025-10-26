@@ -123,11 +123,18 @@ exports.getPayrollEntriesByPeriod = async (req, res) => {
         }
 
         const { periodId } = req.params;
-        const entries = await FinanceModel.getPayrollEntriesByPeriod(periodId);
+        const payrollData = await FinanceModel.getPayrollEntriesByPeriod(periodId);
+        
+        // Combine employee and construction entries into a single array
+        const allEntries = [...payrollData.employee_entries, ...payrollData.construction_entries];
         
         res.json({
             success: true,
-            entries: entries
+            entries: allEntries,
+            employee_entries: payrollData.employee_entries,
+            construction_entries: payrollData.construction_entries,
+            employee_count: payrollData.total_employee_count,
+            construction_count: payrollData.total_construction_count
         });
     } catch (error) {
         console.error('Error in getPayrollEntriesByPeriod:', error);
@@ -1451,6 +1458,67 @@ exports.submitPayrollRemarks = async (req, res) => {
     } catch (error) {
         console.error('Error in submitPayrollRemarks:', error);
         return res.status(500).json({ success: false, message: error.message || 'Failed to submit remarks' });
+    }
+};
+
+// Submit remarks to a construction payroll entry (for pending entries)
+exports.submitConstructionPayrollRemarks = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { constructionPayrollId } = req.params;
+        const { remarks } = req.body;
+        
+        if (!constructionPayrollId) {
+            return res.status(400).json({ success: false, message: 'constructionPayrollId is required' });
+        }
+
+        if (!remarks || remarks.trim() === '') {
+            return res.status(400).json({ success: false, message: 'Remarks are required' });
+        }
+
+        const result = await FinanceModel.submitConstructionPayrollRemarks(constructionPayrollId, remarks.trim());
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        
+        return res.status(200).json({ success: true, message: result.message });
+    } catch (error) {
+        console.error('Error in submitConstructionPayrollRemarks:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to submit remarks' });
+    }
+};
+
+// Approve a construction payroll entry
+exports.approveConstructionPayrollEntry = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { constructionPayrollId } = req.params;
+        const { remarks } = req.body;
+        
+        if (!constructionPayrollId) {
+            return res.status(400).json({ success: false, message: 'constructionPayrollId is required' });
+        }
+
+        const result = await FinanceModel.approveConstructionPayrollEntry(constructionPayrollId, req.session.user.id, remarks);
+        
+        if (!result.success) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: result.message,
+            payslipCreated: result.payslipCreated
+        });
+    } catch (error) {
+        console.error('❌ Error in approveConstructionPayrollEntry:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to approve construction payroll entry' });
     }
 };
 

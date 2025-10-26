@@ -1191,70 +1191,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Sample data for projects
-    const projects = [
-        {
-            id: 1,
-            name: 'Residential Complex A',
-            developer: 'John Smith',
-            foreman: 'Michael Brown',
-            location: 'Manila',
-            status: 'On Going',
-            progress: 0,
-            image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVzaWRlbnRpYWwlMjBidWlsZGluZ3xlbnwwfHwwfHx8MA%3D%3D',
-            submissionDate: '2024-01-01',
-            manufacturingCost: 30000000,
-            divisionProgress: [],
-            // Daily logs will be synced to backend later
-            dailyLogs: [],
-            requestedMaterials: [
-                { id: 'c1', name: 'Cement (bag)', unitPrice: 260, requestedQty: 500, remainingQty: 500 },
-                { id: 's1', name: 'Steel Rebar (kg)', unitPrice: 75, requestedQty: 2000, remainingQty: 2000 },
-                { id: 'g1', name: 'Gravel (m³)', unitPrice: 1200, requestedQty: 50, remainingQty: 50 }
-            ]
-        },
-        {
-            id: 2,
-            name: 'Commercial Building B',
-            developer: 'Maria Garcia',
-            foreman: 'David Wilson',
-            location: 'Makati',
-            status: 'Finished',
-            progress: 100,
-            image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMGJ1aWxkaW5nfGVufDB8fDB8fHww',
-            submissionDate: '2024-02-01',
-            manufacturingCost: 45000000,
-            divisionProgress: [],
-            dailyLogs: [],
-            requestedMaterials: [
-                { id: 'c2', name: 'Concrete Mix (m³)', unitPrice: 4800, requestedQty: 120, remainingQty: 120 },
-                { id: 'w2', name: 'Wiring (roll)', unitPrice: 1500, requestedQty: 80, remainingQty: 80 }
-            ]
-        },
-        {
-            id: 3,
-            name: 'Office Tower C',
-            developer: 'Robert Johnson',
-            foreman: 'James Anderson',
-            location: 'Quezon City',
-            status: 'On Going',
-            progress: 0,
-            image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwdG93ZXJ8ZW58MHx8MHx8fDA%3D',
-            submissionDate: '2024-03-01',
-            manufacturingCost: 60000000,
-            divisionProgress: [],
-            dailyLogs: [],
-            requestedMaterials: [
-                { id: 'p3', name: 'Paint (gallon)', unitPrice: 950, requestedQty: 300, remainingQty: 300 },
-                { id: 't3', name: 'Tiles (box)', unitPrice: 780, requestedQty: 200, remainingQty: 200 }
-            ]
-        }
-    ];
+    // Real projects data from database
+    let projects = [];
 
     // Global variables
     let currentPage = 1;
     let itemsPerPage = 10;
-    let filteredProjects = [...projects];
+    let filteredProjects = [];
     let currentProjectId = null;
     let divisionProgress = [];
     let progressChart;
@@ -1266,26 +1209,113 @@
         let pendingLogDivision = null; // capture division for the next daily log
         // Pending progress data to commit only after daily log is saved
         let pendingProgressData = null;
-        // Track whether daily log was saved to allow closing the modal
-        window.dailyLogSaved = false;
+    
+        // Store divisions fetched from backend
+    let divisionsList = [];
 
     // State management like construction payroll
     const state = {
-        records: [...projects],
+        records: [],
         filtered: [],
         sort: { key: '', dir: 'asc' },
         pageSize: 10,
         currentPage: 1
     };
 
+    // Track whether daily log modal can be closed
+    let canCloseDailyLogModal = true;
+
+    // Fetch actual projects from database
+    async function loadActualProjects() {
+        try {
+            const response = await fetch('/manufacturing/projects-for-progress', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.success && data.projects) {
+                projects = data.projects;
+                state.records = [...projects];
+                state.filtered = [...projects];
+                applySort();
+            } else {
+                console.error('Failed to load projects:', data);
+            }
+        } catch (error) {
+            console.error('Error loading actual projects:', error);
+        }
+    }
+
+    // Store full division objects with id and name
+    let divisionsData = [];
+
+    // Fetch divisions from backend
+    async function fetchDivisions() {
+        try {
+            const response = await fetch('/manufacturing/divisions');
+            const data = await response.json();
+            if (data.success && data.divisions) {
+                divisionsData = data.divisions; // Store full objects
+                divisionsList = data.divisions.map(d => d.division_name);
+                populateDivisionDropdowns();
+            }
+        } catch (error) {
+            console.error('Error fetching divisions:', error);
+            // Fallback to hardcoded divisions if fetch fails
+            divisionsList = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+            populateDivisionDropdowns();
+        }
+    }
+
+    // Helper function to get division ID by name
+    function getDivisionIdByName(divisionName) {
+        const division = divisionsData.find(d => d.division_name === divisionName);
+        return division ? division.id : null;
+    }
+
+    // Populate all division dropdown selects
+    function populateDivisionDropdowns() {
+        const selects = [
+            { id: 'divisionSelect', placeholder: 'SELECT DIVISION' },  // Main progress form
+            { id: 'editDivisionSelect', placeholder: '' },  // Edit modal
+            { id: 'billingDivisionSelect', placeholder: '' }  // Stage billing modal
+        ];
+
+        selects.forEach(({ id, placeholder: placeholderText }) => {
+            const select = document.getElementById(id);
+            if (!select) return;
+
+            // Clear existing options
+            select.innerHTML = '';
+            
+            // Add placeholder if specified
+            if (placeholderText) {
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = placeholderText;
+                select.appendChild(placeholder);
+            }
+
+            // Add dynamic division options
+            divisionsList.forEach(division => {
+                const option = document.createElement('option');
+                option.value = division;
+                option.textContent = division;
+                select.appendChild(option);
+            });
+        });
+    }
+
     // Initialize the page
     document.addEventListener('DOMContentLoaded', function() {
+        fetchDivisions(); // Fetch divisions on page load
+        loadActualProjects(); // Load actual projects from database
         initializeSidebar();
         initializeEventListeners();
         applySort(); // Use the new sorting system
         enhanceStaticTables();
         editProgressModal = new bootstrap.Modal(document.getElementById('editProgressModal'));
-        dailyLogModal = new bootstrap.Modal(document.getElementById('dailyLogModal'), { backdrop: 'static', keyboard: false });
+        dailyLogModal = new bootstrap.Modal(document.getElementById('dailyLogModal'));
         stageBillingModal = new bootstrap.Modal(document.getElementById('stageBillingModal'));
     });
 
@@ -1720,14 +1750,15 @@
     // Initialize chart
     function initializeChart() {
         const ctx = document.getElementById('progressChart').getContext('2d');
+        const divisions = getDivisionsOrder();
         progressChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing', 'Total'],
+                labels: [...divisions, 'Total'],
                 datasets: [{
                     label: 'Progress (%)',
-                    data: [0, 0, 0, 0, 0, 0],
-                    backgroundColor: ['#f8b195', '#f8b195', '#f8b195', '#f8b195', '#f8b195', '#90ee90'],
+                    data: [...divisions.map(() => 0), 0],
+                    backgroundColor: [...divisions.map(() => '#f8b195'), '#90ee90'],
                     borderRadius: 5,
                 }]
             },
@@ -1760,14 +1791,45 @@
     }
 
     // Load division progress
-    function loadDivisionProgress() {
+    // Load division progress from database
+    async function loadDivisionProgress() {
         if (!currentProjectId) return;
         
         const project = state.records.find(p => p.id === currentProjectId);
         if (!project) return;
 
-        // Use the project's stored division progress
-        divisionProgress = [...project.divisionProgress];
+        try {
+            // Fetch division progress from database
+            console.log('📊 Loading division progress for project:', currentProjectId);
+            const response = await fetch(`/manufacturing/division-progress/${currentProjectId}`);
+            const data = await response.json();
+            
+            if (data.success && data.entries) {
+                console.log(`✅ Loaded ${data.entries.length} division progress entries from database`);
+                
+                // Convert database entries to format expected by frontend
+                divisionProgress = data.entries.map(entry => ({
+                    img: 'https://via.placeholder.com/60x60?text=Img', // Placeholder image
+                    division: entry.division_name,
+                    progress: entry.progress_percentage,
+                    date: new Date(entry.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: '2-digit' 
+                    }),
+                    type: 'progress',
+                    dbId: entry.id // Store database ID for reference
+                }));
+            } else {
+                console.log('ℹ️ No division progress entries found, using empty array');
+                divisionProgress = [];
+            }
+        } catch (error) {
+            console.error('❌ Error loading division progress:', error);
+            // Fallback to empty array on error
+            divisionProgress = [];
+        }
+        
         renderDivisionTable();
         updateChart();
     }
@@ -1812,9 +1874,14 @@
                 </td>
                 <td>${division.date}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary" onclick="editDivision(${index})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success" onclick="addDailyLogForDivision('${division.division}')" title="Add Daily Log">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="editDivision(${index})" title="Edit Progress">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(row);
@@ -1823,8 +1890,8 @@
 
     // Update chart with current progress
     function updateChart() {
-        const progressData = [0, 0, 0, 0, 0, 0];
-        const divisions = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+        const divisions = getDivisionsOrder();
+        const progressData = [...divisions.map(() => 0), 0];
 
         // Build cumulative progress per division (sum of entries, capped at 100%)
         const cumulativeProgressByDivision = Object.fromEntries(divisions.map(d => [d, 0]));
@@ -1847,12 +1914,12 @@
         });
 
         // Calculate total progress as average of cumulative per-division progress
-        const totalAvg = progressData.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
-        progressData[5] = Math.round(totalAvg);
+        const totalAvg = progressData.slice(0, -1).reduce((a, b) => a + b, 0) / divisions.length;
+        progressData[progressData.length - 1] = Math.round(totalAvg);
         
         // Update total progress display
         const totalLabel = document.getElementById('updateTotalProgress');
-        if (totalLabel) totalLabel.textContent = `${progressData[5]}%`;
+        if (totalLabel) totalLabel.textContent = `${progressData[progressData.length - 1]}%`;
 
         // Update progress in the main table
         if (currentProjectId) {
@@ -1871,7 +1938,8 @@
 
     // Division gating helpers
     function getDivisionsOrder() {
-        return ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+        // Use dynamically fetched divisions, fallback to hardcoded if not loaded yet
+        return divisionsList.length > 0 ? divisionsList : ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
     }
 
     function getUnlockedDivisionIndex() {
@@ -1966,9 +2034,35 @@
 
         // Load daily logs
         loadDailyLogs();
+        
+        // Load project materials (owner supply + requested materials)
+        loadProjectMaterials();
 
         // Update division selection gating
         updateDivisionSelectOptions();
+    }
+    
+    // Load project materials (from owner supply and request material)
+    async function loadProjectMaterials() {
+        if (!currentProjectId) return;
+        
+        try {
+            const response = await fetch(`/manufacturing/project-materials/${currentProjectId}`);
+            const data = await response.json();
+            
+            if (data.success && data.materials) {
+                // Update the project in state.records with materials
+                const project = state.records.find(p => p.id === currentProjectId);
+                if (project) {
+                    project.requestedMaterials = data.materials;
+                    console.log('✅ Project materials loaded:', data.materials);
+                }
+            } else {
+                console.error('Failed to load project materials:', data.error);
+            }
+        } catch (error) {
+            console.error('Error loading project materials:', error);
+        }
     }
 
     // Initialize form handlers
@@ -2036,12 +2130,63 @@
         // Handle confirmation button click
         document.getElementById('confirmAddProgressBtn').addEventListener('click', function() {
             if (pendingProgressData) {
-                // Do NOT add progress yet. Require daily log first.
+                console.log('✅ Confirm button clicked. Pending progress data:', pendingProgressData);
+                
                 // Close confirmation modal
                 bootstrap.Modal.getInstance(document.getElementById('confirmProgressModal')).hide();
-
-                // Open daily log modal with the stored division; defer success until saved
-                openDailyLogModal(pendingProgressData.division);
+                
+                // SAVE DIVISION PROGRESS TO DATABASE FIRST (at confirm button click)
+                const divisionId = getDivisionIdByName(pendingProgressData.division);
+                console.log('🔍 Division name:', pendingProgressData.division, '-> Division ID:', divisionId);
+                
+                if (!divisionId) {
+                    console.error('❌ Division ID not found for:', pendingProgressData.division);
+                    console.error('Available divisions:', divisionsData);
+                    showWarningMessage(`Division "${pendingProgressData.division}" not found in database.`);
+                    return;
+                }
+                
+                console.log('💾 Sending request to save division progress:', { projectId: currentProjectId, divisionId, progressValue: pendingProgressData.progress });
+                
+                // Save division progress to database IMMEDIATELY on confirm
+                fetch('/manufacturing/save-division-progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProjectId,
+                        divisionId: divisionId,
+                        progressValue: pendingProgressData.progress
+                    }),
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ Division progress saved successfully:', data);
+                        
+                        // Store division name before clearing pendingProgressData
+                        const divisionName = pendingProgressData.division;
+                        
+                        // Add to local state
+                        divisionProgress.push({ ...pendingProgressData, type: 'progress' });
+                        renderDivisionTable();
+                        updateChart();
+                        updateDivisionSelectOptions();
+                        
+                        // Clear pending data
+                        pendingProgressData = null;
+                        
+                        // Now open daily log modal with the division name
+                        openDailyLogModal(divisionName);
+                    } else {
+                        console.error('❌ Failed to save division progress:', data.error);
+                        showWarningMessage('Failed to save division progress: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error saving division progress:', error);
+                    showWarningMessage('Error saving division progress: ' + error.message);
+                });
             }
         });
     });
@@ -2264,8 +2409,25 @@
     }
 
     /* ===================== DAILY LOGS & WEEKLY SUMMARY (Frontend-only state) ===================== */
+    
+    // Add daily log for a specific division (triggered from divisions table)
+    function addDailyLogForDivision(divisionName) {
+        console.log('➕ Add daily log button clicked for division:', divisionName);
+        
+        if (!currentProjectId) {
+            showWarningMessage('Please select a project first.');
+            return;
+        }
+        
+        // Open daily log modal with the specific division
+        openDailyLogModal(divisionName);
+    }
+    
     // Open modal and reset form
     function openDailyLogModal(division = null) {
+        console.log('🪟 openDailyLogModal called with division:', division);
+        console.log('📋 Current pending progress data:', pendingProgressData);
+        
         if (!currentProjectId) {
             showWarningMessage('Please select a project to add a daily log.');
             return;
@@ -2304,51 +2466,64 @@
         document.getElementById('materialsBody').innerHTML = '';
         // Add one blank material row by default
         addMaterialRow();
-        // Pre-fill date with today
-        const today = new Date().toISOString().slice(0,10);
+        // Pre-fill date with today (Philippines timezone)
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
         const dateEl = document.getElementById('logDate');
         if (dateEl) dateEl.value = today;
-        // Prevent closing without saving
-        window.dailyLogSaved = false;
-        // Disable the modal close button and cancel until saved
-        const closeBtn = document.querySelector('#dailyLogModal .btn-close');
-        const cancelBtn = document.querySelector('#dailyLogModal .btn.btn-secondary');
-        if (closeBtn) closeBtn.style.pointerEvents = 'none';
-        if (closeBtn) closeBtn.style.opacity = '0.5';
-        if (cancelBtn) cancelBtn.disabled = true;
+        // Allow closing - we'll just warn if they try to close with unsaved data
+        canCloseDailyLogModal = false;
 
         dailyLogModal.show();
     }
 
-    // Clean up stored division when modal is closed
+    // Handle modal close attempts
     document.getElementById('dailyLogModal').addEventListener('hide.bs.modal', function (e) {
-        // Block hide if not saved
-        if (!window.dailyLogSaved) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return false;
+        // Only prevent closing if there's unsaved data
+        if (!canCloseDailyLogModal) {
+            const dateInput = document.getElementById('logDate').value;
+            const descInput = document.getElementById('logDescription').value;
+            
+            // If there's any data entered, ask for confirmation
+            if (dateInput || descInput) {
+                const confirmClose = confirm('You have unsaved changes. Are you sure you want to close?');
+                if (!confirmClose) {
+                    e.preventDefault();
+                    return;
+                }
+            }
         }
-        return true;
+        // Allow closing
+        canCloseDailyLogModal = true;
     });
 
     document.getElementById('dailyLogModal').addEventListener('hidden.bs.modal', function() {
         window.currentDailyLogDivision = null;
+        canCloseDailyLogModal = true;
     });
 
-    // Add a new material row (select from requested materials)
+    // Add a new material row (select from requested materials and owner supply)
     function addMaterialRow() {
         const tbody = document.getElementById('materialsBody');
         const tr = document.createElement('tr');
         const project = state.records.find(p => p.id === currentProjectId);
+        
+        // Build options from project materials (owner supply + requested materials)
         const options = (project?.requestedMaterials || [])
-            .filter(m => Number(m.remainingQty) > 0)
-            .map(m => `<option value="${m.id}" data-price="${m.unitPrice}" data-remaining="${m.remainingQty}">${escapeHtml(m.name)} (rem: ${m.remainingQty})</option>`) 
+            .filter(m => Number(m.remaining_qty || 0) > 0)
+            .map(m => {
+                const sourceType = m.source_type || 'request';
+                const sourceBadge = sourceType === 'owner_supply' ? '🏢 Owner' : '🏭 Request';
+                return `<option value="${m.id}" data-price="${m.unit_price || 0}" data-remaining="${m.remaining_qty || 0}">
+                    ${escapeHtml(m.name)} - ${sourceBadge} (rem: ${m.remaining_qty || 0} ${m.unit || ''})
+                </option>`;
+            })
             .join('');
+        
         tr.innerHTML = `
             <td>
                 <select class="form-select material-select" required>
                     <option value="" selected disabled>Select material</option>
-                    ${options}
+                    ${options || '<option disabled>No materials available</option>'}
                 </select>
             </td>
             <td>
@@ -2366,6 +2541,7 @@
                     <i class="fas fa-trash"></i>
                 </button>
             </td>`;
+        
         // bind change events for select and qty to auto-fill price and subtotal
         tr.querySelector('.material-select').addEventListener('change', function() {
             const price = Number(this.selectedOptions[0]?.dataset.price || 0);
@@ -2388,6 +2564,9 @@
 
     // Save daily log from modal
     function saveDailyLogFromModal() {
+        console.log('🎯 saveDailyLogFromModal function called');
+        console.log('📊 Current pending progress data:', pendingProgressData);
+        
         const dateInput = document.getElementById('logDate');
         const descInput = document.getElementById('logDescription');
         if (!dateInput.value || !descInput.value) {
@@ -2405,12 +2584,13 @@
             if (!matId) return null;
             const mat = (project?.requestedMaterials || []).find(m => m.id === matId);
             const qty = Number(qtyEl.value || 0);
+            const unitPrice = Number(priceEl.value || mat?.unit_price || 0);
             return {
                 materialId: matId,
                 name: mat?.name || '',
                 quantity: qty,
-                unitPrice: Number(priceEl.value || mat?.unitPrice || 0),
-                subtotal: qty * Number(priceEl.value || mat?.unitPrice || 0)
+                unitPrice: unitPrice,
+                subtotal: qty * unitPrice
             };
         }).filter(Boolean);
 
@@ -2447,36 +2627,41 @@
             if (Number(it.quantity) <= 0) { showWarningMessage('Material quantities must be greater than 0.'); return; }
             const rm = project.requestedMaterials.find(m => m.id === it.materialId);
             if (!rm) { showWarningMessage('Selected material not found in requested list.'); return; }
-            if (it.quantity > rm.remainingQty) { showWarningMessage(`Insufficient remaining for ${rm.name}.`); return; }
+            if (it.quantity > Number(rm.remaining_qty || 0)) { showWarningMessage(`Insufficient remaining for ${rm.name}.`); return; }
         }
         // Deduct remaining quantities
         materials.forEach(it => {
             const rm = project.requestedMaterials.find(m => m.id === it.materialId);
-            if (rm) rm.remainingQty = Math.max(0, Number(rm.remainingQty) - Number(it.quantity || 0));
+            if (rm) rm.remaining_qty = Math.max(0, Number(rm.remaining_qty || 0) - Number(it.quantity || 0));
         });
         project.dailyLogs = project.dailyLogs || [];
         project.dailyLogs.push(newLog);
 
-        // Now commit the pending progress entry atomically with this daily log
-        if (pendingProgressData) {
-            divisionProgress.push({ ...pendingProgressData, type: 'progress' });
-            pendingProgressData = null;
-            renderDivisionTable();
-            updateChart();
-            updateDivisionSelectOptions();
-        }
+        // Note: Division progress is now saved at the CONFIRM button click, not here
+        // This function only saves the daily log
+
+        // Save daily log to database
+        fetch('/manufacturing/save-daily-log-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId: currentProjectId,
+                divisionName: currentDivision,
+                logDate: dateInput.value,
+                description: descInput.value.trim(),
+                materials: materials,
+                totalMaterialCost: totalCost
+            }),
+            credentials: 'include'
+        });
 
         // Reload local cache and UI
         loadDailyLogs();
 
         // Allow modal to close and show success
-        window.dailyLogSaved = true;
-        const closeBtn = document.querySelector('#dailyLogModal .btn-close');
-        const cancelBtn = document.querySelector('#dailyLogModal .btn.btn-secondary');
-        if (closeBtn) { closeBtn.style.pointerEvents = ''; closeBtn.style.opacity = ''; }
-        if (cancelBtn) cancelBtn.disabled = false;
+        canCloseDailyLogModal = true;
         dailyLogModal.hide();
-        showSuccessMessage('Progress and daily log saved.');
+        showSuccessMessage('Daily log saved successfully.');
     }
 
     // Render daily logs table
@@ -2662,9 +2847,9 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${escapeHtml(m.name)}</td>
-                <td class="text-end">${Number(m.requestedQty)}</td>
-                <td class="text-end">${Number(m.remainingQty)}</td>
-                <td class="text-end">${formatter.format(Number(m.unitPrice || 0))}</td>`;
+                <td class="text-end">${Number(m.requested_qty || 0)}</td>
+                <td class="text-end">${Number(m.remaining_qty || 0)}</td>
+                <td class="text-end">${formatter.format(Number(m.unit_price || 0))}</td>`;
             tbody.appendChild(tr);
         });
     }

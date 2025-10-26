@@ -1112,6 +1112,23 @@ const ManufacturingController = {
     }
   },
 
+  // Get projects with roles for construction workers
+  getProjectsForConstructionWorkers: async (req, res) => {
+    try {
+      const projects = await ManufacturingModel.getProjectsForConstructionWorkers();
+      res.json({
+        success: true,
+        projects
+      });
+    } catch (error) {
+      console.error('Error getting projects for construction workers:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get projects for construction workers' 
+      });
+    }
+  },
+
   getAllProjects: async (req, res) => {
     try {
       const projects = await ManufacturingModel.getAllProjects();
@@ -1119,6 +1136,23 @@ const ManufacturingController = {
     } catch (error) {
       console.error('Error getting all projects:', error);
       res.status(500).json({ error: 'Failed to get projects' });
+    }
+  },
+
+  // Get active projects for material requests
+  getProjectsForMaterialRequest: async (req, res) => {
+    try {
+      const projects = await ManufacturingModel.getAllActiveProjects();
+      res.json({
+        success: true,
+        projects
+      });
+    } catch (error) {
+      console.error('Error getting projects for material request:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get projects for material request' 
+      });
     }
   },
 
@@ -1276,6 +1310,168 @@ const ManufacturingController = {
     } catch (error) {
       console.error('Error getting today attendance:', error);
       res.status(500).json({ error: 'Failed to get today attendance records' });
+    }
+  },
+
+  // Get all divisions
+  getAllDivisions: async (req, res) => {
+    try {
+      const divisions = await ManufacturingModel.getAllDivisions();
+      res.json({
+        success: true,
+        divisions
+      });
+    } catch (error) {
+      console.error('Error getting all divisions:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get divisions' 
+      });
+    }
+  },
+
+  // Get projects for manufacturing progress tracking
+  getProjectsForProgress: async (req, res) => {
+    try {
+      const projects = await ManufacturingModel.getProjectsForProgress();
+      res.json({
+        success: true,
+        projects
+      });
+    } catch (error) {
+      console.error('Error getting projects for progress:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get projects for progress' 
+      });
+    }
+  },
+
+  // Save division progress entry for manufacturing progress tracking
+  saveDivisionProgress: async (req, res) => {
+    try {
+      const { projectId, divisionId, progressValue } = req.body;
+      
+      console.log('📝 Saving division progress:', { projectId, divisionId, progressValue });
+      
+      if (!projectId || !divisionId || progressValue === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: projectId, divisionId, progressValue'
+        });
+      }
+
+      const entryId = await ManufacturingModel.saveDivisionProgressEntry(projectId, divisionId, progressValue);
+      
+      console.log('✅ Division progress saved with ID:', entryId);
+      
+      res.json({
+        success: true,
+        entryId,
+        message: 'Division progress saved successfully'
+      });
+    } catch (error) {
+      console.error('❌ Error saving division progress:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to save division progress'
+      });
+    }
+  },
+
+  // Save daily log entry for manufacturing progress tracking
+  saveDailyLogProgress: async (req, res) => {
+    try {
+      const { projectId, divisionName, logDate, description, materials, totalMaterialCost } = req.body;
+      
+      console.log('📝 Saving daily log:', { projectId, divisionName, logDate, description: description?.substring(0, 50) });
+      
+      if (!projectId || !divisionName || !logDate || !description) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields'
+        });
+      }
+
+      const logId = await ManufacturingModel.saveDailyLogEntry(projectId, divisionName, logDate, description, materials || [], totalMaterialCost || 0);
+      
+      console.log('✅ Daily log saved with ID:', logId);
+      
+      res.json({
+        success: true,
+        logId,
+        message: 'Daily log saved successfully'
+      });
+    } catch (error) {
+      console.error('❌ Error saving daily log:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to save daily log'
+      });
+    }
+  },
+
+  // Get daily logs for a project
+  getDailyLogsProgress: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      const logs = await ManufacturingModel.getDailyLogsByProject(projectId);
+      
+      res.json({
+        success: true,
+        logs
+      });
+    } catch (error) {
+      console.error('Error getting daily logs:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get daily logs'
+      });
+    }
+  },
+
+  // Get materials for project dropdown
+  getProjectMaterialsProgress: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      const materials = await ManufacturingModel.getProjectMaterialsDropdown(projectId);
+      
+      res.json({
+        success: true,
+        materials
+      });
+    } catch (error) {
+      console.error('Error getting project materials:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get project materials'
+      });
+    }
+  },
+
+  // Get division progress entries for a project
+  getDivisionProgressByProject: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      console.log('📊 Getting division progress for project:', projectId);
+      
+      const entries = await ManufacturingModel.getDivisionProgressByProject(projectId);
+      
+      console.log(`✅ Found ${entries.length} division progress entries`);
+      
+      res.json({
+        success: true,
+        entries
+      });
+    } catch (error) {
+      console.error('Error getting division progress:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get division progress'
+      });
     }
   }
 };

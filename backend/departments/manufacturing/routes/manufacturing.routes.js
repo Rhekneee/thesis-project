@@ -43,6 +43,7 @@ router.post('/contracts/manufacturing-sign', signatureUpload.single('signature')
 router.get('/foremen', ManufacturingController.getForemen);
 
 // Material request routes
+router.get('/projects-for-material-request', ManufacturingController.getProjectsForMaterialRequest);
 router.post('/request-materials', ManufacturingController.createMaterialRequest);
 router.get('/gather-request-material', ManufacturingController.getManufacturingRequestMaterials);
 router.put('/mark-materials-received', ManufacturingController.markMaterialsReceived);
@@ -72,6 +73,18 @@ router.get('/construction-roles', ManufacturingController.getAllConstructionRole
 router.get('/projects', ManufacturingController.getAllProjects);
 router.get('/projects/:projectId/labor-roles', ManufacturingController.getProjectLaborRoles);
 router.get('/projects/:projectId/planning-labor-roles', ManufacturingController.getLaborRolesForPlanningProjects);
+router.get('/projects-for-construction-workers', ManufacturingController.getProjectsForConstructionWorkers);
+
+// Divisions endpoint
+router.get('/divisions', ManufacturingController.getAllDivisions);
+
+// Projects for progress tracking
+router.get('/projects-for-progress', ManufacturingController.getProjectsForProgress);
+router.post('/save-division-progress', ManufacturingController.saveDivisionProgress);
+router.post('/save-daily-log-progress', ManufacturingController.saveDailyLogProgress);
+router.get('/daily-logs/:projectId', ManufacturingController.getDailyLogsProgress);
+router.get('/project-materials/:projectId', ManufacturingController.getProjectMaterialsProgress);
+router.get('/division-progress/:projectId', ManufacturingController.getDivisionProgressByProject);
 
 // ========== ATTENDANCE ROUTES ==========
 
