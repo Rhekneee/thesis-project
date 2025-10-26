@@ -1080,23 +1080,68 @@ const ManufacturingModel = {
     }
   },
 
-  getAllProjects: async () => {
+  getAllActiveProjects: async () => {
     try {
       const [rows] = await db.query(`
         SELECT 
           p.id,
           p.project_name,
+          p.location,
           p.start_date,
           p.end_date,
           p.status,
           p.created_at
         FROM projects p
-        WHERE p.status = 'planning'
+        WHERE p.status IN ('planning', 'in_progress')
         ORDER BY p.project_name ASC
       `);
       return rows;
     } catch (error) {
-      console.error('❌ Error getting all projects:', error);
+      console.error('❌ Error getting all active projects:', error);
+      throw error;
+    }
+  },
+
+  // Get projects specifically for adding construction workers (with labor roles data)
+  getProjectsForConstructionWorkers: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          p.id,
+          p.project_name,
+          p.location,
+          p.start_date,
+          p.end_date,
+          p.status,
+          p.created_at
+        FROM projects p
+        WHERE p.status IN ('planning', 'in_progress')
+        ORDER BY p.project_name ASC
+      `);
+      
+      // Get labor roles for each project
+      const projectsWithRoles = await Promise.all(rows.map(async (project) => {
+        const [laborRoles] = await db.query(`
+          SELECT DISTINCT
+            l.worker_type_id,
+            cr.role_name as worker_type_name,
+            cr.daily_rate,
+            l.manpower_per_unit
+          FROM labor l
+          JOIN construction_roles cr ON cr.id = l.worker_type_id
+          WHERE l.project_id = ? AND l.manpower_per_unit > 0
+          ORDER BY cr.role_name ASC
+        `, [project.id]);
+        
+        return {
+          ...project,
+          roles: laborRoles
+        };
+      }));
+      
+      return projectsWithRoles;
+    } catch (error) {
+      console.error('❌ Error getting projects for construction workers:', error);
       throw error;
     }
   },
@@ -1320,6 +1365,280 @@ const ManufacturingModel = {
       return rows;
     } catch (error) {
       console.error('❌ Error getting today attendance records:', error);
+      throw error;
+    }
+  },
+
+  // Get all divisions from division_master table
+  getAllDivisions: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT id, division_name, created_at
+        FROM division_master
+        ORDER BY id ASC
+      `);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting all divisions:', error);
+      throw error;
+    }
+  },
+
+  // Get projects for manufacturing progress tracking (planning status or active contracts)
+  getProjectsForProgress: async () => {
+    try {
+      // First get all planning projects
+      const [planningRows] = await db.query(`
+        SELECT 
+          id,
+          project_code,
+          project_name,
+          client_name,
+          location,
+          start_date,
+          end_date,
+          status
+        FROM projects
+        WHERE status = 'planning'
+        ORDER BY start_date DESC
+      `);
+      
+      // Then get active contract projects (status = 'Active' in contracts, matching project created from contract)
+      const [activeRows] = await db.query(`
+        SELECT 
+          p.id,
+          p.project_code,
+          p.project_name,
+          p.client_name,
+          p.location,
+          p.start_date,
+          p.end_date,
+          p.status
+        FROM projects p
+        WHERE p.status = 'in_progress'
+        ORDER BY p.start_date DESC
+      `);
+      
+      // Combine and remove duplicates
+      const allProjects = [...planningRows, ...activeRows];
+      const uniqueProjects = allProjects.filter((project, index, self) => 
+        index === self.findIndex(p => p.id === project.id)
+      );
+      
+      // Format the results to match expected structure
+      return uniqueProjects.map(row => ({
+        id: row.id,
+        name: row.project_name,
+        developer: row.client_name || 'N/A',
+        foreman: 'TBD',
+        location: row.location,
+        status: row.status === 'in_progress' ? 'On Going' : (row.status || 'planning'),
+        progress: 0,
+        image: '/image/project-2.jpg',
+        submissionDate: row.start_date ? new Date(row.start_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        manufacturingCost: 0,
+        divisionProgress: [],
+        dailyLogs: [],
+        requestedMaterials: []
+      }));
+    } catch (error) {
+      console.error('❌ Error getting projects for progress:', error);
+      throw error;
+    }
+  },
+
+  // Save division progress entry (for manufacturing progress tracking)
+  saveDivisionProgressEntry: async (projectId, divisionId, progressValue) => {
+    try {
+      // Validate division_id is provided
+      if (!divisionId) {
+        throw new Error('Division ID is required');
+      }
+      
+      const progress = Math.min(100, Math.max(0, Number(progressValue) || 0));
+      
+      // Insert into division_progress table
+      const [result] = await db.execute(`
+        INSERT INTO division_progress (
+          project_id, division_id, progress_percentage, created_at
+        ) VALUES (?, ?, ?, NOW())
+      `, [projectId, divisionId, progress]);
+      
+      console.log(`✅ Division progress saved: ${progress}% for division_id ${divisionId} (ID: ${result.insertId})`);
+      
+      return result.insertId;
+    } catch (error) {
+      console.error('❌ Error saving division progress entry:', error);
+      throw error;
+    }
+  },
+
+  // Save daily log entry (for manufacturing progress tracking)
+  saveDailyLogEntry: async (projectId, divisionName, logDate, description, materialsArray, totalMaterialCost) => {
+    try {
+      // Get division_id from division_master
+      const [divisionRows] = await db.execute(`
+        SELECT id FROM division_master WHERE division_name = ?
+      `, [divisionName]);
+      
+      if (divisionRows.length === 0) {
+        throw new Error(`Division "${divisionName}" not found`);
+      }
+      
+      const divisionId = divisionRows[0].id;
+      const materialUsed = JSON.stringify(materialsArray);
+      const quantity = materialsArray.map(m => `${m.name}: ${m.quantity}`).join(', ');
+      
+      // Insert into daily_logs table
+      const [result] = await db.execute(`
+        INSERT INTO daily_logs (
+          project_id, division_id, log_date, description, material_used, quantity, total_material_cost
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [projectId, divisionId, logDate, description, materialUsed, quantity, totalMaterialCost]);
+      
+      console.log(`✅ Daily log saved: ${description.substring(0, 30)}... (ID: ${result.insertId})`);
+      
+      return result.insertId;
+    } catch (error) {
+      console.error('❌ Error saving daily log entry:', error);
+      throw error;
+    }
+  },
+
+  // Get daily logs for a project (for manufacturing progress tracking)
+  getDailyLogsByProject: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          dl.id,
+          dl.project_id,
+          dl.division_id,
+          dm.division_name,
+          dl.log_date,
+          dl.description,
+          dl.material_used,
+          dl.quantity,
+          dl.total_material_cost,
+          dl.created_at
+        FROM daily_logs dl
+        JOIN division_master dm ON dl.division_id = dm.id
+        WHERE dl.project_id = ?
+        ORDER BY dl.log_date DESC, dl.created_at DESC
+      `, [projectId]);
+      
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting daily logs by project:', error);
+      throw error;
+    }
+  },
+
+  // Get materials for project dropdown (from owners_supply and request_material)
+  getProjectMaterialsDropdown: async (projectId) => {
+    try {
+      const materials = [];
+      
+      // Step 1: Get proposal_id from contract that created this project
+      const [projectRows] = await db.query(`
+        SELECT project_code FROM projects WHERE id = ?
+      `, [projectId]);
+      
+      if (projectRows.length === 0) {
+        return [];
+      }
+      
+      // Extract contract_id from project_code (format: PRJ-YYYY-####)
+      const projectCode = projectRows[0].project_code;
+      const contractIdMatch = projectCode.match(/PRJ-\d{4}-(\d+)/);
+      
+      if (contractIdMatch) {
+        const contractId = contractIdMatch[1];
+        
+        // Get proposal_id from contract
+        const [contractRows] = await db.query(`
+          SELECT proposal_id FROM contracts WHERE contract_id = ?
+        `, [contractId]);
+        
+        if (contractRows.length > 0) {
+          const proposalId = contractRows[0].proposal_id;
+          
+          // Get owner supply materials that are DELIVERED to main warehouse
+          const [ownerSupplyMaterials] = await db.query(`
+            SELECT 
+              CONCAT('owner_', os.supply_id) as id,
+              os.material_name as name,
+              os.unit,
+              os.quantity as requested_qty,
+              os.quantity as remaining_qty,
+              COALESCE(os.quantity * 0, 0.00) as unit_price,
+              'owner_supply' as source_type,
+              os.supply_id
+            FROM owners_supply os
+            WHERE os.proposal_id = ? AND os.status = 'delivered'
+          `, [proposalId]);
+          
+          materials.push(...ownerSupplyMaterials);
+        }
+      }
+      
+      // Step 2: Get materials from request_material for this project (that have been delivered)
+      const [requestedMaterials] = await db.query(`
+        SELECT 
+          CONCAT('req_', rm.id) as id,
+          CASE 
+            WHEN rm.source_type = 'owner_supply' THEN os.material_name
+            WHEN rm.source_type = 'company_supply' THEN m.name
+            ELSE 'Unknown Material'
+          END as name,
+          rm.unit,
+          rm.quantity as requested_qty,
+          rm.quantity as remaining_qty,
+          COALESCE(rm.quantity * 0, 0.00) as unit_price,
+          rm.source_type,
+          rm.id as request_id
+        FROM request_material rm
+        LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
+        LEFT JOIN materials m ON rm.material_id = m.material_id
+        WHERE rm.project_id = ? AND rm.status = 'received'
+      `, [projectId]);
+      
+      // Add requested materials
+      materials.push(...requestedMaterials);
+      
+      console.log(`✅ Found ${materials.length} materials for project ${projectId}`);
+      
+      return materials;
+    } catch (error) {
+      console.error('❌ Error getting project materials dropdown:', error);
+      throw error;
+    }
+  },
+
+  // Get division progress entries for a project
+  getDivisionProgressByProject: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          dp.id,
+          dp.project_id,
+          dp.division_id,
+          dm.division_name,
+          dp.progress_percentage,
+          dp.status,
+          dp.remarks,
+          dp.start_date,
+          dp.target_date,
+          dp.created_at,
+          dp.updated_at
+        FROM division_progress dp
+        JOIN division_master dm ON dp.division_id = dm.id
+        WHERE dp.project_id = ?
+        ORDER BY dp.created_at DESC
+      `, [projectId]);
+      
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting division progress by project:', error);
       throw error;
     }
   }

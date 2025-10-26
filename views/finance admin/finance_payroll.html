@@ -552,6 +552,32 @@
         </div>
     </div>
 
+    <!-- Info Modal -->
+    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="infoModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>Information
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-info-circle text-info" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="mb-3" id="infoTitle">No Approved Entries</h5>
+                    <p class="text-muted mb-0" id="infoMessage">No approved payroll entries found in this period.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-info" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-2"></i>Understood
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bank Submission Confirmation Modal -->
     <div class="modal fade" id="bankSubmissionConfirmationModal" tabindex="-1" aria-labelledby="bankSubmissionConfirmationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -677,15 +703,22 @@
     <style>
         .period-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease; }
         .period-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); transform: translateY(-2px); }
-        .period-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .period-name { font-size: 1.2rem; font-weight: 600; color: #2c3e50; }
+        .period-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .period-header > div:first-child { flex: 1; }
+        .period-name { font-size: 1.2rem; font-weight: 600; color: #2c3e50; margin-top: 8px; display: flex; align-items: center; gap: 15px; }
+        .date-range { font-size: 0.9rem; color: #6c757d; font-weight: normal; margin-left: 15px; }
+        .date-range i { margin-right: 5px; color: #28a745; }
         .period-status { padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
         .status-pending { background: #fff3cd; color: #856404; }
         .status-approved { background: #d4edda; color: #155724; }
         .status-rejected { background: #f8d7da; color: #721c24; }
         .status-processed { background: #cce5ff; color: #004085; }
-        .period-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .stat-item { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 6px; }
+        .period-stats { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+        .stat-item { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 6px; }
+        .stat-full { grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-full .stat-value { color: white; font-size: 1.8rem; }
+        .stat-full .stat-label { color: rgba(255,255,255,0.9); }
+        .stat-row-status { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .stat-value { font-size: 1.5rem; font-weight: 700; color: #2c3e50; }
         .stat-label { font-size: 0.8rem; color: #6c757d; margin-top: 5px; }
         .period-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -725,6 +758,44 @@
         .summary-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
         .summary-value { font-size: 2rem; font-weight: 700; color: #2c3e50; }
         .summary-label { font-size: 0.9rem; color: #6c757d; margin-top: 5px; }
+        
+        /* Payroll Type Badges */
+        .payroll-type-badge { 
+            display: inline-block; 
+            padding: 6px 14px; 
+            border-radius: 6px; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .badge-employee { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+        }
+        .badge-construction { 
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+            color: white; 
+        }
+        .badge-both { 
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+            color: white; 
+        }
+        .badge-unknown { 
+            background: #6c757d; 
+            color: white; 
+        }
+        .type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 8px;
+            margin-top: 8px;
+        }
+        .badge-blue { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .badge-orange { background: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; }
     </style>
 
     <!-- Move all scripts to the end of body -->
@@ -1363,13 +1434,19 @@
                 let skippedDueToStatus = 0;
                 await Promise.all(selected.map(async cb => {
                     const payrollId = cb.getAttribute('data-payroll-id');
+                    const payrollType = cb.getAttribute('data-payroll-type'); // 'employee' or 'construction'
                     const status = (cb.getAttribute('data-status') || '').toLowerCase();
                     if (['released', 'rejected', 'processed'].includes(status)) {
                         skippedDueToStatus++;
                         return;
                     }
                     try {
-                        const resp = await fetch(`/finance/payrolls/${payrollId}/approve`, {
+                        // Determine the correct endpoint based on payroll type
+                        const endpoint = payrollType === 'construction' 
+                            ? `/finance/construction-payrolls/${payrollId}/approve`
+                            : `/finance/payrolls/${payrollId}/approve`;
+                        
+                        const resp = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ remarks: 'Approved via bulk selection' })
@@ -1445,14 +1522,22 @@
                  const selected = Array.from(document.querySelectorAll('.entry-checkbox'))
                      .filter(cb => cb.checked && !cb.disabled);
                  
-                 // Approve each selected payroll entry with remarks
-                 await Promise.all(selected.map(cb => fetch(`/finance/payrolls/${cb.getAttribute('data-payroll-id')}/approve`, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ remarks: remarks })
-                 }).then(r => r.json()).then(j => {
-                     if (!j.success) throw new Error(j.message || 'Failed to approve an entry');
-                 })));
+                 // Approve each selected payroll entry with remarks (check type)
+                 await Promise.all(selected.map(cb => {
+                     const payrollId = cb.getAttribute('data-payroll-id');
+                     const payrollType = cb.getAttribute('data-payroll-type');
+                     const endpoint = payrollType === 'construction' 
+                         ? `/finance/construction-payrolls/${payrollId}/approve`
+                         : `/finance/payrolls/${payrollId}/approve`;
+                     
+                     return fetch(endpoint, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ remarks: remarks })
+                     }).then(r => r.json()).then(j => {
+                         if (!j.success) throw new Error(j.message || 'Failed to approve an entry');
+                     });
+                 }));
 
                  // Hide confirmation modal
                  const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
@@ -1537,14 +1622,22 @@
                      return;
                  }
                  
-                 // Submit remarks to all pending entries
-                 await Promise.all(pendingEntries.map(entry => fetch(`/finance/payrolls/${entry.id}/remarks`, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ remarks: remarks })
-                 }).then(r => r.json()).then(j => {
-                     if (!j.success) throw new Error(j.message || 'Failed to submit remarks');
-                 })));
+                 // Submit remarks to all pending entries (check type to use correct endpoint)
+                 await Promise.all(pendingEntries.map(entry => {
+                     // Determine if it's construction or employee payroll
+                     const isConstruction = entry.payroll_type === 'construction' || entry.daily_rate; // Use daily_rate as indicator for construction
+                     const endpoint = isConstruction 
+                         ? `/finance/construction-payrolls/${entry.id}/remarks`
+                         : `/finance/payrolls/${entry.id}/remarks`;
+                     
+                     return fetch(endpoint, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ remarks: remarks })
+                     }).then(r => r.json()).then(j => {
+                         if (!j.success) throw new Error(j.message || 'Failed to submit remarks');
+                     });
+                 }));
 
                  // Hide confirmation modal
                  const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
@@ -1919,11 +2012,50 @@
             const startDate = new Date(period.start_date);
             const isFirstHalf = startDate.getDate() <= 15;
             const periodType = isFirstHalf ? 'First Half' : 'Second Half';
+            
+            // Determine payroll type badge
+            const payrollType = period.payroll_type || 'Unknown';
+            let payrollTypeBadge = '';
+            if (payrollType === 'Employee') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-employee"><i class="fas fa-user-tie"></i> Employee Payroll</span>';
+            } else if (payrollType === 'Construction') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-construction"><i class="fas fa-hard-hat"></i> Construction Workers</span>';
+            } else if (payrollType === 'Both') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-both"><i class="fas fa-users"></i> Combined Payroll</span>';
+            } else {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-unknown"><i class="fas fa-question-circle"></i> Unknown</span>';
+            }
+            
+            // Get badges for employee and construction counts
+            let typeBadges = '';
+            if (period.employee_entries_count > 0 && period.construction_entries_count > 0) {
+                typeBadges = `
+                    <span class="type-badge badge-blue">
+                        <i class="fas fa-user-tie"></i> ${period.employee_entries_count} Employees
+                    </span>
+                    <span class="type-badge badge-orange">
+                        <i class="fas fa-hard-hat"></i> ${period.construction_entries_count} Construction
+                    </span>
+                `;
+            } else if (period.employee_entries_count > 0) {
+                typeBadges = `<span class="type-badge badge-blue"><i class="fas fa-user-tie"></i> ${period.employee_entries_count} Employees</span>`;
+            } else if (period.construction_entries_count > 0) {
+                typeBadges = `<span class="type-badge badge-orange"><i class="fas fa-hard-hat"></i> ${period.construction_entries_count} Construction Workers</span>`;
+            }
+            
             return `
                 <div class="period-card">
                     <div class="period-header">
-                        <div class="period-name">
-                            <i class="fas fa-calendar-week"></i> ${periodType}
+                        <div>
+                            ${payrollTypeBadge}
+                            <div class="period-name">
+                                <i class="fas fa-calendar-week"></i> ${periodType}
+                                <span class="date-range">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    ${formatDate2(period.start_date)} - ${formatDate2(period.end_date)}
+                                </span>
+                            </div>
+                            ${typeBadges}
                         </div>
                         <span class="period-status status-${period.status}">
                             ${period.status.charAt(0).toUpperCase() + period.status.slice(1)}
@@ -1931,33 +2063,23 @@
                     </div>
                     
                     <div class="period-stats">
-                        <div class="stat-item">
-                            <div class="stat-value">${period.employee_count || 0}</div>
-                            <div class="stat-label">Employees</div>
-                        </div>
-                        <div class="stat-item">
+                        <div class="stat-item stat-full">
                             <div class="stat-value">₱${formatCurrency2(period.total_payroll_amount || 0)}</div>
                             <div class="stat-label">Total Amount</div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${period.pending_entries || 0}</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${period.approved_entries || 0}</div>
-                            <div class="stat-label">Approved</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${period.released_entries || 0}</div>
-                            <div class="stat-label">Released</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${formatDate2(period.start_date)}</div>
-                            <div class="stat-label">Start Date</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${formatDate2(period.end_date)}</div>
-                            <div class="stat-label">End Date</div>
+                        <div class="stat-row-status">
+                            <div class="stat-item">
+                                <div class="stat-value">${period.pending_entries || 0}</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${period.approved_entries || 0}</div>
+                                <div class="stat-label">Approved</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${period.released_entries || 0}</div>
+                                <div class="stat-label">Released</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -2117,11 +2239,19 @@
             }
         }
 
+        // Show info modal
+        function showInfoModal(title, message) {
+            document.getElementById('infoTitle').textContent = title;
+            document.getElementById('infoMessage').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('infoModal'));
+            modal.show();
+        }
+
         // Submit all approved entries in a period to bank
         async function submitApprovedEntriesToBank(periodId) {
             try {
                 // Get all payroll entries for this period
-                const response = await fetch(`/finance/payroll-periods/${periodId}/entries`);
+                const response = await fetch(`/finance/payroll-periods/${periodId}/entries`, { credentials: 'include' });
                 const result = await response.json();
                 
                 if (!result.success) {
@@ -2134,7 +2264,7 @@
                 );
                 
                 if (approvedEntries.length === 0) {
-                    alert('No approved payroll entries found in this period.');
+                    showInfoModal('No Approved Entries', 'No approved payroll entries found in this period.');
                     return;
                 }
                 
@@ -2143,7 +2273,7 @@
                 
             } catch (error) {
                 console.error('Error submitting approved entries to bank:', error);
-                alert('Error submitting approved entries to bank: ' + error.message);
+                showInfoModal('Error', 'Error submitting approved entries to bank: ' + error.message);
             }
         }
 
@@ -2163,7 +2293,7 @@
                 ]);
 
                 if (periodData.success && entriesData.success && summaryData.success) {
-                    displayPeriodModal(periodData.period, entriesData.entries, summaryData.summary);
+                    displayPeriodModal(periodData.period, entriesData, summaryData.summary);
                 } else {
                     throw new Error('Failed to load period details');
                 }
@@ -2173,8 +2303,25 @@
             }
         }
 
-        function displayPeriodModal(period, entries, summary) {
-            document.getElementById('modal-period-name').textContent = period.period_name;
+        function displayPeriodModal(period, entriesData, summary) {
+            // Update modal title with payroll type badge
+            const payrollType = period.payroll_type || 'Unknown';
+            let payrollTypeBadge = '';
+            if (payrollType === 'Employee') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-employee"><i class="fas fa-user-tie"></i> Employee</span>';
+            } else if (payrollType === 'Construction') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-construction"><i class="fas fa-hard-hat"></i> Construction</span>';
+            } else if (payrollType === 'Both') {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-both"><i class="fas fa-users"></i> Combined</span>';
+            } else {
+                payrollTypeBadge = '<span class="payroll-type-badge badge-unknown"><i class="fas fa-question-circle"></i> Unknown</span>';
+            }
+            
+            document.getElementById('modal-period-name').innerHTML = `
+                <span>${period.period_name}</span>
+                ${payrollTypeBadge}
+            `;
+            
             const summaryHtml = `
                 <div class="summary-card">
                     <div class="summary-value">${summary.total_employees || 0}</div>
@@ -2195,31 +2342,62 @@
             `;
             document.getElementById('modal-summary').innerHTML = summaryHtml;
 
+            // Get all entries (both employee and construction)
+            const allEntries = entriesData.entries || [];
+            const employeeEntries = entriesData.employee_entries || [];
+            const constructionEntries = entriesData.construction_entries || [];
+            
             // Filter out approved entries
-            const nonApprovedEntries = entries.filter(entry => (entry.status || '').toLowerCase() === 'pending');
+            const nonApprovedEntries = allEntries.filter(entry => (entry.status || '').toLowerCase() === 'pending');
 
-            const employeesHtml = `
-                <div class=\"employee-row employee-header\"> 
-                    <div><input type=\"checkbox\" id=\"select-all-entries\"></div>
+            // Generate HTML for employee entries
+            const employeePending = employeeEntries.filter(e => (e.status || '').toLowerCase() === 'pending');
+            const employeesHtml = employeeEntries.length > 0 ? `
+                <h6 class="mb-3 mt-3">Employee Payroll (${employeePending.length} pending)</h6>
+                <div class="employee-row employee-header">
+                    <div><input type="checkbox" id="select-all-employees"></div>
                     <div>Employee</div>
                     <div>Position</div>
                     <div>Net Salary</div>
                 </div>
-                ${nonApprovedEntries.length > 0 ? nonApprovedEntries.map((entry, idx) => `
-                    <div class=\"employee-row\"> 
-                         <div><input type=\"checkbox\" class=\"entry-checkbox\" data-entry-index=\"${idx}\" data-payroll-id=\"${entry.id}\" data-status=\"${(entry.status || '').toLowerCase()}\"></div>
-                         <div class=\"employee-name\"><span>${entry.full_name || entry.employee_name || 'N/A'}</span></div>
-                         <div>${entry.position || 'N/A'}</div>
+                ${employeePending.length > 0 ? employeePending.map((entry, idx) => `
+                    <div class="employee-row">
+                        <div><input type="checkbox" class="entry-checkbox" data-entry-index="${idx}" data-payroll-id="${entry.id}" data-status="${(entry.status || '').toLowerCase()}" data-payroll-type="employee"></div>
+                        <div class="employee-name"><span>${entry.full_name || 'N/A'}</span></div>
+                        <div>${entry.position || 'N/A'}</div>
                         <div>₱${formatCurrency2(entry.net_salary || 0)}</div>
                     </div>
-                 `).join('') : '<div class="employee-row"><div colspan="4" class="text-center text-muted">No pending entries found</div></div>'}
-            `;
-            document.getElementById('modal-employees').innerHTML = employeesHtml;
+                 `).join('') : '<div class="employee-row"><div colspan="4" class="text-center text-muted">No pending employee entries</div></div>'}
+            ` : '';
+
+            // Generate HTML for construction entries
+            const constructionPending = constructionEntries.filter(e => (e.status || '').toLowerCase() === 'pending');
+            const constructionHtml = constructionEntries.length > 0 ? `
+                <h6 class="mb-3 mt-3">Construction Workers (${constructionPending.length} pending)</h6>
+                <div class="employee-row employee-header">
+                    <div><input type="checkbox" id="select-all-construction"></div>
+                    <div>Worker Name</div>
+                    <div>Position</div>
+                    <div>Net Salary</div>
+                </div>
+                ${constructionPending.length > 0 ? constructionPending.map((entry, idx) => `
+                    <div class="employee-row">
+                        <div><input type="checkbox" class="entry-checkbox" data-entry-index="${idx}" data-payroll-id="${entry.id}" data-status="${(entry.status || '').toLowerCase()}" data-payroll-type="construction"></div>
+                        <div class="employee-name"><span>${entry.full_name || 'N/A'}</span></div>
+                        <div>${entry.position || 'N/A'}</div>
+                        <div>₱${formatCurrency2(entry.net_salary || 0)}</div>
+                    </div>
+                 `).join('') : '<div class="employee-row"><div colspan="4" class="text-center text-muted">No pending construction entries</div></div>'}
+            ` : '';
+
+            const combinedHtml = `${employeesHtml}${constructionHtml}`;
+            document.getElementById('modal-employees').innerHTML = combinedHtml;
 
             // Enable/disable approve selected and update total
             const approveSelectedBtn = document.getElementById('btn-approve-period-modal');
             const entryCheckboxes = Array.from(document.querySelectorAll('.entry-checkbox'));
-            const selectAll = document.getElementById('select-all-entries');
+            const selectAllEmployees = document.getElementById('select-all-employees');
+            const selectAllConstruction = document.getElementById('select-all-construction');
             const selectedTotalElement = document.getElementById('selectedTotalAmount');
             
             const updateApproveState = () => {
@@ -2232,7 +2410,7 @@
                 entryCheckboxes.forEach(cb => {
                     if (cb.checked) {
                         const payrollId = cb.getAttribute('data-payroll-id');
-                        const entry = entries.find(e => e.id == payrollId);
+                        const entry = allEntries.find(e => e.id == payrollId);
                         if (entry) {
                             total += parseFloat(entry.net_salary || 0);
                         }
@@ -2247,9 +2425,21 @@
             };
             
             entryCheckboxes.forEach(cb => cb.addEventListener('change', updateAllStates));
-            if (selectAll) {
-                selectAll.addEventListener('change', function() {
-                    entryCheckboxes.forEach(cb => { cb.checked = selectAll.checked; });
+            
+            // Handle select-all-employees checkbox
+            if (selectAllEmployees) {
+                selectAllEmployees.addEventListener('change', function() {
+                    const employeeCheckboxes = Array.from(document.querySelectorAll('.entry-checkbox[data-payroll-type="employee"]'));
+                    employeeCheckboxes.forEach(cb => { cb.checked = selectAllEmployees.checked; });
+                    updateAllStates();
+                });
+            }
+            
+            // Handle select-all-construction checkbox
+            if (selectAllConstruction) {
+                selectAllConstruction.addEventListener('change', function() {
+                    const constructionCheckboxes = Array.from(document.querySelectorAll('.entry-checkbox[data-payroll-type="construction"]'));
+                    constructionCheckboxes.forEach(cb => { cb.checked = selectAllConstruction.checked; });
                     updateAllStates();
                 });
             }

@@ -7,17 +7,25 @@ class FinanceModel {
     static async getAllPayrollPeriods() {
         try {
             const [periods] = await db.query(`
-            SELECT 
+                SELECT 
                     pp.*,
-                    COALESCE(payroll_stats.employee_count, 0) as employee_count,
-                    COALESCE(payroll_stats.total_payroll_amount, 0) as total_payroll_amount,
-                    COALESCE(payroll_stats.total_hours, 0) as total_hours,
-                    COALESCE(payroll_stats.total_overtime_hours, 0) as total_overtime_hours,
-                    COALESCE(payroll_stats.total_entries, 0) as total_entries,
-                    COALESCE(payroll_stats.pending_entries, 0) as pending_entries,
-                    COALESCE(payroll_stats.approved_entries, 0) as approved_entries,
-                    COALESCE(payroll_stats.released_entries, 0) as released_entries,
-                    COALESCE(payroll_stats.rejected_entries, 0) as rejected_entries
+                    COALESCE(payroll_stats.employee_count, 0) + COALESCE(construction_stats.construction_count, 0) as employee_count,
+                    COALESCE(payroll_stats.total_payroll_amount, 0) + COALESCE(construction_stats.total_payroll_amount, 0) as total_payroll_amount,
+                    COALESCE(payroll_stats.total_hours, 0) + COALESCE(construction_stats.total_hours, 0) as total_hours,
+                    COALESCE(payroll_stats.total_overtime_hours, 0) + COALESCE(construction_stats.total_overtime_hours, 0) as total_overtime_hours,
+                    COALESCE(payroll_stats.total_entries, 0) + COALESCE(construction_stats.total_entries, 0) as total_entries,
+                    COALESCE(payroll_stats.pending_entries, 0) + COALESCE(construction_stats.pending_entries, 0) as pending_entries,
+                    COALESCE(payroll_stats.approved_entries, 0) + COALESCE(construction_stats.approved_entries, 0) as approved_entries,
+                    COALESCE(payroll_stats.released_entries, 0) + COALESCE(construction_stats.released_entries, 0) as released_entries,
+                    COALESCE(payroll_stats.rejected_entries, 0) + COALESCE(construction_stats.rejected_entries, 0) as rejected_entries,
+                    COALESCE(payroll_stats.employee_count, 0) as employee_entries_count,
+                    COALESCE(construction_stats.construction_count, 0) as construction_entries_count,
+                    CASE 
+                        WHEN pp.payroll_id IS NOT NULL AND pp.construction_payroll_id IS NOT NULL THEN 'Both'
+                        WHEN pp.payroll_id IS NOT NULL THEN 'Employee'
+                        WHEN pp.construction_payroll_id IS NOT NULL THEN 'Construction'
+                        ELSE 'Unknown'
+                    END as payroll_type
                 FROM payroll_periods pp
                 LEFT JOIN (
                     SELECT 
@@ -34,41 +42,23 @@ class FinanceModel {
                     FROM payroll
                     GROUP BY payroll_period_id
                 ) payroll_stats ON pp.id = payroll_stats.payroll_period_id
+                LEFT JOIN (
+                    SELECT 
+                        payroll_period_id,
+                        COUNT(DISTINCT worker_id) as construction_count,
+                        SUM(net_salary) as total_payroll_amount,
+                        SUM(total_hours) as total_hours,
+                        SUM(overtime_hours) as total_overtime_hours,
+                        COUNT(*) as total_entries,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_entries,
+                        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_entries,
+                        SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_entries,
+                        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected_entries
+                    FROM construction_payroll
+                    GROUP BY payroll_period_id
+                ) construction_stats ON pp.id = construction_stats.payroll_period_id
                 ORDER BY pp.created_at DESC
             `);
-            
-            // Debug: Log the first period's data to see what we're getting
-            if (periods.length > 0) {
-                console.log('🔍 Debug - First period data:', {
-                    id: periods[0].id,
-                    period_name: periods[0].period_name,
-                    total_entries: periods[0].total_entries,
-                    pending_entries: periods[0].pending_entries,
-                    approved_entries: periods[0].approved_entries,
-                    released_entries: periods[0].released_entries,
-                    rejected_entries: periods[0].rejected_entries
-                });
-                
-                // Debug: Check actual payroll entries for this period
-                const [debugEntries] = await db.query(`
-                    SELECT status, COUNT(*) as count 
-                    FROM payroll 
-                    WHERE payroll_period_id = ? 
-                    GROUP BY status
-                `, [periods[0].id]);
-                
-                console.log('🔍 Debug - Actual payroll entries for period', periods[0].id, ':', debugEntries);
-                
-                // Debug: Check all individual entries for this period
-                const [allEntries] = await db.query(`
-                    SELECT id, employee_id, status 
-                    FROM payroll 
-                    WHERE payroll_period_id = ? 
-                    ORDER BY id
-                `, [periods[0].id]);
-                
-                console.log('🔍 Debug - All individual entries for period', periods[0].id, ':', allEntries);
-            }
             
             return periods;
         } catch (error) {
@@ -265,6 +255,56 @@ class FinanceModel {
             throw error;
         }
     }
+
+    // Submit remarks to a construction payroll entry (for pending entries)
+    static async submitConstructionPayrollRemarks(constructionPayrollId, remarks) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            
+            // Check if remarks column exists in construction_payroll table
+            const [columns] = await connection.query(`
+                SELECT COLUMN_NAME 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'construction_payroll' 
+                AND COLUMN_NAME = 'remarks'
+            `);
+            
+            const hasRemarksColumn = columns.length > 0;
+            
+            let result;
+            if (hasRemarksColumn) {
+                // Update with remarks if column exists
+                [result] = await connection.query(`
+                    UPDATE construction_payroll 
+                    SET remarks = ?, updated_at = NOW()
+                    WHERE id = ? AND status = 'pending'
+                `, [remarks, constructionPayrollId]);
+            } else {
+                // Just update the status (remarks column doesn't exist yet)
+                [result] = await connection.query(`
+                    UPDATE construction_payroll 
+                    SET updated_at = NOW()
+                    WHERE id = ? AND status = 'pending'
+                `, [constructionPayrollId]);
+            }
+
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                return { success: false, message: 'Construction payroll entry not found or not in pending status' };
+            }
+
+            await connection.commit();
+            return { success: true, message: 'Construction payroll entry updated successfully' };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error submitting construction payroll remarks:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
     // Get pending payroll periods
     static async getpendingPayrollPeriods() {
         try {
@@ -348,9 +388,10 @@ class FinanceModel {
         }
     }
 
-    // Get all payroll entries for a specific period
+    // Get all payroll entries for a specific period (handles both employee and construction payroll)
     static async getPayrollEntriesByPeriod(periodId) {
         try {
+            // Get employee payroll entries
             const [entries] = await db.query(`
                 SELECT 
                     p.*,
@@ -368,7 +409,25 @@ class FinanceModel {
                 ORDER BY e.full_name
             `, [periodId]);
             
-            // Add next period deductions information to each entry
+            // Get construction payroll entries for this period
+            const [constructionEntries] = await db.query(`
+                SELECT 
+                    cp.*,
+                    CONCAT(cw.firstname, ' ', IFNULL(cw.middlename, ''), ' ', cw.lastname) as full_name,
+                    cr.role_name as position,
+                    cw.picture as profile_picture,
+                    p.project_name as department_name,
+                    pp.period_name
+                FROM construction_payroll cp
+                JOIN construction_workers cw ON cp.worker_id = cw.id
+                JOIN construction_roles cr ON cp.role_id = cr.id
+                LEFT JOIN projects p ON cw.project_id = p.id
+                JOIN payroll_periods pp ON cp.payroll_period_id = pp.id
+                WHERE cp.payroll_period_id = ?
+                ORDER BY cw.lastname, cw.firstname
+            `, [periodId]);
+            
+            // Add next period deductions information to each employee entry
             const HRModel = require('../../hr/model/hr.model');
             const enhancedEntries = await Promise.all(entries.map(async (entry) => {
                 try {
@@ -385,18 +444,59 @@ class FinanceModel {
                     
                     return {
                         ...entry,
-                        next_period_deductions: nextPeriodDeductions
+                        next_period_deductions: nextPeriodDeductions,
+                        payroll_type: 'employee'
                     };
                 } catch (error) {
                     console.error('Error calculating next period deductions for entry:', entry.employee_id, error);
                     return {
                         ...entry,
-                        next_period_deductions: []
+                        next_period_deductions: [],
+                        payroll_type: 'employee'
                     };
                 }
             }));
             
-            return enhancedEntries;
+            // Format construction entries to match employee payroll structure
+            const formattedConstructionEntries = constructionEntries.map(entry => ({
+                id: entry.id,
+                employee_id: entry.worker_id, // Using worker_id as employee_id for construction workers
+                full_name: entry.full_name,
+                position: entry.position,
+                profile_picture: entry.profile_picture,
+                department_name: entry.department_name,
+                period_name: entry.period_name,
+                
+                // Map construction payroll fields to employee payroll structure
+                days_present: entry.days_present,
+                days_absent: entry.days_absent,
+                total_hours: entry.total_hours,
+                overtime_hours: entry.overtime_hours,
+                fixed_salary: entry.basic_salary, // Using basic_salary from construction
+                basic_salary_snapshot: entry.daily_rate, // Daily rate snapshot
+                total_deductions: 0, // Construction workers typically have no deductions
+                absence_deduction: 0,
+                net_salary: entry.net_salary,
+                payroll_period: entry.period_name,
+                status: entry.status,
+                payroll_period_id: entry.payroll_period_id,
+                created_at: entry.created_at,
+                
+                // Additional construction-specific fields
+                daily_rate: entry.daily_rate,
+                basic_salary: entry.basic_salary,
+                overtime_pay: entry.overtime_pay,
+                salary_before_deductions: entry.salary_before_deductions,
+                payroll_type: 'construction'
+            }));
+            
+            // Combine both types of payroll entries
+            return {
+                employee_entries: enhancedEntries,
+                construction_entries: formattedConstructionEntries,
+                total_employee_count: enhancedEntries.length,
+                total_construction_count: formattedConstructionEntries.length
+            };
         } catch (error) {
             console.error('Error fetching payroll entries by period:', error);
             throw error;
@@ -639,6 +739,167 @@ class FinanceModel {
                 message: `Failed to create payslip: ${error.message}`,
                 error: error
             };
+        }
+    }
+
+    // Create construction payslip for an approved construction payroll entry
+    static async createConstructionPayslipForEntry(connection, constructionPayrollId, approvedBy) {
+        try {
+            // Get construction payroll entry details with worker and project info
+            const [payrollRows] = await connection.query(`
+                SELECT 
+                    cp.*,
+                    cw.project_id,
+                    pp.period_name,
+                    pp.start_date as period_start,
+                    pp.end_date as period_end
+                FROM construction_payroll cp
+                JOIN construction_workers cw ON cp.worker_id = cw.id
+                JOIN payroll_periods pp ON cp.payroll_period_id = pp.id
+                WHERE cp.id = ?
+            `, [constructionPayrollId]);
+
+            if (payrollRows.length === 0) {
+                return { success: false, message: 'Construction payroll entry not found' };
+            }
+
+            const payrollEntry = payrollRows[0];
+
+            // Generate payslip number
+            const payslipNumber = `CPS-${payrollEntry.payroll_period_id}-${payrollEntry.worker_id}-${Date.now()}`;
+
+            // Calculate total days
+            const totalDays = payrollEntry.days_present || 0;
+
+            // Insert construction payslip
+            const [payslipResult] = await connection.query(`
+                INSERT INTO construction_payslip (
+                    construction_payroll_id, worker_id, project_id,
+                    payslip_number, payslip_date, start_date, end_date,
+                    daily_rate, total_days, overtime_hours, overtime_pay,
+                    total_earnings, total_deductions, net_salary,
+                    payment_method, reference_number, status, approved_by, approved_date
+                ) VALUES (?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'Approved', ?, NOW())
+            `, [
+                constructionPayrollId,
+                payrollEntry.worker_id,
+                payrollEntry.project_id,
+                payslipNumber,
+                payrollEntry.payroll_start,
+                payrollEntry.payroll_end,
+                payrollEntry.daily_rate,
+                totalDays,
+                payrollEntry.overtime_hours || 0,
+                payrollEntry.overtime_pay || 0,
+                payrollEntry.salary_before_deductions,
+                0, // No deductions for now
+                payrollEntry.net_salary,
+                'Cash',
+                approvedBy
+            ]);
+
+            // Update construction payroll status to 'released'
+            await connection.query(`
+                UPDATE construction_payroll 
+                SET status = 'released', updated_at = NOW()
+                WHERE id = ?
+            `, [constructionPayrollId]);
+
+            return {
+                success: true,
+                payslipId: payslipResult.insertId,
+                payslipNumber: payslipNumber,
+                message: `Construction payslip ${payslipNumber} created successfully`
+            };
+
+        } catch (error) {
+            return {
+                success: false,
+                message: `Failed to create construction payslip: ${error.message}`,
+                error: error
+            };
+        }
+    }
+
+    // Approve construction payroll entry
+    static async approveConstructionPayrollEntry(constructionPayrollId, approverUserId, remarks = null) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // Fetch the construction payroll entry
+            const [rows] = await connection.query(`
+                SELECT id, payroll_period_id, worker_id, status
+                FROM construction_payroll
+                WHERE id = ?
+                FOR UPDATE
+            `, [constructionPayrollId]);
+
+            if (rows.length === 0) {
+                await connection.rollback();
+                return { success: false, message: 'Construction payroll entry not found' };
+            }
+
+            const constructionPayroll = rows[0];
+            const statusLower = (constructionPayroll.status || '').toLowerCase();
+
+            // Update entry to approved if still pending
+            let payslipCreated = false;
+            
+            if (statusLower === 'approved') {
+                // Check if payslip already exists for this construction payroll entry
+                const [existingPayslip] = await connection.query(`
+                    SELECT id FROM construction_payslip WHERE construction_payroll_id = ?
+                `, [constructionPayrollId]);
+                
+                if (existingPayslip.length === 0) {
+                    try {
+                        const payslipResult = await this.createConstructionPayslipForEntry(connection, constructionPayrollId, approverUserId);
+                        payslipCreated = payslipResult.success;
+                    } catch (payslipError) {
+                        console.error('❌ Construction payslip creation failed:', payslipError);
+                        payslipCreated = false;
+                    }
+                } else {
+                    payslipCreated = true;
+                }
+            } else if (statusLower === 'pending') {
+                await connection.query(`
+                    UPDATE construction_payroll
+                    SET status = 'approved', updated_at = NOW()
+                    WHERE id = ?
+                `, [constructionPayrollId]);
+
+                // Automatically create payslip for this approved entry
+                try {
+                    const payslipResult = await this.createConstructionPayslipForEntry(connection, constructionPayrollId, approverUserId);
+                    payslipCreated = payslipResult.success;
+                } catch (payslipError) {
+                    console.error('❌ Construction payslip creation failed:', payslipError);
+                    payslipCreated = false;
+                }
+            } else {
+                await connection.rollback();
+                return { success: false, message: `Cannot approve construction payroll in status ${constructionPayroll.status}` };
+            }
+
+            await connection.commit();
+            
+            let message = payslipCreated
+                ? 'Construction payroll entry approved and payslip created automatically'
+                : 'Construction payroll entry approved';
+            
+            return {
+                success: true,
+                message: message,
+                payslipCreated: payslipCreated
+            };
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error approving construction payroll entry:', error);
+            throw error;
+        } finally {
+            connection.release();
         }
     }
 

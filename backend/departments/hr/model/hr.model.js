@@ -4739,7 +4739,10 @@ const HRModel = {
 
     // Update existing payroll generation to use periods
     insertPayrollRecordsWithPeriod: async (records, periodId) => {
+        const connection = await db.getConnection();
         try {
+            await connection.beginTransaction();
+            
             // Get employee IDs from records
             const employeeIds = records.map(r => r.employee_id);
             
@@ -4770,7 +4773,7 @@ const HRModel = {
 
             console.log('Inserting payroll records with position data and period ID:', periodId);
 
-            const [result] = await db.query(
+            const [result] = await connection.query(
                 `INSERT INTO payroll 
                  (employee_id, position_id, basic_salary_snapshot, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
@@ -4784,8 +4787,23 @@ const HRModel = {
                 insertedIds.push(result.insertId + i);
             }
             
+            // Update payroll_periods table with the first payroll_id
+            const firstPayrollId = insertedIds.length > 0 ? insertedIds[0] : null;
+            if (firstPayrollId !== null) {
+                await connection.query(`
+                    UPDATE payroll_periods 
+                    SET payroll_id = ? 
+                    WHERE id = ?
+                `, [firstPayrollId, periodId]);
+            }
+            
+            await connection.commit();
+            connection.release();
+            
             return insertedIds;
         } catch (error) {
+            await connection.rollback();
+            connection.release();
             console.error('Error inserting payroll records with period:', error);
             throw error;
         }
@@ -5963,19 +5981,54 @@ const HRModel = {
       await connection.beginTransaction();
 
       try {
-        // Insert payroll records
-        for (const record of payrollRecords) {
-          await connection.query(`
-            INSERT INTO construction_payroll (
-              worker_id, role_id, daily_rate, days_present, days_absent,
-              total_hours, overtime_hours, basic_salary, overtime_pay,
-              salary_before_deductions, net_salary, payroll_start, payroll_end, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            record.worker_id, record.role_id, record.daily_rate, record.days_present, record.days_absent,
-            record.total_hours, record.overtime_hours, record.basic_salary, record.overtime_pay,
-            record.salary_before_deductions, record.net_salary, record.payroll_start, record.payroll_end, record.status
-          ]);
+        // Create payroll period entry (similar to employee payroll)
+        if (payrollRecords.length > 0) {
+          const firstRecord = payrollRecords[0];
+          const startDate = firstRecord.payroll_start;
+          const endDate = firstRecord.payroll_end;
+          
+          // Generate period name based on dates
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const month = start.toLocaleDateString('en-US', { month: 'short' });
+          const year = end.getFullYear();
+          const isFirstHalf = start.getDate() <= 15;
+          const period = isFirstHalf ? 'first' : 'second';
+          const periodName = `Construction - ${month} ${year} - ${period}`;
+          
+          // Find or create payroll period
+          const periodId = await HRModel.findOrCreatePayrollPeriod(startDate, endDate, periodName);
+          console.log('Created/found construction payroll period with ID:', periodId);
+
+          // Insert into construction_payroll table only
+          let firstConstructionPayrollId = null;
+          for (const record of payrollRecords) {
+            const [insertResult] = await connection.query(`
+              INSERT INTO construction_payroll (
+                worker_id, role_id, daily_rate, days_present, days_absent,
+                total_hours, overtime_hours, basic_salary, overtime_pay,
+                salary_before_deductions, net_salary, payroll_start, payroll_end, status, payroll_period_id
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              record.worker_id, record.role_id, record.daily_rate, record.days_present, record.days_absent,
+              record.total_hours, record.overtime_hours, record.basic_salary, record.overtime_pay,
+              record.salary_before_deductions, record.net_salary, record.payroll_start, record.payroll_end, record.status, periodId
+            ]);
+            
+            // Capture the first inserted ID
+            if (firstConstructionPayrollId === null) {
+              firstConstructionPayrollId = insertResult.insertId;
+            }
+          }
+          
+          // Update payroll_periods table with the construction_payroll_id
+          if (firstConstructionPayrollId !== null) {
+            await connection.query(`
+              UPDATE payroll_periods 
+              SET construction_payroll_id = ? 
+              WHERE id = ?
+            `, [firstConstructionPayrollId, periodId]);
+          }
         }
 
         await connection.commit();

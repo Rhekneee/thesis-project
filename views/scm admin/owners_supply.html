@@ -453,30 +453,93 @@
               </table>
             </div>
       
-      <!-- Received Materials Table (initially hidden) -->
+      <!-- Received Materials with Tabs (initially hidden) -->
       <div class="mt-4" id="receivedMaterialsInline" style="display: none;">
-        <h6 class="mb-3">
-          <i class="fas fa-check-circle text-success me-2"></i>
-          Received Materials
-        </h6>
-        <div class="table-responsive">
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>Material</th>
-                <th>Unit</th>
-                <th>Quantity</th>
-                <th>Status</th>
-                <th>Received Date</th>
-                <th>Material Status</th>
-              </tr>
-            </thead>
-            <tbody id="receivedMaterialsInlineBody">
-              <!-- Received materials will be populated here -->
-            </tbody>
-          </table>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" id="materialsTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="received-tab" data-bs-toggle="tab" data-bs-target="#received-pane" type="button" role="tab">
+              <i class="fas fa-check-circle me-1"></i> Received Materials
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="delivery-tab" data-bs-toggle="tab" data-bs-target="#delivery-pane" type="button" role="tab">
+              <i class="fas fa-truck me-1"></i> Delivery Information
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab content -->
+        <div class="tab-content" id="materialsTabContent">
+          <!-- Received Materials Pane -->
+          <div class="tab-pane fade show active" id="received-pane" role="tabpanel">
+            <div class="table-responsive mt-3">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Received Date</th>
+                    <th>Material Status</th>
+                  </tr>
+                </thead>
+                <tbody id="receivedMaterialsInlineBody">
+                  <!-- Received materials will be populated here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Delivery Information Pane -->
+          <div class="tab-pane fade" id="delivery-pane" role="tabpanel">
+            <form id="deliveryForm" class="mt-3">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Driver ID</label>
+                    <input type="text" class="form-control" id="driverId" placeholder="Enter driver ID">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Vehicle Plate Number</label>
+                    <input type="text" class="form-control" id="vehicleInfo" placeholder="Enter vehicle plate number">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">External Driver Name (if applicable)</label>
+                    <input type="text" class="form-control" id="externalDriverName" placeholder="Enter external driver name">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">External Vehicle Details (if applicable)</label>
+                    <input type="text" class="form-control" id="externalVehicleDetails" placeholder="Enter external vehicle details">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Courier Service (if applicable)</label>
+                    <input type="text" class="form-control" id="courierService" placeholder="Enter courier service">
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-primary" onclick="submitDeliveryInfo()">
+                  <i class="fas fa-save me-1"></i> Submit Delivery Info
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
         </div>
 
     <!-- Received Materials Section (initially hidden) -->
@@ -943,8 +1006,8 @@ async function updateSelectedMaterialsInSection() {
                 body: JSON.stringify({
                     status: 'Delivered',
                     delivered_date: today,
-                    quantity_used: material.quantity,
-                    quantity_remaining: 0,
+                    quantity_used: 0,  // Start with 0, will be tracked as materials are used in daily logs
+                    quantity_remaining: material.quantity,  // Full quantity is available for use
                     is_delivered: true
                 })
             });
@@ -974,9 +1037,9 @@ async function updateSelectedMaterialsInSection() {
         const allReceived = remainingCheckboxes.length === 0;
         
         if (allReceived) {
-            // Show received materials section and driver form
+            // Show received materials section (but not the driver form automatically)
             showReceivedMaterialsSection(receivedMaterials);
-            showDriverVehicleForm();
+            // Don't auto-show driver form anymore - user will click the button
         }
         
         // Refresh data
@@ -1072,13 +1135,19 @@ function showReceivedMaterialsSection(receivedMaterials) {
     receivedSection.style.display = 'block';
 }
 
-// Show driver and vehicle form
+// Show/hide driver and vehicle form (toggle)
 function showDriverVehicleForm() {
     const driverForm = document.getElementById('driverVehicleForm');
-    driverForm.style.display = 'block';
     
-    // Scroll to the form
-    driverForm.scrollIntoView({ behavior: 'smooth' });
+    // Toggle visibility
+    if (driverForm.style.display === 'none' || driverForm.style.display === '') {
+        driverForm.style.display = 'block';
+        
+        // Scroll to the form
+        driverForm.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        driverForm.style.display = 'none';
+    }
 }
 
 // Submit delivery information

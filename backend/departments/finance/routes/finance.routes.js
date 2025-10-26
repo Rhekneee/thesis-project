@@ -31,6 +31,12 @@ router.post('/payrolls/:payrollId/approve', isFinanceAdmin, financeController.ap
 // Submit remarks to a payroll entry (for pending entries)
 router.post('/payrolls/:payrollId/remarks', isFinanceAdmin, financeController.submitPayrollRemarks);
 
+// Approve a construction payroll entry
+router.post('/construction-payrolls/:constructionPayrollId/approve', isFinanceAdmin, financeController.approveConstructionPayrollEntry);
+
+// Submit remarks to a construction payroll entry (for pending entries)
+router.post('/construction-payrolls/:constructionPayrollId/remarks', isFinanceAdmin, financeController.submitConstructionPayrollRemarks);
+
 // =============================================
 // PURCHASE REQUESTS - Connected to Supply Department
 // These routes handle purchase request operations from the supply department
