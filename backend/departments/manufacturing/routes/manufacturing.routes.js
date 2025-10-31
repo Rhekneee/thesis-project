@@ -83,6 +83,7 @@ router.get('/projects-for-progress', ManufacturingController.getProjectsForProgr
 
 // Get completed projects for developer
 router.get('/completed-projects', ManufacturingController.getCompletedProjectsByDeveloper);
+router.get('/developers/:developerId/completed-projects', ManufacturingController.getCompletedProjectsForDeveloperId);
 
 router.post('/save-division-progress', ManufacturingController.saveDivisionProgress);
 router.post('/save-daily-log-progress', ManufacturingController.saveDailyLogProgress);
@@ -149,5 +150,10 @@ router.post('/attendance/record', ManufacturingController.recordAttendance);
 router.get('/attendance/worker/:workerId', ManufacturingController.getWorkerAttendance);
 router.get('/attendance/project/:projectId', ManufacturingController.getProjectAttendance);
 router.get('/attendance/today', ManufacturingController.getTodayAttendance);
+
+// ==================== PROJECT RATINGS (appended feature) ====================
+router.post('/projects/:projectId/rating', ManufacturingController.submitProjectRating);
+router.get('/projects/:projectId/rating', ManufacturingController.getProjectRating);
+router.get('/ratings/summary', ManufacturingController.getRatingsSummary);
 
 module.exports = router;

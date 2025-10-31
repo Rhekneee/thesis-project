@@ -216,6 +216,31 @@
             padding: 20px;
             border-top: 1px solid #e9ecef;
         }
+        /* Professional star rating styling for per-criterion stars */
+        .criteria-stars {
+            display: inline-flex;
+            gap: 6px;
+        }
+        .criteria-stars i {
+            font-size: 22px;
+            line-height: 1;
+            color: #e4e5e9; /* neutral */
+            cursor: pointer;
+            transition: transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+        }
+        .criteria-stars i.fas { /* filled */
+            color: #ffc107;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.05);
+        }
+        .criteria-stars i:hover {
+            transform: scale(1.12);
+        }
+        .criteria-stars i:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255,193,7,0.35);
+            border-radius: 4px;
+        }
+        .form-label + .criteria-stars { margin-bottom: 4px; }
     </style>
 </head>
 
@@ -288,7 +313,7 @@
                 </li>
                 
         
-                <li class="logout nav-item"><a href="/login"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
             </ul>
         </div>
         
@@ -400,15 +425,112 @@
                                         </div>
                                         <!-- Editable rating/feedback section -->
                                         <div class="rating-section mb-4">
-                                            <h5 class="mb-3">Rate this Project</h5>
-                                            <div class="rating-stars mb-2" id="ratingStars">
-                                                <i class="far fa-star" data-rating="1"></i>
-                                                <i class="far fa-star" data-rating="2"></i>
-                                                <i class="far fa-star" data-rating="3"></i>
-                                                <i class="far fa-star" data-rating="4"></i>
-                                                <i class="far fa-star" data-rating="5"></i>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h3 class="mb-0">Rate this Project</h3>
+                                                <div class="d-flex align-items-center gap-2 text-muted" style="font-weight:600;">
+                                                    <span id="ratingAverageHeader">0.0</span><span>/10</span> <i class="fas fa-star text-warning"></i>
+                                                </div>
                                             </div>
                                             <div id="ratingDescription" class="text-muted"></div>
+                                            <!-- Professional 1–10 criteria form -->
+                                            <div class="card mt-3 border-0 shadow-sm">
+                                                <div class="card-body p-3">
+                                                    <div class="row g-3 align-items-center">
+                                                        <!-- Star group: Finishing Quality -->
+                                                        <div class="col-12">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <label class="form-label mb-0">
+                                                                    Finishing Quality <span class="text-danger">*</span>
+                                                                    <i class="fas fa-info-circle ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Workmanship, aesthetics, and defect-free finish."></i>
+                                                                </label>
+                                                                <span class="badge bg-primary d-none" id="finishingQualityValue"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-1 criteria-stars" id="finishingQualityStars" data-target-input="finishingQuality">
+                                                                <i class="far fa-star" data-value="1"></i>
+                                                                <i class="far fa-star" data-value="2"></i>
+                                                                <i class="far fa-star" data-value="3"></i>
+                                                                <i class="far fa-star" data-value="4"></i>
+                                                                <i class="far fa-star" data-value="5"></i>
+                                                            </div>
+                                                            <input type="number" class="form-control d-none" id="finishingQuality" min="1" max="10" value="5">
+                                                            
+                                                        </div>
+                                                        <!-- Star group: Structural Accuracy -->
+                                                        <div class="col-12">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <label class="form-label mb-0">Structural Accuracy <span class="text-danger">*</span>
+                                                                    <i class="fas fa-info-circle ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Conformance to plans and tolerances."></i>
+                                                                </label>
+                                                                <span class="badge bg-primary d-none" id="structuralAccuracyValue"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-1 criteria-stars" id="structuralAccuracyStars" data-target-input="structuralAccuracy">
+                                                                <i class="far fa-star" data-value="1"></i>
+                                                                <i class="far fa-star" data-value="2"></i>
+                                                                <i class="far fa-star" data-value="3"></i>
+                                                                <i class="far fa-star" data-value="4"></i>
+                                                                <i class="far fa-star" data-value="5"></i>
+                                                            </div>
+                                                            <input type="number" class="form-control d-none" id="structuralAccuracy" min="1" max="10" value="5">
+                                                            
+                                                        </div>
+                                                        <!-- Star group: Timeline Performance -->
+                                                        <div class="col-12">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <label class="form-label mb-0">Timeline Performance <span class="text-danger">*</span>
+                                                                    <i class="fas fa-info-circle ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Adherence to schedule and milestones."></i>
+                                                                </label>
+                                                                <span class="badge bg-primary d-none" id="timelinePerformanceValue"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-1 criteria-stars" id="timelinePerformanceStars" data-target-input="timelinePerformance">
+                                                                <i class="far fa-star" data-value="1"></i>
+                                                                <i class="far fa-star" data-value="2"></i>
+                                                                <i class="far fa-star" data-value="3"></i>
+                                                                <i class="far fa-star" data-value="4"></i>
+                                                                <i class="far fa-star" data-value="5"></i>
+                                                            </div>
+                                                            <input type="number" class="form-control d-none" id="timelinePerformance" min="1" max="10" value="5">
+                                                            
+                                                        </div>
+                                                        <!-- Star group: Client Satisfaction -->
+                                                        <div class="col-12">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <label class="form-label mb-0">Client Satisfaction <span class="text-danger">*</span>
+                                                                    <i class="fas fa-info-circle ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Responsiveness, communication, and overall experience."></i>
+                                                                </label>
+                                                                <span class="badge bg-primary d-none" id="clientSatisfactionValue"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-1 criteria-stars" id="clientSatisfactionStars" data-target-input="clientSatisfaction">
+                                                                <i class="far fa-star" data-value="1"></i>
+                                                                <i class="far fa-star" data-value="2"></i>
+                                                                <i class="far fa-star" data-value="3"></i>
+                                                                <i class="far fa-star" data-value="4"></i>
+                                                                <i class="far fa-star" data-value="5"></i>
+                                                            </div>
+                                                            <input type="number" class="form-control d-none" id="clientSatisfaction" min="1" max="10" value="5">
+                                                            
+                                                        </div>
+                                                        <!-- Star group: Material Efficiency -->
+                                                        <div class="col-12">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <label class="form-label mb-0">Material Efficiency <span class="text-danger">*</span>
+                                                                    <i class="fas fa-info-circle ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Optimization and minimal waste of materials."></i>
+                                                                </label>
+                                                                <span class="badge bg-primary d-none" id="materialEfficiencyValue"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-1 criteria-stars" id="materialEfficiencyStars" data-target-input="materialEfficiency">
+                                                                <i class="far fa-star" data-value="1"></i>
+                                                                <i class="far fa-star" data-value="2"></i>
+                                                                <i class="far fa-star" data-value="3"></i>
+                                                                <i class="far fa-star" data-value="4"></i>
+                                                                <i class="far fa-star" data-value="5"></i>
+                                                            </div>
+                                                            <input type="number" class="form-control d-none" id="materialEfficiency" min="1" max="10" value="5">
+                                                            
+                                                        </div>
+                                                        
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div id="feedbackSection">
                                             <h5 class="mb-2">Provide Feedback <span class="text-muted" style="font-size:0.9em;">(Optional)</span></h5>
@@ -544,21 +666,34 @@
 
         // Show error message if projects fail to load
         function showProjectsError() {
+            // Clear table rows and show message below the table only
             const projectsList = document.getElementById('projectsList');
-            projectsList.innerHTML = `
-                <tr>
-                    <td colspan="9" class="text-center py-4">
-                        <i class="fas fa-exclamation-circle text-warning me-2"></i>
-                        No completed projects found or failed to load projects.
-                    </td>
-                </tr>
-            `;
+            projectsList.innerHTML = '';
+            const showingEntries = document.getElementById('showingEntries');
+            if (showingEntries) {
+                showingEntries.textContent = 'No completed projects found';
+                showingEntries.classList.add('w-100', 'text-center');
+            }
+            const entriesMsg = document.getElementById('entriesMessage');
+            if (entriesMsg) {
+                entriesMsg.classList.remove('justify-content-between');
+                entriesMsg.classList.add('justify-content-center');
+            }
+            const paginationControls = document.getElementById('paginationControls');
+            if (paginationControls) paginationControls.style.display = 'none';
         }
 
         // Initialize event listeners
         function initializeEventListeners() {
             document.getElementById('searchBar').addEventListener('input', filterProjects);
             initializeRatingStars();
+            // Real-time profanity filtering for feedback input
+            const feedbackInput = document.getElementById('projectFeedback');
+            if (feedbackInput) {
+                feedbackInput.addEventListener('input', () => {
+                    feedbackInput.value = filterProfanity(feedbackInput.value);
+                });
+            }
         }
 
         // Initialize rating stars
@@ -630,20 +765,31 @@
             const newSubmitBtn = submitRatingBtn.cloneNode(true);
             submitRatingBtn.parentNode.replaceChild(newSubmitBtn, submitRatingBtn);
             newSubmitBtn.addEventListener('click', function() {
-                const selectedRating = project.developerRating;
-                if (selectedRating) {
-                    const feedback = feedbackInput.value;
-                    // Show confirmation modal before submitting
-                    const confirmationModal = new bootstrap.Modal(document.getElementById('ratingConfirmationModal'));
-                    confirmationModal.show();
-                    document.getElementById('confirmRatingBtn').onclick = function() {
-                        updateRating(selectedRating, feedback);
-                        confirmationModal.hide();
-                        // Hide the view modal after submission
-                        const viewModal = bootstrap.Modal.getInstance(document.getElementById('projectDetailsModal'));
-                        if (viewModal) viewModal.hide();
-                    };
+                const selectedRating = project.developerRating || 0;
+                const feedback = feedbackInput.value || '';
+                // Require all criteria to be rated (1-10)
+                const requiredIds = ['finishingQuality','structuralAccuracy','timelinePerformance','clientSatisfaction','materialEfficiency'];
+                const values = requiredIds.map(id => Number(document.getElementById(id)?.value || 0));
+                const allRated = values.every(v => v >= 1 && v <= 10);
+                if (!allRated) {
+                    showWarningMessage('Please rate all criteria (click the stars).');
+                    return;
                 }
+                // If feedback contains censored content (asterisks), reject
+                if (/[*]{2,}/.test(feedback)) {
+                    showWarningMessage('Please avoid offensive words.');
+                    return;
+                }
+                // Show confirmation modal before submitting
+                const confirmationModal = new bootstrap.Modal(document.getElementById('ratingConfirmationModal'));
+                confirmationModal.show();
+                document.getElementById('confirmRatingBtn').onclick = function() {
+                    updateRating(selectedRating, feedback);
+                    confirmationModal.hide();
+                    // Hide the view modal after submission
+                    const viewModal = bootstrap.Modal.getInstance(document.getElementById('projectDetailsModal'));
+                    if (viewModal) viewModal.hide();
+                };
             });
         }
 
@@ -652,6 +798,35 @@
             const projectId = parseInt(document.getElementById('projectDetailsModal').getAttribute('data-project-id'));
             const project = projects.find(p => p.id === projectId);
             if (project) {
+                // Added: read 1–10 fields and persist to backend
+                const finishing_quality = Number(document.getElementById('finishingQuality')?.value);
+                const structural_accuracy = Number(document.getElementById('structuralAccuracy')?.value);
+                const timeline_performance = Number(document.getElementById('timelinePerformance')?.value);
+                const client_satisfaction = Number(document.getElementById('clientSatisfaction')?.value);
+                const material_efficiency = Number(document.getElementById('materialEfficiency')?.value);
+                const required = [finishing_quality, structural_accuracy, timeline_performance, client_satisfaction, material_efficiency];
+                const allProvided = required.every(v => typeof v === 'number' && !isNaN(v));
+                const validRange = required.every(v => v >= 1 && v <= 10);
+                (async () => {
+                    try {
+                        if (allProvided && validRange) {
+                            const resp = await fetch(`/manufacturing/projects/${encodeURIComponent(projectId)}/rating`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    finishing_quality,
+                                    structural_accuracy,
+                                    timeline_performance,
+                                    client_satisfaction,
+                                    material_efficiency,
+                                    feedback: feedback || ''
+                                })
+                            });
+                            // Non-blocking: continue UI even if error
+                            if (!resp.ok) { try { console.warn('Rating submit failed', await resp.text()); } catch(_){} }
+                        }
+                    } catch (e) { console.warn('Rating submit error', e); }
+                })();
                 // Save developer's rating and feedback
                 project.developerRating = Number(rating);
                 project.feedback = feedback;
@@ -675,6 +850,30 @@
             }
         }
 
+        // Real-time profanity filter (Option 1)
+        function filterProfanity(text) {
+            if (!text) return text;
+            const terms = [
+                // Mga Salitang Nakakasakit
+                'gago', 'tanga', 'ulol', 'bobo', 'hayop', 'putang ina', 'tang ina', 'pakshet', 'hayup', 'buang',
+                // Mga Salitang Nakababastos
+                'puta', 'putain', 'gago ka', 'tanga ka', 'ulol ka', 'hayop ka', 'mahalay', 'nakakadiri', 'nakakasuka', 'bulok',
+                // Mga Salitang Nakakainsulto
+                'idiot', 'stupid', 'fool', 'clown', 'dumdum', 'tanglet', 'bastos', 'mahina', 'walang kwenta', 'hindi mo alam',
+                // Mga Salitang May Kasamang Pagmamalupit
+                'mamatay ka', 'saktan kita', 'patayin kita', 'suwerteng mamatay ka', 'kawawa ka', 'panget gawa nyo', 
+            ];
+            // Build one regex per term for robust matching (case-insensitive, global)
+            let result = text;
+            for (const term of terms) {
+                const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const pattern = new RegExp(escaped, 'gi');
+                // Replace inner characters with asterisks, preserve term length
+                result = result.replace(pattern, (match) => '*'.repeat(match.length));
+            }
+            return result;
+        }
+
         // Show success message modal
         function showSuccessMessage(message) {
             document.getElementById('successMessage').textContent = message;
@@ -683,6 +882,14 @@
             setTimeout(() => {
                 successModal.hide();
             }, 2000);
+        }
+
+        // Show warning message modal
+        function showWarningMessage(message) {
+            const warningEl = document.getElementById('warningMessage');
+            if (warningEl) warningEl.textContent = message;
+            const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+            warningModal.show();
         }
 
         // Generate star rating HTML
@@ -705,6 +912,33 @@
             projectsList.innerHTML = '';
 
             const projectsToRender = filteredProjects || projects;
+            if (!projectsToRender || projectsToRender.length === 0) {
+                const showingEntries = document.getElementById('showingEntries');
+                if (showingEntries) {
+                    showingEntries.textContent = 'No completed projects found';
+                    showingEntries.classList.add('w-100', 'text-center');
+                }
+                const entriesMsg = document.getElementById('entriesMessage');
+                if (entriesMsg) {
+                    entriesMsg.classList.remove('justify-content-between');
+                    entriesMsg.classList.add('justify-content-center');
+                }
+                const paginationControls = document.getElementById('paginationControls');
+                if (paginationControls) paginationControls.style.display = 'none';
+                return;
+            }
+
+            // Restore default alignment when there are items
+            const entriesMsg = document.getElementById('entriesMessage');
+            if (entriesMsg) {
+                entriesMsg.classList.remove('justify-content-center');
+                entriesMsg.classList.add('justify-content-between');
+            }
+            const showingEntries = document.getElementById('showingEntries');
+            if (showingEntries) {
+                showingEntries.classList.remove('w-100', 'text-center');
+                showingEntries.classList.add('text-muted');
+            }
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = Math.min(startIndex + itemsPerPage, projectsToRender.length);
             const paginatedProjects = projectsToRender.slice(startIndex, endIndex);
@@ -727,7 +961,7 @@
                             `<span class="text-muted">Not rated yet</span>`
                         }
                     </td>
-                    <td>${project.feedback || '-'}</td>
+                    <td>${project.feedback && project.feedback.trim() ? project.feedback : 'No entry'}</td>
                     <td>
                         ${project.developerRating ? 
                             `<span class="badge bg-success">Rated</span>` : 
@@ -753,7 +987,7 @@
         }
 
         // Show project details
-        function showProjectDetails(projectId, viewOnly = false) {
+        async function showProjectDetails(projectId, viewOnly = false) {
             const project = projects.find(p => p.id === projectId);
             if (!project) return;
 
@@ -766,17 +1000,35 @@
             document.getElementById('modalProjectLocation').textContent = project.location;
             document.getElementById('modalCompletionDate').textContent = formatDate(project.completionDate);
 
-            // Show/hide rating section based on viewOnly parameter
+            // Determine if a rating already exists from backend; if yes, force viewOnly
+            let hasExisting = false;
+            try {
+                const resp = await fetch(`/manufacturing/projects/${encodeURIComponent(projectId)}/rating`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.success && data.rating) {
+                        hasExisting = true;
+                        const ratingData = data.rating;
+                        const avgTen = Number(ratingData.total_score) || 0;
+                        const fiveStar = Math.round(avgTen / 2);
+                        project.developerRating = fiveStar > 0 ? fiveStar : null;
+                        project.feedback = ratingData.feedback || '';
+                        project.hasRated = true;
+                    }
+                }
+            } catch(_) {}
+
+            // Show/hide rating section based on computed state
             const ratingSection = document.querySelector('.rating-section');
             const feedbackSection = document.getElementById('feedbackSection');
             const viewDetailsSection = document.getElementById('viewDetailsSection');
-            if (viewOnly) {
+            if (viewOnly || hasExisting || project.hasRated) {
                 ratingSection.style.display = 'none';
                 feedbackSection.style.display = 'none';
                 viewDetailsSection.style.display = 'block';
                 // Set rating stars and feedback
                 document.getElementById('viewRatingStars').innerHTML = project.developerRating ? generateStarRating(project.developerRating) : '<span class="text-muted">Not rated yet</span>';
-                document.getElementById('viewFeedbackText').textContent = project.feedback || '-';
+                document.getElementById('viewFeedbackText').textContent = (project.feedback && project.feedback.trim()) ? project.feedback : 'No entry';
             } else {
                 ratingSection.style.display = 'block';
                 feedbackSection.style.display = 'block';
@@ -784,20 +1036,14 @@
                 // Reset feedback section and rating description
                 document.getElementById('projectFeedback').value = project.feedback || '';
                 document.getElementById('ratingDescription').textContent = project.developerRating ? ratingDescriptions[project.developerRating] : '';
-                // Initialize stars with the project's rating
+                // Start with empty main stars (user must click to fill)
                 const stars = document.querySelectorAll('.rating-stars i');
-                stars.forEach(star => {
-                    const starRating = parseInt(star.getAttribute('data-rating'));
-                    if (project.developerRating && starRating <= project.developerRating) {
-                        star.classList.remove('far');
-                        star.classList.add('fas');
-                    } else {
-                        star.classList.remove('fas');
-                        star.classList.add('far');
-                    }
-                });
-                // Initialize rating stars and feedback logic
+                stars.forEach(star => { star.classList.remove('fas'); star.classList.add('far'); });
+                document.getElementById('ratingDescription').textContent = '';
+                // Initialize rating stars and feedback logic (no prefill)
                 initializeRatingStars();
+                // Initialize professional criteria controls
+                initCriteriaControls();
             }
 
             // Show modal
@@ -974,5 +1220,75 @@
             renderProjects(filteredProjects);
         }
     </script>
+    <script>
+        // Bind range sliders to hidden numeric inputs and compute average
+        function initCriteriaControls() {
+            // Star groups: map container id -> hidden input id and badge id
+            const groups = [
+                { starsId: 'finishingQualityStars', num: 'finishingQuality', badge: 'finishingQualityValue' },
+                { starsId: 'structuralAccuracyStars', num: 'structuralAccuracy', badge: 'structuralAccuracyValue' },
+                { starsId: 'timelinePerformanceStars', num: 'timelinePerformance', badge: 'timelinePerformanceValue' },
+                { starsId: 'clientSatisfactionStars', num: 'clientSatisfaction', badge: 'clientSatisfactionValue' },
+                { starsId: 'materialEfficiencyStars', num: 'materialEfficiency', badge: 'materialEfficiencyValue' },
+            ];
+            const averageEl = document.getElementById('ratingAverage');
+            const getVal = (id) => Number(document.getElementById(id)?.value || 0);
+
+            const recompute = () => {
+                const vals = [
+                    getVal('finishingQuality'),
+                    getVal('structuralAccuracy'),
+                    getVal('timelinePerformance'),
+                    getVal('clientSatisfaction'),
+                    getVal('materialEfficiency'),
+                ];
+                const sum = vals.reduce((a,b)=>a+(Number(b)||0),0);
+                const avg = vals.length ? (sum/vals.length) : 0;
+                const avgText = (Math.round(avg*10)/10).toFixed(1);
+                if (averageEl) averageEl.textContent = avgText;
+                const headerAvg = document.getElementById('ratingAverageHeader');
+                if (headerAvg) headerAvg.textContent = avgText;
+            };
+
+            groups.forEach(g => {
+                const container = document.getElementById(g.starsId);
+                const hidden = document.getElementById(g.num);
+                const badge = document.getElementById(g.badge);
+                if (!container || !hidden) return;
+                const stars = Array.from(container.querySelectorAll('i[data-value]'));
+                const setVisual = (v) => {
+                    const selectedStars = Math.ceil((Number(v)||0) / 2);
+                    stars.forEach(s => {
+                        const sv = Number(s.getAttribute('data-value'));
+                        if (sv <= selectedStars) { s.classList.remove('far'); s.classList.add('fas'); }
+                        else { s.classList.remove('fas'); s.classList.add('far'); }
+                    });
+                };
+                const setValue = (v) => {
+                    hidden.value = String(v);
+                    if (badge) { badge.textContent = ''; badge.style.display = 'none'; }
+                    setVisual(v);
+                    recompute();
+                };
+                // Force initial state to empty (0) regardless of markup defaults
+                stars.forEach(s => { s.classList.remove('fas'); s.classList.add('far'); });
+                hidden.value = '0';
+                if (badge) { badge.textContent = ''; badge.style.display = 'none'; }
+                setVisual(0);
+                stars.forEach(s => {
+                    s.style.cursor = 'pointer';
+                    // Hover should NOT color stars; only click fills
+                    s.addEventListener('click', () => setValue(Number(s.getAttribute('data-value')) * 2));
+                });
+            });
+            recompute();
+            // Initialize Bootstrap tooltips for any info icons
+            try {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
+            } catch(_){}
+        }
+    </script>
+    
 </body>
 </html>
