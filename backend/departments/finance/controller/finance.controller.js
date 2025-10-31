@@ -1367,6 +1367,57 @@ exports.insertCashInflow = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message || 'Failed to insert inflow' });
     }
 };
+
+// Get all cash inflows
+exports.getAllCashInflows = async (req, res) => {
+    try {
+        const inflows = await FinanceModel.getAllCashInflows();
+        
+        return res.status(200).json({ 
+            success: true, 
+            inflows: inflows.map(inflow => ({
+                id: inflow.id,
+                date: inflow.transaction_date,
+                client: inflow.inflow_source,
+                description: inflow.description || 'No description',
+                amount: parseFloat(inflow.amount),
+                paymentMethod: inflow.payment_method || 'manual',
+                reference: inflow.payment_reference || null,
+                status: 'received',
+                category: inflow.inflow_source || 'Other'
+            }))
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message || 'Failed to fetch cash inflows' });
+    }
+};
+
+// Get all cash outflows
+exports.getAllCashOutflows = async (req, res) => {
+    try {
+        const outflows = await FinanceModel.getAllCashOutflows();
+        
+        return res.status(200).json({ 
+            success: true, 
+            outflows: outflows.map(outflow => ({
+                id: outflow.id,
+                date: outflow.transaction_date,
+                category: outflow.supplier_name || 'Purchase',
+                description: outflow.description || 'No description',
+                amount: parseFloat(outflow.amount || 0),
+                paymentMethod: outflow.payment_method || 'bank_transfer',
+                reference: outflow.reference_number || null,
+                status: 'paid',
+                supplier: outflow.supplier_name,
+                quantity: parseFloat(outflow.quantity || 0),
+                unit: outflow.unit
+            }))
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message || 'Failed to fetch cash outflows' });
+    }
+};
+
 // BANK ACCOUNT MANAGEMENT
 // These endpoints handle bank account operations
 // =============================================

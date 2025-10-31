@@ -594,7 +594,7 @@
     <!-- Manufacturing Material Requests Section -->
     <div class="mt-4">
       <h3>Manufacturing Material Requests</h3>
-      <div class="glass-card p-3 h-100 mb-3">
+      <div class="glass-card p-3 h-100 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <span class="text-muted">Material requests submitted by manufacturing department</span>
         </div>
@@ -623,7 +623,7 @@
       </div>
     </div>
 
-    <!-- Delivery Table Section -->
+    <!-- Approved Materials for Delivery Section (appears below Manufacturing Material Requests) -->
     <div class="mt-4">
       <h3>Approved Materials for Delivery</h3>
       <div class="glass-card p-3 h-100 mb-3">
@@ -634,16 +634,18 @@
           <table class="table mb-0 align-middle text-center" id="delivery-table">
             <thead>
               <tr>
-                <th class="text-center">Request ID</th>
+                <th class="text-center">Request No</th>
                 <th class="text-center">Project</th>
-                <th class="text-center">Delivered Date</th>
+                <th class="text-center">Requested By</th>
+                <th class="text-center">Request Date</th>
+                <th class="text-center">Source Type</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody id="deliveryBody">
               <tr>
-                <td colspan="4" class="text-center py-5 text-muted">
+                <td colspan="7" class="text-center py-5 text-muted">
                   <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
                 </td>
               </tr>
@@ -758,16 +760,11 @@
             </div>
             <div class="col-md-6">
               <label for="deliveryType" class="form-label">Delivery Type <span class="text-danger">*</span></label>
-              <select class="form-select" id="deliveryType" required onchange="toggleDeliveryFields()">
-                <option value="">Select delivery type</option>
-                <option value="internal">Internal Driver</option>
-                <option value="external">External Driver</option>
-                <option value="courier">Courier Service</option>
-              </select>
+              <input type="text" class="form-control" id="deliveryType" value="Internal Driver" readonly>
             </div>
           </div>
 
-          <div class="row mb-3" id="internalDriverRow" style="display: none;">
+          <div class="row mb-3" id="internalDriverRow">
             <div class="col-md-6">
               <label for="driverSelect" class="form-label">Driver <span class="text-danger">*</span></label>
               <select class="form-select" id="driverSelect" required>
@@ -807,7 +804,8 @@
                 <thead>
                   <tr>
                     <th>Material</th>
-                    <th>Quantity</th>
+                    <th>Available Quantity</th>
+                    <th>Quantity to Release</th>
                     <th>Unit</th>
                     <th>Source</th>
                   </tr>
@@ -1035,7 +1033,10 @@
     // Load manufacturing requests on page load
     async function loadManufacturingRequests() {
       try {
-        const response = await fetch('/scm/manufacturing-requests');
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get('project_id');
+        const url = pid ? `/scm/manufacturing-requests?project_id=${encodeURIComponent(pid)}` : '/scm/manufacturing-requests';
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           manufacturingRequests = data.requests || [];
@@ -1050,19 +1051,19 @@
       }
     }
 
-    // Load employees for driver selection
+    // Load employees for driver selection (role_id 17 or 18)
     async function loadEmployees() {
       try {
-        const response = await fetch('/scm/employees');
+        const response = await fetch('/scm/drivers');
         if (response.ok) {
           const data = await response.json();
-          employees = data.employees || [];
+          employees = data.drivers || [];
           populateDriverSelect();
         } else {
-          console.error('Failed to load employees');
+          console.error('Failed to load drivers');
         }
       } catch (error) {
-        console.error('Error loading employees:', error);
+        console.error('Error loading drivers:', error);
       }
     }
 
@@ -1070,18 +1071,22 @@
       const tbody = document.getElementById('manufacturingRequestsBody');
       tbody.innerHTML = '';
 
-      if (manufacturingRequests.length === 0) {
+      // Filter out approved requests - only show non-approved requests
+      const nonApprovedRequests = manufacturingRequests.filter(request => request.status !== 'approved');
+
+      if (nonApprovedRequests.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="text-center py-5 text-muted">
-              <i class="fa-regular fa-box me-2"></i>No manufacturing requests found.
+              <i class="fa-regular fa-box me-2"></i>No pending request materials.
             </td>
           </tr>
         `;
+        updateDeliveryTable();
         return;
       }
 
-      manufacturingRequests.forEach(request => {
+      nonApprovedRequests.forEach(request => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="text-center">${request.request_no}</td>
@@ -1101,16 +1106,14 @@
               <button class="btn btn-sm btn-outline-info" onclick="viewManufacturingRequest('${request.request_no}')">
                 <i class="fa-solid fa-eye"></i> View
               </button>
-              ${request.status === 'approved' ? `
-                <button class="btn btn-sm btn-success" onclick="showReleaseForm('${request.request_no}')">
-                  <i class="fa-solid fa-truck"></i> Release
-                </button>
-              ` : ''}
             </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
+      
+      // Update the delivery table with approved materials
+      updateDeliveryTable();
     }
 
     function showManufacturingRequestsError() {
@@ -1168,6 +1171,7 @@
                   <th>Quantity</th>
                   <th>Unit</th>
                   <th>Source</th>
+                  <th>Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -1180,6 +1184,7 @@
                     <td>${material.quantity}</td>
                     <td>${material.unit}</td>
                     <td>${request.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}</td>
+                    <td>${request.source_type === 'company_supply' ? (material.price !== undefined && material.price !== null ? `₱${Number(material.price).toFixed(2)}` : '₱0.00') : '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1291,7 +1296,7 @@
       employees.forEach(employee => {
         const option = document.createElement('option');
         option.value = employee.employee_id;
-        option.textContent = `${employee.full_name} (${employee.employee_id})`;
+        option.textContent = employee.full_name;
         driverSelect.appendChild(option);
       });
     }
@@ -1455,30 +1460,20 @@
         if (data.success) {
           // Update frontend array
           const request = manufacturingRequests.find(r => r.request_no === requestNo);
-      if (request) {
+          if (request) {
             console.log('Found request, current status:', request.status);
             request.status = newStatus;
             console.log('Updated request status to:', request.status);
-            
-            // Store the approval data for the release form
-            window.pendingMaterialRelease = {
-              requestNo: request.request_no,
-              project: request.project_name || 'N/A',
-              sourceType: request.source_type,
-              selectedMaterials: selectedMaterials,
-              selectedIndices: selectedIndices,
-              originalRequest: request
-            };
           }
+          
+          // Refresh the manufacturing requests table (this will also update delivery table)
+          loadManufacturingRequests();
           
           // Close modal
           const modal = bootstrap.Modal.getInstance(document.getElementById('manufacturingRequestDetailsModal'));
           modal.hide();
           
-          // Show the material release form
-          showMaterialReleaseForm();
-          
-          showNotification(`Request ${requestNo} approved! Please fill out the release details.`, 'success');
+          showNotification(`Request ${requestNo} status updated to ${newStatus}!`, 'success');
         } else {
           console.error('Status update failed:', data.error);
           showNotification(data.error || 'Failed to update request status.', 'danger');
@@ -1488,6 +1483,117 @@
         console.error('Error updating request status:', error);
         showNotification('Failed to update request status. Please try again.', 'danger');
       });
+    }
+
+    // Update delivery table with approved materials
+    function updateDeliveryTable() {
+      const tbody = document.getElementById('deliveryBody');
+      tbody.innerHTML = '';
+
+      // Filter approved requests from manufacturingRequests
+      const approvedRequests = manufacturingRequests.filter(request => request.status === 'approved');
+
+      if (approvedRequests.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      approvedRequests.forEach(request => {
+        const tr = document.createElement('tr');
+        
+        const statusHtml = `<span class="status-badge status-good">Approved</span>`;
+        
+        tr.innerHTML = `
+          <td class="text-center">${request.request_no}</td>
+          <td class="text-center">${request.project_name || 'N/A'}</td>
+          <td class="text-center">${request.requested_by_name || request.requested_by}</td>
+          <td class="text-center">${formatDate(request.requested_at)}</td>
+          <td class="text-center">
+            <span class="badge ${request.source_type === 'owner_supply' ? 'bg-info' : 'bg-primary'}">
+              ${request.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}
+            </span>
+          </td>
+          <td class="text-center">${statusHtml}</td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" onclick="viewApprovedRequestFromDelivery('${request.request_no}')">
+                <i class="fa-solid fa-eye"></i> View
+              </button>
+              <button class="btn btn-sm btn-success" onclick="showReleaseForm('${request.request_no}')">
+                <i class="fa-solid fa-truck"></i> Release
+              </button>
+            </div>
+          </td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+    }
+
+    // View approved request from delivery table
+    function viewApprovedRequestFromDelivery(requestNo) {
+      const request = manufacturingRequests.find(r => r.request_no === requestNo);
+      if (!request) return;
+
+      // Populate modal with request details
+      document.getElementById('modalRequestId').textContent = request.request_no;
+      document.getElementById('modalProject').textContent = request.project_name || 'N/A';
+      document.getElementById('modalRequestDate').textContent = formatDate(request.requested_at);
+      document.getElementById('modalStatus').innerHTML = `<span class="status-badge status-good">Approved</span>`;
+
+      // Show materials without checkboxes since already approved
+      const materialsContainer = document.getElementById('modalMaterials');
+      const approveBtn = document.getElementById('approveSelectedMaterialsBtn');
+      
+      if (request.materials && request.materials.length > 0) {
+        materialsContainer.innerHTML = `
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>Source</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${request.materials.map(material => `
+                  <tr>
+                    <td>${material.material_name || 'N/A'}</td>
+                    <td>${material.quantity}</td>
+                    <td>${material.unit}</td>
+                    <td>${request.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}</td>
+                    <td>${request.source_type === 'company_supply' ? (material.price !== undefined && material.price !== null ? `₱${Number(material.price).toFixed(2)}` : '₱0.00') : '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        // Hide approve button since already approved
+        approveBtn.style.display = 'none';
+      } else {
+        materialsContainer.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-box-open fa-2x mb-3"></i>
+            <p class="mb-0">No materials found for this request.</p>
+          </div>
+        `;
+        approveBtn.style.display = 'none';
+      }
+
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('manufacturingRequestDetailsModal'));
+      modal.show();
     }
 
     function addManufacturingMaterialsToDelivery(requestNo, project, materials, sourceType) {
@@ -1558,9 +1664,8 @@
       // Show the material release form
       showMaterialReleaseForm();
       
-      // Auto-set delivery type to internal driver for supply department
-      document.getElementById('deliveryType').value = 'internal';
-      toggleDeliveryFields();
+      // Delivery type is now locked to "Internal Driver" - show driver fields immediately
+      showInternalDriverFields();
     }
     
     function showMaterialReleaseForm() {
@@ -1576,12 +1681,23 @@
       document.getElementById('releaseProject').value = release.project;
       document.getElementById('releaseSourceType').value = release.sourceType === 'owner_supply' ? 'Owner Supply' : 'Company Supply';
       
-      // Populate materials list
+      // Populate materials list with quantity inputs
       const materialsList = document.getElementById('releaseMaterialsList');
-      materialsList.innerHTML = release.selectedMaterials.map(material => `
-        <tr>
+      materialsList.innerHTML = release.selectedMaterials.map((material, index) => `
+        <tr data-material-index="${index}">
           <td>${material.material_name || 'N/A'}</td>
           <td>${material.quantity}</td>
+          <td>
+            <input type="number" 
+                   class="form-control form-control-sm quantity-input" 
+                   data-material-index="${index}"
+                   data-available="${material.quantity}"
+                   min="0" 
+                   max="${material.quantity}" 
+                   value="${material.quantity}"
+                   required
+                   onchange="validateQuantity(this)">
+          </td>
           <td>${material.unit}</td>
           <td>${release.sourceType === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}</td>
         </tr>
@@ -1598,18 +1714,18 @@
     }
 
     function loadDrivers() {
-      // Fetch drivers from the API
-      fetch('/scm/employees')
+      // Fetch drivers from the API (role_id 17 or 18)
+      fetch('/scm/drivers')
         .then(response => response.json())
         .then(data => {
           const driverSelect = document.getElementById('driverSelect');
           driverSelect.innerHTML = '<option value="">Select driver</option>';
           
-          if (data.success && data.employees) {
-            data.employees.forEach(employee => {
+          if (data.success && data.drivers) {
+            data.drivers.forEach(driver => {
               const option = document.createElement('option');
-              option.value = employee.employee_id;
-              option.textContent = `${employee.full_name} (${employee.employment_status})`;
+              option.value = driver.employee_id;
+              option.textContent = driver.full_name;
               driverSelect.appendChild(option);
             });
           }
@@ -1620,6 +1736,37 @@
         });
     }
 
+    function validateQuantity(input) {
+      const entered = parseFloat(input.value);
+      const available = parseFloat(input.getAttribute('data-available'));
+      
+      if (isNaN(entered) || entered < 0) {
+        input.value = 0;
+        return;
+      }
+      
+      if (entered > available) {
+        input.value = available;
+        showNotification('Quantity cannot exceed available amount.', 'warning');
+      }
+    }
+    
+    function showInternalDriverFields() {
+      // Show internal driver fields and make them required
+      document.getElementById('internalDriverRow').style.display = 'block';
+      document.getElementById('driverSelect').required = true;
+      document.getElementById('vehicleInfo').required = true;
+      
+      // Hide external and courier fields (not used anymore)
+      document.getElementById('externalDriverRow').style.display = 'none';
+      document.getElementById('courierServiceRow').style.display = 'none';
+      
+      // Clear external/courier required attributes (safety measure)
+      document.getElementById('externalDriverName').required = false;
+      document.getElementById('externalVehicleDetails').required = false;
+      document.getElementById('courierService').required = false;
+    }
+    
     function toggleDeliveryFields() {
       const deliveryType = document.getElementById('deliveryType').value;
       
@@ -1663,7 +1810,7 @@
       
       // Reset form
       document.getElementById('materialReleaseForm').reset();
-      toggleDeliveryFields();
+      showInternalDriverFields();
     }
 
     function confirmMaterialReleaseFromForm() {
@@ -1672,73 +1819,52 @@
         return;
       }
 
-      const deliveryType = document.getElementById('deliveryType').value;
+      // Delivery type is now always internal
+      const driverId = document.getElementById('driverSelect').value;
+      const vehicleInfo = document.getElementById('vehicleInfo').value.trim();
       
-      // Validate required fields based on delivery type
-      if (!deliveryType) {
-        showNotification('Please select a delivery type.', 'danger');
+      // Validate required fields for internal delivery
+      if (!driverId || !vehicleInfo) {
+        showNotification('Please fill in all required fields for internal delivery.', 'danger');
         return;
       }
-
-      let deliveryData = {};
       
-      switch (deliveryType) {
-        case 'internal':
-          const driverId = document.getElementById('driverSelect').value;
-          const vehicleInfo = document.getElementById('vehicleInfo').value.trim();
-          
-          if (!driverId || !vehicleInfo) {
-            showNotification('Please fill in all required fields for internal delivery.', 'danger');
-            return;
-          }
-          
-          deliveryData = {
-            delivery_type: 'internal',
-            driver_id: driverId,
-            vehicle_info: vehicleInfo,
-            external_driver_name: null,
-            external_vehicle_details: null,
-            courier_service: null
-          };
-          break;
-          
-        case 'external':
-          const externalDriverName = document.getElementById('externalDriverName').value.trim();
-          const externalVehicleDetails = document.getElementById('externalVehicleDetails').value.trim();
-          
-          if (!externalDriverName || !externalVehicleDetails) {
-            showNotification('Please fill in all required fields for external delivery.', 'danger');
-            return;
-          }
-          
-          deliveryData = {
-            delivery_type: 'external',
-            driver_id: null,
-            vehicle_info: null,
-            external_driver_name: externalDriverName,
-            external_vehicle_details: externalVehicleDetails,
-            courier_service: null
-          };
-          break;
-          
-        case 'courier':
-          const courierService = document.getElementById('courierService').value.trim();
-          
-          if (!courierService) {
-            showNotification('Please fill in the courier service.', 'danger');
-            return;
-          }
-          
-          deliveryData = {
-            delivery_type: 'courier',
-            driver_id: null,
-            vehicle_info: null,
-            external_driver_name: null,
-            external_vehicle_details: null,
-            courier_service: courierService
-          };
-          break;
+      // Get quantities entered for each material
+      const quantityInputs = document.querySelectorAll('.quantity-input');
+      const releaseQuantities = [];
+      let hasRelease = false;
+      
+      quantityInputs.forEach(input => {
+        const index = parseInt(input.getAttribute('data-material-index'));
+        const available = parseFloat(input.getAttribute('data-available'));
+        const released = parseFloat(input.value) || 0;
+        
+        if (released > 0) {
+          hasRelease = true;
+        }
+        
+        releaseQuantities[index] = {
+          available: available,
+          released: released,
+          backordered: available - released
+        };
+      });
+      
+      if (!hasRelease) {
+        showNotification('Please specify quantity to release for at least one material.', 'danger');
+        return;
       }
+      
+      // Delivery data for internal driver only
+      const deliveryData = {
+        delivery_type: 'internal',
+        driver_id: driverId,
+        vehicle_info: vehicleInfo,
+        external_driver_name: null,
+        external_vehicle_details: null,
+        courier_service: null,
+        quantities: releaseQuantities
+      };
 
       // Submit the material release
       submitMaterialRelease(deliveryData);
@@ -1754,7 +1880,8 @@
         vehicle_info: deliveryData.vehicle_info,
         external_driver_name: deliveryData.external_driver_name,
         external_vehicle_details: deliveryData.external_vehicle_details,
-        courier_service: deliveryData.courier_service
+        courier_service: deliveryData.courier_service,
+        quantities: deliveryData.quantities
       };
 
       // Submit to backend
@@ -1778,7 +1905,17 @@
           // Hide the form and clear data
           cancelMaterialRelease();
           
-          showNotification(`Material release created successfully! ${release.selectedMaterials.length} material(s) have been released.`, 'success');
+          const releasedCount = release.selectedMaterials.length;
+          const backorderedCount = release.selectedMaterials.filter((mat, idx) => {
+            return deliveryData.quantities[idx] && deliveryData.quantities[idx].backordered > 0;
+          }).length;
+          
+          let message = `Material release created successfully! ${releasedCount} material(s) processed.`;
+          if (backorderedCount > 0) {
+            message += ` ${backorderedCount} material(s) marked as backordered.`;
+          }
+          
+          showNotification(message, 'success');
       } else {
           console.error('Material release failed:', data.error);
           showNotification(data.error || 'Failed to create material release.', 'danger');

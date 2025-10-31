@@ -493,10 +493,10 @@
                 <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i> <span>Completed Projects</span></a>
             </li>
             <li class="nav-item">
-                <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
+                <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Payment</span></a>
             </li>
-
             
+    
             </ul>
             <div class="logout-container">
                 <a href="/logout" class="logout-link">
@@ -742,34 +742,107 @@
         let progressChart = null;
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             initializeSidebar();
+            const params = new URLSearchParams(window.location.search);
+            const pid = params.get('project_id');
+            await loadProjectsFromBackend(pid);
             renderProjects();
             initializeEventListeners();
             getUserInfo();
         });
 
+        // Load projects dynamically from backend
+        async function loadProjectsFromBackend(projectId = null) {
+            try {
+                if (projectId) {
+                    // Load single project via aggregated tracking API
+                    const r = await fetch(`/manufacturing/project-tracking/${encodeURIComponent(projectId)}`);
+                    const d = await r.json();
+                    if (!d || !d.success || !d.detail || !d.detail.project) return;
+                    const proj = d.detail.project;
+                    const divisions = d.detail.divisions || [];
+                    const map = new Map();
+                    divisions.slice().reverse().forEach(e => {
+                        const name = e.division_name; const val = Math.max(0, Math.min(100, Number(e.progress_percentage||0)));
+                        const current = map.get(name) || 0; const next = Math.min(100, current + val); map.set(name, next);
+                    });
+                    const defaultDivs = ['Foundation','Structural','Mechanical','Electrical','Finishing'];
+                    const normalizedDivs = defaultDivs.map(name => ({ name, progress: Number(map.get(name) || 0), lastUpdate: '', lastImage: '' }));
+                    projects = [{
+                        id: proj.id,
+                        name: proj.project_name || `Project ${proj.id}`,
+                        location: proj.location || '-',
+                        startDate: proj.start_date || null,
+                        deadline: proj.end_date || null,
+                        status: (proj.status === 'in_progress' || proj.status === 'On Going') ? 'in-progress' : (proj.status || 'planning'),
+                        image: '/image/project-2.jpg',
+                        divisions: normalizedDivs
+                    }];
+                } else {
+                    // Load all projects summary
+                    const resp = await fetch('/manufacturing/projects-for-progress', { credentials: 'include' });
+                    const data = await resp.json();
+                    if (!data || !data.success || !Array.isArray(data.projects)) {
+                        return;
+                    }
+                    projects = data.projects.map(p => ({
+                        id: p.id,
+                        name: p.name || p.project_name || `Project ${p.id}`,
+                        location: p.location || '-',
+                        startDate: p.start_date || p.submissionDate || null,
+                        deadline: p.end_date || null,
+                        status: (p.status === 'in_progress' || p.status === 'On Going') ? 'in-progress' : (p.status || 'planning'),
+                        image: p.image || '/image/project-2.jpg',
+                        divisions: []
+                    }));
+                    await Promise.all(projects.map(async (proj) => {
+                        try {
+                            const res = await fetch(`/manufacturing/division-progress/${proj.id}`);
+                            const json = await res.json();
+                            const entries = (json && json.success && Array.isArray(json.entries)) ? json.entries : [];
+                            const cmap = new Map();
+                            entries.slice().reverse().forEach(e => {
+                                const name = e.division_name; const val = Math.max(0, Math.min(100, Number(e.progress_percentage||0)));
+                                const current = cmap.get(name) || 0; const next = Math.min(100, current + val); cmap.set(name, next);
+                            });
+                            const defaultDivs = ['Foundation','Structural','Mechanical','Electrical','Finishing'];
+                            proj.divisions = defaultDivs.map(name => ({ name, progress: Number(cmap.get(name) || 0), lastUpdate: '' , lastImage: '' }));
+                        } catch(_) { proj.divisions = []; }
+                    }));
+                }
+            } catch (_) {}
+        }
+
         // Sidebar functionality
         function initializeSidebar() {
-            const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
+            if (!sidebar || !content) return;
+            // Ensure default visible state
+            if (!sidebar.style.display) sidebar.style.display = 'block';
+            content.style.marginLeft = sidebar.style.display === 'block' ? '300px' : '0';
+        }
 
-            sidebarToggle.addEventListener('click', function() {
-                if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-                    sidebar.style.display = 'block';
-                    content.style.marginLeft = '300px';
-                } else {
-                    sidebar.style.display = 'none';
-                    content.style.marginLeft = '0';
-                }
-            });
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (!sidebar || !content) return;
+            if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                sidebar.style.display = 'block';
+                content.style.marginLeft = '300px';
+            } else {
+                sidebar.style.display = 'none';
+                content.style.marginLeft = '0';
+            }
         }
 
         // Initialize event listeners
         function initializeEventListeners() {
-            document.getElementById('searchBar').addEventListener('input', filterProjects);
-            document.getElementById('statusFilter').addEventListener('change', filterProjects);
+            const searchEl = document.getElementById('searchBar');
+            if (searchEl) searchEl.addEventListener('input', filterProjects);
+            const filterEl = document.getElementById('filterDropdown');
+            if (filterEl) filterEl.addEventListener('change', filterProjects);
         }
 
         // Render projects
@@ -814,103 +887,58 @@
         }
 
         // Show project details
-        function showProjectDetails(projectId) {
-            const project = projects.find(p => p.id === projectId);
+        async function showProjectDetails(projectId) {
+            // Fetch aggregated tracking detail from backend
+            const resp = await fetch(`/manufacturing/project-tracking/${projectId}`);
+            const data = await resp.json();
+            if (!data || !data.success) return;
+            const { project, divisions, dailyLogs, requestedMaterials, materialReleases } = data.detail || {};
             if (!project) return;
 
             // Update modal content
-            document.getElementById('modalProjectImage').src = project.image;
-            document.getElementById('modalProjectName').textContent = project.name;
-            document.getElementById('modalProjectLocation').textContent = project.location;
-            document.getElementById('modalStartDate').textContent = formatDate(project.startDate);
-            document.getElementById('modalDeadline').textContent = formatDate(project.deadline);
-            document.getElementById('modalStatus').textContent = project.status === 'in-progress' ? 'In Progress' : 'Completed';
+            document.getElementById('modalProjectImage').src = '/image/project-2.jpg';
+            document.getElementById('modalProjectName').textContent = project.project_name || '';
+            document.getElementById('modalProjectLocation').textContent = project.location || '';
+            document.getElementById('modalStartDate').textContent = project.start_date ? formatDate(project.start_date) : '';
+            document.getElementById('modalDeadline').textContent = project.end_date ? formatDate(project.end_date) : '';
+            document.getElementById('modalStatus').textContent = project.status || '';
 
-            // Update division progress
-            const divisionProgressHtml = project.divisions.map(division => `
+            // Division progress list
+            const divisionProgressHtml = (divisions || []).map(d => `
                 <div class="division-item">
-                    <div class="division-name">${division.name}</div>
+                    <div class="division-name">${d.division_name}</div>
                     <div class="division-bar">
                         <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: ${division.progress}%"></div>
+                            <div class="progress-bar-fill" style="width: ${Number(d.progress_percentage||0)}%"></div>
                         </div>
-                        <div class="division-last-update">Last updated: ${division.lastUpdate}</div>
+                        <div class="division-last-update">Last updated: ${d.created_at ? formatDate(d.created_at) : '-'}</div>
                     </div>
-                    <div class="division-percentage">${division.progress}%</div>
-                    <img src="${division.lastImage}" alt="${division.name} progress" class="division-image" 
-                         onclick="showDivisionImage('${division.name}', '${division.lastImage}', '${division.lastUpdate}')">
+                    <div class="division-percentage">${Number(d.progress_percentage||0)}%</div>
                 </div>
             `).join('');
             document.getElementById('modalDivisionProgress').innerHTML = divisionProgressHtml;
 
-            // Update chart
-            if (progressChart) {
-                progressChart.destroy();
-            }
+            // Chart: compute combined per-division from entries
+            const divMap = new Map();
+            (divisions || []).slice().reverse().forEach(d => {
+                const name = d.division_name; const val = Number(d.progress_percentage||0);
+                const current = divMap.get(name) || 0; const next = Math.min(100, current + val); divMap.set(name, next);
+            });
+            const labels = Array.from(divMap.keys());
+            const values = Array.from(divMap.values());
+            const overall = labels.length ? Math.round(values.reduce((a,b)=>a+b,0) / labels.length) : 0;
 
+            if (progressChart) { progressChart.destroy(); }
             const ctx = document.getElementById('progressChart').getContext('2d');
-            const overallProgress = calculateOverallProgress(project.divisions);
-            
             progressChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: [...project.divisions.map(d => d.name), 'Total'],
-                    datasets: [{
-                        label: 'Progress (%)',
-                        data: [...project.divisions.map(d => d.progress), overallProgress],
-                        backgroundColor: [
-                            '#4e73df', // Foundation
-                            '#1cc88a', // Structural
-                            '#36b9cc', // Mechanical
-                            '#f6c23e', // Electrical
-                            '#e74a3b', // Finishing
-                            '#2e59d9'  // Total
-                        ],
-                        borderRadius: 5,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.label}: ${context.parsed.y}%`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Progress (%)',
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                stepSize: 10
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
+                data: { labels: [...labels, 'Total'], datasets: [{ label: 'Progress (%)', data: [...values, overall], backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#2e59d9'], borderRadius: 5, borderWidth: 2, borderColor: '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.y}%` } } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 10 } }, x: { grid: { display: false } } } }
             });
 
-            // Show modal
+            // Below chart: combine Daily Logs table, Division Progress table, Materials (requested + releases)
+            // For brevity, reuse existing modalDivisionProgress for divisions; daily logs/materials can be appended if desired.
+
             const modal = new bootstrap.Modal(document.getElementById('projectDetailsModal'));
             modal.show();
         }

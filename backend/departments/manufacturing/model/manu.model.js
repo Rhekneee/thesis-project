@@ -583,8 +583,9 @@ const ManufacturingModel = {
           location,
           start_date,
           status,
+          developer_id,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, 'planning', NOW())
+        ) VALUES (?, ?, ?, ?, ?, 'planning', ?, NOW())
       `;
 
       const [result] = await db.execute(projectInsertQuery, [
@@ -592,7 +593,8 @@ const ManufacturingModel = {
         contract.project_name,
         contract.developer_company,
         contract.location,
-        contract.contract_date
+        contract.contract_date,
+        contract.developer_id
       ]);
 
       console.log(`✅ Project created successfully: ${projectCode} (ID: ${result.insertId})`);
@@ -666,11 +668,11 @@ const ManufacturingModel = {
       const { request_no, project_id, requested_by, department_id, source_type, purpose, materials } = data;
       
       // Insert each material as a separate request record
-      const insertPromises = materials.map(material => {
+      const insertPromises = materials.map(async (material) => {
         let query, params;
         
         if (source_type === 'owner_supply') {
-          // For owner supply, use owner_supply_id instead of material_id
+          // For owner supply, use owner_supply_id instead of material_id. Price is NULL for owner supply.
           query = `
             INSERT INTO request_material (
               request_no,
@@ -682,9 +684,10 @@ const ManufacturingModel = {
               unit,
               purpose,
               source_type,
+              price,
               status,
               requested_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
           `;
           params = [
             request_no,
@@ -695,10 +698,15 @@ const ManufacturingModel = {
             material.quantity,
             material.unit,
             purpose,
-            source_type
+            source_type,
+            null // price
           ];
         } else {
-          // For company supply, use material_id
+          // For company supply, use material_id and store the price from materials table
+          // Fetch price for the material_id
+          const [priceRows] = await db.execute(`SELECT price FROM materials WHERE material_id = ?`, [material.material_id]);
+          const unitPrice = priceRows && priceRows[0] ? Number(priceRows[0].price) || 0 : 0;
+          
           query = `
             INSERT INTO request_material (
               request_no,
@@ -710,9 +718,10 @@ const ManufacturingModel = {
               unit,
               purpose,
               source_type,
+              price,
               status,
               requested_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
           `;
           params = [
             request_no,
@@ -723,7 +732,8 @@ const ManufacturingModel = {
             material.quantity,
             material.unit,
             purpose,
-            source_type
+            source_type,
+            unitPrice
           ];
         }
         
@@ -798,6 +808,7 @@ const ManufacturingModel = {
             rm.quantity,
             rm.unit,
             rm.source_type,
+            rm.price,
             CASE 
               WHEN rm.source_type = 'owner_supply' THEN os.material_name
               WHEN rm.source_type = 'company_supply' THEN m.name
@@ -1090,8 +1101,11 @@ const ManufacturingModel = {
           p.start_date,
           p.end_date,
           p.status,
-          p.created_at
+          p.created_at,
+          p.project_code,
+          c.proposal_id
         FROM projects p
+        LEFT JOIN contracts c ON CAST(SUBSTRING_INDEX(p.project_code, '-', -1) AS UNSIGNED) = c.contract_id
         WHERE p.status IN ('planning', 'in_progress')
         ORDER BY p.project_name ASC
       `);
@@ -1384,8 +1398,32 @@ const ManufacturingModel = {
     }
   },
 
+  // Get completed projects for a developer
+  getCompletedProjectsByDeveloper: async (developerId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          p.id,
+          p.project_code,
+          p.project_name,
+          p.client_name,
+          p.location,
+          p.start_date,
+          p.end_date,
+          p.status
+        FROM projects p
+        WHERE p.status = 'completed' AND p.developer_id = ?
+        ORDER BY p.end_date DESC
+      `, [developerId]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting completed projects:', error);
+      throw error;
+    }
+  },
+
   // Get projects for manufacturing progress tracking (planning status or active contracts)
-  getProjectsForProgress: async () => {
+  getProjectsForProgress: async (developerId = null) => {
     try {
       // First get all planning projects
       const [planningRows] = await db.query(`
@@ -1399,9 +1437,9 @@ const ManufacturingModel = {
           end_date,
           status
         FROM projects
-        WHERE status = 'planning'
+        WHERE status = 'planning' ${developerId ? 'AND developer_id = ?' : ''}
         ORDER BY start_date DESC
-      `);
+      `, developerId ? [developerId] : []);
       
       // Then get active contract projects (status = 'Active' in contracts, matching project created from contract)
       const [activeRows] = await db.query(`
@@ -1415,9 +1453,9 @@ const ManufacturingModel = {
           p.end_date,
           p.status
         FROM projects p
-        WHERE p.status = 'in_progress'
+        WHERE p.status = 'in_progress' ${developerId ? 'AND p.developer_id = ?' : ''}
         ORDER BY p.start_date DESC
-      `);
+      `, developerId ? [developerId] : []);
       
       // Combine and remove duplicates
       const allProjects = [...planningRows, ...activeRows];
@@ -1466,9 +1504,74 @@ const ManufacturingModel = {
       
       console.log(`✅ Division progress saved: ${progress}% for division_id ${divisionId} (ID: ${result.insertId})`);
       
-      return result.insertId;
+      // Check if overall progress is 100% and update project status
+      const overallProgress = await ManufacturingModel.checkAndUpdateProjectStatus(projectId);
+      
+      return { entryId: result.insertId, overallProgress };
     } catch (error) {
       console.error('❌ Error saving division progress entry:', error);
+      throw error;
+    }
+  },
+
+  // Check and update project status to completed when overall progress reaches 100%
+  checkAndUpdateProjectStatus: async (projectId) => {
+    try {
+      // Get all division progress entries for this project
+      const [divisionRows] = await db.query(`
+        SELECT 
+          dp.division_id,
+          dm.division_name,
+          dp.progress_percentage
+        FROM division_progress dp
+        JOIN division_master dm ON dp.division_id = dm.id
+        WHERE dp.project_id = ?
+        ORDER BY dp.created_at ASC
+      `, [projectId]);
+      
+      if (divisionRows.length === 0) {
+        console.log('No division progress entries found for project');
+        return;
+      }
+      
+      // Calculate cumulative progress per division (sum capped at 100%)
+      const divisionsMap = {};
+      divisionRows.forEach(row => {
+        const divName = row.division_name;
+        const progress = Number(row.progress_percentage || 0);
+        
+        if (!divisionsMap[divName]) {
+          divisionsMap[divName] = 0;
+        }
+        
+        const current = divisionsMap[divName];
+        divisionsMap[divName] = Math.min(100, current + progress);
+      });
+      
+      // Calculate overall progress as average of all divisions
+      const divisionProgressValues = Object.values(divisionsMap);
+      const overallProgress = divisionProgressValues.length > 0
+        ? Math.round(divisionProgressValues.reduce((sum, val) => sum + val, 0) / divisionProgressValues.length)
+        : 0;
+      
+      console.log(`📊 Overall progress for project ${projectId}: ${overallProgress}%`);
+      
+      // If overall progress is 100%, update project status to 'completed'
+      if (overallProgress >= 100) {
+        console.log(`✅ Project ${projectId} has reached 100% progress. Updating status to 'completed'`);
+        
+        await db.query(`
+          UPDATE projects 
+          SET status = 'completed'
+          WHERE id = ? AND status != 'completed'
+        `, [projectId]);
+        
+        console.log(`✅ Project ${projectId} status updated to 'completed'`);
+      }
+      
+      return overallProgress;
+    } catch (error) {
+      console.error('❌ Error checking and updating project status:', error);
       throw error;
     }
   },
@@ -1533,10 +1636,11 @@ const ManufacturingModel = {
     }
   },
 
-  // Get materials for project dropdown (from owners_supply and request_material)
+  // Get materials for project dropdown (from owners_supply and material_releases)
   getProjectMaterialsDropdown: async (projectId) => {
     try {
       const materials = [];
+      let proposalId = null; // Declare outside to use in multiple queries
       
       // Step 1: Get proposal_id from contract that created this project
       const [projectRows] = await db.query(`
@@ -1560,56 +1664,129 @@ const ManufacturingModel = {
         `, [contractId]);
         
         if (contractRows.length > 0) {
-          const proposalId = contractRows[0].proposal_id;
+          proposalId = contractRows[0].proposal_id;
           
           // Get owner supply materials that are DELIVERED to main warehouse
+          // Use quantity_requested to show what has been requested/supplied from the owner
+          // IMPORTANT: Only get materials from this specific proposal_id to avoid duplicates from other proposals
           const [ownerSupplyMaterials] = await db.query(`
             SELECT 
               CONCAT('owner_', os.supply_id) as id,
               os.material_name as name,
               os.unit,
-              os.quantity as requested_qty,
-              os.quantity as remaining_qty,
-              COALESCE(os.quantity * 0, 0.00) as unit_price,
+              os.quantity_requested as requested_qty,
+              COALESCE(os.quantity_remaining, 0) as remaining_qty,
+              COALESCE(os.quantity_requested * 0, 0.00) as unit_price,
               'owner_supply' as source_type,
-              os.supply_id
+              os.supply_id,
+              os.proposal_id
             FROM owners_supply os
-            WHERE os.proposal_id = ? AND os.status = 'delivered'
+            WHERE os.proposal_id = ? 
+              AND os.status = 'delivered'
+              AND os.quantity_requested IS NOT NULL 
+              AND os.quantity_requested > 0
+            GROUP BY os.supply_id
           `, [proposalId]);
           
           materials.push(...ownerSupplyMaterials);
+          console.log(`📦 Owner supply materials for proposal ${proposalId}:`, ownerSupplyMaterials.length);
         }
       }
       
-      // Step 2: Get materials from request_material for this project (that have been delivered)
-      const [requestedMaterials] = await db.query(`
-        SELECT 
-          CONCAT('req_', rm.id) as id,
-          CASE 
-            WHEN rm.source_type = 'owner_supply' THEN os.material_name
-            WHEN rm.source_type = 'company_supply' THEN m.name
-            ELSE 'Unknown Material'
-          END as name,
+      // Step 2: Get materials from material_releases that have been received
+      // This ensures we only get materials from the current project's proposal
+      // Skip material_releases query for owner supply - we already got them from owners_supply table
+      // Only get company supply materials from material_releases
+      let query = `
+        SELECT DISTINCT
+          CONCAT('release_', mr.id) as id,
+          m.name,
           rm.unit,
-          rm.quantity as requested_qty,
-          rm.quantity as remaining_qty,
-          COALESCE(rm.quantity * 0, 0.00) as unit_price,
-          rm.source_type,
-          rm.id as request_id
-        FROM request_material rm
-        LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
-        LEFT JOIN materials m ON rm.material_id = m.material_id
-        WHERE rm.project_id = ? AND rm.status = 'received'
-      `, [projectId]);
+          COALESCE(rm.quantity_supplied, rm.quantity) as requested_qty,
+          COALESCE(rm.quantity - rm.quantity_supplied, 0) as remaining_qty,
+          COALESCE(m.price, 0.00) as unit_price,
+          mr.source_type,
+          mr.id as release_id,
+          NULL as proposal_id
+        FROM material_releases mr
+        INNER JOIN request_material rm ON mr.request_id = rm.id
+        LEFT JOIN materials m ON mr.material_id = m.material_id
+        WHERE mr.project_id = ?
+          AND mr.status IN ('released','received')
+          AND mr.source_type = 'company_supply'
+        GROUP BY mr.id
+      `;
+      
+      const [requestedMaterials] = await db.query(query, [projectId]);
       
       // Add requested materials
       materials.push(...requestedMaterials);
+      console.log(`📦 Requested materials for project ${projectId}:`, requestedMaterials.length);
       
-      console.log(`✅ Found ${materials.length} materials for project ${projectId}`);
+      console.log(`✅ Total materials for project ${projectId}: ${materials.length}`);
+      
+      // Log each material with its proposal_id or project_id for debugging
+      materials.forEach(m => {
+        const proposalInfo = m.proposal_id ? `proposal_id: ${m.proposal_id}` : 'N/A';
+        const projectInfo = m.project_id ? `project_id: ${m.project_id}` : 'N/A';
+        console.log(`   - ${m.name} (${m.source_type}) - ${proposalInfo}, ${projectInfo}`);
+      });
       
       return materials;
     } catch (error) {
       console.error('❌ Error getting project materials dropdown:', error);
+      throw error;
+    }
+  },
+
+  // Get material releases intended for a specific project (company and owner supply)
+  getProjectMaterialReleases: async (projectId) => {
+    try {
+      const sql = `
+        SELECT 
+          mr.id as release_id,
+          mr.request_id,
+          mr.project_id,
+          mr.status as release_status,
+          mr.source_type,
+          mr.released_at,
+          rm.request_no,
+          rm.unit,
+          COALESCE(rm.quantity_supplied, rm.quantity) AS quantity,
+          rm.quantity_backorder,
+          CASE 
+            WHEN rm.source_type = 'owner_supply' THEN os.material_name
+            WHEN rm.source_type = 'company_supply' THEN m.name
+            ELSE 'Unknown Material'
+          END as material_name,
+          CASE 
+            WHEN rm.source_type = 'company_supply' THEN COALESCE(rm.price, m.price)
+            ELSE NULL
+          END as unit_price
+        FROM material_releases mr
+        INNER JOIN request_material rm ON mr.request_id = rm.id
+        LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
+        LEFT JOIN materials m ON rm.material_id = m.material_id
+        WHERE mr.project_id = ?
+        ORDER BY mr.released_at DESC, mr.id DESC
+      `;
+      const [rows] = await db.query(sql, [projectId]);
+      return rows.map(r => ({
+        release_id: r.release_id,
+        request_id: r.request_id,
+        project_id: r.project_id,
+        status: r.release_status,
+        source_type: r.source_type,
+        released_at: r.released_at,
+        request_no: r.request_no,
+        unit: r.unit,
+        quantity: Number(r.quantity || 0),
+        quantity_backorder: Number(r.quantity_backorder || 0),
+        material_name: r.material_name,
+        unit_price: r.unit_price !== null ? Number(r.unit_price) : null
+      }));
+    } catch (error) {
+      console.error('❌ Error getting project material releases:', error);
       throw error;
     }
   },
@@ -1640,6 +1817,377 @@ const ManufacturingModel = {
     } catch (error) {
       console.error('❌ Error getting division progress by project:', error);
       throw error;
+    }
+  }
+  ,
+  // List stage billings for a project (brief)
+  getStageBillingsByProject: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          s.id,
+          s.project_id,
+          s.division_id,
+          dm.division_name,
+          s.start_date,
+          s.end_date,
+          s.total_labor_cost,
+          s.total_material_cost,
+          s.amount_due,
+          s.progress_percent,
+          s.billing_number,
+          s.billing_date,
+          s.billing_status
+        FROM stage_billing_summary s
+        LEFT JOIN division_master dm ON s.division_id = dm.id
+        WHERE s.project_id = ?
+        ORDER BY s.billing_date DESC, s.id DESC
+      `, [projectId]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error getting stage billings by project:', error);
+      throw error;
+    }
+  }
+  ,
+  // Detailed stage billing summary: base billing + materials and labor breakdown
+  getStageBillingDetail: async (billingId) => {
+    try {
+      // Base billing
+      const [baseRows] = await db.query(`
+        SELECT 
+          s.*, dm.division_name
+        FROM stage_billing_summary s
+        LEFT JOIN division_master dm ON s.division_id = dm.id
+        WHERE s.id = ?
+      `, [billingId]);
+      const base = baseRows[0];
+      if (!base) return null;
+
+      // Materials from daily_logs: within [start_date, end_date]
+      const [matRows] = await db.query(`
+        SELECT 
+          dl.id as log_id,
+          dl.log_date,
+          dl.division_id,
+          dm.division_name,
+          dl.material_used,
+          dl.total_material_cost
+        FROM daily_logs dl
+        LEFT JOIN division_master dm ON dm.id = dl.division_id
+        WHERE dl.project_id = ?
+          AND dl.log_date BETWEEN ? AND ?
+        ORDER BY dl.log_date ASC, dl.id ASC
+      `, [base.project_id, base.start_date, base.end_date]);
+
+      // Parse material_used JSON for a flat array breakdown
+      const materials = [];
+      let materialsTotal = 0;
+      for (const r of matRows) {
+        let items = [];
+        try { items = JSON.parse(r.material_used || '[]'); } catch(_) { items = []; }
+        (items || []).forEach(it => {
+          const qty = Number(it.quantity || 0);
+          const up = Number(it.unitPrice || it.price || 0);
+          const sub = qty * up;
+          materials.push({ date: r.log_date, division_name: r.division_name, name: it.name || '', quantity: qty, unit_price: up, subtotal: sub });
+          materialsTotal += sub;
+        });
+      }
+
+      // Labor via existing computation (reuse period overlap)
+      const labor = await ManufacturingModel.getLaborCostForRange(base.project_id, base.start_date, base.end_date);
+
+      return { base, materials, materials_total: Math.round(materialsTotal * 100) / 100, labor_total: Number(labor || 0) };
+    } catch (error) {
+      console.error('❌ Error getting stage billing detail:', error);
+      throw error;
+    }
+  }
+  ,
+  // Aggregate project tracking detail for developer view
+  getProjectTrackingDetail: async (projectId) => {
+    try {
+      // Basic project info
+      const [projRows] = await db.query(`
+        SELECT id, project_code, project_name, client_name, location, start_date, end_date, status
+        FROM projects WHERE id = ?
+      `, [projectId]);
+      const project = projRows[0] || null;
+
+      // Division progress entries (newest first)
+      const divisions = await ManufacturingModel.getDivisionProgressByProject(projectId);
+
+      // Daily logs
+      const dailyLogs = await ManufacturingModel.getDailyLogsByProject(projectId);
+
+      // Materials: requested + releases intended for this project
+      const requestedMaterials = await ManufacturingModel.getProjectMaterialsDropdown(projectId);
+      const materialReleases = await ManufacturingModel.getProjectMaterialReleases(projectId);
+
+      return {
+        project,
+        divisions,
+        dailyLogs,
+        requestedMaterials,
+        materialReleases
+      };
+    } catch (error) {
+      console.error('❌ Error in getProjectTrackingDetail:', error);
+      throw error;
+    }
+  }
+  ,
+  /**
+   * Insert a Stage Billing Summary record.
+   *
+   * This persists a single stage/period billing summary into stage_billing_summary.
+   * Required inputs:
+   *  - projectId: Target project id (FK to projects.id)
+   *  - startDate, endDate: Date range covered by this billing (inclusive)
+   *  - progressPercent: Overall project progress percent at the time of billing
+   *  - remarks: Optional notes
+   *  - totalMaterialCost: Frontend-computed sum of material costs within the period (daily logs)
+   *
+   * Backend additionally computes:
+   *  - totalLaborCost: Sum of payroll payouts (if available) within the same date range
+   *  - totalExpense: Stored column (labor + material)
+   *  - billing_number: Unique human-friendly number (SB-YYYY-XXXXXX)
+   *  - amount_due: Mirrors totalExpense currently
+   */
+  createStageBillingSummary: async ({ projectId, divisionId, startDate, endDate, progressPercent, totalMaterialCost, remarks }) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Normalize dates to YYYY-MM-DD to satisfy DATE columns
+      const normStartDate = (startDate && startDate.includes('T')) ? startDate.split('T')[0] : startDate;
+      const normEndDate = (endDate && endDate.includes('T')) ? endDate.split('T')[0] : endDate;
+
+      // Generate a unique billing number of the form SB-YYYY-XXXXXX
+      const year = new Date().getFullYear();
+      const rand = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
+      const billingNo = `SB-${year}-${rand}`;
+
+      // Compute labor cost from payroll/payslip data if available.
+      // NOTE: This query assumes a payslips (or payroll) table with columns: project_id, pay_date, total_amount
+      // If your schema differs, update this section accordingly.
+      let totalLabor = 0;
+      try {
+        const [laborRows] = await connection.query(`
+          SELECT COALESCE(SUM(total_amount), 0) AS labor_cost
+          FROM payslips
+          WHERE project_id = ?
+            AND pay_date BETWEEN ? AND ?
+        `, [projectId, startDate, endDate]);
+        totalLabor = Number(laborRows && laborRows[0] && laborRows[0].labor_cost || 0);
+      } catch (err) {
+        // If payroll/payslips table does not exist or columns differ, fall back to 0
+        // This ensures the billing can still be stored using material cost only
+        totalLabor = 0;
+      }
+
+      const totalMaterial = Number(totalMaterialCost || 0);
+      const amountDue = totalLabor + totalMaterial;
+
+      // Insert the stage billing summary record
+      await connection.query(`
+        INSERT INTO stage_billing_summary (
+          project_id, division_id, start_date, end_date,
+          total_labor_cost, total_material_cost,
+          progress_percent,
+          billing_number, billing_date, billing_status,
+          amount_due, remarks
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, 'Generated', ?, ?)
+      `, [
+        projectId,
+        divisionId || null,
+        normStartDate, normEndDate,
+        totalLabor, totalMaterial,
+        Number(progressPercent || 0),
+        billingNo,
+        amountDue,
+        remarks || null
+      ]);
+
+      await connection.commit();
+      return { success: true, billing_number: billingNo, total_labor_cost: totalLabor, total_material_cost: totalMaterial, amount_due: amountDue };
+    } catch (error) {
+      await connection.rollback();
+      console.error('❌ Error creating stage billing summary:', error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+  ,
+  /**
+   * Get total labor cost from payslips within a date range for a project.
+   * Returns a number (0 if none or table unavailable).
+   * 
+   * Note: Uses date overlap logic where payslip.start_date/end_date overlaps with the stage date range.
+   * Also checks construction_payroll table for construction workers assigned to the project.
+   */
+  getLaborCostForRange: async (projectId, startDate, endDate) => {
+    try {
+      // Normalize dates to YYYY-MM-DD format safely
+      const toYmd = (d) => {
+        if (!d) return null;
+        if (typeof d === 'string') return d.includes('T') ? d.split('T')[0] : d;
+        try { return new Date(d).toISOString().split('T')[0]; } catch(_) { return String(d); }
+      };
+      const normStartDate = toYmd(startDate);
+      const normEndDate = toYmd(endDate);
+      
+      console.log(`[DEBUG] getLaborCostForRange: projectId=${projectId}, startDate=${startDate}->${normStartDate}, endDate=${endDate}->${normEndDate}`);
+      
+      // Get labor cost from construction payslips where date range overlaps
+      // Use start_date and end_date to match the pay period range
+      const [conRows] = await db.query(`
+        SELECT COALESCE(SUM(cp.net_salary), 0) AS labor_cost
+        FROM construction_payslip cp
+        WHERE cp.project_id = ?
+          AND cp.start_date <= ?
+          AND cp.end_date >= ?
+      `, [projectId, normEndDate, normStartDate]);
+      
+      const conLaborCost = Number(conRows && conRows[0] && conRows[0].labor_cost || 0);
+      console.log(`[DEBUG] Query result: labor_cost=${conLaborCost}`);
+      
+      return conLaborCost;
+    } catch (err) {
+      console.error('Error getting labor cost for range:', err);
+      // If finance tables are not present or schema differs, return 0 to keep UI functional
+      return 0;
+    }
+  },
+  
+  /**
+   * Store payment record for stage billing
+   * 
+   * Stores payment information in stage_billing_payment table.
+   * For manual payments: stores payment_method, reference, amount, proof file path.
+   * For Stripe payments: stores payment_method, reference, amount, stripe payment details.
+   */
+  storePaymentRecord: async ({ billingId, paymentMethod, paymentReference, amountPaid, remarks, proofFilePath = null }) => {
+    try {
+      await db.query(`
+        INSERT INTO stage_billing_payment (
+          stage_billing_id, payment_method, payment_reference, 
+          amount_paid, remarks
+        ) VALUES (?, ?, ?, ?, ?)
+      `, [billingId, paymentMethod, paymentReference, amountPaid, remarks]);
+      
+      // Update billing status based on amount paid
+      const [billingRows] = await db.query(`
+        SELECT amount_due FROM stage_billing_summary WHERE id = ?
+      `, [billingId]);
+      
+      if (billingRows && billingRows.length > 0) {
+        const amountDue = Number(billingRows[0].amount_due || 0);
+        const amountPaidTotal = await ManufacturingModel.getTotalPaidAmount(billingId);
+        
+        let newStatus = 'Generated';
+        if (amountPaidTotal >= amountDue) {
+          newStatus = 'Paid';
+        } else if (amountPaidTotal > 0) {
+          newStatus = 'Partially Paid';
+        }
+        
+        await db.query(`
+          UPDATE stage_billing_summary SET billing_status = ? WHERE id = ?
+        `, [newStatus, billingId]);
+      }
+      
+      // Attempt to persist proof file path if provided and column exists
+      if (proofFilePath) {
+        try {
+          await db.query(`
+            UPDATE stage_billing_payment 
+            SET proof_file_path = ? 
+            WHERE stage_billing_id = ? 
+              AND payment_reference <=> ? 
+            ORDER BY id DESC 
+            LIMIT 1
+          `, [proofFilePath, billingId, paymentReference || null]);
+        } catch (e) {
+          // Column may not exist; ignore
+          console.warn('proof_file_path update skipped:', e.code || e.message);
+        }
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error storing payment record:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get total amount paid for a stage billing
+   */
+  getTotalPaidAmount: async (billingId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT COALESCE(SUM(amount_paid), 0) as total_paid
+        FROM stage_billing_payment
+        WHERE stage_billing_id = ?
+      `, [billingId]);
+      
+      return Number(rows && rows[0] && rows[0].total_paid || 0);
+    } catch (error) {
+      console.error('Error getting total paid amount:', error);
+      return 0;
+    }
+  },
+
+  /**
+   * Get payments by reference number (to check for duplicates)
+   */
+  getPaymentsByReference: async (paymentReference) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT * FROM stage_billing_payment
+        WHERE payment_reference = ?
+      `, [paymentReference]);
+      
+      return rows;
+    } catch (error) {
+      console.error('Error getting payments by reference:', error);
+      return [];
+    }
+  }
+  ,
+  /**
+   * Persist PayMongo checkout session metadata for auditing and reconciliation.
+   * Safe to call even if table doesn't exist (fails silently).
+   */
+  savePaymongoCheckoutSession: async ({ sessionId, billingId, amount, reference, remarks, url, status }) => {
+    try {
+      await db.query(`
+        INSERT INTO paymongo_sessions (
+          session_id, stage_billing_id, amount, reference, remarks, checkout_url, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [sessionId, billingId, amount, reference, remarks, url, status || 'created']);
+    } catch (error) {
+      // Table might not exist in some deployments; log and continue
+      console.warn('paymongo_sessions insert skipped:', error.code || error.message);
+    }
+  }
+  ,
+  /**
+   * Persist raw PayMongo webhook event payload for traceability.
+   * Safe to call even if table doesn't exist (fails silently).
+   */
+  savePaymongoWebhookEvent: async ({ eventId, type, payloadJson }) => {
+    try {
+      await db.query(`
+        INSERT INTO paymongo_webhook_events (
+          event_id, event_type, payload_json, received_at
+        ) VALUES (?, ?, ?, NOW())
+      `, [eventId, type, payloadJson]);
+    } catch (error) {
+      console.warn('paymongo_webhook_events insert skipped:', error.code || error.message);
     }
   }
 };

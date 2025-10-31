@@ -80,11 +80,66 @@ router.get('/divisions', ManufacturingController.getAllDivisions);
 
 // Projects for progress tracking
 router.get('/projects-for-progress', ManufacturingController.getProjectsForProgress);
+
+// Get completed projects for developer
+router.get('/completed-projects', ManufacturingController.getCompletedProjectsByDeveloper);
+
 router.post('/save-division-progress', ManufacturingController.saveDivisionProgress);
 router.post('/save-daily-log-progress', ManufacturingController.saveDailyLogProgress);
 router.get('/daily-logs/:projectId', ManufacturingController.getDailyLogsProgress);
 router.get('/project-materials/:projectId', ManufacturingController.getProjectMaterialsProgress);
+router.get('/project-material-releases/:projectId', ManufacturingController.getProjectMaterialReleases);
 router.get('/division-progress/:projectId', ManufacturingController.getDivisionProgressByProject);
+// Aggregated project tracking (developer view)
+router.get('/project-tracking/:projectId', ManufacturingController.getProjectTrackingDetail);
+// Stage billing summary
+router.post('/stage-billing', ManufacturingController.createStageBilling);
+router.get('/stage-billing/labor-cost/:projectId', ManufacturingController.getLaborCostForRange);
+router.get('/stage-billings/:projectId', ManufacturingController.getStageBillingsByProject);
+router.get('/stage-billing/detail/:billingId', ManufacturingController.getStageBillingDetail);
+
+// Payment routes
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for payment proof uploads
+const paymentProofStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'payment_proofs');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'payment-proof-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const paymentProofUpload = multer({
+    storage: paymentProofStorage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and PDF are allowed.'));
+        }
+    },
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+router.post('/process-payment', paymentProofUpload.single('proof'), ManufacturingController.processPayment);
+router.post('/create-payment-intent', ManufacturingController.createPaymentIntent);
+
+// PayMongo webhook endpoint (must be before body parsing middleware)
+router.post('/paymongo-webhook', express.raw({type: 'application/json'}), ManufacturingController.paymongoWebhook);
+
+// Payment callback routes
+router.get('/payments/success', ManufacturingController.paymentSuccess);
+router.get('/payments/cancel', ManufacturingController.paymentCancel);
 
 // ========== ATTENDANCE ROUTES ==========
 

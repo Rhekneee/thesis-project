@@ -1386,7 +1386,7 @@
 <!-- Modal -->
 <!-- Modal for Resume Upload -->
 <div class="modal fade" id="applyModal" tabindex="-1" aria-labelledby="applyModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 1000px;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 1500px;">
       <div class="modal-content border-0 shadow">
         <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 1.5rem 2rem;">
           <h4 class="modal-title" id="applyModalLabel" style="font-weight: 600;">
@@ -1402,7 +1402,7 @@
                         <h5 class="fw-bold mb-3" style="color: #2563eb;">
                             <i class="fas fa-info-circle me-2"></i>Job Information
                         </h5>
-                        <div id="jobInfoContent" class="job-info-content" style="height: 450px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 1.5rem; background-color: #f8f9fa;">
+                        <div id="jobInfoContent" class="job-info-content" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 1.5rem; background-color: #f8f9fa;">
                             <!-- Job info will be populated here -->
                         </div>
                     </div>
@@ -1413,75 +1413,93 @@
                             <i class="fas fa-user me-2"></i>Personal Information
                         </h5>
                         
-                <!-- First Name -->
-                <div class="mb-3">
-                    <label for="firstname" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="firstname" required />
+                <!-- Name Row -->
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="firstname" required />
+                        <div class="invalid-feedback">First name is required.</div>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="lastname" class="form-label">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="lastname" required />
+                        <div class="invalid-feedback">Last name is required.</div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="middleinitial" class="form-label">Middle Initial <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="middleinitial" required />
+                        <div class="invalid-feedback">Middle initial is required.</div>
+                    </div>
                 </div>
 
-                <!-- Last Name -->
-                <div class="mb-3">
-                    <label for="lastname" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="lastname" required />
+                <!-- Birthdate / Age Row -->
+        		<div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label for="birthdate" class="form-label">Birthdate <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="birthdate" required />
+                        <div class="invalid-feedback">Birthdate is required.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Age</label>
+                        <div class="form-control" style="background-color: #f8f9fa;">
+                            <span id="ageDisplay">—</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Middle Initial -->
-                <div class="mb-3">
-                    <label for="middleinitial" class="form-label">Middle Initial</label>
-                    <input type="text" class="form-control" id="middleinitial" required />
+                <!-- Contact / Email (stacked) -->
+                <div class="mt-1">
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Contact Number <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background-color:#fff;">
+                                <img src="https://flagcdn.com/w20/ph.png" srcset="https://flagcdn.com/w40/ph.png 2x" width="20" height="14" alt="PH">
+                            </span>
+                            <input type="text" class="form-control" id="phone" placeholder="+63 9xx xxx xxxx" required />
+                        </div>
+                        <div class="invalid-feedback">Valid Philippine mobile number is required.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="email" pattern="^[A-Za-z0-9._%+-]+@gmail\.com$" placeholder="yourname@gmail.com" required />
+                        <small class="form-text text-muted">Gmail only (example: yourname@gmail.com).</small>
+                        <div class="invalid-feedback">Gmail address is required (example: yourname@gmail.com).</div>
+                    </div>
                 </div>
 
-                <!-- Age -->
-                <div class="mb-3">
-                    <label for="age" class="form-label">Age</label>
-                    <input type="number" class="form-control" id="age" min="18" required />
-                </div>
-
-                <!-- Birthdate -->
-                <div class="mb-3">
-                    <label for="birthdate" class="form-label">Birthdate</label>
-                    <input type="date" class="form-control" id="birthdate" required />
-                </div>
-
-                <!-- Contact Number -->
-                <div class="mb-3">
-                    <label for="phone" class="form-label">Contact Number</label>
-                    <input type="text" class="form-control" id="phone" pattern="^\+?\d{1,4}?[\d\s\-\(\)]{7,15}$" required />
-                    <small class="form-text text-muted">Enter a valid contact number.</small>
-                </div>
-
-                <!-- Email Address -->
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email Address</label>
-                    <input type="email" class="form-control" id="email" required />
-                    <small class="form-text text-muted">We'll never share your email.</small>
-                </div>
-
-                <!-- Position Applying For -->
-                <div class="mb-3">
-                    <label class="form-label">Position Applying For</label>
-                    <input type="text" class="form-control" id="position_display" readonly>
-                    <input type="hidden" id="role_id" name="role_id">
-                </div>
+                <!-- Position (hidden for submission only) -->
+                <input type="hidden" id="role_id" name="role_id">
 
                 <!-- Resume Upload -->
                 <div class="mb-3">
-                    <label for="resume" class="form-label">Upload Resume (PDF only)</label>
+                    <label for="resume" class="form-label">Upload Resume (PDF only) <span class="text-danger">*</span></label>
                     <input class="form-control" type="file" id="resume" accept="application/pdf" required />
                     <small class="form-text text-muted">Only PDF files are accepted.</small>
                     <p id="fileError" style="color: red; display: none;">Please upload a valid PDF file.</p>
+                    <div class="invalid-feedback">Resume (PDF) is required.</div>
                     <!-- PDF Preview Container -->
                     <div id="pdfPreviewContainer" style="margin-top: 1rem; display: none;">
                         <p class="fw-bold">Preview Your Resume:</p>
                         <canvas id="pdfPreview" style="width: 100%; border: 1px solid #ccc;"></canvas>
                     </div>
                     </div>
+                </div>
+
+                <!-- Consent Agreement -->
+                <div class="mb-3 form-check">
+                    <input class="form-check-input" type="checkbox" id="consent" />
+                    <label class="form-check-label" for="consent">
+                        I hereby allow the information provided in this application to be collected and processed for recruitment purposes.
+                    </label>
+                    <div class="invalid-feedback">You must agree to the information processing policy.</div>
+                </div>
                 </div>    
             </div>
 
             <!-- Submit Button -->
-            <div class="modal-footer" style="padding: 0 2rem 1.5rem 2rem; background-color: #f8f9fa; text-align: center;">
-                <button type="submit" class="btn btn-primary px-4 mx-3 my-2">
+            <div class="modal-footer" style="padding: 0 2rem 1.5rem 2rem; background-color: #f8f9fa; text-align: center; flex-direction: column; align-items: center;">
+                <div id="formError" class="text-danger small" style="display:none; margin-bottom: 0.5rem;"></div>
+                <button id="submitBtn" type="submit" class="btn btn-primary px-4 mx-3 my-2" disabled>
                     <i class="fas fa-paper-plane me-2"></i>Submit Application
                 </button>
             </div>
@@ -1563,19 +1581,212 @@
         }
     });
 
-    // Handle form submission
-    document.getElementById("applicationForm").addEventListener("submit", async function(event) {
+    // Compute age helper
+    function computeAgeFromBirthdate(birthdateStr) {
+        if (!birthdateStr) return null;
+        const today = new Date();
+        const birth = new Date(birthdateStr);
+        if (isNaN(birth.getTime())) return null;
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return age;
+    }
+
+    // Update age display when birthdate changes
+    document.getElementById('birthdate').addEventListener('change', function() {
+        const age = computeAgeFromBirthdate(this.value);
+        const ageDisplay = document.getElementById('ageDisplay');
+        ageDisplay.textContent = (age !== null && age >= 0) ? `${age} years old` : '—';
+    });
+
+    // Phone formatting and validation (Philippines, default +63)
+    (function initPhoneFormatting() {
+        const phoneInput = document.getElementById('phone');
+        if (!phoneInput) return;
+
+        const PREFIX = '+63';
+        const cleanNumber = (v) => (v || '').toString().replace(/[^0-9+]/g, '');
+        const isValidPhMobile = (v) => {
+            const n = cleanNumber(v).replace(/\+/g, (m, i) => (i === 0 ? '+' : ''));
+            return /^\+639\d{9}$/.test(n);
+        };
+        const normalizePhToE164 = (v) => {
+            const n = cleanNumber(v);
+            if (n.startsWith(PREFIX)) return n;
+            // Force +63 formatting
+            return PREFIX + n.replace(/^0/, '').replace(/^63/, '');
+        };
+        const formatPhMobile = (v) => {
+            let n = cleanNumber(v);
+            // Ensure prefix always present
+            if (!n.startsWith(PREFIX)) {
+                // Strip any leading zeros or 63
+                n = PREFIX + n.replace(/^\+?63/, '').replace(/^0/, '');
+            }
+            const digits = n.replace(PREFIX, '');
+            const part1 = digits.slice(0, 1); // should be 9
+            const part2 = digits.slice(1, 4); // xxx
+            const part3 = digits.slice(4, 7); // xxx
+            const part4 = digits.slice(7, 11); // xxxx
+            let out = PREFIX;
+            if (part1) out += ' ' + part1;
+            if (part2) out += part2 ? part2 : '';
+            if (part3) out += part3 ? ' ' + part3 : '';
+            if (part4) out += part4 ? ' ' + part4 : '';
+            return out.trim();
+        };
+
+        // Set default value
+        if (!phoneInput.value) phoneInput.value = PREFIX + ' ';
+
+        phoneInput.addEventListener('focus', function () {
+            if (!this.value || this.value === '+') this.value = PREFIX + ' ';
+        });
+
+        phoneInput.addEventListener('keydown', function (e) {
+            // Prevent deleting the +63 prefix
+            const minIndex = (PREFIX + ' ').length;
+            if ((e.key === 'Backspace' || e.key === 'Delete')) {
+                const start = this.selectionStart || 0;
+                const end = this.selectionEnd || 0;
+                if (start <= minIndex) {
+                    e.preventDefault();
+                }
+            }
+        });
+
+        phoneInput.addEventListener('input', function () {
+            const raw = this.value;
+            const cleaned = cleanNumber(raw);
+            let formatted = formatPhMobile(cleaned);
+            this.value = formatted;
+        });
+
+        // Expose helpers for submit handler
+        window.__phPhone = { isValidPhMobile, normalizePhToE164 };
+    })();
+
+    // Enable submit when all required fields have content and consent is checked (no deep validation here)
+    (function initSubmitEnabler() {
+        const fields = ['firstname','lastname','middleinitial','birthdate','phone','email','resume','consent'];
+        const submitBtn = document.getElementById('submitBtn');
+        function hasContent(id) {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            if (el.type === 'file') return !!(el.files && el.files[0]);
+            if (el.type === 'checkbox') return !!el.checked;
+            return !!(el.value || '').trim();
+        }
+        function update() {
+            const ready = fields.every(hasContent);
+            if (submitBtn) submitBtn.disabled = !ready;
+        }
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const evt = (el.type === 'file' || el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
+            el.addEventListener(evt, update);
+        });
+        // Initial check
+        update();
+        // Remove invalid styling on consent toggle
+        const consentEl = document.getElementById('consent');
+        if (consentEl) consentEl.addEventListener('change', function(){
+            if (this.checked) this.classList.remove('is-invalid');
+        });
+    })();
+
+   // Handle form submission
+   document.getElementById("applicationForm").addEventListener("submit", async function(event) {
         event.preventDefault();
+
+        // Clear previous invalid states
+        ['firstname','lastname','middleinitial','birthdate','phone','email','resume','consent'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('is-invalid');
+        });
+        const formError = document.getElementById('formError');
+        if (formError) { formError.style.display = 'none'; formError.textContent = ''; }
+
+        // Basic required checks
+        let hasMissing = false;
+        function setInvalid(id, message) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('is-invalid');
+            const feedback = el.parentElement && el.parentElement.querySelector('.invalid-feedback');
+            if (feedback && message) feedback.textContent = message;
+        }
+        function markIfEmpty(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const val = el.type === 'file' ? (el.files && el.files[0]) : (el.value || '').trim();
+            if (!val) {
+                setInvalid(id);
+                hasMissing = true;
+            }
+        }
+        markIfEmpty('firstname');
+        markIfEmpty('lastname');
+        markIfEmpty('middleinitial');
+        markIfEmpty('birthdate');
+        // Consent required
+        const consentEl = document.getElementById('consent');
+        if (consentEl && consentEl.checked !== true) {
+            consentEl.classList.add('is-invalid');
+            hasMissing = true;
+        }
 
         // Get the resume file
         const resumeFile = document.getElementById("resume").files[0];
+        // Validate age range using birthdate
+        const birthdateInput = document.getElementById("birthdate").value;
+        const age = computeAgeFromBirthdate(birthdateInput);
+        if (age === null || age < 18 || age >= 65) {
+            const message = (age === null)
+                ? "Please enter a valid birthdate."
+                : (age < 18)
+                    ? "You must be at least 18 years old to apply."
+                    : "Applicants aged 65 and above are not eligible to apply.";
+            setInvalid('birthdate', message);
+            hasMissing = true;
+        }
 
-        // Check if the file is a PDF
-        if (resumeFile && resumeFile.type !== "application/pdf") {
+        // Resume required and must be PDF
+        if (!resumeFile) {
+            setInvalid('resume', 'Resume (PDF) is required.');
+            hasMissing = true;
+        } else if (resumeFile.type !== "application/pdf") {
             document.getElementById("fileError").style.display = "block";
-            return; // Stop submission if file is not PDF
+            setInvalid('resume', 'Only PDF resumes are accepted.');
+            hasMissing = true;
         } else {
             document.getElementById("fileError").style.display = "none"; // Hide error if PDF is valid
+        }
+
+        // Validate and normalize Philippine phone number
+        const phoneInputEl = document.getElementById("phone");
+        const phoneInputRaw = phoneInputEl ? phoneInputEl.value : '';
+        if (!window.__phPhone || !window.__phPhone.isValidPhMobile(phoneInputRaw)) {
+            setInvalid('phone', 'Please enter a valid Philippine mobile number (09123456789 or +639123456789).');
+            hasMissing = true;
+        }
+        const phoneNormalized = window.__phPhone.normalizePhToE164(phoneInputRaw);
+
+        // Validate Gmail email
+        const emailEl = document.getElementById("email");
+        const emailRaw = (emailEl?.value || '').trim().toLowerCase();
+        if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(emailRaw)) {
+            setInvalid('email', 'Please enter a valid Gmail address (example: yourname@gmail.com).');
+            hasMissing = true;
+        }
+
+        // Final missing check
+        if (hasMissing) {
+            return;
         }
 
         // Prepare form data
@@ -1583,12 +1794,18 @@
         formData.append("firstname", document.getElementById("firstname").value);
         formData.append("lastname", document.getElementById("lastname").value);
         formData.append("middleinitial", document.getElementById("middleinitial").value);
-        formData.append("age", document.getElementById("age").value);
+        formData.append("age", age);
         formData.append("birthdate", document.getElementById("birthdate").value);
-        formData.append("phone", document.getElementById("phone").value);
-        formData.append("email", document.getElementById("email").value);
+        formData.append("phone", phoneNormalized);
+        formData.append("email", emailRaw);
         formData.append("role_id", document.getElementById("role_id").value); // Append role_id
         formData.append("resume", resumeFile);
+
+        // Final confirmation before submit via modal
+        if (!hasMissing) {
+            const confirmed = await confirmSubmission();
+            if (!confirmed) return;
+        }
 
         try {
             let response = await fetch(`${API_URL}/upload`, {
@@ -1599,14 +1816,14 @@
             let result = await response.json();
 
             if (response.ok) {
-                alert(result.message); // Success message
-                $('#applyModal').modal('hide'); // Hide the modal after successful submission
-                document.getElementById("applicationForm").reset(); // Reset the form fields
+                $('#applyModal').modal('hide');
+                document.getElementById("applicationForm").reset();
+                showSuccessModal('Your application was submitted successfully. We will keep you posted.');
             } else {
-                alert(result.error); // Error message from backend
+                if (formError) { formError.textContent = result.error || 'Submission failed.'; formError.style.display = 'block'; }
             }
         } catch (error) {
-            alert("Error uploading resume. Please try again.");
+            if (formError) { formError.textContent = 'Error uploading resume. Please try again.'; formError.style.display = 'block'; }
             console.error("Error:", error);
         }
     });
@@ -1759,7 +1976,9 @@
         // Function to open apply modal with job info
         window.openApplyModal = function(roleId, positionName, roleName) {
             document.getElementById('applyModalLabel').textContent = `Apply for ${positionName} (${roleName})`;
-            document.getElementById('position_display').value = `${positionName} (${roleName})`;
+            if (document.getElementById('position_display')) {
+                document.getElementById('position_display').value = `${positionName} (${roleName})`;
+            }
             document.getElementById('role_id').value = roleId;
             
             // Populate job info in the modal
@@ -1874,6 +2093,110 @@
                 behavior: 'smooth'
             });
         });
+    }
+
+    // Bootstrap info modal for alerts
+    function ensureInfoModalExists() {
+        if (document.getElementById('infoModal')) return;
+        const modalHtml = `
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
+        <h5 class="modal-title" id="infoModalLabel">Information</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="infoModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function showInfoModal(message) {
+        ensureInfoModalExists();
+        document.getElementById('infoModalBody').textContent = message;
+        const modal = new bootstrap.Modal(document.getElementById('infoModal'));
+        modal.show();
+    }
+
+    // Confirmation modal
+    function ensureConfirmModalExists() {
+        if (document.getElementById('confirmModal')) return;
+        const html = `
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
+        <h5 class="modal-title" id="confirmModalLabel">Confirm Submission</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">Are you sure you want to submit your application now?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="confirmSubmitBtn" type="button" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+
+    function confirmSubmission() {
+        ensureConfirmModalExists();
+        return new Promise((resolve) => {
+            const modalEl = document.getElementById('confirmModal');
+            const modal = new bootstrap.Modal(modalEl);
+            const confirmBtn = document.getElementById('confirmSubmitBtn');
+
+            function cleanup(result) {
+                confirmBtn.removeEventListener('click', onConfirm);
+                modalEl.removeEventListener('hidden.bs.modal', onCancel);
+                resolve(result);
+            }
+            function onConfirm() {
+                modal.hide();
+                cleanup(true);
+            }
+            function onCancel() {
+                cleanup(false);
+            }
+            confirmBtn.addEventListener('click', onConfirm);
+            modalEl.addEventListener('hidden.bs.modal', onCancel, { once: true });
+            modal.show();
+        });
+    }
+
+    // Success modal
+    function ensureSuccessModalExists() {
+        if (document.getElementById('successModal')) return;
+        const html = `
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+        <h5 class="modal-title" id="successModalLabel">Application Submitted</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="successModalBody">Your application was submitted successfully. We will keep you posted.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+
+    function showSuccessModal(message) {
+        ensureSuccessModalExists();
+        const body = document.getElementById('successModalBody');
+        if (body && message) body.textContent = message;
+        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        modal.show();
     }
   </script>
   

@@ -823,7 +823,7 @@
                             <th>Image</th>
                             <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
                             <th class="sortable" data-key="addedProgress">Added Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
-                            <th class="sortable" data-key="totalProgress">Total Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable" data-key="totalProgress">Total Division Progress <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                             <th class="sortable" data-key="dateUpdated">Date Updated <i class="fas fa-sort-alpha-up sort-icon"></i></th>
                             <th>Action</th>
                         </tr>
@@ -872,7 +872,6 @@
                     <thead class="table-light">
                         <tr>
                             <th class="sortable" data-key="week">Week (Mon - Sun) <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable text-end" data-key="combinedProgress">Combined Progress % <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                             <th class="sortable text-end" data-key="totalMaterialCost">Total Material Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                         </tr>
                     </thead>
@@ -1045,7 +1044,7 @@
             </div>
             <div class="modal-body">
                 <div class="row g-3 mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="billingDivisionSelect" class="form-label">Stage / Division</label>
                         <select id="billingDivisionSelect" class="form-select">
                             <option value="Foundation">Foundation</option>
@@ -1054,6 +1053,14 @@
                             <option value="Electrical">Electrical</option>
                             <option value="Finishing">Finishing</option>
                         </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="billingStartDate" class="form-label">Start Date</label>
+                        <input type="date" id="billingStartDate" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="billingEndDate" class="form-label">End Date</label>
+                        <input type="date" id="billingEndDate" class="form-control" required>
                     </div>
                 </div>
                 <div id="stageBillingContent"></div>
@@ -1237,12 +1244,50 @@
                 projects = data.projects;
                 state.records = [...projects];
                 state.filtered = [...projects];
+                // Preload current progress for each project so table shows non-zero immediately
+                await preloadProjectProgress();
                 applySort();
             } else {
                 console.error('Failed to load projects:', data);
             }
         } catch (error) {
             console.error('Error loading actual projects:', error);
+        }
+    }
+
+    // Preload division progress and compute overall % per project
+    async function preloadProjectProgress() {
+        try {
+            const tasks = (projects || []).map(async (proj) => {
+                try {
+                    const res = await fetch(`/manufacturing/division-progress/${proj.id}`);
+                    const json = await res.json();
+                    const entries = (json && json.success && Array.isArray(json.entries)) ? json.entries : [];
+
+                    // Compute cumulative per-division (capped 100) then overall average across known divisions
+                    const order = getDivisionsOrder();
+                    const cumulative = Object.fromEntries(order.map(d => [d, 0]));
+                    entries.forEach(entry => {
+                        const name = entry.division_name || entry.division || '';
+                        if (!name) return;
+                        const value = Math.max(0, Math.min(100, Number(entry.progress_percentage || entry.progress || 0)));
+                        const current = Number(cumulative[name] || 0);
+                        cumulative[name] = Math.min(100, current + value);
+                    });
+                    const values = order.map(d => Number(cumulative[d] || 0));
+                    const avg = values.length ? Math.round(values.reduce((a,b)=>a+b,0) / values.length) : 0;
+                    proj.progress = avg;
+                    // Cache minimal divisionProgress for later use
+                    proj.divisionProgress = entries.map(e => ({
+                        division: e.division_name || e.division,
+                        progress: e.progress_percentage || e.progress,
+                        date: e.created_at
+                    }));
+                } catch (_) {}
+            });
+            await Promise.all(tasks);
+        } catch (e) {
+            // Non-fatal if preloading fails
         }
     }
 
@@ -1307,9 +1352,9 @@
     }
 
     // Initialize the page
-    document.addEventListener('DOMContentLoaded', function() {
-        fetchDivisions(); // Fetch divisions on page load
-        loadActualProjects(); // Load actual projects from database
+    document.addEventListener('DOMContentLoaded', async function() {
+        await fetchDivisions(); // Ensure divisions loaded for accurate averaging
+        await loadActualProjects(); // Load projects and preload progress
         initializeSidebar();
         initializeEventListeners();
         applySort(); // Use the new sorting system
@@ -1410,6 +1455,13 @@
         // Stage billing
         document.getElementById('openStageBillingBtn').addEventListener('click', () => {
             if (!currentProjectId) { showWarningMessage('Please select a project first.'); return; }
+            const project = state.records.find(p => p.id === currentProjectId);
+            if (project && project.dailyLogs && project.dailyLogs.length > 0) {
+                const allDateStrings = project.dailyLogs.map(l => String(l.date)).sort();
+                // Set default date range to earliest and latest log dates
+                document.getElementById('billingStartDate').value = allDateStrings[0].split('T')[0];
+                document.getElementById('billingEndDate').value = allDateStrings[allDateStrings.length - 1].split('T')[0];
+            }
             document.getElementById('stageBillingContent').innerHTML = '';
             stageBillingModal.show();
         });
@@ -1834,12 +1886,31 @@
         updateChart();
     }
 
-    // Load daily logs for current project
-    function loadDailyLogs() {
+    // Load daily logs for current project from backend
+    async function loadDailyLogs() {
         if (!currentProjectId) return;
         const project = state.records.find(p => p.id === currentProjectId);
         if (!project) return;
-        currentDailyLogs = [...(project.dailyLogs || [])];
+        try {
+            const res = await fetch(`/manufacturing/daily-logs/${currentProjectId}`);
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.logs)) {
+                // Normalize backend fields to frontend shape
+                currentDailyLogs = data.logs.map(l => ({
+                    date: l.log_date,
+                    division: l.division_name,
+                    description: l.description,
+                    // material_used is a JSON string; best-effort parse
+                    materials: (()=>{ try { return JSON.parse(l.material_used||'[]'); } catch(_) { return []; } })(),
+                    totalCost: Number(l.total_material_cost || 0)
+                }));
+                project.dailyLogs = [...currentDailyLogs];
+            } else {
+                currentDailyLogs = [...(project.dailyLogs || [])];
+            }
+        } catch (_) {
+            currentDailyLogs = [...(project.dailyLogs || [])];
+        }
         renderDailyLogsTable();
         renderWeeklySummaries();
         renderRequestedMaterialsTable();
@@ -1849,36 +1920,42 @@
     function renderDivisionTable() {
         const tbody = document.getElementById('divisionProgressBody');
         tbody.innerHTML = '';
-        // Track cumulative per division
         const order = getDivisionsOrder();
+        // Sort entries by date ascending for correct cumulative calculation
+        const sortedAsc = [...divisionProgress].sort((a,b) => new Date(a.date) - new Date(b.date));
+        // Compute cumulative totals per entry (sum capped at 100)
         const cumulativeByDivision = Object.fromEntries(order.map(d => [d, 0]));
-
-        divisionProgress.forEach((division, index) => {
+        const withTotals = sortedAsc.map((entry, idx) => {
+            const added = Math.max(0, Math.min(100, Number(entry.progress) || 0));
+            const before = Number(cumulativeByDivision[entry.division] || 0);
+            const totalAt = entry.type === 'rework' ? before : Math.min(100, before + added);
+            cumulativeByDivision[entry.division] = totalAt;
+            return { idx, entry, added, totalAt };
+        });
+        // Display newest first, but use precomputed totals
+        const displayRows = [...withTotals].sort((a,b) => new Date(b.entry.date) - new Date(a.entry.date));
+        displayRows.forEach(({ entry, added, totalAt }) => {
             const row = document.createElement('tr');
-            const added = Math.max(0, Math.min(100, Number(division.progress) || 0));
-            const beforeTotal = Number(cumulativeByDivision[division.division] || 0);
-            const total = division.type === 'rework' ? beforeTotal : Math.min(100, beforeTotal + added);
-            cumulativeByDivision[division.division] = total;
             row.innerHTML = `
                 <td>
-                    <img src="${division.img}" class="division-img" alt="Division Image" 
-                        style="cursor: pointer;" onclick="previewImage('${division.img}')">
+                    <img src="${entry.img}" class="division-img" alt="Division Image" 
+                        style="cursor: pointer;" onclick="previewImage('${entry.img}')">
                 </td>
-                <td>${division.division}</td>
-                <td><small class="text-muted fw-semibold">${added}%${division.type === 'rework' ? ' (rework)' : ''}</small></td>
+                <td>${entry.division}</td>
+                <td><small class="text-muted fw-semibold">${added}%${entry.type === 'rework' ? ' (rework)' : ''}</small></td>
                 <td>
                     <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: ${total}%"></div>
+                        <div class="progress-bar-fill" style="width: ${totalAt}%"></div>
                     </div>
-                    <small class="text-muted">${total}%</small>
+                    <small class="text-muted">${totalAt}%</small>
                 </td>
-                <td>${division.date}</td>
+                <td>${entry.date}</td>
                 <td>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-success" onclick="addDailyLogForDivision('${division.division}')" title="Add Daily Log">
+                        <button class="btn btn-sm btn-success" onclick="addDailyLogForDivision('${entry.division}')" title="Add Daily Log">
                             <i class="fas fa-plus"></i> Add
                         </button>
-                        <button class="btn btn-sm btn-primary" onclick="editDivision(${index})" title="Edit Progress">
+                        <button class="btn btn-sm btn-primary" onclick="editDivision(${divisionProgress.indexOf(entry)})" title="Edit Progress">
                             <i class="fas fa-edit"></i> Edit
                         </button>
                     </div>
@@ -1893,9 +1970,10 @@
         const divisions = getDivisionsOrder();
         const progressData = [...divisions.map(() => 0), 0];
 
-        // Build cumulative progress per division (sum of entries, capped at 100%)
+        // Build cumulative progress per division in chronological order (sum capped at 100%)
         const cumulativeProgressByDivision = Object.fromEntries(divisions.map(d => [d, 0]));
-        divisionProgress.forEach(entry => {
+        const sortedAsc = [...divisionProgress].sort((a,b) => new Date(a.date) - new Date(b.date));
+        sortedAsc.forEach(entry => {
             const idx = divisions.indexOf(entry.division);
             if (idx !== -1) {
                 const value = Math.max(0, Math.min(100, Number(entry.progress) || 0));
@@ -2043,6 +2121,7 @@
     }
     
     // Load project materials (from owner supply and request material)
+    // Only loads materials that have quantity_requested value for the current project_id
     async function loadProjectMaterials() {
         if (!currentProjectId) return;
         
@@ -2051,11 +2130,22 @@
             const data = await response.json();
             
             if (data.success && data.materials) {
-                // Update the project in state.records with materials
+                // Filter materials to only include those with quantity_requested > 0
+                // This ensures only materials that have been requested/supplied are shown
+                const filteredMaterials = data.materials.filter(m => {
+                    // For owner supply, must have quantity_requested
+                    if (m.source_type === 'owner_supply') {
+                        return Number(m.requested_qty || 0) > 0;
+                    }
+                    // For other materials, include them
+                    return true;
+                });
+                
+                // Update the project in state.records with filtered materials
                 const project = state.records.find(p => p.id === currentProjectId);
                 if (project) {
-                    project.requestedMaterials = data.materials;
-                    console.log('✅ Project materials loaded:', data.materials);
+                    project.requestedMaterials = filteredMaterials;
+                    console.log(`✅ Project materials loaded for project ${currentProjectId}:`, filteredMaterials.length, 'materials');
                 }
             } else {
                 console.error('Failed to load project materials:', data.error);
@@ -2175,6 +2265,21 @@
                         
                         // Clear pending data
                         pendingProgressData = null;
+                        
+                        // Check if project is completed (100% progress)
+                        if (data.isCompleted) {
+                            // Update project status in local state
+                            const project = state.records.find(p => p.id === currentProjectId);
+                            if (project) {
+                                project.status = 'Finished';
+                                // Reload projects to show updated status in the table
+                                loadActualProjects();
+                            }
+                            // Show success message indicating project completion
+                            setTimeout(() => {
+                                showSuccessMessage(data.message);
+                            }, 500);
+                        }
                         
                         // Now open daily log modal with the division name
                         openDailyLogModal(divisionName);
@@ -2424,7 +2529,7 @@
     }
     
     // Open modal and reset form
-    function openDailyLogModal(division = null) {
+    async function openDailyLogModal(division = null) {
         console.log('🪟 openDailyLogModal called with division:', division);
         console.log('📋 Current pending progress data:', pendingProgressData);
         
@@ -2464,6 +2569,10 @@
         
         document.getElementById('dailyLogForm').reset();
         document.getElementById('materialsBody').innerHTML = '';
+        // Refresh project materials so newly released company items appear
+        try {
+            await loadProjectMaterials();
+        } catch (e) {}
         // Add one blank material row by default
         addMaterialRow();
         // Pre-fill date with today (Philippines timezone)
@@ -2507,14 +2616,35 @@
         const tr = document.createElement('tr');
         const project = state.records.find(p => p.id === currentProjectId);
         
-        // Build options from project materials (owner supply + requested materials)
+        // Build options from project materials (owner supply + company supply)
+        // - Owner supply: require requested_qty > 0 and remaining > 0
+        // - Company supply: include when requested_qty > 0 (remaining may be 0/undefined)
         const options = (project?.requestedMaterials || [])
-            .filter(m => Number(m.remaining_qty || 0) > 0)
+            .filter(m => {
+                const sourceType = m.source_type || 'company_supply';
+                const requested = Number(m.requested_qty || 0);
+                const remaining = Number(m.remaining_qty ?? 0);
+                if (sourceType === 'owner_supply') {
+                    return requested > 0 && remaining > 0;
+                }
+                // company_supply: include whenever present in backend list
+                return true;
+            })
             .map(m => {
-                const sourceType = m.source_type || 'request';
-                const sourceBadge = sourceType === 'owner_supply' ? '🏢 Owner' : '🏭 Request';
-                return `<option value="${m.id}" data-price="${m.unit_price || 0}" data-remaining="${m.remaining_qty || 0}">
-                    ${escapeHtml(m.name)} - ${sourceBadge} (rem: ${m.remaining_qty || 0} ${m.unit || ''})
+                const sourceType = m.source_type || 'company_supply';
+                const sourceBadge = sourceType === 'owner_supply' ? '🏢 Owner' : '🏭 Company';
+                const displayedQty = Number(m.requested_qty || 0);
+                const dataRemaining = Number(m.remaining_qty ?? NaN);
+                // Attach identifiers so downstream can distinguish
+                const dataProposal = m.proposal_id || '';
+                const dataProject = m.project_id || currentProjectId || '';
+                return `<option value="${m.id}"
+                    data-price="${Number(m.unit_price || 0)}"
+                    data-remaining="${isNaN(dataRemaining) ? '' : String(dataRemaining)}"
+                    data-source="${sourceType}"
+                    data-proposal-id="${dataProposal}"
+                    data-project-id="${dataProject}">
+                    ${escapeHtml(m.name)} - ${sourceBadge} (RQ: ${displayedQty} ${m.unit || ''})
                 </option>`;
             })
             .join('');
@@ -2544,12 +2674,20 @@
         
         // bind change events for select and qty to auto-fill price and subtotal
         tr.querySelector('.material-select').addEventListener('change', function() {
-            const price = Number(this.selectedOptions[0]?.dataset.price || 0);
-            const remaining = Number(this.selectedOptions[0]?.dataset.remaining || 0);
+            const sel = this.selectedOptions[0];
+            const price = Number(sel?.dataset.price || 0);
+            const remainingRaw = sel?.dataset.remaining;
+            const remaining = remainingRaw === '' || remainingRaw === undefined ? NaN : Number(remainingRaw);
             const priceInput = tr.querySelector('.material-price');
             const qtyInput = tr.querySelector('.material-qty');
             priceInput.value = price.toFixed(2);
-            qtyInput.max = String(remaining);
+            // Set max only when remaining is a valid number
+            if (!isNaN(remaining)) {
+                qtyInput.removeAttribute('max');
+                qtyInput.max = String(Math.max(0, remaining));
+            } else {
+                qtyInput.removeAttribute('max');
+            }
             updateRowSubtotal();
         });
         tr.querySelector('.material-qty').addEventListener('input', updateRowSubtotal);
@@ -2742,7 +2880,6 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${formatDateNice(s.weekStart)} - ${formatDateNice(s.weekEnd)}</td>
-                <td class="text-end">${s.combinedProgress}%</td>
                 <td class="text-end">${formatter.format(s.totalCost)}</td>`;
             tbody.appendChild(tr);
         });
@@ -2759,11 +2896,12 @@
             if (!groups.has(key)) {
                 const end = new Date(start);
                 end.setDate(start.getDate() + 6);
-                groups.set(key, { weekStart: key, weekEnd: end.toISOString().slice(0,10), logs: [], totalCost: 0 });
+                groups.set(key, { weekStart: key, weekEnd: end.toISOString().slice(0,10), logs: [], totalCost: 0, maxDate: d });
             }
             const g = groups.get(key);
             g.logs.push(log);
             g.totalCost += Number(log.totalCost || 0);
+            if (!g.maxDate || d > g.maxDate) g.maxDate = d;
         });
 
         // Combined progress % derived from divisionProgress entries within the same week
@@ -2773,7 +2911,9 @@
         groups.forEach((g, key) => {
             // Filter division updates within week window
             const start = new Date(g.weekStart);
-            const end = new Date(g.weekEnd);
+            const plannedEnd = new Date(g.weekEnd);
+            // Clamp displayed week end to the latest log date inside this group to avoid showing future dates
+            const end = g.maxDate && g.maxDate < plannedEnd ? new Date(g.maxDate) : plannedEnd;
             // Average division progress values in this week
             const values = divs
                 .filter(dp => {
@@ -2785,7 +2925,7 @@
             const combined = values.length ? Math.round(values.reduce((a,b)=>a+b,0) / values.length) : (project ? Number(project.progress || 0) : 0);
             result.push({
                 weekStart: g.weekStart,
-                weekEnd: g.weekEnd,
+                weekEnd: end.toISOString().slice(0,10),
                 totalCost: Math.round(g.totalCost * 100) / 100,
                 combinedProgress: combined
             });
@@ -2843,57 +2983,229 @@
         tbody.innerHTML = '';
         const project = state.records.find(p => p.id === currentProjectId);
         const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-        (project?.requestedMaterials || []).forEach(m => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${escapeHtml(m.name)}</td>
-                <td class="text-end">${Number(m.requested_qty || 0)}</td>
-                <td class="text-end">${Number(m.remaining_qty || 0)}</td>
-                <td class="text-end">${formatter.format(Number(m.unit_price || 0))}</td>`;
-            tbody.appendChild(tr);
-        });
+        const rows = (project?.requestedMaterials || []).map(m => ({
+            material: m.name,
+            requested: Number(m.requested_qty || 0),
+            remaining: Number(m.remaining_qty || 0),
+            price: Number(m.unit_price || 0)
+        }));
+        // Also fetch and append material releases intended for this project
+        if (currentProjectId) {
+            fetch(`/manufacturing/project-material-releases/${currentProjectId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success && Array.isArray(data.releases)) {
+                        data.releases.forEach(rel => {
+                            rows.push({
+                                material: rel.material_name,
+                                requested: Number(rel.quantity || 0),
+                                remaining: Number(rel.quantity_backorder || 0),
+                                price: Number(rel.unit_price || 0)
+                            });
+                        });
+                    }
+                })
+                .finally(() => {
+                    rows.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${escapeHtml(r.material)}</td>
+                            <td class="text-end">${r.requested}</td>
+                            <td class="text-end">${r.remaining}</td>
+                            <td class="text-end">${formatter.format(r.price)}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                });
+        } else {
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(r.material)}</td>
+                    <td class="text-end">${r.requested}</td>
+                    <td class="text-end">${r.remaining}</td>
+                    <td class="text-end">${formatter.format(r.price)}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
     }
 
     // Generate stage billing content
-    function generateStageBilling() {
+    async function generateStageBilling() {
         const division = document.getElementById('billingDivisionSelect').value;
+        const startDateInput = document.getElementById('billingStartDate').value;
+        const endDateInput = document.getElementById('billingEndDate').value;
+        
+        if (!startDateInput || !endDateInput) {
+            showWarningMessage('Please select both start and end dates.');
+            return;
+        }
+        
         const project = state.records.find(p => p.id === currentProjectId);
         if (!project) return;
-        const logs = (project.dailyLogs || []).filter(l => (l.division || '') === division);
+        
+        // Filter logs by division AND date range
+        const logs = (project.dailyLogs || []).filter(l => {
+            const matchDivision = (l.division || '') === division;
+            const logDate = new Date(l.date);
+            const startDate = new Date(startDateInput);
+            const endDate = new Date(endDateInput);
+            const matchDate = logDate >= startDate && logDate <= endDate;
+            return matchDivision && matchDate;
+        });
+        
         const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
         let totalCost = 0;
         logs.forEach(l => totalCost += Number(l.totalCost || 0));
+        
+        console.log(`[DEBUG] generateStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} logs`);
+        
+        let laborCost = 0;
+        try {
+            const resp = await fetch(`/manufacturing/stage-billing/labor-cost/${currentProjectId}?start_date=${encodeURIComponent(startDateInput)}&end_date=${encodeURIComponent(endDateInput)}`);
+            const data = await resp.json();
+            if (data && data.success) laborCost = Number(data.labor_cost || 0);
+        } catch (_) {}
+        const grandTotal = Number(totalCost) + Number(laborCost);
         let html = '';
-        html += `<div class="mb-3"><strong>Project:</strong> ${escapeHtml(project.name)} | <strong>Stage:</strong> ${escapeHtml(division)}</div>`;
+        html += `<div class="mb-3"><strong>Project:</strong> ${escapeHtml(project.name)} &nbsp; <span class="badge bg-secondary">${escapeHtml(division)}</span></div>`;
         if (!logs.length) {
-            html += '<p class="text-muted mb-0">No daily logs for this stage.</p>';
+            html += '<div class="alert alert-light border text-muted">No daily logs for this stage.</div>';
         } else {
+            // Summary header
             html += '<div class="table-responsive">';
             html += '<table class="table table-bordered align-middle mb-3">';
-            html += '<thead class="table-light"><tr><th>Date</th><th>Description</th><th class="text-end">Materials</th><th class="text-end">Cost</th></tr></thead><tbody>';
+            html += '<thead class="table-light"><tr><th style="width: 130px;">Date</th><th>Description</th><th style="width: 120px;" class="text-end">Items</th><th style="width: 160px;" class="text-end">Cost</th></tr></thead><tbody>';
+            // Group logs by date
+            const groups = new Map();
             logs.forEach(l => {
-                html += `<tr><td>${formatDateNice(l.date)}</td><td>${escapeHtml(l.description)}</td><td class="text-end">${(l.materials||[]).length}</td><td class="text-end">${formatter.format(Number(l.totalCost||0))}</td></tr>`;
-                if ((l.materials||[]).length) {
-                    html += '<tr><td colspan="4" class="p-0"><table class="table table-sm mb-0"><thead class="table-light"><tr><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead><tbody>';
-                    (l.materials||[]).forEach(m => {
-                        html += `<tr><td>${escapeHtml(m.name)}</td><td class="text-end">${Number(m.quantity||0)}</td><td class="text-end">${formatter.format(Number(m.unitPrice||0))}</td><td class="text-end">${formatter.format(Number(m.subtotal||0))}</td></tr>`;
-                    });
-                    html += '</tbody></table></td></tr>';
-                }
+                const key = String(l.date);
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(l);
             });
-            html += `</tbody><tfoot><tr><th colspan="3" class="text-end">Stage Total</th><th class="text-end">${formatter.format(totalCost)}</th></tr></tfoot></table>`;
-            html += '</div>';
+            // Sort dates ascending
+            const orderedDates = Array.from(groups.keys()).sort((a,b)=> new Date(a) - new Date(b));
+            orderedDates.forEach(dateKey => {
+                const dayLogs = groups.get(dateKey) || [];
+                const dayItems = dayLogs.reduce((n, lg) => n + (lg.materials||[]).length, 0);
+                const dayCost = dayLogs.reduce((s, lg) => s + Number(lg.totalCost||0), 0);
+                // Date summary row
+                html += `<tr class="table-secondary">
+                    <td><span class="badge bg-light text-dark border">${formatDateNice(dateKey)}</span></td>
+                    <td colspan="2">${dayLogs.length} log(s), ${dayItems} item(s)</td>
+                    <td class="text-end fw-semibold">${formatter.format(dayCost)}</td>
+                </tr>`;
+                // One combined materials table for the entire date (no repeated headers per item)
+                const combinedMaterials = [];
+                dayLogs.forEach(l => {
+                    (l.materials||[]).forEach(m => {
+                        const qty = Number(m.quantity||0);
+                        const up = Number(m.unitPrice || m.price || 0);
+                        const sub = Number(m.subtotal || (qty * up) || 0);
+                        combinedMaterials.push({ name: m.name || '', qty, up, sub });
+                    });
+                });
+                if (combinedMaterials.length) {
+                    html += '<tr><td colspan="4" class="p-0">';
+                    html += '<div class="table-responsive"><table class="table table-sm mb-0">';
+                    html += '<thead class="table-light"><tr><th>Material</th><th class="text-end" style="width:120px;">Qty</th><th class="text-end" style="width:160px;">Unit Price</th><th class="text-end" style="width:180px;">Subtotal</th></tr></thead><tbody>';
+                    combinedMaterials.forEach(row => {
+                        html += `<tr>
+                            <td>${escapeHtml(row.name)}</td>
+                            <td class="text-end">${row.qty}</td>
+                            <td class="text-end">${formatter.format(row.up)}</td>
+                            <td class="text-end">${formatter.format(row.sub)}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                    html += '</td></tr>';
+                }
+                // Divider between dates
+                html += '<tr><td colspan="4" class="p-0"><div style="height:8px;background:#f8f9fa;border-top:1px solid #e9ecef;border-bottom:1px solid #e9ecef;"></div></td></tr>';
+            });
+            html += `</tbody><tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Total Material Cost</th>
+                    <th class="text-end">${formatter.format(totalCost)}</th>
+                </tr>
+                <tr>
+                    <th colspan="3" class="text-end">Total Labor Cost</th>
+                    <th class="text-end">${formatter.format(laborCost)}</th>
+                </tr>
+                <tr>
+                    <th colspan="3" class="text-end">Grand Total</th>
+                    <th class="text-end">${formatter.format(grandTotal)}</th>
+                </tr>
+            </tfoot></table></div>`;
+            // Legend
+            html += '<div class="small text-muted">Prices in PHP. Subtotals per log are derived from quantity × unit price.</div>';
         }
         document.getElementById('stageBillingContent').innerHTML = html;
     }
 
     function emailStageBilling() {
         const division = document.getElementById('billingDivisionSelect').value;
+        const startDateInput = document.getElementById('billingStartDate').value;
+        const endDateInput = document.getElementById('billingEndDate').value;
+        
+        if (!startDateInput || !endDateInput) {
+            showWarningMessage('Please select both start and end dates.');
+            return;
+        }
+        
         const project = state.records.find(p => p.id === currentProjectId);
-        if (!project) return;
-        const subject = encodeURIComponent(`Billing Summary - ${project.name} - ${division}`);
-        const body = encodeURIComponent(`Dear Client,\n\nPlease find the billing summary for stage: ${division} of project: ${project.name}.\n\nYou can review and print the summary directly from the application.\n\nRegards,\n${project.developer}`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        if (!project) { showWarningMessage('Please select a project first.'); return; }
+        
+        // Filter logs by division AND date range
+        const logs = (project.dailyLogs || []).filter(l => {
+            const matchDivision = (l.division || '') === division;
+            const logDate = new Date(l.date);
+            const startDate = new Date(startDateInput);
+            const endDate = new Date(endDateInput);
+            const matchDate = logDate >= startDate && logDate <= endDate;
+            return matchDivision && matchDate;
+        });
+        
+        if (!logs.length) { showWarningMessage('No daily logs for this stage to bill within the selected date range.'); return; }
+        
+        console.log(`[DEBUG] emailStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} logs`);
+        
+        const totalMaterialCost = logs.reduce((s, l) => s + Number(l.totalCost || 0), 0);
+        const progressPercent = Number(document.getElementById('updateTotalProgress')?.textContent?.replace('%','') || 0);
+
+        // Use the user-selected dates directly (already in YYYY-MM-DD format from date inputs)
+        const normStart = startDateInput;
+        const normEnd = endDateInput;
+
+        // Hide stage billing modal to ensure confirmation modal appears on top
+        try { stageBillingModal && stageBillingModal.hide && stageBillingModal.hide(); } catch (_) {}
+
+        // Confirm before storing
+        showConfirmationDialog(`Send stage billing to client for ${division}?`, async () => {
+            try {
+                const resp = await fetch('/manufacturing/stage-billing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        project_id: currentProjectId,
+                        division_id: getDivisionIdByName(division),
+                        start_date: normStart,
+                        end_date: normEnd,
+                        progress_percent: progressPercent,
+                        total_material_cost: totalMaterialCost,
+                        remarks: `Stage billing generated from UI for division ${division}`
+                    })
+                });
+                const data = await resp.json();
+                if (data && data.success) {
+                    showSuccessMessage(`Stage billing ${data.billing_number} stored successfully.`);
+                } else {
+                    showWarningMessage('Failed to store stage billing.');
+                }
+            } catch (e) {
+                showWarningMessage('Error sending stage billing.');
+            }
+        });
     }
 </script>
 </body>

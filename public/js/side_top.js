@@ -236,9 +236,13 @@ function toggleChevron() {
                     const topbarRight = document.querySelector('.topbar .topbar-right');
                     const roleName = (user.role_name || '').toLowerCase();
                     const userPermissions = Array.isArray(user.permissions) ? user.permissions : [];
-                    const hasVirtualTourAccess = roleName === 'sales_marketing_head' || userPermissions.includes('access_virtual_tour_dashboard');
+                    // Only show the Virtual Tour button for manufacturing context and appropriate role/permission
+                    const pathname = window.location.pathname || '';
+                    const isManufacturingPage = pathname.startsWith('/manufacturing');
+                    const hasVirtualTourAccess = roleName === 'general_foreman' || userPermissions.includes('access_virtual_tour_dashboard');
 
-                    if (topbarRight && hasVirtualTourAccess && !document.getElementById('topbar-virtual-tour')) {
+                    // Inject button ONLY on manufacturing pages; hide on CRM pages
+                    if (topbarRight && isManufacturingPage && hasVirtualTourAccess && !document.getElementById('topbar-virtual-tour')) {
                         const vt = document.createElement('button');
                         vt.id = 'topbar-virtual-tour';
                         vt.type = 'button';
@@ -259,7 +263,7 @@ function toggleChevron() {
 
                         // Navigate when clicked
                         vt.addEventListener('click', function() {
-                            window.location.href = '/crm/virtual_tour_dashboard';
+                            window.location.href = '/manufacturing/virtual_tour_dashboard';
                         });
 
                         const notificationIcon = topbarRight.querySelector('.notification-icon');

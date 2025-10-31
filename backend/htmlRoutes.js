@@ -146,7 +146,12 @@ const htmlRoutes = (app) => {
     if (roleName === 'sales_marketing_coordinator') {
       return res.redirect('/crm/crm_admin');
     }
-    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'job_posting.html')); // Adjusted path
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'job_posting.html')); // Adjusted path
+  });
+
+  // HR: Serve Job Posting management page
+  app.get('/hr/job_posting', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'job_posting.html'));
   });
   
   // Virtual Tour Portal (CRM Admin) - Restricted to general_foreman only
@@ -167,6 +172,9 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'virtual_tour_location_detail.html'));
   });
   
+  app.get('/crm/crm_faqs', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'crm admin', 'crm_faqs.html')); // Adjusted path
+  });
 
   // ====================
   // SCM admin Routes
@@ -307,6 +315,10 @@ const htmlRoutes = (app) => {
   });
   app.get('/hr/hr_employee_details', (req, res) => {      
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'hr_employee_details.html')); // Adjusted path
+  });
+
+  app.get('/hr/job_posting', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'job_posting.html')); // Adjusted path
   });
 
   // Removed HR payroll forecasting route
@@ -485,6 +497,19 @@ app.get('/developer/profile', (req, res) => {
   app.get('/supplier/materials', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'supplier', 'materials.html')); // Adjusted path
   });
+
+// ====================
+  //   driver Routes
+  // ====================  
+
+  app.get('/driver/driver_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'driver', 'driver_attendance.html')); // Adjusted path
+  });
+
+  app.get('/driver/driver_material_release', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'driver', 'driver_material_release.html')); // Adjusted path
+  });
+
 
 };
 

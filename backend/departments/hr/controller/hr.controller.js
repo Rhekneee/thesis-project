@@ -549,19 +549,9 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         const userId = req.params.id;
         const { date, checkInTime, userLat, userLng, facialVerification } = req.body;
 
-        console.log('📝 Check-in request received:', {
-            userId,
-            date,
-            checkInTime,
-            userLat,
-            userLng,
-            facialVerification
-        });
-
         try {
             // Validate required fields
             if (!userId || !date || !checkInTime || userLat === undefined || userLng === undefined) {
-                console.log('❌ Missing required fields:', { userId, date, checkInTime, userLat, userLng });
                 return res.status(400).json({ 
                     error: 'Missing required fields',
                     details: {
@@ -576,134 +566,122 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
             // Validate user ID format
             if (isNaN(parseInt(userId))) {
-                console.log('❌ Invalid user ID format:', userId);
                 return res.status(400).json({ error: 'Invalid user ID format' });
             }
 
             // Validate coordinates
             if (isNaN(parseFloat(userLat)) || isNaN(parseFloat(userLng))) {
-                console.log('❌ Invalid coordinates:', { userLat, userLng });
                 return res.status(400).json({ error: 'Invalid coordinates' });
             }
 
             // Validate date format
             const dateObj = new Date(date);
             if (isNaN(dateObj.getTime())) {
-                console.log('❌ Invalid date format:', date);
                 return res.status(400).json({ error: 'Invalid date format' });
             }
 
             // Validate check-in time format
             const timeObj = new Date(checkInTime);
             if (isNaN(timeObj.getTime())) {
-                console.log('❌ Invalid check-in time format:', checkInTime);
                 return res.status(400).json({ error: 'Invalid check-in time format' });
             }
 
-            // Optional: facial verification when an image is provided (field name: image)
-            if (req.file && (req.file.buffer || req.file.path)) {
-                try {
-                    const faceService = require('../../../utils/faceService');
-                    // Extract encoding from uploaded image
-                    const encoding = await faceService.extractEncodingFromImage(req.file.buffer || req.file.path);
-                    if (!encoding || (Array.isArray(encoding) && encoding.length === 0)) {
-                        return res.status(400).json({ error: 'Face not detected' });
-                    }
+            // ===== COMMENTED OUT: Facial Recognition Logic =====
+            // if (req.file && (req.file.buffer || req.file.path)) {
+            //     try {
+            //         const faceService = require('../../../utils/faceService');
+            //         const encoding = await faceService.extractEncodingFromImage(req.file.buffer || req.file.path);
+            //         if (!encoding || (Array.isArray(encoding) && encoding.length === 0)) {
+            //             return res.status(400).json({ error: 'Face not detected' });
+            //         }
+            //         const db = require('../../../db');
+            //         const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
+            //         if (!empRows || empRows.length === 0) {
+            //             return res.status(404).json({ error: 'Employee record not found for user' });
+            //         }
+            //         const employeeId = empRows[0].employee_id;
+            //         const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
+            //         if (!faces || faces.length === 0) {
+            //             return res.status(401).json({ error: 'No enrolled face found. Please register facial data first.' });
+            //         }
+            //         const toArray = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : null);
+            //         const cosSim = (a, b) => {
+            //             if (!a || !b || a.length !== b.length) return -1;
+            //             let dot = 0, na = 0, nb = 0;
+            //             for (let i = 0; i < a.length; i++) {
+            //                 dot += a[i] * b[i];
+            //                 na += a[i] * a[i];
+            //                 nb += b[i] * b[i];
+            //             }
+            //             na = Math.sqrt(na); nb = Math.sqrt(nb);
+            //             return na > 0 && nb > 0 ? dot / (na * nb) : -1;
+            //         };
+            //         const matched = faces.some(row => {
+            //             const stored = toArray(row.face_encoding);
+            //             return cosSim(stored, encoding) >= 0.85;
+            //         });
+            //         if (!matched) {
+            //             return res.status(401).json({ error: 'Face verification failed' });
+            //         }
+            //     } catch (err) {
+            //         console.error('❌ Facial verification error:', err);
+            //         return res.status(400).json({ error: 'Facial verification error' });
+            //     }
+            // }
 
-                    // Fetch stored encodings for this user (by employee_id)
-                    const db = require('../../../db');
-                    const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
-                    if (!empRows || empRows.length === 0) {
-                        return res.status(404).json({ error: 'Employee record not found for user' });
-                    }
-                    const employeeId = empRows[0].employee_id;
-                    const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
-                    if (!faces || faces.length === 0) {
-                        return res.status(401).json({ error: 'No enrolled face found. Please register facial data first.' });
-                    }
-
-                    // Compare encodings using cosine similarity
-                    const toArray = (v) => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : null);
-                    const cosSim = (a, b) => {
-                        if (!a || !b || a.length !== b.length) return -1;
-                        let dot = 0, na = 0, nb = 0;
-                        for (let i = 0; i < a.length; i++) {
-                            dot += a[i] * b[i];
-                            na += a[i] * a[i];
-                            nb += b[i] * b[i];
-                        }
-                        na = Math.sqrt(na); nb = Math.sqrt(nb);
-                        return na > 0 && nb > 0 ? dot / (na * nb) : -1;
-                    };
-
-                    const matched = faces.some(row => {
-                        const stored = toArray(row.face_encoding);
-                        return cosSim(stored, encoding) >= 0.85;
-                    });
-
-                    if (!matched) {
-                        return res.status(401).json({ error: 'Face verification failed' });
-                    }
-                } catch (err) {
-                    console.error('❌ Facial verification error:', err);
-                    return res.status(400).json({ error: 'Facial verification error' });
-                }
-            }
-
-            console.log('✅ Input validation passed, proceeding with check-in...');
+            // ===== COMMENTED OUT: Facial Verification Flow =====
+            // Facial verification routes and logic have been commented out
             
-            // If facialVerification flag is set, only do radius check and return verification requirement
-            if (facialVerification === true || facialVerification === 'true') {
-                console.log('🔍 Performing radius check for facial verification flow...');
-                
-                const officeLat = 14.327791594318544;
-                const officeLng = 120.94059104947334;
-                const allowedRadius = 500;
-                
-                // Calculate distance
-                const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
-                console.log('📍 Distance from office:', Math.round(distance), 'meters');
-                
-                if (distance > allowedRadius) {
-                    console.log('❌ User outside allowed range');
-                    return res.status(400).json({ error: `You are outside the allowed range (${Math.round(distance)}m).` });
-                }
-                
-                // Check if employee has facial data enrolled
-                const db = require('../../../db');
-                const [empRows] = await db.query('SELECT employee_id FROM employees WHERE user_id = ?', [userId]);
-                
-                if (!empRows || empRows.length === 0) {
-                    return res.status(404).json({ error: 'Employee record not found' });
-                }
-                
-                const employeeId = empRows[0].employee_id;
-                const [faces] = await db.query('SELECT face_encoding FROM employee_faces WHERE employee_id = ?', [employeeId]);
-                
-                if (!faces || faces.length === 0) {
-                    return res.status(400).json({ 
-                        error: 'No facial data enrolled. Please contact HR to enroll your face first.',
-                        code: 'NO_FACE_ENROLLED'
-                    });
-                }
-                
-                // If radius check passed and face is enrolled, return that facial verification is required
-                console.log('✅ Radius check passed, facial verification required');
-                return res.status(200).json({ 
-                    requiresFacialVerification: true,
-                    message: 'Location verified. Please complete facial verification.'
-                });
-            }
-            
-            // Regular check-in flow (with or without facial verification)
+            // First, perform check-in (this will handle radius check and all validations)
             const result = await HRModel.checkIn(userId, checkInTime, date, userLat, userLng);
             
             if (result.error) {
-                console.log('❌ Check-in validation failed:', result.error);
                 return res.status(400).json({ error: result.error });
             }
+            
+            // After successful check-in, save the photo if image was provided
+            if (req.file && (req.file.buffer || req.file.path)) {
+                try {
+                    const db = require('../../../db');
+                    const fs = require('fs');
+                    const path = require('path');
+                    
+                    // Create uploads/attendance_photos directory if it doesn't exist
+                    const uploadDir = path.join(__dirname, '../../../uploads/attendance_photos');
+                    if (!fs.existsSync(uploadDir)) {
+                        fs.mkdirSync(uploadDir, { recursive: true });
+                    }
+                    
+                    // Generate unique filename
+                    const timestamp = Date.now();
+                    const filename = `attendance_${userId}_${timestamp}.jpg`;
+                    const filePath = path.join(uploadDir, filename);
+                    
+                    // Save image to disk
+                    fs.writeFileSync(filePath, req.file.buffer);
+                    
+                    // Get the attendance_id from the check-in
+                    const [attendanceRecord] = await db.query(
+                        'SELECT attendance_id FROM attendance WHERE user_id = ? AND date = ? ORDER BY attendance_id DESC LIMIT 1',
+                        [userId, date]
+                    );
+                    
+                    if (attendanceRecord.length > 0) {
+                        const attendanceId = attendanceRecord[0].attendance_id;
+                        
+                        // Save to attendance_photos table
+                        await db.query(
+                            'INSERT INTO attendance_photos (attendance_id, image_path) VALUES (?, ?)',
+                            [attendanceId, `attendance_photos/${filename}`]
+                        );
+                    }
+                    
+                } catch (photoErr) {
+                    // Log error but don't fail the check-in
+                    console.error('Error saving attendance photo:', photoErr);
+                }
+            }
 
-            console.log('✅ Check-in successful:', result);
             return res.status(200).json(result);
         } catch (error) {
             console.error('❌ Error in checkInAttendance controller:', error);
@@ -4353,6 +4331,77 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 error: 'Failed to delete construction payroll records' 
             });
         }
+    }
+};
+
+// ==================== JOB POSTINGS (moved from CRM) ====================
+// These handlers were moved from CRM to HR. Keep logic identical, now using HRModel.
+HRController.getAllJobPostings = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const p = Math.max(1, parseInt(page, 10) || 1);
+        const l = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+        const offset = (p - 1) * l;
+        const rows = await HRModel.getAllJobPostings({ limit: l, offset, search });
+        const total = await HRModel.countJobPostings({ search });
+        res.json({ success: true, data: rows, page: p, limit: l, total });
+    } catch (err) {
+        console.error('getAllJobPostings error:', err);
+        res.status(500).json({ success: false, error: 'Failed to fetch job postings' });
+    }
+};
+
+HRController.getJobPostingById = async (req, res) => {
+    try {
+        const row = await HRModel.getJobPostingById(req.params.id);
+        if (!row) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true, data: row });
+    } catch (err) {
+        console.error('getJobPostingById error:', err);
+        res.status(500).json({ success: false, error: 'Failed to fetch job posting' });
+    }
+};
+
+HRController.createJobPosting = async (req, res) => {
+    try {
+        const payload = req.body || {};
+        const id = await HRModel.createJobPosting(payload);
+        res.status(201).json({ success: true, id });
+    } catch (err) {
+        console.error('createJobPosting error:', err);
+        res.status(500).json({ success: false, error: 'Failed to create job posting' });
+    }
+};
+
+HRController.updateJobPosting = async (req, res) => {
+    try {
+        const ok = await HRModel.updateJobPosting(req.params.id, req.body || {});
+        if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('updateJobPosting error:', err);
+        res.status(500).json({ success: false, error: 'Failed to update job posting' });
+    }
+};
+
+HRController.deleteJobPosting = async (req, res) => {
+    try {
+        const ok = await HRModel.deleteJobPosting(req.params.id);
+        if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('deleteJobPosting error:', err);
+        res.status(500).json({ success: false, error: 'Failed to delete job posting' });
+    }
+};
+
+HRController.getAllPositions = async (_req, res) => {
+    try {
+        const rows = await HRModel.getAllPositions();
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('getAllPositions error:', err);
+        res.status(500).json({ success: false, error: 'Failed to fetch positions' });
     }
 };
 

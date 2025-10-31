@@ -1362,58 +1362,55 @@
         }
 
         function createBankCharts() {
-            // BDO Chart
-            const bdoCtx = document.getElementById('bdoChart');
-            charts.bdo = new Chart(bdoCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Available', 'Reserved'],
-                    datasets: [{
-                        data: [2000000, 500000],
-                        backgroundColor: ['#28a745', '#ffc107']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
+            // Dynamically create charts for all loaded bank accounts
+            if (!cashData.bankAccounts || cashData.bankAccounts.length === 0) {
+                console.log('No bank accounts to create charts for');
+                return;
+            }
 
-            // BPI Chart
-            const bpiCtx = document.getElementById('bpiChart');
-            charts.bpi = new Chart(bpiCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Available', 'Reserved'],
-                    datasets: [{
-                        data: [1500000, 300000],
-                        backgroundColor: ['#17a2b8', '#ffc107']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+            cashData.bankAccounts.forEach(account => {
+                const chartId = account.bankName.toLowerCase().replace(/\s+/g, '-') + 'Chart';
+                const ctx = document.getElementById(chartId);
+                
+                if (!ctx) {
+                    console.log(`Chart canvas not found: ${chartId}`);
+                    return;
                 }
-            });
 
-            // Metrobank Chart
-            const metrobankCtx = document.getElementById('metrobankChart');
-            charts.metrobank = new Chart(metrobankCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Available', 'Reserved'],
-                    datasets: [{
-                        data: [2800000, 400000],
-                        backgroundColor: ['#6f42c1', '#ffc107']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+                // Destroy existing chart if it exists
+                if (charts[chartId]) {
+                    charts[chartId].destroy();
                 }
+
+                // Create new chart with dynamic data
+                const balance = account.balance || 0;
+                const reserved = balance * 0.2; // 20% reserved
+                const available = balance - reserved;
+                
+                charts[chartId] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Available', 'Reserved'],
+                        datasets: [{
+                            data: [available, reserved],
+                            backgroundColor: ['#28a745', '#ffc107']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + formatCurrency(context.parsed);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             });
         }
 
@@ -2062,13 +2059,66 @@
             }, 5000);
         }
 
+        // Load cash inflows from backend
+        async function loadCashInflows() {
+            try {
+                const response = await fetch('/finance/cash-monitoring/inflows');
+                const data = await response.json();
+                
+                if (data.success && data.inflows) {
+                    cashData.inflows = data.inflows;
+                    updateInflowsTable();
+                    calculateSummary();
+                    createInflowChart();
+                }
+            } catch (error) {
+                console.error('Error loading cash inflows:', error);
+            }
+        }
+
+        // Load cash outflows from backend
+        async function loadCashOutflows() {
+            try {
+                const response = await fetch('/finance/cash-monitoring/outflows');
+                const data = await response.json();
+                
+                if (data.success && data.outflows) {
+                    cashData.outflows = data.outflows;
+                    updateOutflowsTable();
+                    calculateSummary();
+                    createOutflowChart();
+                }
+            } catch (error) {
+                console.error('Error loading cash outflows:', error);
+            }
+        }
+
+        // Update inflows table with data
+        function updateInflowsTable() {
+            const tbody = document.getElementById('inflowsTableBody');
+            tbody.innerHTML = '';
+            
+            cashData.inflows.forEach(inflow => {
+                addInflowToTable(inflow);
+            });
+        }
+
+        // Update outflows table with data
+        function updateOutflowsTable() {
+            const tbody = document.getElementById('outflowsTableBody');
+            tbody.innerHTML = '';
+            
+            cashData.outflows.forEach(outflow => {
+                addOutflowToTable(outflow);
+            });
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            calculateSummary();
-            createInflowChart();
-            createOutflowChart();
+            loadCashInflows();
+            loadCashOutflows();
             createTrendChart();
-            createBankCharts();
+            // loadBankAccounts() will call createBankCharts() after loading accounts
             loadBankAccounts();
         });
     </script>

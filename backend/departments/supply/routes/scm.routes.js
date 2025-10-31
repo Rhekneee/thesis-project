@@ -122,8 +122,10 @@ router.put('/owners-supply/:supplyId/delivery', logisticsAuth, SCMController.upd
 router.get('/owners-supply/project/:proposalId', SCMController.getOwnersSupplyByProject);
 
 // Manufacturing material requests routes
-router.get('/manufacturing-requests', logisticsAuth, SCMController.getManufacturingRequests);
+router.get('/manufacturing-requests', logisticsAuth, SCMController.getManufacturingRequests); // accepts optional ?project_id=123
+router.get('/manufacturing-requests/approved', SCMController.getApprovedManufacturingRequests); // Get approved requests (for general_foreman access)
 router.get('/employees', logisticsAuth, SCMController.getEmployees);
+router.get('/drivers', logisticsAuth, SCMController.getDrivers); // Get drivers (role_id 17 or 18)
 router.post('/material-release', logisticsAuth, SCMController.handleMaterialRelease);
 router.put('/manufacturing-requests/status', logisticsAuth, SCMController.updateManufacturingRequestStatus);
 
@@ -256,5 +258,14 @@ router.post('/supplier/:id/profile-picture', async (req, res) => {
         res.status(500).json({ error: 'Failed to upload profile picture' });
     }
 });
+
+// ===== DRIVER API ROUTES =====
+// Get material releases assigned to the logged-in driver
+// This route is specifically for drivers (role_id 17 or 18) to view their assigned deliveries
+router.get('/driver/material-releases', SCMController.getDriverMaterialReleases);
+
+// Mark material release as received after delivery to the site
+// This route allows drivers to confirm that materials have been delivered
+router.put('/driver/material-releases/:releaseId/received', SCMController.updateDriverMaterialReleaseStatus);
 
 module.exports = router;

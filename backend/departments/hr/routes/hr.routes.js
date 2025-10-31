@@ -107,11 +107,9 @@
     const memoryStorage = multer({ storage: multer.memoryStorage() });
     router.post('/check-in/:id', memoryStorage.single('image'), HRController.checkInAttendance);
 
-    // 🔹 Facial verification for attendance (separate endpoint)
-    router.post('/verify-face/:userId', memoryStorage.single('image'), HRController.verifyFaceForAttendance);
-
-    // 🔹 Complete attendance after facial verification
-    router.post('/complete-attendance/:userId', HRController.completeAttendanceAfterVerification);
+    // ===== COMMENTED OUT: Facial Verification Routes =====
+    // router.post('/verify-face/:userId', memoryStorage.single('image'), HRController.verifyFaceForAttendance);
+    // router.post('/complete-attendance/:userId', HRController.completeAttendanceAfterVerification);
 
     // 🔹 Check-out attendance for the employee
     router.post('/check-out/:id', HRController.checkOutAttendance);
@@ -434,6 +432,15 @@
     // Employee attendance summary and history
     router.get('/employees/:employeeId/attendance-summary', authMiddleware.verifySession, HRController.getEmployeeAttendanceSummary);
     router.get('/employees/:employeeId/attendance-history', authMiddleware.verifySession, HRController.getEmployeeAttendanceHistory);
+
+    // ==================== JOB POSTINGS (moved from CRM) ====================
+    // These endpoints were moved from CRM to HR to manage job postings
+    router.get('/job-postings', HRController.getAllJobPostings); // list with pagination/search
+    router.get('/job-postings/positions', HRController.getAllPositions); // list of positions/roles
+    router.get('/job-postings/:id', HRController.getJobPostingById); // single job
+    router.post('/job-postings', HRController.createJobPosting); // create job
+    router.put('/job-postings/:id', HRController.updateJobPosting); // update job
+    router.delete('/job-postings/:id', HRController.deleteJobPosting); // delete job
 
     // Add error handling middleware for multer
     const handleMulterError = (err, req, res, next) => {

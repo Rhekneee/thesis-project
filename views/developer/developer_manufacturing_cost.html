@@ -11,6 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
     <script src="/js/side_top.js"></script>
+    <!-- Stripe.js for online payments -->
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
  #content {
             margin-left: 0;
@@ -485,9 +487,9 @@
                             <a href="/developer/developer_finished_projects"><i class="fas fa-check-circle"></i> <span>Completed Projects</span></a>
                         </li>
                         <li class="nav-item">
-                            <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Manufacturing Cost</span></a>
+                            <a href="/developer/developer_manufacturing_cost"><i class="fas fa-money-bill-wave"></i> <span>Payment</span></a>
                         </li>
-            
+                        
                         
                     </ul>
                      <!-- Move Logout outside the main ul -->
@@ -501,17 +503,16 @@
 
         <!-- Main content area -->
         <div id="content">
-
-            <h2>Manufacturing Cost</h2>
+            <h2>Payment Overview</h2>
 
             <div class="search-container">
                 <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
                 <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
                     <option value="all">All Projects</option>
                     <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
-                    <option value="in-progress">In Progress</option>
                 </select>
                 <div id="entriesPerPageContainer" class="entries-per-page">
                     <label for="entriesPerPageSelect">Entries per page:</label>
@@ -523,18 +524,18 @@
                 </div>
             </div>
 
-            <!-- Manufacturing Cost Table -->
+            <!-- Project Table -->
             <div class="table-container">
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)">No. <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable(1)">Project Name <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Image</th>
                                 <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(4)">Accepted Date <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(5)">Manufacturing Cost <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(4)">Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable(5)">Total Billing <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortTable(6)">Status <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Actions</th>
                             </tr>
@@ -553,155 +554,55 @@
         </div>
     </div>
 
-    <!-- View Project Modal -->
-    <div class="modal fade" id="viewProjectModal" tabindex="-1" aria-labelledby="viewProjectModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewProjectModalLabel">
-                        <i class="fas fa-eye me-2"></i>Project Details
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="project-details-container">
-                        <div class="row">
-                            <div class="col-md-5">
-                                <div class="project-image-container">
-                                    <img id="viewProjectImage" src="#" alt="Project Image" class="project-detail-image">
-                                </div>
-                            </div>
-                            <div class="col-md-7">
-                                <div class="project-info-container">
-                                    <div class="info-group">
-                                        <label>Project Name</label>
-                                        <p id="viewProjectName" class="info-value"></p>
-                                    </div>
-                                    <div class="info-group">
-                                        <label>Location</label>
-                                        <p id="viewProjectLocation" class="info-value"></p>
-                                    </div>
-                                    <div class="info-group">
-                                        <label>Accepted Date</label>
-                                        <p id="viewProjectAcceptedDate" class="info-value"></p>
-                                    </div>
-                                    <div class="info-group">
-                                        <label>Manufacturing Cost</label>
-                                        <p id="viewProjectCost" class="info-value"></p>
-                                    </div>
-                                    <div class="info-group">
-                                        <label>Status</label>
-                                        <p id="viewProjectStatus" class="info-value status-badge"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-question-circle me-2"></i>Confirm Action
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
-                    <p class="mb-0" id="confirmationMessage"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" id="confirmActionBtn">
-                        <i class="fas fa-check me-2"></i>Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Success Message Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
-                    <h5 class="mt-3" id="successMessage"></h5>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Warning Message Modal -->
-    <div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 48px;"></i>
-                    <h5 class="mt-3" id="warningMessage"></h5>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/side_top.js"></script>
 
     <script>
-        // Sample data for manufacturing costs
-        let manufacturingProjects = [
-            {
-                id: 1,
-                name: 'Residential Complex A',
-                location: 'Manila',
-                acceptedDate: '2024-03-20',
-                cost: 4500000,
-                status: 'approved',
-                image: 'https://via.placeholder.com/60x60?text=ResA'
-            },
-            {
-                id: 2,
-                name: 'Commercial Building B',
-                location: 'Makati',
-                acceptedDate: '2024-03-15',
-                cost: 6800000,
-                status: 'rejected',
-                image: 'https://via.placeholder.com/60x60?text=ComB'
-            },
-            {
-                id: 3,
-                name: 'Office Tower C',
-                location: 'Quezon City',
-                acceptedDate: '2024-03-18',
-                cost: 5200000,
-                status: 'in-progress',
-                image: 'https://via.placeholder.com/60x60?text=OffC'
-            },
-            {
-                id: 4,
-                name: 'Retail Complex D',
-                location: 'Pasig',
-                acceptedDate: '2024-03-22',
-                cost: 3900000,
-                status: 'pending',
-                image: 'https://via.placeholder.com/60x60?text=RetD'
+        // Load projects dynamically from backend
+        let manufacturingProjects = [];
+        
+        async function loadProjects() {
+            try {
+                const resp = await fetch('/manufacturing/projects-for-progress', { credentials: 'include' });
+                const data = await resp.json();
+                if (data && data.success && Array.isArray(data.projects)) {
+                    // Only include projects that have stage billing entries
+                    const projectsWithBillings = await Promise.all(
+                        data.projects.map(async (p) => {
+                            try {
+                                const billingResp = await fetch(`/manufacturing/stage-billings/${p.id}`, { credentials: 'include' });
+                                const billingData = await billingResp.json();
+                                const hasBillings = billingData && billingData.success && Array.isArray(billingData.billings) && billingData.billings.length > 0;
+                                if (hasBillings) {
+                                    // Calculate total cost from stage billings (sum of amount_due)
+                                    const totalCost = billingData.billings.reduce((sum, billing) => {
+                                        return sum + Number(billing.amount_due || 0);
+                                    }, 0);
+                                    
+                                    return {
+                                        id: p.id,
+                                        name: p.name || p.project_name || `Project ${p.id}`,
+                                        location: p.location || '-',
+                                        acceptedDate: p.start_date || p.submissionDate || new Date().toISOString().split('T')[0],
+                                        cost: totalCost,
+                                        status: (p.status === 'in_progress' || p.status === 'On Going') ? 'in-progress' : (p.status || 'planning'),
+                                        image: p.image || '/image/project-2.jpg'
+                                    };
+                                }
+                                return null;
+                            } catch (_) {
+                                return null;
+                            }
+                        })
+                    );
+                    manufacturingProjects = projectsWithBillings.filter(p => p !== null);
+                }
+            } catch (e) {
+                console.error('Failed to load projects:', e);
             }
-        ];
+        }
 
         let currentPage = 1;
         let itemsPerPage = 5;
@@ -744,17 +645,9 @@
                     <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
+                            <button class="action-btn view-btn" onclick="openLatestStageBillingDetail(${project.id})" title="View Stage Billing">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            ${project.status === 'pending' ? `
-                                <button class="action-btn approve-btn" onclick="approveProject(${project.id})" title="Approve Project">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button class="action-btn reject-btn" onclick="rejectProject(${project.id})" title="Reject Project">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            ` : ''}
                         </div>
                     </td>
                 `;
@@ -977,22 +870,40 @@
 
         // Function to show success message
         function showSuccessMessage(message) {
-            document.getElementById('successMessage').textContent = message;
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
-            setTimeout(() => {
-                successModal.hide();
-            }, 2000);
+            const successElement = document.getElementById('successMessage');
+            const successModalElement = document.getElementById('successModal');
+            
+            if (successElement && successModalElement) {
+                successElement.textContent = message;
+                const successModal = new bootstrap.Modal(successModalElement);
+                successModal.show();
+                setTimeout(() => {
+                    successModal.hide();
+                }, 2000);
+            } else {
+                // Fallback to alert if modal elements don't exist
+                alert(message);
+                console.log('Success:', message);
+            }
         }
 
         // Function to show warning message
         function showWarningMessage(message) {
-            document.getElementById('warningMessage').textContent = message;
-            const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-            warningModal.show();
-            setTimeout(() => {
-                warningModal.hide();
-            }, 2000);
+            const warningElement = document.getElementById('warningMessage');
+            const warningModalElement = document.getElementById('warningModal');
+            
+            if (warningElement && warningModalElement) {
+                warningElement.textContent = message;
+                const warningModal = new bootstrap.Modal(warningModalElement);
+                warningModal.show();
+                setTimeout(() => {
+                    warningModal.hide();
+                }, 2000);
+            } else {
+                // Fallback to alert if modal elements don't exist
+                alert(message);
+                console.error('Warning modal elements not found:', message);
+            }
         }
 
         // Function to show confirmation dialog
@@ -1054,11 +965,14 @@
             }
         }
 
-        // Add event listener for search input
-        document.getElementById('searchBar').addEventListener('input', handleFilterChange);
+        // Add event listener for search input (guard if element missing)
+        (function(){
+            const sb = document.getElementById('searchBar');
+            if (sb && sb.addEventListener) sb.addEventListener('input', handleFilterChange);
+        })();
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
             
@@ -1071,9 +985,97 @@
                 content.style.marginLeft = '300px';
             }
             
+            await loadProjects();
             renderProjects();
             getUserInfo();
         });
+
+        // Stage Billing: list for a project
+        async function openStageBillings(projectId) {
+            try {
+                const resp = await fetch(`/manufacturing/stage-billings/${encodeURIComponent(projectId)}`);
+                const data = await resp.json();
+                const tbody = document.getElementById('stageBillingListBody');
+                tbody.innerHTML = '';
+                if (!data || !data.success || !Array.isArray(data.billings) || data.billings.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No stage billings found.</td>`;
+                    tbody.appendChild(tr);
+                } else {
+                    data.billings.forEach(b => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${b.billing_number}</td>
+                            <td>${b.division_name || '-'}</td>
+                            <td>${b.start_date || ''}</td>
+                            <td>${b.end_date || ''}</td>
+                            <td class="text-end">₱${Number(b.total_material_cost||0).toLocaleString()}</td>
+                            <td class="text-end">₱${Number(b.total_labor_cost||0).toLocaleString()}</td>
+                            <td class="text-end">₱${Number(b.amount_due||0).toLocaleString()}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                new bootstrap.Modal(document.getElementById('stageBillingListModal')).show();
+            } catch (e) {
+                showWarningMessage('Failed to load stage billings.');
+            }
+        }
+
+        // Stage Billing: open latest billing detail directly (used by outer eye)
+        async function openLatestStageBillingDetail(projectId) {
+            try {
+                const resp = await fetch(`/manufacturing/stage-billings/${encodeURIComponent(projectId)}`);
+                const data = await resp.json();
+                const billings = (data && data.success && Array.isArray(data.billings)) ? data.billings : [];
+                if (!billings.length) { showWarningMessage('No stage billings found for this project.'); return; }
+                const latest = billings[0]; // already ordered DESC in backend
+                await viewStageBillingDetail(latest.id);
+            } catch (_) {
+                showWarningMessage('Failed to open latest stage billing.');
+            }
+        }
+
+        // Stage Billing: detail view
+        async function viewStageBillingDetail(billingId) {
+            try {
+                const resp = await fetch(`/manufacturing/stage-billing/detail/${encodeURIComponent(billingId)}`);
+                const data = await resp.json();
+                if (!data || !data.success || !data.detail) { showWarningMessage('No detail found.'); return; }
+                const { base, materials, materials_total, labor_total } = data.detail;
+                
+                // Store billing detail for payment
+                currentBillingDetail = { base, materials, materials_total, labor_total };
+                
+                const cont = document.getElementById('stageBillingDetailBody');
+                const fmt = (n) => `₱${Number(n||0).toLocaleString()}`;
+                let html = '';
+                html += `<div class="mb-3"><strong>Billing No:</strong> ${base.billing_number} &nbsp;&nbsp; <strong>Division:</strong> ${base.division_name || '-'}</div>`;
+                html += `<div class="row g-3 mb-3">
+                    <div class="col-md-3"><div class="small text-muted">Start Date</div><div>${base.start_date||''}</div></div>
+                    <div class="col-md-3"><div class="small text-muted">End Date</div><div>${base.end_date||''}</div></div>
+                    <div class="col-md-3"><div class="small text-muted">Progress %</div><div>${Number(base.progress_percent||0)}%</div></div>
+                    <div class="col-md-3"><div class="small text-muted">Status</div><div>${base.billing_status||''}</div></div>
+                </div>`;
+                html += `<div class="table-responsive mb-3">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light"><tr><th>Date</th><th>Division</th><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
+                        <tbody>
+                        ${ (materials||[]).map(m => `<tr><td>${m.date||''}</td><td>${m.division_name||''}</td><td>${m.name||''}</td><td class='text-end'>${Number(m.quantity||0)}</td><td class='text-end'>${fmt(m.unit_price)}</td><td class='text-end'>${fmt(m.subtotal)}</td></tr>`).join('') || `<tr><td colspan='6' class='text-center text-muted'>No materials</td></tr>` }
+                        </tbody>
+                        <tfoot>
+                          <tr><th colspan="5" class="text-end">Materials Total</th><th class="text-end">${fmt(materials_total)}</th></tr>
+                          <tr><th colspan="5" class="text-end">Labor Total</th><th class="text-end">${fmt(labor_total)}</th></tr>
+                          <tr><th colspan="5" class="text-end">Amount Due</th><th class="text-end">${fmt((materials_total||0) + (labor_total||0))}</th></tr>
+                        </tfoot>
+                    </table>
+                </div>`;
+                cont.innerHTML = html;
+                new bootstrap.Modal(document.getElementById('stageBillingDetailModal')).show();
+            } catch (e) {
+                showWarningMessage('Failed to load billing detail.');
+            }
+        }
 
         // Update getUserInfo function to use the correct developer session endpoint
         async function getUserInfo() {
@@ -1150,6 +1152,249 @@
                 }
             }
         }
+
+        // ========== PAYMENT FUNCTIONALITY ==========
+        let currentBillingDetail = null;
+
+        // Initialize Payment
+        document.addEventListener('DOMContentLoaded', () => {
+            // Payment method toggle
+            document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
+                const method = e.target.value;
+                const proofSection = document.getElementById('proofUploadSection');
+                const paymongoSection = document.getElementById('paymongoPaymentSection');
+                
+                if (method === 'paymongo') {
+                    proofSection.style.display = 'none';
+                    paymongoSection.style.display = 'block';
+                } else {
+                    proofSection.style.display = 'block';
+                    paymongoSection.style.display = 'none';
+                }
+            });
+
+            // Pay Now button
+            document.getElementById('payStageBillingBtn').addEventListener('click', () => {
+                if (!currentBillingDetail) {
+                    showWarningMessage('No billing information available.');
+                    return;
+                }
+
+                const amountDue = parseFloat(currentBillingDetail.base.amount_due || 0);
+                document.getElementById('amountPaidInput').value = amountDue.toFixed(2);
+                document.getElementById('paymentMethodSelect').value = 'manual';
+                document.getElementById('proofUploadSection').style.display = 'block';
+                document.getElementById('paymongoPaymentSection').style.display = 'none';
+                document.getElementById('proofFileInput').value = '';
+                document.getElementById('paymentReferenceInput').value = '';
+                document.getElementById('paymentRemarksInput').value = '';
+
+                new bootstrap.Modal(document.getElementById('paymentModal')).show();
+            });
+
+            // Process payment button
+            document.getElementById('processPaymentBtn').addEventListener('click', processPayment);
+        });
+
+        // Process payment
+        async function processPayment() {
+            const paymentMethod = document.getElementById('paymentMethodSelect').value;
+            const amount = parseFloat(document.getElementById('amountPaidInput').value);
+            const reference = document.getElementById('paymentReferenceInput').value;
+            const remarks = document.getElementById('paymentRemarksInput').value;
+
+            if (!amount || amount <= 0) {
+                showWarningMessage('Please enter a valid payment amount.');
+                return;
+            }
+
+            if (paymentMethod === 'manual') {
+                await processManualPayment(amount, reference, remarks);
+            } else if (paymentMethod === 'paymongo') {
+                await processPaymongoPayment(amount, reference, remarks);
+            }
+        }
+
+        // Process manual payment with proof
+        async function processManualPayment(amount, reference, remarks) {
+            const fileInput = document.getElementById('proofFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showWarningMessage('Please upload payment proof.');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('billing_id', currentBillingDetail.base.id);
+                formData.append('amount', amount);
+                formData.append('reference', reference);
+                formData.append('remarks', remarks);
+                formData.append('payment_method', 'manual');
+                formData.append('proof', file);
+
+                const response = await fetch('/manufacturing/process-payment', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccessMessage('Payment submitted successfully! It will be reviewed.');
+                    bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+                    bootstrap.Modal.getInstance(document.getElementById('stageBillingDetailModal')).hide();
+                    // Reload projects to refresh costs
+                    await loadProjects();
+                    renderProjects();
+                } else {
+                    showWarningMessage(data.error || 'Failed to process payment.');
+                }
+            } catch (error) {
+                console.error('Error processing manual payment:', error);
+                showWarningMessage('Failed to process payment.');
+            }
+        }
+
+        // Process PayMongo payment
+        async function processPaymongoPayment(amount, reference, remarks) {
+            try {
+                // Create payment intent on server
+                const response = await fetch('/manufacturing/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        billing_id: currentBillingDetail.base.id,
+                        amount: amount,
+                        reference: reference,
+                        remarks: remarks
+                    }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    showWarningMessage(data.error || 'Failed to create payment intent.');
+                    return;
+                }
+
+                // Redirect to PayMongo Checkout
+                if (data.url) {
+                    showSuccessMessage('Redirecting to secure payment page...');
+                    window.location.href = data.url;
+                } else {
+                    showWarningMessage('Payment URL not received from server.');
+                }
+            } catch (error) {
+                console.error('Error processing PayMongo payment:', error);
+                showWarningMessage('Failed to process payment.');
+            }
+        }
     </script>
+
+    <!-- Stage Billing List Modal -->
+    <div class="modal fade" id="stageBillingListModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Stage Billings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Billing No</th>
+                                    <th>Division</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th class="text-end">Materials</th>
+                                    <th class="text-end">Labor</th>
+                                    <th class="text-end">Amount Due</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stageBillingListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stage Billing Detail Modal -->
+    <div class="modal fade" id="stageBillingDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i>Stage Billing Detail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="stageBillingDetailBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="payStageBillingBtn"><i class="fas fa-credit-card me-2"></i>Pay Now</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>Make Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select id="paymentMethodSelect" class="form-select">
+                            <option value="manual">Manual Payment (Upload Proof)</option>
+                            <option value="paymongo">Online Payment (PayMongo)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount to Pay (PHP)</label>
+                        <input type="number" id="amountPaidInput" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Reference/Tracking Number</label>
+                        <input type="text" id="paymentReferenceInput" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea id="paymentRemarksInput" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                    </div>
+                    <!-- Proof upload section for manual payment -->
+                    <div class="mb-3" id="proofUploadSection" style="display: block;">
+                        <label class="form-label">Upload Payment Proof</label>
+                        <input type="file" id="proofFileInput" class="form-control" accept="image/*,application/pdf">
+                        <small class="text-muted">Accepted formats: JPG, PNG, PDF</small>
+                    </div>
+                    <!-- PayMongo payment section -->
+                    <div id="paymongoPaymentSection" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Online Payment via PayMongo</strong>
+                            <p class="mb-0 mt-2">You will be redirected to a secure PayMongo checkout page where you can pay using:</p>
+                            <ul class="mb-0 mt-2">
+                                <li>Credit or Debit Card</li>
+                                <li>GCash</li>
+                                <li>GrabPay</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="processPaymentBtn"><i class="fas fa-lock me-2"></i>Process Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Cost Details Modal -->

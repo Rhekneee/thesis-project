@@ -81,13 +81,7 @@ router.get('/default-profile-picture', (req, res) => {
 router.post("/upload", upload.single("resume"), CRMController.uploadResume);
 router.post('/submitVisitRequest', CRMController.createVisitRequest);
 
-// Job Posting Routes
-router.get('/job-postings', CRMController.getAllJobPostings);
-router.get('/job-postings/positions', CRMController.getAllPositions);
-router.get('/job-postings/:id', CRMController.getJobPostingById);
-router.post('/job-postings', CRMController.createJobPosting);
-router.put('/job-postings/:id', CRMController.updateJobPosting);
-router.delete('/job-postings/:id', CRMController.deleteJobPosting);
+// (Moved to HR) Job Posting Routes removed from CRM to avoid duplication
 
 // Developer Registration Route
 router.post('/developer/register', developerUpload.single('profile_picture'), CRMController.registerDeveloper);
@@ -148,5 +142,9 @@ router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoor
 
 // Developers (Clients page)
 router.get('/api/developers', CRMController.getAllDevelopers);
+
+
+// (Removed) Non-API Inquiry Routes to avoid shadowing HTML route at /crm/inquiries
+// Use the /api prefixed routes above instead
 
 module.exports = router;

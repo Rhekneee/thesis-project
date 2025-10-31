@@ -1762,7 +1762,13 @@ const SCMController = {
                 return res.status(400).json({ error: 'Project ID is required' });
             }
 
-            const materials = await SCMModel.getOwnersSupplyByProject(Number(proposalId));
+            // Validate that proposalId is a valid number
+            const parsedProposalId = Number(proposalId);
+            if (isNaN(parsedProposalId) || parsedProposalId <= 0) {
+                return res.status(400).json({ error: 'Invalid Project ID format' });
+            }
+
+            const materials = await SCMModel.getOwnersSupplyByProject(parsedProposalId);
             
             res.json({
                 success: true,
@@ -1794,7 +1800,10 @@ const SCMController = {
                 return res.status(403).json({ error: 'Forbidden: Logistics access required' });
             }
 
-            const requests = await SCMModel.getManufacturingRequests();
+            // Optional filter by project_id
+            const { project_id } = req.query;
+            const pid = project_id ? Number(project_id) : null;
+            const requests = await SCMModel.getManufacturingRequests(pid);
             
             res.json({
                 success: true,
@@ -1805,6 +1814,37 @@ const SCMController = {
             res.status(500).json({ 
                 success: false,
                 error: 'Failed to fetch manufacturing requests' 
+            });
+        }
+    },
+
+    // Get approved manufacturing requests for delivery
+    getApprovedManufacturingRequests: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const user = req.session.user;
+            const isLogistics = user.role_name === 'logistics';
+            const isGeneralForeman = user.role_name === 'general_foreman';
+            const isDeveloper = user.role_id === 1;
+            
+            if (!isLogistics && !isGeneralForeman && !isDeveloper) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+
+            const requests = await SCMModel.getApprovedManufacturingRequests();
+            
+            res.json({
+                success: true,
+                requests: requests
+            });
+        } catch (error) {
+            console.error('Error in getApprovedManufacturingRequests:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch approved manufacturing requests' 
             });
         }
     },
@@ -1840,6 +1880,28 @@ const SCMController = {
         }
     },
 
+    // Get drivers only (role_id 17 or 18)
+    getDrivers: async (req, res) => {
+        try {
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const drivers = await SCMModel.getDrivers();
+            
+            res.json({
+                success: true,
+                drivers: drivers
+            });
+        } catch (error) {
+            console.error('Error in getDrivers:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch drivers' 
+            });
+        }
+    },
+
     // Handle material release
     handleMaterialRelease: async (req, res) => {
         try {
@@ -1856,7 +1918,7 @@ const SCMController = {
                 return res.status(403).json({ error: 'Forbidden: Logistics access required' });
             }
 
-            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes } = req.body;
+            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes, quantities } = req.body;
 
             console.log('Material release request data:', req.body);
 
@@ -1873,6 +1935,7 @@ const SCMController = {
                 external_vehicle_details,
                 courier_service,
                 release_notes,
+                quantities,
                 released_by: user.employee_id || user.id
             });
 
@@ -2041,6 +2104,103 @@ const SCMController = {
             res.status(500).json({ 
                 success: false,
                 error: 'Failed to get delivery information' 
+            });
+        }
+    },
+
+    // ===== DRIVER API: Get material releases assigned to the logged-in driver =====
+    // This API endpoint is specifically for drivers to view their assigned material deliveries
+    // Returns materials with status 'released' or 'backordered' that need to be delivered
+    // Displays backordered quantity if material was partially released
+    getDriverMaterialReleases: async (req, res) => {
+        try {
+            // Check if user is authenticated
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const user = req.session.user;
+            
+            // Verify user is a driver (role_id 17 or 18)
+            const isDriver = user.role_id === 17 || user.role_id === 18;
+            
+            if (!isDriver) {
+                return res.status(403).json({ error: 'Forbidden: Driver access required' });
+            }
+
+            // Get the driver's employee_id
+            const driverId = user.employee_id;
+            
+            if (!driverId) {
+                return res.status(400).json({ error: 'Driver ID not found in session' });
+            }
+
+            console.log(`📦 [Driver API] Fetching material releases for driver_id: ${driverId}`);
+
+            // Get driver's assigned material releases
+            const releases = await SCMModel.getDriverMaterialReleases(driverId);
+
+            res.json({
+                success: true,
+                releases: releases,
+                count: releases.length
+            });
+        } catch (error) {
+            console.error('❌ [Driver API] Error in getDriverMaterialReleases:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to fetch driver material releases' 
+            });
+        }
+    },
+
+    // ===== DRIVER API: Mark material release as received after delivery =====
+    // This API allows drivers to confirm that materials have been delivered to the site
+    // Updates both material_releases and request_material status to 'received'
+    updateDriverMaterialReleaseStatus: async (req, res) => {
+        try {
+            // Check if user is authenticated
+            if (!req.session?.user) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const user = req.session.user;
+            
+            // Verify user is a driver (role_id 17 or 18)
+            const isDriver = user.role_id === 17 || user.role_id === 18;
+            
+            if (!isDriver) {
+                return res.status(403).json({ error: 'Forbidden: Driver access required' });
+            }
+
+            const { releaseId } = req.params;
+            const driverId = user.employee_id;
+            
+            if (!driverId) {
+                return res.status(400).json({ error: 'Driver ID not found in session' });
+            }
+
+            console.log(`📦 [Driver API] Driver ${driverId} marking release ${releaseId} as received`);
+
+            // Update material release status
+            const result = await SCMModel.updateMaterialReleaseStatus(releaseId, driverId);
+
+            if (result.success) {
+                res.json({
+                    success: true,
+                    message: 'Material release marked as received successfully'
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    error: result.error || 'Failed to update material release status'
+                });
+            }
+        } catch (error) {
+            console.error('❌ [Driver API] Error in updateDriverMaterialReleaseStatus:', error);
+            res.status(500).json({ 
+                success: false,
+                error: 'Failed to update material release status' 
             });
         }
     }

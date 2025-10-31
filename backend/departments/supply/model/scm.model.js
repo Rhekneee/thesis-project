@@ -1652,10 +1652,18 @@ const SCMModel = {
                 os.material_status,
                 p.project_name,
                 p.location,
-                u.username as developer_name
+                u.username as developer_name,
+                mr.driver_id,
+                mr.vehicle_info,
+                mr.external_driver_name as driver_name,
+                mr.external_vehicle_details as vehicle_details,
+                mr.courier_service,
+                mr.released_at as release_date,
+                mr.status as release_status
             FROM owners_supply os
             LEFT JOIN proposals p ON os.proposal_id = p.proposal_id
             LEFT JOIN users u ON os.developer_id = u.id
+            LEFT JOIN material_releases mr ON os.supply_id = mr.owner_supply_id
             ORDER BY os.supply_id DESC
         `;
         try {
@@ -1666,7 +1674,8 @@ const SCMModel = {
                 quantity_used: parseFloat(row.quantity_used || 0),
                 quantity_remaining: parseFloat(row.quantity_remaining || 0),
                 is_delivered: Boolean(row.is_delivered),
-                material_status: Boolean(row.material_status)
+                material_status: Boolean(row.material_status),
+                vehicle_info: row.vehicle_info || row.vehicle_details
             }));
         } catch (error) {
             console.error('Error in getAllOwnersSupplyMaterials:', error);
@@ -1793,6 +1802,8 @@ const SCMModel = {
             LEFT JOIN proposals p ON os.proposal_id = p.proposal_id
             LEFT JOIN users u ON os.developer_id = u.id
             WHERE os.proposal_id = ?
+                AND os.status = 'Delivered'
+                AND (os.material_status = 1 OR os.material_status = true)
             ORDER BY os.supply_id ASC
         `;
         try {
@@ -1811,8 +1822,8 @@ const SCMModel = {
         }
     },
 
-    // Get manufacturing material requests
-    getManufacturingRequests: async () => {
+    // Get manufacturing material requests (optionally filter by project_id)
+    getManufacturingRequests: async (projectId = null) => {
         const query = `
             SELECT 
                 rm.request_no,
@@ -1833,10 +1844,11 @@ const SCMModel = {
             LEFT JOIN employees e ON rm.requested_by = e.employee_id
             LEFT JOIN departments d ON rm.department_id = d.id
             WHERE rm.department_id = 3
+              ${projectId ? 'AND rm.project_id = ?' : ''}
             ORDER BY rm.requested_at DESC
         `;
         try {
-            const [rows] = await db.query(query);
+            const [rows] = projectId ? await db.query(query, [projectId]) : await db.query(query);
             
             // Group materials by request_no
             const requestMap = new Map();
@@ -1864,13 +1876,28 @@ const SCMModel = {
                 }
                 
                 // Get materials for this request
+                // Show quantity_supplied (what's being supplied), with backorder quantity if applicable
                 const materialQuery = `
                     SELECT 
                         rm.material_id,
                         rm.owner_supply_id,
-                        rm.quantity,
+                        rm.project_id,
+                        rm.price,
+                        CASE 
+                            -- If quantity_backorder > 0, show the backordered quantity
+                            WHEN rm.quantity_backorder IS NOT NULL AND rm.quantity_backorder > 0 
+                            THEN rm.quantity_backorder
+                            -- If quantity_supplied exists, show it (what's being supplied)
+                            WHEN rm.quantity_supplied IS NOT NULL AND rm.quantity_supplied > 0
+                            THEN rm.quantity_supplied
+                            -- Otherwise show original requested quantity
+                            ELSE rm.quantity
+                        END as quantity,
                         rm.unit,
                         rm.source_type,
+                        rm.quantity as original_quantity,
+                        rm.quantity_supplied,
+                        rm.quantity_backorder,
                         CASE 
                             WHEN rm.source_type = 'owner_supply' THEN os.material_name
                             WHEN rm.source_type = 'company_supply' THEN m.name
@@ -1893,17 +1920,113 @@ const SCMModel = {
         }
     },
 
+    // Get approved material requests for delivery (status = 'approved')
+    getApprovedManufacturingRequests: async () => {
+        const query = `
+            SELECT 
+                rm.request_no,
+                rm.project_id,
+                rm.requested_by,
+                rm.department_id,
+                rm.source_type,
+                rm.purpose,
+                rm.status,
+                rm.requested_at,
+                rm.approved_at,
+                p.project_name,
+                e.full_name as requested_by_name,
+                d.name as department_name
+            FROM request_material rm
+            LEFT JOIN projects p ON rm.project_id = p.id
+            LEFT JOIN employees e ON rm.requested_by = e.employee_id
+            LEFT JOIN departments d ON rm.department_id = d.id
+            WHERE rm.department_id = 3 AND rm.status = 'approved'
+            ORDER BY rm.approved_at DESC
+        `;
+        try {
+            const [rows] = await db.query(query);
+            
+            // Group materials by request_no and attach materials
+            const requestMap = new Map();
+            
+            for (const row of rows) {
+                const requestNo = row.request_no;
+                
+                if (!requestMap.has(requestNo)) {
+                    requestMap.set(requestNo, {
+                        request_no: requestNo,
+                        project_id: row.project_id,
+                        project_name: row.project_name,
+                        requested_by: row.requested_by,
+                        requested_by_name: row.requested_by_name,
+                        department_id: row.department_id,
+                        department_name: row.department_name,
+                        source_type: row.source_type,
+                        purpose: row.purpose,
+                        status: row.status,
+                        requested_at: row.requested_at,
+                        approved_at: row.approved_at,
+                        materials: []
+                    });
+                }
+                
+                // Get materials for this request
+                // Show quantity_supplied (what's being supplied), with backorder quantity if applicable
+                const materialQuery = `
+                    SELECT 
+                        rm.material_id,
+                        rm.owner_supply_id,
+                        rm.price,
+                        CASE 
+                            -- If quantity_backorder > 0, show the backordered quantity
+                            WHEN rm.quantity_backorder IS NOT NULL AND rm.quantity_backorder > 0 
+                            THEN rm.quantity_backorder
+                            -- If quantity_supplied exists, show it (what's being supplied)
+                            WHEN rm.quantity_supplied IS NOT NULL AND rm.quantity_supplied > 0
+                            THEN rm.quantity_supplied
+                            -- Otherwise show original requested quantity
+                            ELSE rm.quantity
+                        END as quantity,
+                        rm.unit,
+                        rm.source_type,
+                        rm.quantity as original_quantity,
+                        rm.quantity_supplied,
+                        rm.quantity_backorder,
+                        CASE 
+                            WHEN rm.source_type = 'owner_supply' THEN os.material_name
+                            WHEN rm.source_type = 'company_supply' THEN m.name
+                            ELSE 'Unknown Material'
+                        END as material_name
+                    FROM request_material rm
+                    LEFT JOIN owners_supply os ON rm.owner_supply_id = os.supply_id
+                    LEFT JOIN materials m ON rm.material_id = m.material_id
+                    WHERE rm.request_no = ?
+                `;
+                
+                const [materials] = await db.query(materialQuery, [requestNo]);
+                requestMap.get(requestNo).materials = materials;
+            }
+            
+            return Array.from(requestMap.values());
+        } catch (error) {
+            console.error('Error in getApprovedManufacturingRequests:', error);
+            throw new Error('Failed to fetch approved manufacturing requests');
+        }
+    },
+
     // Get employees for driver selection
     getEmployees: async () => {
         const query = `
             SELECT 
-                employee_id,
-                full_name,
-                employment_status,
-                role_id
-            FROM employees
-            WHERE employment_status = 'active' AND is_deleted = 0
-            ORDER BY full_name
+                e.employee_id,
+                e.full_name,
+                e.employment_status,
+                e.role_id
+            FROM employees e
+            LEFT JOIN users u ON e.user_id = u.id
+            WHERE u.is_active = 1 
+                AND e.is_deleted = 0
+            ORDER BY e.full_name
         `;
         try {
             const [rows] = await db.query(query);
@@ -1914,13 +2037,37 @@ const SCMModel = {
         }
     },
 
+    // Get drivers only (role_id 17 or 18)
+    getDrivers: async () => {
+        const query = `
+            SELECT 
+                e.employee_id,
+                e.full_name,
+                e.employment_status,
+                e.role_id
+            FROM employees e
+            LEFT JOIN users u ON e.user_id = u.id
+            WHERE (e.role_id = 17 OR e.role_id = 18) 
+                AND u.is_active = 1
+                AND e.is_deleted = 0
+            ORDER BY e.role_id, e.full_name
+        `;
+        try {
+            const [rows] = await db.query(query);
+            return rows;
+        } catch (error) {
+            console.error('Error in getDrivers:', error);
+            throw new Error('Failed to fetch drivers');
+        }
+    },
+
     // Create material release
     createMaterialRelease: async (releaseData) => {
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
 
-            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes, released_by } = releaseData;
+            const { request_no, delivery_type, driver_id, vehicle_info, external_driver_name, external_vehicle_details, courier_service, release_notes, released_by, quantities } = releaseData;
 
             // Get the request materials
             const [requestMaterials] = await connection.query(`
@@ -1934,8 +2081,41 @@ const SCMModel = {
                 return { success: false, error: 'Request not found' };
             }
 
-            // Create material release records
-            const releasePromises = requestMaterials.map(material => {
+            // Update request_material with quantities for each material
+            // Store quantity_supplied (what's being released) and quantity_backorder (what's left)
+            // Keep the original quantity (requested amount) unchanged
+            const updatePromises = requestMaterials.map((material, index) => {
+                const quantityInfo = quantities && quantities[index] ? quantities[index] : { released: material.quantity, backordered: 0 };
+                const releasedQty = parseFloat(quantityInfo.released) || material.quantity;
+                const backorderedQty = parseFloat(quantityInfo.backordered) || 0;
+                
+                // Determine status: if there's backorder, mark as 'backordered', otherwise 'released'
+                const recordStatus = backorderedQty > 0 ? 'backordered' : 'released';
+                
+                // Update quantity_supplied and quantity_backorder while keeping original quantity
+                const updateQuery = `
+                    UPDATE request_material 
+                    SET quantity_supplied = ?,
+                        quantity_backorder = ?,
+                        status = ?
+                    WHERE id = ? AND request_no = ?
+                `;
+
+                return connection.query(updateQuery, [
+                    releasedQty,      // quantity_supplied: amount being released
+                    backorderedQty,   // quantity_backorder: amount left to be delivered
+                    recordStatus,     // status: 'released' or 'backordered'
+                    material.id,
+                    request_no
+                ]);
+            });
+
+            await Promise.all(updatePromises);
+
+            // Create material release records (without quantity columns)
+            // Note: Status in material_releases is always 'released' for tracking physical release
+            // Backorder information is stored in request_material table
+            const releasePromises = requestMaterials.map((material, index) => {
                 const releaseQuery = `
                     INSERT INTO material_releases (
                         material_id,
@@ -1967,28 +2147,34 @@ const SCMModel = {
 
             await Promise.all(releasePromises);
 
-            // Update quantity_used in owners_supply table for owner_supply materials
-            for (const material of requestMaterials) {
+            // Update quantity_requested in owners_supply table for owner_supply materials
+            for (let i = 0; i < requestMaterials.length; i++) {
+                const material = requestMaterials[i];
+                const quantityInfo = quantities && quantities[i] ? quantities[i] : { released: material.quantity, backordered: 0 };
+                const releasedQty = parseFloat(quantityInfo.released) || material.quantity;
+                
                 if (material.source_type === 'owner_supply' && material.owner_supply_id) {
+                    // Update quantity_requested (amount requested from owner) and recalculate remaining
                     await connection.query(`
                         UPDATE owners_supply 
-                        SET quantity_used = COALESCE(quantity_used, 0) + ?,
-                            quantity_remaining = quantity - (COALESCE(quantity_used, 0) + ?)
+                        SET quantity_requested = COALESCE(quantity_requested, 0) + ?,
+                            quantity_remaining = quantity - (COALESCE(quantity_requested, 0) + ?)
                         WHERE supply_id = ?
-                    `, [material.quantity, material.quantity, material.owner_supply_id]);
+                    `, [releasedQty, releasedQty, material.owner_supply_id]);
                     
-                    console.log('Updated owners_supply quantity_used for supply_id:', material.owner_supply_id, 'quantity:', material.quantity);
+                    console.log('Updated owners_supply quantity_requested for supply_id:', material.owner_supply_id, 'quantity:', releasedQty);
                 }
             }
 
-            // Update request status to 'released'
+            // Update request approved_at timestamp (status is already updated per material with released/backordered)
             const updateResult = await connection.query(`
                 UPDATE request_material 
-                SET status = 'released', approved_at = NOW()
+                SET approved_at = NOW()
                 WHERE request_no = ?
             `, [request_no]);
 
-            console.log('Updated request_material status to released:', updateResult[0].affectedRows, 'rows affected for request_no:', request_no);
+            console.log('Updated request_material approved_at for request_no:', request_no, 'affected rows:', updateResult[0].affectedRows);
+            console.log('Quantities and backorder info stored in request_material table');
 
             await connection.commit();
             return { success: true, release_id: Date.now() };
@@ -2008,6 +2194,37 @@ const SCMModel = {
             await connection.beginTransaction();
 
             console.log('Updating manufacturing request status:', requestNo, 'to:', newStatus);
+
+            // If status is 'approved', deduct quantity from owner_supply
+            if (newStatus === 'approved') {
+                // Get all materials for this request
+                const [requestMaterials] = await connection.query(`
+                    SELECT owner_supply_id, material_id, quantity, source_type 
+                    FROM request_material 
+                    WHERE request_no = ?
+                `, [requestNo]);
+
+                console.log('Request materials:', requestMaterials);
+
+                // Deduct quantity from owner_supply for owner_supply materials
+                for (const material of requestMaterials) {
+                    if (material.source_type === 'owner_supply' && material.owner_supply_id) {
+                        const deducted = parseFloat(material.quantity) || 0;
+                        
+                        console.log('Deducting quantity:', deducted, 'from supply_id:', material.owner_supply_id);
+                        
+                        // Update owner_supply to subtract quantity
+                        await connection.query(`
+                            UPDATE owners_supply 
+                            SET quantity_remaining = GREATEST(0, quantity_remaining - ?),
+                                material_status = 0
+                            WHERE supply_id = ?
+                        `, [deducted, material.owner_supply_id]);
+                        
+                        console.log('Deducted from owner_supply successfully');
+                    }
+                }
+            }
 
             // Update request status
             const updateResult = await connection.query(`
@@ -2213,6 +2430,13 @@ const SCMModel = {
         try {
             console.log('🔍 Getting delivery info for purchase_id:', purchaseId);
             
+            // First, check if any material_releases exist for this purchase
+            const [checkRows] = await db.query(`
+                SELECT COUNT(*) as count FROM material_releases WHERE purchase_id = ?
+            `, [purchaseId]);
+            
+            console.log('📊 Total material_releases for this purchase:', checkRows[0].count);
+            
             const [rows] = await db.query(`
                 SELECT 
                     external_driver_name,
@@ -2228,17 +2452,39 @@ const SCMModel = {
             `, [purchaseId]);
 
             console.log('📋 Query result:', rows.length > 0 ? rows[0] : 'No records found');
+            console.log('🔍 Purchase ID used:', purchaseId);
 
             if (rows.length > 0) {
+                console.log('✅ Delivery info found:', {
+                    driver: rows[0].external_driver_name,
+                    vehicle: rows[0].external_vehicle_details,
+                    courier: rows[0].courier_service,
+                    date: rows[0].expected_delivery_date
+                });
                 return { 
                     success: true, 
                     deliveryInfo: rows[0] 
                 };
             } else {
-                return { 
-                    success: false, 
-                    error: 'Delivery information not found' 
-                };
+                console.log('⚠️ No delivery information found for purchase_id:', purchaseId);
+                
+                // Try to find if there are any releases for this purchase (without delivery info)
+                const [allRows] = await db.query(`
+                    SELECT purchase_id, status, released_at FROM material_releases WHERE purchase_id = ?
+                `, [purchaseId]);
+                
+                if (allRows.length > 0) {
+                    console.log('⚠️ Material releases exist but no delivery information', allRows);
+                    return { 
+                        success: false, 
+                        error: 'Material releases exist but delivery information is missing' 
+                    };
+                } else {
+                    return { 
+                        success: false, 
+                        error: 'No delivery information or material releases found for this purchase' 
+                    };
+                }
             }
         } catch (error) {
             console.error('Error in getPurchaseDeliveryInfo:', error);
@@ -2246,6 +2492,160 @@ const SCMModel = {
                 success: false, 
                 error: 'Failed to get delivery information' 
             };
+        }
+    },
+
+    // ===== DRIVER API: Get material releases assigned to a specific driver =====
+    // This API is specifically for drivers to view their assigned material deliveries
+    // Returns materials with status 'released' or 'backordered' that need to be delivered
+    // Displays backordered quantity if material was partially released
+    getDriverMaterialReleases: async (driverId) => {
+        try {
+            const query = `
+                SELECT DISTINCT
+                    mr.id as release_id,
+                    mr.material_id,
+                    mr.request_id,
+                    mr.project_id,
+                    mr.status as release_status,
+                    mr.source_type,
+                    mr.driver_id,
+                    mr.vehicle_info,
+                    mr.released_at,
+                    rm.request_no,
+                    rm.quantity as original_quantity,
+                    rm.quantity_supplied,
+                    rm.quantity_backorder,
+                    rm.unit,
+                    rm.status as material_status,
+                    rm.id as material_record_id,
+                    CASE 
+                        WHEN mr.source_type = 'owner_supply' THEN os.material_name
+                        WHEN mr.source_type = 'company_supply' THEN m.name
+                        ELSE 'Unknown Material'
+                    END as material_name,
+                    p.project_name,
+                    p.location as project_location,
+                    -- Show quantity_supplied (what's being delivered to driver), fallback to original quantity
+                    -- This preserves the original requested quantity while tracking what's actually supplied
+                    COALESCE(rm.quantity_supplied, rm.quantity) as display_quantity
+                FROM material_releases mr
+                INNER JOIN request_material rm ON mr.request_id = rm.id
+                LEFT JOIN owners_supply os ON mr.source_type = 'owner_supply' AND rm.owner_supply_id = os.supply_id
+                LEFT JOIN materials m ON mr.source_type = 'company_supply' AND mr.material_id = m.material_id
+                LEFT JOIN projects p ON mr.project_id = p.id
+                WHERE mr.driver_id = ?
+                    AND mr.status = 'released'
+                    AND rm.status != 'received'
+                ORDER BY mr.released_at DESC
+            `;
+            
+            const [rows] = await db.query(query, [driverId]);
+            
+            console.log(`📦 [Driver API] Found ${rows.length} material releases for driver_id: ${driverId}`);
+            
+            return rows.map(row => ({
+                release_id: row.release_id,
+                request_no: row.request_no,
+                material_id: row.material_id,
+                material_name: row.material_name,
+                quantity: parseFloat(row.display_quantity),
+                original_quantity: parseFloat(row.original_quantity),
+                quantity_supplied: parseFloat(row.quantity_supplied || 0),
+                quantity_backorder: parseFloat(row.quantity_backorder || 0),
+                unit: row.unit,
+                release_status: row.release_status,
+                material_status: row.material_status,
+                source_type: row.source_type,
+                project_name: row.project_name,
+                project_location: row.project_location,
+                vehicle_info: row.vehicle_info,
+                released_at: row.released_at,
+                is_backordered: row.quantity_backorder > 0,
+                material_record_id: row.material_record_id,
+                request_id: row.request_id
+            }));
+        } catch (error) {
+            console.error('❌ [Driver API] Error fetching driver material releases:', error);
+            throw new Error('Failed to fetch driver material releases');
+        }
+    },
+
+    // ===== DRIVER API: Mark material release as received by driver =====
+    // This API allows drivers to confirm delivery and mark materials as received
+    // - material_releases: status = 'received' (physical delivery complete)
+    // - request_material: status = 'backordered' (if still has backorder) or 'received' (if fully delivered)
+    updateMaterialReleaseStatus: async (releaseId, driverId) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            console.log(`📦 [Driver API] Updating release ${releaseId} status to received for driver ${driverId}`);
+
+            // Verify the release belongs to this driver
+            const [releaseCheck] = await connection.query(
+                'SELECT id, request_id FROM material_releases WHERE id = ? AND driver_id = ?',
+                [releaseId, driverId]
+            );
+
+            if (releaseCheck.length === 0) {
+                await connection.rollback();
+                return { success: false, error: 'Release not found or not assigned to this driver' };
+            }
+
+            const requestId = releaseCheck[0].request_id;
+
+            // Check if there's still a backorder for this material
+            const [materialCheck] = await connection.query(
+                'SELECT quantity_backorder FROM request_material WHERE id = ?',
+                [requestId]
+            );
+
+            const hasBackorder = materialCheck.length > 0 && parseFloat(materialCheck[0].quantity_backorder || 0) > 0;
+
+            // Update material_releases status to 'received' (physical delivery complete)
+            await connection.query(
+                'UPDATE material_releases SET status = "received" WHERE id = ?',
+                [releaseId]
+            );
+
+            // Update request_material status: 'backordered' if still has backorder, 'received' if fully delivered
+            const newStatus = hasBackorder ? 'backordered' : 'received';
+            await connection.query(
+                'UPDATE request_material SET status = ? WHERE id = ?',
+                [newStatus, requestId]
+            );
+
+            // Deduct inventory for company-supply only when driver marks as received
+            const [rmRows] = await connection.query(
+                `SELECT material_id, source_type, 
+                        COALESCE(quantity_supplied, quantity) AS delivered_qty
+                 FROM request_material WHERE id = ?`,
+                [requestId]
+            );
+            if (rmRows && rmRows.length > 0) {
+                const rm = rmRows[0];
+                const deliveredQty = parseFloat(rm.delivered_qty || 0);
+                if (rm.source_type === 'company_supply' && rm.material_id && deliveredQty > 0) {
+                    await connection.query(
+                        `UPDATE materials 
+                         SET quantity = GREATEST(0, COALESCE(quantity,0) - ?)
+                         WHERE material_id = ?`,
+                        [deliveredQty, rm.material_id]
+                    );
+                }
+            }
+
+            console.log(`✅ [Driver API] Updated release ${releaseId} - material_releases='received', request_material='${newStatus}'`);
+
+            await connection.commit();
+            return { success: true };
+        } catch (error) {
+            await connection.rollback();
+            console.error('❌ [Driver API] Error updating material release status:', error);
+            throw new Error('Failed to update material release status');
+        } finally {
+            connection.release();
         }
     }
 };

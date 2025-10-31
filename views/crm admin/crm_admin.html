@@ -14,22 +14,129 @@
     <link rel="stylesheet" href="/public/css/side_top.css">
 
     <style>
+      :root {
+            --brand-start: #0d6efd;
+            --brand-end: #6610f2;
+            --muted: #6c757d;
+        }
+
+        body {
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
         #content {
             margin-left: 0;
             transition: margin-left 0.3s;
-            padding: 20px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-top: 56px;
+        }
+
+        .page-hero {
+            background: linear-gradient(120deg, var(--brand-start), var(--brand-end));
+            color: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.25);
+            margin-bottom: 24px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card .card-body {
+            padding: 24px;
+            text-align: center;
+        }
+
+        .kpi-card .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-card .card-text {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--brand-start);
+            margin: 0;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        .chart-container h4 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 18px;
         }
 
         #content h2 {
             font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0;
         }
 
-        .kpi-card {
-            margin: 10px 0;
+        .row {
+            margin: 0 -12px;
         }
 
-        .chart-container {
-            margin-top: 20px;
+        .row > * {
+            padding: 0 12px;
+        }
+
+        .badge-purple {
+            background-color: #6610f2 !important;
+        }
+
+        @media (max-width: 768px) {
+            #content {
+                padding: 16px;
+            }
+            
+            .kpi-card .card-text {
+                font-size: 24px;
+            }
+            
+            .page-hero {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -129,7 +236,7 @@
                 <li class="nav-item"><a href="/crm/clients"><i class="fas fa-user-friends"></i> <span>Clients</span></a></li>
                 <li class="nav-item"><a href="/crm/inquiries"><i class="fas fa-comment-dots"></i> <span>Inquiries</span></a></li>
                 <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/agents"><i class="fas fa-user-friends"></i> <span>Coodnators</span></a></li>
-                <li class="nav-item coordinator-only" style="display: none;"><a href="/crm/job_posting"><i class="fas fa-user-friends"></i> <span>Job Posting</span></a></li>
+                
                 <!-- Properties Section with sub-options -->
                  <li class="nav-item">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#properties" aria-expanded="false">
@@ -142,6 +249,7 @@
                     </ul>
                 </li>
                 <li class="nav-item active"><a href="/crm/transactions"><i class="fas fa-handshake"></i> <span>Transactions</span></a></li>
+                <li class="nav-item"><a href="/crm/crm_faqs"><i class="fas fa-question-circle"></i> <span>FAQs</span></a></li>
                
             </ul>
             <!-- Move Logout outside the main ul -->
@@ -158,60 +266,84 @@
         <div id="content">
             <!-- Button to toggle sidebar with icon -->
 
-            <!-- ========== Dashboard Content ========== -->
-            <h2>Admin Dashboard</h2>
+            <!-- Page Hero Section -->
+            <div class="page-hero mb-4 d-flex align-items-center justify-content-between gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
+                    <p class="mb-0 opacity-75">Monitor and manage inquiries and FAQs</p>
+                </div>
+            </div>
             
             <!-- KPI Cards -->
-            <div class="row">
-                <div class="col-md-3">
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6 col-lg-3">
                     <div class="card kpi-card">
                         <div class="card-body">
-                            <h5 class="card-title">Total Properties</h5>
-                            <p class="card-text">120</p>
+                            <h5 class="card-title">Total Inquiries</h5>
+                            <p class="card-text" id="totalInquiries">0</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <div class="card kpi-card">
                         <div class="card-body">
-                            <h5 class="card-title">Total Agents</h5>
-                            <p class="card-text">30</p>
+                            <h5 class="card-title">New Inquiries</h5>
+                            <p class="card-text" id="newInquiries">0</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <div class="card kpi-card">
                         <div class="card-body">
-                            <h5 class="card-title">Active Inquiries</h5>
-                            <p class="card-text">50</p>
+                            <h5 class="card-title">Total FAQs</h5>
+                            <p class="card-text" id="totalFaqs">0</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <div class="card kpi-card">
                         <div class="card-body">
-                            <h5 class="card-title">Completed Transactions</h5>
-                            <p class="card-text">80</p>
+                            <h5 class="card-title">Replied Inquiries</h5>
+                            <p class="card-text" id="repliedInquiries">0</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Chart Section -->
-            <div class="chart-container">
-                <h4>Sales Performance</h4>
-                <canvas id="salesChart"></canvas>
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-pie me-2"></i>Inquiries by Status</h4>
+                        <canvas id="inquiriesChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-bar me-2"></i>FAQs Distribution</h4>
+                        <canvas id="faqsChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="chart-container">
-                <h4>Inquiries by Status</h4>
-                <canvas id="inquiriesChart"></canvas>
-            </div>
-
-            <!-- Top Performing Agents Chart -->
-            <div class="chart-container">
-                <h4>Top Performing Agents</h4>
-                <canvas id="agentsChart"></canvas>
+            <!-- Recent Activity Section -->
+            <div class="row g-3 mt-3">
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-clock me-2"></i>Recent Inquiries</h4>
+                        <div id="recentInquiriesList" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Recent inquiries will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-question-circle me-2"></i>Recent FAQs Updates</h4>
+                        <div id="recentFaqsList" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Recent FAQs will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -268,57 +400,194 @@
                 });
         });
 
-        // Sales Chart
-        var salesChart = new Chart(document.getElementById("salesChart"), {
-            type: 'line',
-            data: {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-                datasets: [{
-                    label: 'Sales ($)',
-                    data: [1200, 1900, 1500, 2500, 2100, 2900],
-                    fill: false,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
+       // Load dashboard data
+       function loadDashboardData() {
+            // Load inquiries data from localStorage
+            const savedInquiries = localStorage.getItem('crm_inquiries');
+            if (savedInquiries) {
+                try {
+                    const parsed = JSON.parse(savedInquiries);
+                    mockInquiries = parsed;
+                } catch(e) {
+                    console.log('Error parsing inquiries data');
+                    // Use default mock data
+                    mockInquiries = [
+                        { id: 1, full_name: "John Doe", email: "john@example.com", status: "new", created_at: new Date().toISOString() },
+                        { id: 2, full_name: "Jane Smith", email: "jane@example.com", status: "replied", created_at: new Date(Date.now() - 86400000).toISOString() },
+                        { id: 3, full_name: "Mike Johnson", email: "mike@example.com", status: "archived", created_at: new Date(Date.now() - 172800000).toISOString() }
+                    ];
+                }
+            } else {
+                mockInquiries = [
+                    { id: 1, full_name: "John Doe", email: "john@example.com", status: "new", created_at: new Date().toISOString() },
+                    { id: 2, full_name: "Jane Smith", email: "jane@example.com", status: "replied", created_at: new Date(Date.now() - 86400000).toISOString() },
+                    { id: 3, full_name: "Mike Johnson", email: "mike@example.com", status: "archived", created_at: new Date(Date.now() - 172800000).toISOString() }
+                ];
             }
-        });
 
-        // Inquiries Status Chart
-        var inquiriesChart = new Chart(document.getElementById("inquiriesChart"), {
-            type: 'pie',
-            data: {
-                labels: ['New', 'Follow Up', 'Closed'],
-                datasets: [{
-                    label: 'Inquiries Status',
-                    data: [30, 15, 5],
-                    backgroundColor: ['#ffcc00', '#ff9900', '#00cc99'],
-                    hoverOffset: 4
-                }]
+            updateKPIStats();
+            initializeCharts();
+            loadRecentInquiries();
+            loadRecentFaqs();
+        }
+
+        // Update KPI Statistics
+        function updateKPIStats() {
+            const total = mockInquiries.length;
+            const new_count = mockInquiries.filter(i => i.status === 'new').length;
+            const replied_count = mockInquiries.filter(i => i.status === 'replied').length;
+            
+            // Load FAQs from localStorage
+            const savedFAQs = localStorage.getItem('crm_faqs');
+            let totalFaqs = 0;
+            if (savedFAQs) {
+                try {
+                    totalFaqs = JSON.parse(savedFAQs).length;
+                } catch(e) {
+                    totalFaqs = 8; // default
+                }
+            } else {
+                totalFaqs = 8; // default
             }
-        });
 
-        // Top Performing Agents Chart
-        var agentsChart = new Chart(document.getElementById("agentsChart"), {
-            type: 'bar',
-            data: {
-                labels: ['Agent A', 'Agent B', 'Agent C', 'Agent D'],
-                datasets: [{
-                    label: 'Deals Closed',
-                    data: [15, 20, 10, 18],
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+            document.getElementById('totalInquiries').textContent = total;
+            document.getElementById('newInquiries').textContent = new_count;
+            document.getElementById('repliedInquiries').textContent = replied_count;
+            document.getElementById('totalFaqs').textContent = totalFaqs;
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Inquiries Status Chart
+            const inquiryStats = {
+                'new': mockInquiries.filter(i => i.status === 'new').length,
+                'replied': mockInquiries.filter(i => i.status === 'replied').length,
+                'archived': mockInquiries.filter(i => i.status === 'archived').length
+            };
+
+            var inquiriesChart = new Chart(document.getElementById("inquiriesChart"), {
+                type: 'pie',
+                data: {
+                    labels: ['New', 'Replied', 'Archived'],
+                    datasets: [{
+                        label: 'Inquiries Status',
+                        data: [inquiryStats.new, inquiryStats.replied, inquiryStats.archived],
+                        backgroundColor: ['#0d6efd', '#28a745', '#6c757d'],
+                        hoverOffset: 4
+                    }]
+                }
+            });
+
+            // FAQs Distribution Chart
+            const savedFAQs = localStorage.getItem('crm_faqs');
+            let faqsData = { left: 4, right: 4 };
+            if (savedFAQs) {
+                try {
+                    const faqs = JSON.parse(savedFAQs);
+                    faqsData.left = faqs.filter(f => f.column === 'left').length;
+                    faqsData.right = faqs.filter(f => f.column === 'right').length;
+                } catch(e) {
+                    console.log('Error parsing FAQs data');
                 }
             }
-        });
 
+            var faqsChart = new Chart(document.getElementById("faqsChart"), {
+                type: 'bar',
+                data: {
+                    labels: ['Left Column', 'Right Column'],
+                    datasets: [{
+                        label: 'FAQs',
+                        data: [faqsData.left, faqsData.right],
+                        backgroundColor: ['#0d6efd', '#6610f2'],
+                        borderColor: ['#0b5ed7', '#5500cc'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load Recent Inquiries
+        function loadRecentInquiries() {
+            const container = document.getElementById('recentInquiriesList');
+            
+            if (mockInquiries.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">No inquiries yet</p>';
+                return;
+            }
+
+            // Get last 5 inquiries
+            const recentInquiries = mockInquiries
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5);
+
+            container.innerHTML = recentInquiries.map(inquiry => `
+                <div class="mb-3 p-3 bg-light rounded" style="border-left: 4px solid ${inquiry.status === 'new' ? '#0d6efd' : inquiry.status === 'replied' ? '#28a745' : '#6c757d'}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${escapeHtml(inquiry.full_name)}</h6>
+                            <p class="text-muted mb-1" style="font-size: 0.9rem;"><i class="fas fa-envelope"></i> ${escapeHtml(inquiry.email)}</p>
+                        </div>
+                        <span class="badge bg-${inquiry.status === 'new' ? 'primary' : inquiry.status === 'replied' ? 'success' : 'secondary'}">${inquiry.status}</span>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.8rem;"><i class="fas fa-clock"></i> ${new Date(inquiry.created_at).toLocaleString()}</p>
+                </div>
+            `).join('');
+        }
+
+        // Load Recent FAQs
+        function loadRecentFaqs() {
+            const container = document.getElementById('recentFaqsList');
+            
+            const savedFAQs = localStorage.getItem('crm_faqs');
+            if (!savedFAQs) {
+                container.innerHTML = '<p class="text-muted text-center">No FAQs yet</p>';
+                return;
+            }
+
+            try {
+                const faqs = JSON.parse(savedFAQs);
+                // Get last 5 FAQs
+                const recentFaqs = faqs.slice(-5).reverse();
+
+                container.innerHTML = recentFaqs.map(faq => `
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-${faq.column === 'left' ? 'primary' : 'purple'}">${faq.column.toUpperCase()} Column</span>
+                        </div>
+                        <h6 class="mb-1">${escapeHtml(faq.question)}</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.85rem; max-height: 60px; overflow: hidden;">${escapeHtml(faq.answer.substring(0, 100))}${faq.answer.length > 100 ? '...' : ''}</p>
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<p class="text-muted text-center">Error loading FAQs</p>';
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Listen for updates
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'crm_inquiries' || e.key === 'crm_faqs') {
+                loadDashboardData();
+            }
+        });
     </script>
     <script src="/js/onboarding-checker.js"></script>
 </body>
