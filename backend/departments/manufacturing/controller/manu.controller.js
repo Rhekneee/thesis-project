@@ -1579,6 +1579,124 @@ const ManufacturingController = {
     }
   }
   ,
+  // ==================== PROJECT RATINGS (appended feature) ====================
+  // POST /manufacturing/projects/:projectId/rating
+  submitProjectRating: async (req, res) => {
+    try {
+      const projectId = Number(req.params.projectId);
+      const developerId = req.session?.user?.id || req.body?.developer_id || null;
+      const {
+        finishing_quality,
+        structural_accuracy,
+        timeline_performance,
+        client_satisfaction,
+        material_efficiency,
+        feedback
+      } = req.body || {};
+
+      if (!projectId) {
+        return res.status(400).json({ success: false, error: 'projectId is required' });
+      }
+
+      // Optional: ensure project is completed before rating
+      try {
+        const [projRows] = await db.query('SELECT status FROM projects WHERE id = ?', [projectId]);
+        const status = projRows && projRows[0] ? projRows[0].status : null;
+        if (!status) return res.status(404).json({ success: false, error: 'Project not found' });
+        // Allow rating only when completed
+        if (String(status).toLowerCase() !== 'completed') {
+          return res.status(400).json({ success: false, error: 'Project is not completed yet' });
+        }
+      } catch (_) { /* ignore status check errors */ }
+
+      // Strict one-time rating: reject if already exists for this project+developer
+      try {
+        const exists = await ManufacturingModel.hasProjectRating({ projectId, developerId });
+        if (exists) {
+          return res.status(409).json({ success: false, error: 'Rating already submitted for this project' });
+        }
+      } catch(_) {}
+
+      const id = await ManufacturingModel.upsertProjectRating({
+        projectId,
+        developerId,
+        finishingQuality: finishing_quality,
+        structuralAccuracy: structural_accuracy,
+        timelinePerformance: timeline_performance,
+        clientSatisfaction: client_satisfaction,
+        materialEfficiency: material_efficiency,
+        feedback
+      });
+      return res.json({ success: true, id });
+    } catch (error) {
+      console.error('Error submitting project rating:', error);
+      return res.status(500).json({ success: false, error: 'Failed to submit project rating' });
+    }
+  },
+
+  // GET /manufacturing/projects/:projectId/rating
+  getProjectRating: async (req, res) => {
+    try {
+      const projectId = Number(req.params.projectId);
+      const developerId = req.session?.user?.id || null;
+      if (!projectId) {
+        return res.status(400).json({ success: false, error: 'projectId is required' });
+      }
+      const row = await ManufacturingModel.getProjectRating({ projectId, developerId });
+      return res.json({ success: true, rating: row });
+    } catch (error) {
+      console.error('Error fetching project rating:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch project rating' });
+    }
+  },
+
+  // GET /manufacturing/ratings/summary
+  getRatingsSummary: async (req, res) => {
+    try {
+      // Optional range filtering
+      const { range, start_date, end_date } = req.query || {};
+      let start = null, end = null;
+      const now = new Date();
+      if (range === 'week') {
+        end = new Date(now);
+        start = new Date(now);
+        start.setDate(start.getDate() - 7);
+      } else if (range === 'month') {
+        end = new Date(now);
+        start = new Date(now);
+        start.setDate(start.getDate() - 30);
+      } else if (range === 'year') {
+        end = new Date(now);
+        start = new Date(now);
+        start.setDate(start.getDate() - 365);
+      } else if (start_date && end_date) {
+        start = new Date(start_date);
+        end = new Date(end_date);
+      }
+      const fmt = (d) => d ? new Date(d).toISOString().slice(0, 19).replace('T', ' ') : null;
+      const input = (start && end) ? { startDate: fmt(start), endDate: fmt(end) } : {};
+
+      const summary = await ManufacturingModel.getRatingsSummaryByDeveloper(input);
+      const overall = await ManufacturingModel.getRatingsOverallAverages(input);
+      return res.json({ success: true, summary, overall });
+    } catch (error) {
+      console.error('Error fetching ratings summary:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch ratings summary' });
+    }
+  },
+
+  // GET /manufacturing/developers/:developerId/completed-projects
+  getCompletedProjectsForDeveloperId: async (req, res) => {
+    try {
+      const developerId = Number(req.params.developerId);
+      if (!developerId) return res.status(400).json({ success: false, error: 'developerId is required' });
+      const projects = await ManufacturingModel.getCompletedProjectsByDeveloper(developerId);
+      return res.json({ success: true, projects });
+    } catch (error) {
+      console.error('Error fetching completed projects for developer:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch completed projects' });
+    }
+  },
   /**
    * Store Stage Billing Summary
    *

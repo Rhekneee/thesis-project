@@ -219,6 +219,25 @@
 
             <h2>Manufacturing Ratings</h2>
 
+            <!-- Hero Section: Overall Ratings Chart -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Overall Developer Ratings</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="rangeSelect" class="form-select form-select-sm" style="width:auto;">
+                                <option value="all">All time</option>
+                                <option value="week">Last week</option>
+                                <option value="month">Last month</option>
+                                <option value="year">Last year</option>
+                            </select>
+                            <div class="text-muted small" id="overallTotals"></div>
+                        </div>
+                    </div>
+                    <canvas id="overallChart" height="90"></canvas>
+                </div>
+            </div>
+
             <div class="search-container">
                 <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
                 <div class="entries-per-page">
@@ -231,29 +250,89 @@
                 </div>
             </div>
 
-            <!-- Projects Table -->
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Image</th>
-                            <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(3)">Developer <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(4)">Location <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(5)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(6)">Rating <i class="fas fa-sort sort-icon"></i></th>
-                            <th onclick="sortTable(7)">Feedback <i class="fas fa-sort sort-icon"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="projectsList"></tbody>
-                </table>
+            <!-- Summary and Ranking -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Criteria Averages</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <select id="rangeSelectCriteria" class="form-select form-select-sm" style="width:auto;">
+                                        <option value="all">All time</option>
+                                        <option value="week">Last week</option>
+                                        <option value="month">Last month</option>
+                                        <option value="year">Last year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <ul class="list-group" id="criteriaAverages">
+                                <!-- Filled by JS -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Developer Ranking</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <select id="rangeSelectRanking" class="form-select form-select-sm" style="width:auto;">
+                                        <option value="all">All time</option>
+                                        <option value="week">Last week</option>
+                                        <option value="month">Last month</option>
+                                        <option value="year">Last year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="developerRanking" class="vstack gap-2">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div id="entriesMessage">
-                <span id="showingEntries"></span>
-                <nav><ul class="pagination" id="paginationControls"></ul></nav>
+            
+            <!-- Grouped by Developer Cards -->
+            <h3 class="mt-4 mb-2">Ratings and Feedback</h3>
+            <div class="mt-0" id="developerCards" class="row g-3">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Permission Modal -->
+    <div class="modal fade" id="vtourPermissionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Submit Permission</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="vtourError" class="alert alert-danger d-none" role="alert"></div>
+                    <input type="hidden" id="vtourDeveloperId" />
+                    <input type="hidden" id="vtourProjectId" />
+                    <div class="mb-3">
+                        <label class="form-label">Completed Project</label>
+                        <div class="form-control" id="vtourProjectDisplay" style="background:#f8f9fa;" tabindex="-1" aria-readonly="true"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Remarks (optional)</label>
+                        <textarea id="vtourRemarks" class="form-control" rows="3" placeholder="Add context for the request..."></textarea>
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyPermissionTemplate(1)">Use template 1</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyPermissionTemplate(2)">Use template 2</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyPermissionTemplate(3)">Use template 3</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitVtourPermission()">Submit</button>
+                </div>
             </div>
         </div>
     </div>
@@ -296,31 +375,13 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/side_top.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Sample completed projects data (same as in developer_finished_projects.html)
-        let projects = [
-            {
-                id: 1,
-                name: 'Residential Complex A',
-                developer: 'John Smith',
-                location: 'Manila',
-                completionDate: '2024-02-15',
-                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&h=500&fit=crop',
-                rating: 5,
-                feedback: 'Excellent quality and timely completion'
-            },
-            {
-                id: 2,
-                name: 'Commercial Building B',
-                developer: 'Sarah Johnson',
-                location: 'Makati',
-                completionDate: '2024-01-30',
-                image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&h=500&fit=crop',
-                rating: 4,
-                feedback: 'Great attention to detail and professional work'
-            }
-        ];
+        // Ratings summary data
+        let ratingsSummary = [];
+        let ratingsOverall = null;
+        let currentRange = 'all';
 
         let currentPage = 1;
         let itemsPerPage = 5;
@@ -330,8 +391,15 @@
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             initializeSidebar();
-            renderProjects();
-            initializeEventListeners();
+            const rangeSelect = document.getElementById('rangeSelect');
+            const rangeSelectCriteria = document.getElementById('rangeSelectCriteria');
+            const rangeSelectRanking = document.getElementById('rangeSelectRanking');
+            const onChange = (val) => { currentRange = val; syncRangeSelects(); loadSummary(); };
+            if (rangeSelect) rangeSelect.addEventListener('change', () => onChange(rangeSelect.value));
+            if (rangeSelectCriteria) rangeSelectCriteria.addEventListener('change', () => onChange(rangeSelectCriteria.value));
+            if (rangeSelectRanking) rangeSelectRanking.addEventListener('change', () => onChange(rangeSelectRanking.value));
+            syncRangeSelects();
+            loadSummary();
         });
 
         // Sidebar functionality
@@ -339,9 +407,12 @@
             const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
+            if (!sidebar || !content) return; // nothing to do
+            if (!sidebarToggle) return; // toggle not present on this page
 
             sidebarToggle.addEventListener('click', function() {
-                if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+                const isHidden = sidebar.style.display === 'none' || sidebar.style.display === '';
+                if (isHidden) {
                     sidebar.style.display = 'block';
                     content.style.marginLeft = '300px';
                 } else {
@@ -356,18 +427,235 @@
             document.getElementById('searchBar').addEventListener('input', filterProjects);
         }
 
-        // Generate star rating HTML
-        function generateStarRating(rating) {
-            rating = Number(rating) || 0;
-            let stars = '';
-            for (let i = 1; i <= 5; i++) {
-                if (i <= rating) {
-                    stars += '<i class="fas fa-star" style="color: #ffc107;"></i>';
-                } else {
-                    stars += '<i class="far fa-star" style="color: #e4e5e9;"></i>';
+        function labelForScore(score) {
+            const s = Number(score) || 0;
+            if (s < 3) return { text: 'Critical', class: 'badge bg-danger' };
+            if (s < 5) return { text: 'Moderate', class: 'badge bg-warning text-dark' };
+            return { text: 'Good', class: 'badge bg-success' };
+        }
+
+        async function loadSummary() {
+            try {
+                const qs = currentRange && currentRange !== 'all' ? `?range=${encodeURIComponent(currentRange)}` : '';
+                const resp = await fetch(`/manufacturing/ratings/summary${qs}`);
+                const data = await resp.json();
+                if (!data.success) throw new Error('Failed');
+                ratingsSummary = data.summary || [];
+                ratingsOverall = data.overall || null;
+                renderHero();
+                renderCriteriaAverages();
+                renderRanking();
+                renderDeveloperCards();
+            } catch (e) {
+                console.warn('Failed to load ratings summary', e);
+                // Render empty states
+                document.getElementById('overallTotals').textContent = 'No data';
+            }
+        }
+
+        function renderHero() {
+            const totalsEl = document.getElementById('overallTotals');
+            if (ratingsOverall) {
+                totalsEl.textContent = `${rangeText()} • Entries: ${ratingsOverall.total_entries || 0}`;
+            } else {
+                totalsEl.textContent = `${rangeText()} • Entries: 0`;
+            }
+            const ctx = document.getElementById('overallChart');
+            const labels = ['Finishing', 'Structural', 'Timeline', 'Client', 'Material'];
+            const dataset = ratingsOverall ? [
+                ratingsOverall.avg_finishing_quality || 0,
+                ratingsOverall.avg_structural_accuracy || 0,
+                ratingsOverall.avg_timeline_performance || 0,
+                ratingsOverall.avg_client_satisfaction || 0,
+                ratingsOverall.avg_material_efficiency || 0,
+            ] : [0,0,0,0,0];
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{
+                    label: 'Average (1-10)',
+                    data: dataset,
+                    backgroundColor: '#0d6efd'
+                }]},
+                options: { scales: { y: { beginAtZero: true, max: 10 } } }
+            });
+        }
+
+        function renderCriteriaAverages() {
+            const el = document.getElementById('criteriaAverages');
+            el.innerHTML = '';
+            const items = [
+                { label: 'Finishing Quality', value: ratingsOverall?.avg_finishing_quality },
+                { label: 'Structural Accuracy', value: ratingsOverall?.avg_structural_accuracy },
+                { label: 'Timeline Performance', value: ratingsOverall?.avg_timeline_performance },
+                { label: 'Client Satisfaction', value: ratingsOverall?.avg_client_satisfaction },
+                { label: 'Material Efficiency', value: ratingsOverall?.avg_material_efficiency },
+            ];
+            items.forEach(it => {
+                const v = (Number(it.value) || 0).toFixed(2);
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `<span>${it.label}</span><span class="fw-semibold">${v}</span>`;
+                el.appendChild(li);
+            });
+        }
+
+        function renderRanking() {
+            const el = document.getElementById('developerRanking');
+            el.innerHTML = '';
+            const sorted = [...ratingsSummary].sort((a,b) => (Number(b.avg_score||0)) - (Number(a.avg_score||0)));
+            sorted.forEach((d, idx) => {
+                const badge = labelForScore(d.avg_score);
+                const row = document.createElement('div');
+                row.className = 'd-flex justify-content-between align-items-center border rounded p-2';
+                row.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">#${idx+1}</span>
+                        <span class="fw-semibold">${d.developer_name || 'Developer ' + (d.developer_id||'')}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold">${(Number(d.avg_score)||0).toFixed(2)}/10</span>
+                        <span class="${badge.class}">${badge.text}</span>
+                    </div>
+                `;
+                el.appendChild(row);
+            });
+        }
+
+        function renderDeveloperCards() {
+            const container = document.getElementById('developerCards');
+            container.innerHTML = '';
+            const row = document.createElement('div');
+            row.className = 'row g-3';
+            ratingsSummary.forEach(d => {
+                const badge = labelForScore(d.avg_score);
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                const avg10 = (Number(d.avg_score) || 0);
+                const showBtn = avg10 >= 8.5 && avg10 <= 10;
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">${d.developer_name || 'Developer ' + (d.developer_id||'')}</h6>
+                                <span class="${badge.class}">${badge.text}</span>
+                            </div>
+                           
+                            <div class="text-muted small mb-2">Total Ratings: <span class="fw-semibold">${d.total_ratings}</span></div>
+                            <div class="fw-bold mb-2">Average: ${(Number(d.avg_score)||0).toFixed(2)} / 10</div>
+                            <div class="row g-1 small">
+                                <div class="col-6">Finishing: <span class="fw-semibold">${(Number(d.avg_finishing_quality)||0).toFixed(2)}</span></div>
+                                <div class="col-6">Structural: <span class="fw-semibold">${(Number(d.avg_structural_accuracy)||0).toFixed(2)}</span></div>
+                                <div class="col-6">Timeline: <span class="fw-semibold">${(Number(d.avg_timeline_performance)||0).toFixed(2)}</span></div>
+                                <div class="col-6">Client: <span class="fw-semibold">${(Number(d.avg_client_satisfaction)||0).toFixed(2)}</span></div>
+                                <div class="col-12">Material: <span class="fw-semibold">${(Number(d.avg_material_efficiency)||0).toFixed(2)}</span></div>
+                            </div>
+                            <div class="mt-3 ${showBtn ? '' : 'd-none'}">
+                                <button class="btn btn-sm btn-primary" type="button" onclick="openPermissionModal(${d.developer_id})">Submit Permission</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                row.appendChild(col);
+            });
+            container.appendChild(row);
+        }
+
+        // Simple permission modal
+        async function openPermissionModal(developerId) {
+            const devInput = document.getElementById('vtourDeveloperId');
+            if (devInput) devInput.value = String(developerId || '');
+            const projHidden = document.getElementById('vtourProjectId');
+            const projDisplay = document.getElementById('vtourProjectDisplay');
+            if (projHidden && projDisplay) {
+                projHidden.value = '';
+                projDisplay.textContent = 'Loading...';
+                try {
+                    const r = await fetch(`/manufacturing/developers/${encodeURIComponent(developerId)}/completed-projects`);
+                    const j = await r.json();
+                    const list = (j && j.success && Array.isArray(j.projects)) ? j.projects : [];
+                    if (list.length === 0) {
+                        projHidden.value = '';
+                        projDisplay.textContent = 'No completed projects found';
+                    } else {
+                        // Pick the most recent by end_date (fallback to id)
+                        const sorted = list.sort((a,b) => {
+                            const da = a.end_date ? new Date(a.end_date).getTime() : 0;
+                            const db = b.end_date ? new Date(b.end_date).getTime() : 0;
+                            if (db !== da) return db - da;
+                            return (b.id||0) - (a.id||0);
+                        });
+                        const chosen = sorted[0];
+                        projHidden.value = chosen.id;
+                        projDisplay.textContent = `${chosen.project_name} (ID: ${chosen.id})`;
+                    }
+                } catch(_) {
+                    projHidden.value = '';
+                    projDisplay.textContent = 'Failed to load projects';
                 }
             }
-            return stars;
+            const modalEl = document.getElementById('vtourPermissionModal');
+            if (!modalEl) return;
+            const m = new bootstrap.Modal(modalEl);
+            m.show();
+        }
+
+        async function submitVtourPermission() {
+            const developerId = Number(document.getElementById('vtourDeveloperId').value || 0);
+            const projectId = Number(document.getElementById('vtourProjectId').value || 0);
+            const remarks = document.getElementById('vtourRemarks').value || '';
+            if (!developerId || !projectId) {
+                const err = document.getElementById('vtourError');
+                if (err) { err.textContent = 'Project ID and Developer are required.'; err.classList.remove('d-none'); }
+                return;
+            }
+            try {
+                const resp = await fetch('/manufacturing/vtour-permissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ developer_id: developerId, project_id: projectId, remarks })
+                });
+                if (resp.ok) {
+                    const modalEl = document.getElementById('vtourPermissionModal');
+                    const m = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    m.hide();
+                } else {
+                    const errTxt = await resp.text().catch(()=> 'Request failed');
+                    const err = document.getElementById('vtourError');
+                    if (err) { err.textContent = errTxt || 'Request failed'; err.classList.remove('d-none'); }
+                }
+            } catch (e) {
+                const err = document.getElementById('vtourError');
+                if (err) { err.textContent = 'Network error'; err.classList.remove('d-none'); }
+            }
+        }
+
+        function applyPermissionTemplate(idx) {
+            const el = document.getElementById('vtourRemarks');
+            if (!el) return;
+            const projectTxt = document.getElementById('vtourProjectDisplay')?.textContent || 'your completed project';
+            const templates = {
+                1: `Requesting permission to capture 360° images of ${projectTxt} for MDB Construction’s portfolio and marketing materials. The session will be scheduled at your convenience and handled by our trained team.`,
+                2: `May we obtain your consent for MDB’s team to take 360° photos at ${projectTxt}? Images will be used for website showcases and social media promotions, highlighting the quality of our work.`,
+                3: `Seeking approval to conduct a short 360° photo session at ${projectTxt}. Purpose is advertisement and project documentation for MDB Construction. We will ensure minimal disruption and full compliance with site protocols.`
+            };
+            el.value = templates[idx] || '';
+        }
+
+        function rangeText() {
+            switch (currentRange) {
+                case 'week': return 'Last week';
+                case 'month': return 'Last month';
+                case 'year': return 'Last year';
+                default: return 'All time';
+            }
+        }
+
+        function syncRangeSelects() {
+            const ids = ['rangeSelect','rangeSelectCriteria','rangeSelectRanking'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = currentRange;
+            });
         }
 
         // Render projects

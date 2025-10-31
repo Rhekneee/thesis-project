@@ -1938,6 +1938,140 @@ const ManufacturingModel = {
     }
   }
   ,
+  // ==================== PROJECT RATINGS (appended feature) ====================
+  // Create or update a rating for a completed project
+  upsertProjectRating: async ({ projectId, developerId, finishingQuality, structuralAccuracy, timelinePerformance, clientSatisfaction, materialEfficiency, feedback }) => {
+    // Compute total score as average of provided criteria (1-10 scale)
+    const toNum = (v) => (v === undefined || v === null || v === '' ? null : Number(v));
+    const a = [toNum(finishingQuality), toNum(structuralAccuracy), toNum(timelinePerformance), toNum(clientSatisfaction), toNum(materialEfficiency)];
+    const nums = a.filter(v => typeof v === 'number' && !isNaN(v));
+    const total = nums.length ? (nums.reduce((s, v) => s + v, 0) / nums.length) : null;
+
+    // Check if rating exists
+    const [rows] = await db.query(`SELECT id FROM project_ratings WHERE project_id = ? AND (developer_id <=> ?)` , [projectId, developerId || null]);
+    if (rows && rows.length) {
+      // Update
+      await db.query(`
+        UPDATE project_ratings SET 
+          finishing_quality = ?,
+          structural_accuracy = ?,
+          timeline_performance = ?,
+          client_satisfaction = ?,
+          material_efficiency = ?,
+          total_score = ?,
+          feedback = ?,
+          rated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [
+        toNum(finishingQuality),
+        toNum(structuralAccuracy),
+        toNum(timelinePerformance),
+        toNum(clientSatisfaction),
+        toNum(materialEfficiency),
+        total,
+        feedback || null,
+        rows[0].id
+      ]);
+      return rows[0].id;
+    }
+    // Insert new
+    const [result] = await db.query(`
+      INSERT INTO project_ratings (
+        project_id, developer_id, finishing_quality, structural_accuracy, timeline_performance,
+        client_satisfaction, material_efficiency, total_score, feedback
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      projectId,
+      developerId || null,
+      toNum(finishingQuality),
+      toNum(structuralAccuracy),
+      toNum(timelinePerformance),
+      toNum(clientSatisfaction),
+      toNum(materialEfficiency),
+      total,
+      feedback || null
+    ]);
+    return result.insertId;
+  },
+
+  // Check if a rating already exists for a given project and developer
+  hasProjectRating: async ({ projectId, developerId = null }) => {
+    const params = [projectId];
+    let sql = `SELECT id FROM project_ratings WHERE project_id = ?`;
+    if (developerId !== null && developerId !== undefined) {
+      sql += ` AND developer_id <=> ?`;
+      params.push(developerId);
+    }
+    const [rows] = await db.query(sql, params);
+    return Array.isArray(rows) && rows.length > 0;
+  },
+
+  // Get rating for a project (optionally by developer)
+  getProjectRating: async ({ projectId, developerId = null }) => {
+    const params = [projectId];
+    let sql = `SELECT * FROM project_ratings WHERE project_id = ?`;
+    if (developerId !== null && developerId !== undefined) {
+      sql += ` AND developer_id <=> ?`;
+      params.push(developerId);
+    } else {
+      sql += ` ORDER BY rated_at DESC LIMIT 1`;
+    }
+    const [rows] = await db.query(sql, params);
+    return rows && rows[0] ? rows[0] : null;
+  },
+
+  // Ratings summary grouped by developer with per-criterion averages
+  getRatingsSummaryByDeveloper: async ({ startDate = null, endDate = null } = {}) => {
+    let where = '';
+    const params = [];
+    if (startDate && endDate) {
+      where = 'WHERE pr.rated_at BETWEEN ? AND ?';
+      params.push(startDate, endDate);
+    }
+    const sql = `
+      SELECT 
+        pr.developer_id,
+        da.company_name AS developer_name,
+        COUNT(*) AS total_ratings,
+        ROUND(AVG(pr.total_score), 2) AS avg_score,
+        ROUND(AVG(pr.finishing_quality), 2) AS avg_finishing_quality,
+        ROUND(AVG(pr.structural_accuracy), 2) AS avg_structural_accuracy,
+        ROUND(AVG(pr.timeline_performance), 2) AS avg_timeline_performance,
+        ROUND(AVG(pr.client_satisfaction), 2) AS avg_client_satisfaction,
+        ROUND(AVG(pr.material_efficiency), 2) AS avg_material_efficiency
+      FROM project_ratings pr
+      LEFT JOIN developer_accounts da ON da.id = pr.developer_id
+      ${where}
+      GROUP BY pr.developer_id, da.company_name
+      ORDER BY avg_score DESC
+    `;
+    const [rows] = await db.query(sql, params);
+    return rows;
+  },
+
+  // Overall averages across all ratings
+  getRatingsOverallAverages: async ({ startDate = null, endDate = null } = {}) => {
+    let where = '';
+    const params = [];
+    if (startDate && endDate) {
+      where = 'WHERE pr.rated_at BETWEEN ? AND ?';
+      params.push(startDate, endDate);
+    }
+    const sql = `
+      SELECT 
+        ROUND(AVG(pr.total_score), 2) AS avg_total,
+        ROUND(AVG(pr.finishing_quality), 2) AS avg_finishing_quality,
+        ROUND(AVG(pr.structural_accuracy), 2) AS avg_structural_accuracy,
+        ROUND(AVG(pr.timeline_performance), 2) AS avg_timeline_performance,
+        ROUND(AVG(pr.client_satisfaction), 2) AS avg_client_satisfaction,
+        ROUND(AVG(pr.material_efficiency), 2) AS avg_material_efficiency,
+        COUNT(*) AS total_entries
+      FROM project_ratings pr
+      ${where}
+    `;
+    const [rows] = await db.query(sql, params);
+    return rows && rows[0] ? rows[0] : null;
+  },
   /**
    * Insert a Stage Billing Summary record.
    *
