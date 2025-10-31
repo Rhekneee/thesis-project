@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 const CRMModel = require("../model/crm.model");
 const multer = require("multer");
 const path = require("path");
@@ -20,35 +18,12 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         console.log(`📁 Uploading to: ${uploadDir}`);
         cb(null, uploadDir);
-=======
-const CRMModel = require("../model/crm.model");  // Remove destructuring
-const multer = require("multer");
-const path = require("path");
-
-// 🔹 Configure Multer for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, "../../../uploads/resume/")); 
->>>>>>> 85f9240 (Initial commit)
-=======
-const CRMModel = require("../model/crm.model");
-const multer = require("multer");
-const path = require("path");
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = "C:/Users/Maddie/Documents/THESIS PROJECT - copy/uploads/resume";
-        console.log("📁 Uploading to:", uploadPath);
-        cb(null, uploadPath);
->>>>>>> aa1bb20 (Initial commit)
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // 📎 Multer middleware for file filtering and upload
 const upload = multer({
     storage,
@@ -377,56 +352,67 @@ const CRMController = {
     },
 
     // Handle the submission of a resume (HR functionality)
-=======
-const upload = multer({ storage });
-
-const CRMController = {
-    // 🔹 Handle resume upload and save application
->>>>>>> 85f9240 (Initial commit)
-=======
-
-const upload = multer({ storage });
-
-const CRMController = {
->>>>>>> aa1bb20 (Initial commit)
     uploadResume: async (req, res) => {
         try {
             if (!req.file) {
                 return res.status(400).json({ error: "No file uploaded" });
             }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            const { firstname, lastname, middleinitial, email, phone, age, birthdate } = req.body;
-            console.log("Received HR data:", { firstname, lastname, middleinitial, email, phone, age, birthdate });
+            const { firstname, lastname, middleinitial, email, phone, birthdate } = req.body;
+            console.log("Received HR data:", { firstname, lastname, middleinitial, email, phone, birthdate });
 
             // Check for missing required fields
-            if (!firstname || !lastname || !middleinitial || !email || !phone || !age || !birthdate) {
+            if (!firstname || !lastname || !middleinitial || !email || !phone || !birthdate) {
                 return res.status(400).json({ error: "Missing required fields in the form" });
+            }
+
+            // Validate Philippine mobile number and normalize to +63 format
+            const cleanNumber = (v) => (v || '').toString().replace(/[\s\-\(\)]/g, '');
+            const isValidPhMobile = (v) => /^(\+63|0)9\d{9}$/.test(cleanNumber(v));
+            const toE164 = (v) => {
+                const n = cleanNumber(v);
+                if (n.startsWith('+63')) return n;
+                if (n.startsWith('0')) return '+63' + n.slice(1);
+                return n;
+            };
+            if (!isValidPhMobile(phone)) {
+                return res.status(400).json({ error: "Please provide a valid Philippine mobile number (09123456789 or +639123456789)." });
+            }
+            const normalizedPhone = toE164(phone);
+
+            // Normalize and validate email (Gmail only)
+            const normalizedEmail = (email || '').toLowerCase().trim();
+            const gmailRegex = /^[A-Za-z0-9._%+-]+@gmail\.com$/;
+            if (!gmailRegex.test(normalizedEmail)) {
+                return res.status(400).json({ error: "Please provide a valid Gmail address (example: yourname@gmail.com)." });
+            }
+
+            // Compute and validate age from birthdate (server-side authority)
+            const birth = new Date(birthdate);
+            if (isNaN(birth.getTime())) {
+                return res.status(400).json({ error: "Invalid birthdate format" });
+            }
+            const today = new Date();
+            let computedAge = today.getFullYear() - birth.getFullYear();
+            const monthDelta = today.getMonth() - birth.getMonth();
+            if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birth.getDate())) {
+                computedAge--;
+            }
+            if (computedAge < 18) {
+                return res.status(400).json({ error: "You must be at least 18 years old to apply." });
+            }
+            if (computedAge >= 65) {
+                return res.status(400).json({ error: "Applicants aged 65 and above are not eligible to apply." });
             }
 
             const full_name = `${lastname}, ${firstname}`;
             const resumeFileName = req.file.filename;
 
             /* Check if the email already exists in the database (to avoid duplicates)
-=======
-            const { full_name, email, phone, address } = req.body;
-            const resumeFileName = req.file.filename; // Only store filename, not full path
-
-            // 🔥 Check if email already exists
->>>>>>> 85f9240 (Initial commit)
-=======
-            const { full_name, email, phone, address } = req.body;
-            const resumeFileName = req.file.filename;
-
-            // Check if email already exists
->>>>>>> aa1bb20 (Initial commit)
             const emailExists = await CRMModel.checkApplicantEmail(email);
             if (emailExists) {
                 return res.status(400).json({ error: "Applicant with this email already exists" });
             }
-<<<<<<< HEAD
-<<<<<<< HEAD
             */
 
             const resumeFilePath = path.join(uploadDir, resumeFileName);
@@ -439,40 +425,20 @@ const CRMController = {
             }
 
             // Store the application data in the database
-=======
-
-            // 🔹 Save application to database
->>>>>>> 85f9240 (Initial commit)
-=======
-
-            // Save application to database
->>>>>>> aa1bb20 (Initial commit)
             await CRMModel.storeApplication({
                 full_name,
-                email,
-                phone,
-<<<<<<< HEAD
-<<<<<<< HEAD
+                email: normalizedEmail,
+                phone: normalizedPhone,
                 resume: resumeFileName,
-                age,
+                age: computedAge,
                 birthdate,
                 middleinitial,
                 role_id: req.body.role_id ? Number(req.body.role_id) : null // Ensure role_id is a number or null
-=======
-                address,
-                resume: resumeFileName  // Change 'resume_path' to 'resume'
->>>>>>> 85f9240 (Initial commit)
-=======
-                address,
-                resume: resumeFileName
->>>>>>> aa1bb20 (Initial commit)
             });
 
             res.status(201).json({ message: "Application submitted successfully!" });
 
         } catch (error) {
-<<<<<<< HEAD
-<<<<<<< HEAD
             console.error("Error uploading resume:", error);
             res.status(500).json({ error: `Failed to upload resume: ${error.message}` });
         }
@@ -1365,20 +1331,107 @@ const CRMController = {
                 success: false,
                 error: "Failed to fetch coordinator performance" 
             });
-=======
-            console.error("❌ Error uploading resume:", error);
-            res.status(500).json({ error: "Failed to upload resume" });
->>>>>>> 85f9240 (Initial commit)
-=======
-            console.error(" Error uploading resume:", error);
-            res.status(500).json({ error: "Failed to upload resume" });
->>>>>>> aa1bb20 (Initial commit)
+        }
+    },
+     // ==================== INQUIRIES MANAGEMENT ====================
+    
+    // Create a new inquiry from contact form
+    createInquiry: async (req, res) => {
+        try {
+            const { full_name, email, phone, subject, message } = req.body;
+
+            // Validate required fields
+            if (!full_name || !email || !phone || !subject || !message) {
+                return res.status(400).json({ error: "All fields are required" });
+            }
+
+            const inquiryId = await CRMModel.createInquiry({
+                full_name,
+                email,
+                phone,
+                subject,
+                message
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Inquiry submitted successfully",
+                inquiryId 
+            });
+        } catch (error) {
+            console.error("Error creating inquiry:", error);
+            res.status(500).json({ error: "Failed to create inquiry" });
+        }
+    },
+
+    // Get all inquiries with filters and pagination
+    getAllInquiries: async (req, res) => {
+        try {
+            const { page = 1, limit = 10, search = '', status = '' } = req.query;
+            const result = await CRMModel.getAllInquiries(
+                parseInt(page), 
+                parseInt(limit), 
+                search, 
+                status
+            );
+            res.json(result);
+        } catch (error) {
+            console.error("Error fetching inquiries:", error);
+            res.status(500).json({ error: "Failed to fetch inquiries" });
+        }
+    },
+
+    // Get single inquiry by ID
+    getInquiryById: async (req, res) => {
+        try {
+            const inquiryId = req.params.id;
+            const inquiry = await CRMModel.getInquiryById(inquiryId);
+            
+            if (!inquiry) {
+                return res.status(404).json({ error: "Inquiry not found" });
+            }
+            
+            res.json(inquiry);
+        } catch (error) {
+            console.error("Error fetching inquiry:", error);
+            res.status(500).json({ error: "Failed to fetch inquiry" });
+        }
+    },
+
+    // Update inquiry status (reply, archive, etc.)
+    updateInquiryStatus: async (req, res) => {
+        try {
+            const inquiryId = req.params.id;
+            const { status, replied_by } = req.body;
+
+            if (!status) {
+                return res.status(400).json({ error: "Status is required" });
+            }
+
+            await CRMModel.updateInquiryStatus(inquiryId, status, replied_by || null);
+
+            res.json({ 
+                success: true, 
+                message: "Inquiry status updated successfully" 
+            });
+        } catch (error) {
+            console.error("Error updating inquiry status:", error);
+            res.status(500).json({ error: "Failed to update inquiry status" });
+        }
+    },
+
+    // Get inquiry statistics
+    getInquiryStats: async (req, res) => {
+        try {
+            const stats = await CRMModel.getInquiryStats();
+            res.json(stats);
+        } catch (error) {
+            console.error("Error fetching inquiry stats:", error);
+            res.status(500).json({ error: "Failed to fetch inquiry statistics" });
         }
     }
 };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 module.exports = { 
     CRMController, 
     upload,
@@ -1387,9 +1440,3 @@ module.exports = {
     virtualLocationUpload,
     virtualSceneUpload
 };
-=======
-module.exports = { CRMController, upload };
->>>>>>> 85f9240 (Initial commit)
-=======
-module.exports = { CRMController, upload };
->>>>>>> aa1bb20 (Initial commit)

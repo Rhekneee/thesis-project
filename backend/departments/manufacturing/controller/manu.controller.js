@@ -1,10 +1,20 @@
 const ManufacturingModel = require("../model/manu.model");
+const FinanceModel = require('../../finance/model/finance.model');
+const db = require("../../../db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const pathConfig = require('../../../utils/pathConfig'); // Import path configuration
 const { sendLaborSubmissionNotification } = require('../../../utils/emailService');
 const Notifications = require('../../../models/notification.model');
+
+// Normalize PayMongo environment variables to align with .env keys
+const PAYMONGO_SECRET = process.env.PAYMONGO_SECRET_KEY 
+  || process.env.PAYMONGO_SECRET 
+  || process.env.PAYMONGO_SK;
+const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET 
+  || process.env.PAYMONGO_WEBHOOK_KEY 
+  || process.env.PAYMONGO_WEBHOOK;
 
 // Configure multer for project image uploads
 const projectUploadDir = pathConfig.getUploadPath('projects');
@@ -1132,10 +1142,13 @@ const ManufacturingController = {
   getAllProjects: async (req, res) => {
     try {
       const projects = await ManufacturingModel.getAllProjects();
-      res.json(projects);
+      res.json({
+        success: true,
+        projects
+      });
     } catch (error) {
       console.error('Error getting all projects:', error);
-      res.status(500).json({ error: 'Failed to get projects' });
+      res.status(500).json({ success: false, error: 'Failed to get projects' });
     }
   },
 
@@ -1333,7 +1346,10 @@ const ManufacturingController = {
   // Get projects for manufacturing progress tracking
   getProjectsForProgress: async (req, res) => {
     try {
-      const projects = await ManufacturingModel.getProjectsForProgress();
+      // If session user is developer, restrict by developer_id
+      const user = req.session?.user || {};
+      const developerId = (user.role_name === 'developer' || user.role_id === 1) ? user.id : null;
+      const projects = await ManufacturingModel.getProjectsForProgress(developerId);
       res.json({
         success: true,
         projects
@@ -1343,6 +1359,35 @@ const ManufacturingController = {
       res.status(500).json({ 
         success: false,
         error: 'Failed to get projects for progress' 
+      });
+    }
+  },
+
+  // Get completed projects for a developer
+  getCompletedProjectsByDeveloper: async (req, res) => {
+    try {
+      // Get developer_id from session
+      const user = req.session?.user || {};
+      const developerId = user.id;
+
+      if (!developerId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Developer not authenticated'
+        });
+      }
+
+      const projects = await ManufacturingModel.getCompletedProjectsByDeveloper(developerId);
+      
+      res.json({
+        success: true,
+        projects
+      });
+    } catch (error) {
+      console.error('Error getting completed projects:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get completed projects'
       });
     }
   },
@@ -1361,14 +1406,22 @@ const ManufacturingController = {
         });
       }
 
-      const entryId = await ManufacturingModel.saveDivisionProgressEntry(projectId, divisionId, progressValue);
+      const result = await ManufacturingModel.saveDivisionProgressEntry(projectId, divisionId, progressValue);
       
-      console.log('✅ Division progress saved with ID:', entryId);
+      console.log('✅ Division progress saved with ID:', result.entryId);
+      console.log('📊 Overall progress:', result.overallProgress, '%');
+      
+      // Check if project status is now 'completed'
+      const [projectRows] = await db.query('SELECT status FROM projects WHERE id = ?', [projectId]);
+      const currentStatus = projectRows && projectRows[0] ? projectRows[0].status : null;
+      const isCompleted = currentStatus === 'completed';
       
       res.json({
         success: true,
-        entryId,
-        message: 'Division progress saved successfully'
+        entryId: result.entryId,
+        overallProgress: result.overallProgress || 0,
+        isCompleted,
+        message: isCompleted ? 'Division progress saved successfully! 🎉 Project completed (100% overall progress)!' : 'Division progress saved successfully'
       });
     } catch (error) {
       console.error('❌ Error saving division progress:', error);
@@ -1451,6 +1504,18 @@ const ManufacturingController = {
     }
   },
 
+  // Get material releases intended for a specific project
+  getProjectMaterialReleases: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const releases = await ManufacturingModel.getProjectMaterialReleases(projectId);
+      res.json({ success: true, releases });
+    } catch (error) {
+      console.error('Error getting project material releases:', error);
+      res.status(500).json({ success: false, error: 'Failed to get project material releases' });
+    }
+  },
+
   // Get division progress entries for a project
   getDivisionProgressByProject: async (req, res) => {
     try {
@@ -1472,6 +1537,458 @@ const ManufacturingController = {
         success: false,
         error: 'Failed to get division progress'
       });
+    }
+  }
+  ,
+  // Stage billing: list for project
+  getStageBillingsByProject: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      if (!projectId) return res.status(400).json({ success: false, error: 'projectId is required' });
+      const rows = await ManufacturingModel.getStageBillingsByProject(Number(projectId));
+      return res.json({ success: true, billings: rows });
+    } catch (error) {
+      console.error('Error getting stage billings by project:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get stage billings' });
+    }
+  }
+  ,
+  // Stage billing: detailed info
+  getStageBillingDetail: async (req, res) => {
+    try {
+      const { billingId } = req.params;
+      if (!billingId) return res.status(400).json({ success: false, error: 'billingId is required' });
+      const detail = await ManufacturingModel.getStageBillingDetail(Number(billingId));
+      if (!detail) return res.status(404).json({ success: false, error: 'Stage billing not found' });
+      return res.json({ success: true, detail });
+    } catch (error) {
+      console.error('Error getting stage billing detail:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get stage billing detail' });
+    }
+  }
+  ,
+  // Get aggregated project tracking detail for developer view
+  getProjectTrackingDetail: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const detail = await ManufacturingModel.getProjectTrackingDetail(projectId);
+      res.json({ success: true, detail });
+    } catch (error) {
+      console.error('Error getting project tracking detail:', error);
+      res.status(500).json({ success: false, error: 'Failed to get project tracking detail' });
+    }
+  }
+  ,
+  /**
+   * Store Stage Billing Summary
+   *
+   * This endpoint persists a single stage billing summary into stage_billing_summary.
+   * Request body must include:
+   *   - project_id: number
+   *   - start_date, end_date: ISO yyyy-mm-dd
+   *   - progress_percent: number (e.g. 35 for 35%)
+   *   - total_material_cost: number (front-end computed from daily logs/materials)
+   *   - remarks: optional string
+   *
+   * Backend computes total_labor_cost by summing payslips within [start_date, end_date] for the project.
+   */
+  createStageBilling: async (req, res) => {
+    try {
+      const { project_id, division_id, start_date, end_date, progress_percent, total_material_cost, remarks } = req.body || {};
+      if (!project_id || !start_date || !end_date) {
+        return res.status(400).json({ success: false, error: 'project_id, start_date, end_date are required' });
+      }
+      const result = await ManufacturingModel.createStageBillingSummary({
+        projectId: Number(project_id),
+        divisionId: Number(division_id || 0),
+        startDate: start_date,
+        endDate: end_date,
+        progressPercent: Number(progress_percent || 0),
+        totalMaterialCost: Number(total_material_cost || 0),
+        remarks: remarks || null
+      });
+      return res.json({ success: true, ...result });
+    } catch (error) {
+      console.error('Error creating stage billing summary:', error);
+      return res.status(500).json({ success: false, error: 'Failed to create stage billing summary' });
+    }
+  }
+  ,
+  /**
+   * Compute labor cost for a project within [start_date, end_date].
+   */
+  getLaborCostForRange: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { start_date, end_date } = req.query;
+      if (!projectId || !start_date || !end_date) {
+        return res.status(400).json({ success: false, error: 'projectId, start_date, end_date are required' });
+      }
+      const cost = await ManufacturingModel.getLaborCostForRange(Number(projectId), start_date, end_date);
+      return res.json({ success: true, labor_cost: cost });
+    } catch (error) {
+      console.error('Error getting labor cost for range:', error);
+      return res.status(500).json({ success: false, error: 'Failed to compute labor cost' });
+    }
+  },
+  
+  /**
+   * Process payment for stage billing
+   * Handles both manual (with proof) and online (Stripe) payments
+   */
+  processPayment: async (req, res) => {
+    try {
+      const { billing_id, payment_method, reference, remarks, amount } = req.body;
+      
+      if (!billing_id || !amount) {
+        return res.status(400).json({ success: false, error: 'billing_id and amount are required' });
+      }
+      
+      // For manual payments, proof file is required
+      let proofFilePath = null;
+      if (req.file) {
+        proofFilePath = `/uploads/payment_proofs/${req.file.filename}`;
+      }
+      
+      // Store payment record
+      await ManufacturingModel.storePaymentRecord({
+        billingId: Number(billing_id),
+        paymentMethod: payment_method || 'Manual',
+        paymentReference: reference || null,
+        amountPaid: Number(amount),
+        remarks: remarks || null,
+        proofFilePath: proofFilePath
+      });
+      
+      // Record payment as cash inflow in cash monitoring
+      try {
+        await FinanceModel.insertCashMonitoringInflow({
+          inflow_source: 'stage_billing_payment',
+          amount: Number(amount),
+          payment_method: payment_method || 'manual',
+          reference_number: reference || null,
+          description: `Stage billing payment - ${remarks || 'No remarks'}`,
+          recorded_by: 'system:manual_payment',
+          transaction_date: new Date()
+        });
+        console.log('✅ Cash inflow recorded for manual payment');
+      } catch (cashError) {
+        // Log but don't fail the payment if cash monitoring fails
+        console.error('⚠️ Failed to record cash inflow:', cashError);
+      }
+      
+      return res.json({ success: true, message: 'Payment processed successfully' });
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      return res.status(500).json({ success: false, error: 'Failed to process payment' });
+    }
+  },
+  
+  /**
+   * Create PayMongo payment intent
+   * This creates a payment intent on PayMongo and returns the checkout URL
+   * Real API integration with PayMongo - redirects user to PayMongo Checkout
+   */
+  createPaymentIntent: async (req, res) => {
+    try {
+      const { billing_id, amount, reference, remarks } = req.body;
+      
+      if (!billing_id || !amount) {
+        return res.status(400).json({ success: false, error: 'billing_id and amount are required' });
+      }
+      
+      // Check if PayMongo is configured
+      if (!PAYMONGO_SECRET) {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'PayMongo is not configured. Please set PAYMONGO_SECRET_KEY in environment variables.' 
+        });
+      }
+
+      // Initialize PayMongo client
+      const Paymongo = require('paymongo');
+      const client = new Paymongo(PAYMONGO_SECRET);
+      
+      // Create PayMongo Checkout Link
+      const checkout = await client.links.create({
+        data: {
+          attributes: {
+            amount: Math.round(amount * 100), // Amount in centavos
+            currency: 'PHP',
+            description: remarks || 'Payment for stage billing',
+            remark: `Stage Billing Payment - ${reference || 'N/A'}`,
+            reference_number: reference || '',
+            metadata: {
+              billing_id: billing_id.toString(),
+              reference: reference || '',
+              remarks: remarks || ''
+            }
+          }
+        }
+      });
+      
+      // Persist checkout session metadata for reconciliation
+      try {
+        await ManufacturingModel.savePaymongoCheckoutSession({
+          sessionId: checkout.data.id,
+          billingId: Number(billing_id),
+          amount: Number(amount),
+          reference: reference || null,
+          remarks: remarks || null,
+          url: checkout.data.attributes.checkout_url,
+          status: checkout.data.attributes.status || 'created'
+        });
+      } catch (persistErr) {
+        console.warn('Failed to persist PayMongo session:', persistErr.message);
+      }
+
+      // Return the checkout URL for frontend to redirect
+      return res.json({ 
+        success: true,
+        url: checkout.data.attributes.checkout_url, // This is the PayMongo Checkout URL
+        session_id: checkout.data.id,
+        client_secret: checkout.data.id // For compatibility
+      });
+      
+    } catch (error) {
+      console.error('Error creating PayMongo payment intent:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to create payment intent',
+        details: error.message 
+      });
+    }
+  },
+
+  /**
+   * Handle PayMongo webhook for payment confirmation
+   * This endpoint receives webhooks from PayMongo when payment is completed
+   * Verifies PayMongo webhook signature and processes payment events
+   */
+  paymongoWebhook: async (req, res) => {
+    try {
+      console.log('🔔 PayMongo webhook received');
+      
+      // PayMongo webhook verification
+      const payload = req.body;
+      const headers = req.headers;
+      
+      console.log('📦 Event type:', payload.type);
+      console.log('📦 Event data:', JSON.stringify(payload, null, 2));
+      
+      // Verify webhook signature if webhook secret is set
+      const crypto = require('crypto');
+      const signature = headers['paymongo-signature'];
+      const secret = PAYMONGO_WEBHOOK_SECRET;
+      
+      if (secret && signature) {
+        const hash = crypto
+          .createHmac('sha256', secret)
+          .update(JSON.stringify(payload))
+          .digest('hex');
+
+        if (signature !== hash) {
+          console.error('⚠️ Webhook signature verification failed');
+          return res.status(400).json({ error: 'Invalid signature' });
+        }
+        console.log('✅ Webhook signature verified');
+      } else {
+        console.log('⚠️ Webhook secret not configured, skipping signature verification');
+      }
+
+      // Persist raw event payload for traceability
+      try {
+        await ManufacturingModel.savePaymongoWebhookEvent({
+          eventId: payload.id || null,
+          type: payload.type || 'unknown',
+          payloadJson: JSON.stringify(payload)
+        });
+      } catch (persistWebhookErr) {
+        console.warn('Failed to persist PayMongo webhook event:', persistWebhookErr.message);
+      }
+
+      // Handle the event
+      const eventType = payload.type;
+      
+      // Handle Payment Paid event (most common)
+      if (eventType === 'payment.paid') {
+        const payment = payload.data.attributes;
+        const paymentData = payload.data;
+        
+        console.log('✅ Payment.paid event received');
+        console.log('💰 Payment ID:', paymentData.id);
+        console.log('💰 Amount:', payment.amount);
+        console.log('💰 Status:', payment.status);
+        
+        // Extract metadata from the payment
+        const billingId = payment.metadata?.billing_id || payment.attributes?.metadata?.billing_id;
+        const amountPaid = payment.amount / 100; // Convert from centavos to pesos
+        
+        console.log('💳 Billing ID:', billingId);
+        console.log('💳 Amount paid:', amountPaid);
+        
+        if (billingId) {
+          try {
+            // Check if payment already exists
+            const existingPayments = await ManufacturingModel.getPaymentsByReference(paymentData.id);
+            
+            if (existingPayments.length === 0) {
+              // Store payment record in database
+              await ManufacturingModel.storePaymentRecord({
+                billingId: Number(billingId),
+                paymentMethod: 'paymongo',
+                paymentReference: paymentData.id,
+                amountPaid: amountPaid,
+                remarks: `PayMongo payment completed - Payment ID: ${paymentData.id}`
+              });
+              
+              console.log('✅ Payment record stored successfully in database');
+            } else {
+              console.log('⚠️ Payment already recorded in database');
+            }
+          } catch (dbError) {
+            console.error('❌ Error storing payment record:', dbError);
+          }
+        } else {
+          console.log('⚠️ No billing_id found in metadata, skipping payment record');
+        }
+      } 
+      // Handle Checkout Session Payment Paid event
+      else if (eventType === 'checkout.payment.paid') {
+        const checkout = payload.data.attributes;
+        const checkoutData = payload.data;
+        
+        console.log('✅ Checkout.payment.paid event received');
+        console.log('🛒 Checkout ID:', checkoutData.id);
+        console.log('💰 Amount:', checkout.amount);
+        
+        // Extract metadata from the checkout
+        const billingId = checkout.metadata?.billing_id || payload.data.attributes?.metadata?.billing_id;
+        const amountPaid = checkout.amount / 100; // Convert from centavos to pesos
+        
+        if (billingId) {
+          try {
+            // Check if payment already exists
+            const existingPayments = await ManufacturingModel.getPaymentsByReference(checkoutData.id);
+            
+            if (existingPayments.length === 0) {
+              // Store payment record in database
+              await ManufacturingModel.storePaymentRecord({
+                billingId: Number(billingId),
+                paymentMethod: 'paymongo',
+                paymentReference: checkoutData.id,
+                amountPaid: amountPaid,
+                remarks: `PayMongo checkout payment completed - Checkout ID: ${checkoutData.id}`
+              });
+              
+              console.log('✅ Payment record stored successfully in database');
+            } else {
+              console.log('⚠️ Payment already recorded in database');
+            }
+          } catch (dbError) {
+            console.error('❌ Error storing payment record:', dbError);
+          }
+        }
+      } 
+      // Handle Link Payment events
+      else if (eventType === 'link.payment.paid') {
+        const link = payload.data.attributes;
+        const linkData = payload.data;
+        
+        console.log('✅ Link.payment.paid event received');
+        console.log('🔗 Link ID:', linkData.id);
+        console.log('💰 Amount:', link.amount);
+        
+        // Extract metadata from the link
+        const billingId = link.metadata?.billing_id || payload.data.attributes?.metadata?.billing_id;
+        const amountPaid = link.amount / 100; // Convert from centavos to pesos
+        
+        if (billingId) {
+          try {
+            // Check if payment already exists
+            const existingPayments = await ManufacturingModel.getPaymentsByReference(linkData.id);
+            
+            if (existingPayments.length === 0) {
+              // Store payment record in database
+              await ManufacturingModel.storePaymentRecord({
+                billingId: Number(billingId),
+                paymentMethod: 'paymongo',
+                paymentReference: linkData.id,
+                amountPaid: amountPaid,
+                remarks: `PayMongo link payment completed - Link ID: ${linkData.id}`
+              });
+              
+              console.log('✅ Payment record stored successfully in database');
+            } else {
+              console.log('⚠️ Payment already recorded in database');
+            }
+          } catch (dbError) {
+            console.error('❌ Error storing payment record:', dbError);
+          }
+        }
+      } else {
+        console.log('ℹ️ Unhandled event type:', eventType);
+      }
+
+      // Return a 200 response to acknowledge receipt of the event
+      res.json({ received: true, event: eventType });
+    } catch (err) {
+      console.error('⚠️ Webhook error:', err.message);
+      console.error('❌ Full error:', err);
+      return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+    }
+  },
+
+  /**
+   * Handle successful payment callback from PayMongo
+   */
+  paymentSuccess: async (req, res) => {
+    try {
+      const { checkout_session_id, billing_id } = req.query;
+      
+      if (!billing_id) {
+        return res.status(400).json({ success: false, error: 'Missing billing_id parameter' });
+      }
+
+      if (checkout_session_id) {
+        // Verify the payment with PayMongo
+        const Paymongo = require('paymongo');
+        const client = new Paymongo(PAYMONGO_SECRET);
+        
+        try {
+          const checkout = await client.links.retrieve(checkout_session_id);
+          
+          if (checkout.data.attributes.status === 'paid') {
+            // Payment is verified, redirect to success page
+            return res.redirect(`/manufacturing/billing/success?billing_id=${billing_id}`);
+          } else {
+            return res.redirect(`/manufacturing/billing/failed?billing_id=${billing_id}`);
+          }
+        } catch (verifyError) {
+          console.error('Error verifying checkout:', verifyError);
+          // Still redirect to success page as webhook will handle the payment recording
+          return res.redirect(`/manufacturing/billing/success?billing_id=${billing_id}`);
+        }
+      } else {
+        // No checkout session ID, just redirect to success
+        return res.redirect(`/manufacturing/billing/success?billing_id=${billing_id}`);
+      }
+    } catch (error) {
+      console.error('Error in payment success callback:', error);
+      return res.redirect(`/manufacturing/billing/failed?error=${error.message}`);
+    }
+  },
+
+  /**
+   * Handle cancelled payment callback from PayMongo
+   */
+  paymentCancel: async (req, res) => {
+    try {
+      const { billing_id } = req.query;
+      return res.redirect(`/manufacturing/billing?billing_id=${billing_id}&cancelled=true`);
+    } catch (error) {
+      console.error('Error in payment cancel callback:', error);
+      return res.status(500).json({ success: false, error: 'Payment cancellation error' });
     }
   }
 };

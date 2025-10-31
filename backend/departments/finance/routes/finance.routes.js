@@ -139,6 +139,12 @@ router.post('/payments/create-link', financeController.createPaymentLink);
 // Manual insert inflow (admin tool)
 router.post('/cash-monitoring/inflow', financeController.insertCashInflow);
 
+// Get all cash inflows
+router.get('/cash-monitoring/inflows', financeController.getAllCashInflows);
+
+// Get all cash outflows
+router.get('/cash-monitoring/outflows', financeController.getAllCashOutflows);
+
 // =============================================
 // BANK ACCOUNT MANAGEMENT ROUTES
 // These routes handle bank account operations

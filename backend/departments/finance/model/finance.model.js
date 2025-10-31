@@ -190,18 +190,27 @@ class FinanceModel {
         try {
             await connection.beginTransaction();
 
-            // Lock rows to prevent race conditions
-            const [counts] = await connection.query(`
+            // Lock rows to prevent race conditions – check both employee and construction payrolls
+            const [empCounts] = await connection.query(`
                 SELECT 
-                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved_count,
+                    SUM(CASE WHEN status IN ('approved','released','processed') THEN 1 ELSE 0 END) AS approved_count,
                     COUNT(*) AS total_count
                 FROM payroll
                 WHERE payroll_period_id = ?
                 FOR UPDATE
             `, [periodId]);
 
-            const approvedCount = Number(counts[0]?.approved_count || 0);
-            const totalCount = Number(counts[0]?.total_count || 0);
+            const [conCounts] = await connection.query(`
+                SELECT 
+                    SUM(CASE WHEN status IN ('approved','released','processed') THEN 1 ELSE 0 END) AS approved_count,
+                    COUNT(*) AS total_count
+                FROM construction_payroll
+                WHERE payroll_period_id = ?
+                FOR UPDATE
+            `, [periodId]);
+
+            const approvedCount = Number(empCounts[0]?.approved_count || 0) + Number(conCounts[0]?.approved_count || 0);
+            const totalCount = Number(empCounts[0]?.total_count || 0) + Number(conCounts[0]?.total_count || 0);
 
             if (totalCount === 0) {
                 await connection.rollback();
@@ -424,6 +433,7 @@ class FinanceModel {
                 LEFT JOIN projects p ON cw.project_id = p.id
                 JOIN payroll_periods pp ON cp.payroll_period_id = pp.id
                 WHERE cp.payroll_period_id = ?
+                GROUP BY cp.id
                 ORDER BY cw.lastname, cw.firstname
             `, [periodId]);
             
@@ -797,13 +807,7 @@ class FinanceModel {
                 'Cash',
                 approvedBy
             ]);
-
-            // Update construction payroll status to 'released'
-            await connection.query(`
-                UPDATE construction_payroll 
-                SET status = 'released', updated_at = NOW()
-                WHERE id = ?
-            `, [constructionPayrollId]);
+            // Keep construction payroll at 'approved' after payslip generation; release happens only after bank submission
 
             return {
                 success: true,
@@ -2177,6 +2181,31 @@ class FinanceModel {
         }
     }
 
+    // Update bank account balance by adding amount
+    static async addToBankAccountBalance(accountId, amount) {
+        const SQL_COMMAND = `
+            UPDATE bank_accounts 
+            SET opening_balance = opening_balance + ?
+            WHERE account_id = ? AND status = 'active'
+        `;
+
+        try {
+            const [result] = await db.query(SQL_COMMAND, [amount, accountId]);
+            
+            if (result.affectedRows === 0) {
+                throw new Error('Bank account not found or not active');
+            }
+
+            return {
+                success: true,
+                message: 'Bank account balance updated successfully'
+            };
+        } catch (error) {
+            console.error('Error in addToBankAccountBalance:', error);
+            throw new Error('Failed to update bank account balance: ' + error.message);
+        }
+    }
+
     // Check if account number exists
     static async checkAccountNumberExists(accountNumber, excludeId = null) {
         let SQL_COMMAND = `
@@ -2243,6 +2272,71 @@ class FinanceModel {
         }
     }
 
+    // Get all cash inflows from stage_billing_payment
+    static async getAllCashInflows() {
+        const SQL = `
+            SELECT 
+                sbp.id,
+                sbp.stage_billing_id,
+                sbp.payment_method as inflow_source,
+                sbp.amount_paid as amount,
+                sbp.payment_method,
+                sbp.payment_reference,
+                sbp.remarks as description,
+                'system:manual_payment' as recorded_by,
+                DATE_FORMAT(sbp.payment_date, '%Y-%m-%d') as transaction_date,
+                DATE_FORMAT(sbp.payment_date, '%Y-%m-%d %H:%i:%s') as created_at,
+                sbs.project_id,
+                sbs.billing_number as billing_reference
+            FROM stage_billing_payment sbp
+            LEFT JOIN stage_billing_summary sbs ON sbp.stage_billing_id = sbs.id
+            ORDER BY sbp.payment_date DESC
+        `;
+
+        try {
+            const [rows] = await db.query(SQL);
+            return rows;
+        } catch (error) {
+            console.error('Error fetching cash inflows:', error);
+            throw new Error('Failed to fetch cash inflows');
+        }
+    }
+
+    // Get all cash outflows from purchases table with status 'Received'
+    static async getAllCashOutflows() {
+        const SQL = `
+            SELECT 
+                p.purchase_id as id,
+                p.status as outflow_category,
+                COALESCE(p.invoice_amount, p.total_price) as amount,
+                'bank_transfer' as payment_method,
+                COALESCE(p.supplier_invoice, CAST(p.purchase_id AS CHAR)) as reference_number,
+                CONCAT(m.name, ' - ', p.variant) as description,
+                'system:purchase' as recorded_by,
+                DATE_FORMAT(p.invoice_date, '%Y-%m-%d') as transaction_date,
+                DATE_FORMAT(p.created_date, '%Y-%m-%d %H:%i:%s') as created_at,
+                sa.supplier_name,
+                p.quantity,
+                p.unit,
+                p.unit_price,
+                p.delivery_cost,
+                p.discount
+            FROM purchases p
+            LEFT JOIN supplier_account sa ON p.supplier_id = sa.supplier_id
+            LEFT JOIN materials m ON p.material_id = m.material_id
+            WHERE p.status = 'Received'
+            ORDER BY p.invoice_date DESC, p.created_date DESC
+        `;
+
+        try {
+            const [rows] = await db.query(SQL);
+            return rows;
+        } catch (error) {
+            console.error('Error fetching cash outflows:', error);
+            throw new Error('Failed to fetch cash outflows');
+        }
+    }
+
     static async createPayMongoPaymentLink({ amount, description, reference_number, customer }) {
         const secretKey = process.env.PAYMONGO_SECRET_KEY;
         if (!secretKey) {
@@ -2306,26 +2400,48 @@ class FinanceModel {
         try {
             await connection.beginTransaction();
 
-            // Determine which approved payroll entries to submit
-            let payrollEntries = [];
+            // Determine which approved entries (employee + construction) to submit
+            let empEntries = [];
+            let conEntries = [];
+
             if (Array.isArray(payrollIds) && payrollIds.length > 0) {
-                const [rows] = await connection.query(`
+                // Employee payroll subset
+                const [empRows] = await connection.query(`
                     SELECT id 
                     FROM payroll 
                     WHERE payroll_period_id = ? 
                       AND status = 'approved'
                       AND id IN (${payrollIds.map(() => '?').join(',')})
                 `, [payrollPeriodId, ...payrollIds]);
-                payrollEntries = rows;
+
+                // Construction payroll subset
+                const [conRows] = await connection.query(`
+                    SELECT id 
+                    FROM construction_payroll 
+                    WHERE payroll_period_id = ? 
+                      AND status = 'approved'
+                      AND id IN (${payrollIds.map(() => '?').join(',')})
+                `, [payrollPeriodId, ...payrollIds]);
+
+                empEntries = empRows;
+                conEntries = conRows;
             } else {
-                const [rows] = await connection.query(`
+                // All approved employee payrolls for the period
+                const [empRows] = await connection.query(`
                     SELECT id FROM payroll 
                     WHERE payroll_period_id = ? AND status = 'approved'
                 `, [payrollPeriodId]);
-                payrollEntries = rows;
+                // All approved construction payrolls for the period
+                const [conRows] = await connection.query(`
+                    SELECT id FROM construction_payroll 
+                    WHERE payroll_period_id = ? AND status = 'approved'
+                `, [payrollPeriodId]);
+                empEntries = empRows;
+                conEntries = conRows;
             }
 
-            if (payrollEntries.length === 0) {
+            const totalToSubmit = (empEntries?.length || 0) + (conEntries?.length || 0);
+            if (totalToSubmit === 0) {
                 await connection.rollback();
                 return { success: false, message: 'No approved payroll entries found for this period' };
             }
@@ -2333,7 +2449,8 @@ class FinanceModel {
             // Insert bank submission record for each selected payroll entry
             const submissionIds = [];
             const updatedPayrollIds = [];
-            for (const entry of payrollEntries) {
+            // Submit EMPLOYEE payroll entries: insert submission row and mark released
+            for (const entry of empEntries) {
                 const [result] = await connection.query(`
                     INSERT INTO payroll_bank_submissions (
                         payroll_id, payroll_period_id, submitted_by, reference_text, document_path, remarks, submitted_at
@@ -2353,17 +2470,38 @@ class FinanceModel {
                 }
             }
 
+            // Submit CONSTRUCTION payroll entries: no submission table; mark released
+            for (const centry of conEntries) {
+                const [upd] = await connection.query(`
+                    UPDATE construction_payroll 
+                    SET status = 'released', updated_at = NOW()
+                    WHERE id = ?
+                `, [centry.id]);
+                if (upd.affectedRows > 0) {
+                    updatedPayrollIds.push(centry.id);
+                }
+            }
+
             // For bank submission, do not alter payroll_periods.status. It remains pending
             // until all entries are approved via the approval flow.
-            const [statusCheck] = await connection.query(`
+            // Recompute period submission progress across both employee and construction
+            const [empStatusCheck] = await connection.query(`
                 SELECT 
                     COUNT(*) as total_count,
                     SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_count
                 FROM payroll
                 WHERE payroll_period_id = ?
             `, [payrollPeriodId]);
-            const totalCount = Number(statusCheck[0].total_count || 0);
-            const releasedCount = Number(statusCheck[0].released_count || 0);
+            const [conStatusCheck] = await connection.query(`
+                SELECT 
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN status = 'released' THEN 1 ELSE 0 END) as released_count
+                FROM construction_payroll
+                WHERE payroll_period_id = ?
+            `, [payrollPeriodId]);
+
+            const totalCount = Number(empStatusCheck[0].total_count || 0) + Number(conStatusCheck[0].total_count || 0);
+            const releasedCount = Number(empStatusCheck[0].released_count || 0) + Number(conStatusCheck[0].released_count || 0);
 
             await connection.commit();
 
@@ -2372,7 +2510,7 @@ class FinanceModel {
             return {
                 success: true,
                 submissionIds: submissionIds,
-                message: `Bank documents submitted successfully for ${payrollEntries.length} payroll entries. ${periodStatusMessage}`,
+                message: `Bank documents submitted successfully for ${totalToSubmit} payroll entries. ${periodStatusMessage}`,
                 periodReleased: false,
                 submittedCount: releasedCount,
                 totalCount: totalCount,

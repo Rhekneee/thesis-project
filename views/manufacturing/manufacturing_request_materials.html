@@ -270,25 +270,21 @@
 
                     <!-- Company Supply Material Selection -->
                     <div class="row mb-3" id="companySupplySection" style="display: none;">
-                        <div class="col-md-4">
+                        <div class="col-12">
                             <label for="materialSelect" class="form-label">Select Material</label>
-                            <select class="form-select" id="materialSelect">
-                                <option value="">Select Material...</option>
-                                <!-- Materials will be loaded dynamically -->
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="quantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="quantity" min="0.01" step="0.01">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="unit" class="form-label">Unit</label>
-                            <input type="text" class="form-control" id="unit" readonly>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="btn btn-success w-100" onclick="addMaterial()">
-                                <i class="fas fa-plus"></i> Add
-                            </button>
+                            <div class="input-group flex-nowrap gap-2">
+                                <select class="form-select" id="materialSelect" style="max-width: 45%;">
+                                    <option value="">Select Material...</option>
+                                    <!-- Materials will be loaded dynamically -->
+                                </select>
+                                <div class="input-group-text">Qty</div>
+                                <input type="number" class="form-control" id="quantity" min="0.01" step="0.01" placeholder="0" style="max-width: 15%;">
+                                <div class="input-group-text">Unit</div>
+                                <input type="text" class="form-control" id="unit" readonly placeholder="Unit" style="max-width: 15%;">
+                                <button type="button" class="btn btn-success" onclick="addMaterial()">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -386,6 +382,38 @@
                         </thead>
                         <tbody id="allRequestMaterials">
                             <!-- All request materials will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Approved Materials for Delivery Table -->
+            <div class="recent-requests">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Approved Materials for Delivery</h4>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadApprovedMaterialsForDelivery()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Request No</th>
+                                <th>Project</th>
+                                <th>Source Type</th>
+                                <th>Approved Date</th>
+                                <th>Status</th>
+                                <th>Materials</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvedMaterialsTable">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">
+                                    <i class="fas fa-box-open me-2"></i>No approved materials for delivery
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -511,6 +539,31 @@
                 </div>
             </div>
 
+            <!-- Success Modal -->
+            <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="successModalLabel">
+                                <i class="fas fa-check-circle me-2"></i>Success!
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle fa-3x text-success"></i>
+                            </div>
+                            <h5>Material Request Submitted Successfully!</h5>
+                            <p class="mb-2">Your request has been submitted and is pending approval.</p>
+                            <p class="text-muted"><strong>Request No:</strong> <span id="successRequestNo"></span></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- All Request Materials Details Modal -->
             <div class="modal fade" id="allRequestDetailsModal" tabindex="-1" aria-labelledby="allRequestDetailsModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
@@ -562,6 +615,65 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Delivery Information Modal for Approved Materials -->
+            <div class="modal fade" id="deliveryInfoModalApproved" tabindex="-1" aria-labelledby="deliveryInfoModalApprovedLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deliveryInfoModalApprovedLabel">
+                                <i class="fas fa-truck me-2"></i>Record Delivery Information
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Selected Materials Summary -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3">Selected Materials for Release:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Material</th>
+                                                <th>Unit</th>
+                                                <th>Quantity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="approvedSelectedMaterialsSummary">
+                                            <!-- Summary will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <form id="deliveryInfoFormApproved">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Driver</label>
+                                            <select class="form-select" id="approvedModalDriverId">
+                                                <option value="">Select a driver</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Vehicle Plate Number</label>
+                                            <input type="text" class="form-control" id="approvedModalVehicleInfo" placeholder="Enter vehicle plate number">
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="submitDeliveryInfoFromApprovedModal()">
+                                <i class="fas fa-truck me-1"></i> Record Delivery
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -596,6 +708,7 @@
             loadProjects();
             loadMaterials();
             loadAllRequestMaterials();
+            loadApprovedMaterialsForDelivery();
 
             // Initialize the materials list
             updateMaterialsList();
@@ -707,28 +820,24 @@
                 const project = projects.find(p => p.id == projectId);
                 const proposalId = project ? project.proposal_id : projectId;
                 console.log('Using proposal_id:', proposalId);
+                
+                // Validate proposalId before making the API call
+                if (!proposalId || proposalId === 'undefined' || isNaN(Number(proposalId))) {
+                    console.log('Invalid or missing proposal_id');
+                    ownerSupplyMaterials = [];
+                    populateOwnerSupplyTable();
+                    return;
+                }
+                
                 const response = await fetch(`/scm/owners-supply/project/${proposalId}`);
                 const data = await response.json();
                 if (data && data.success) {
                     console.log('All owner supply materials from API:', data.materials);
                     console.log('Total materials returned:', data.materials.length);
                     
-                    // Debug each material's status and material_status
-                    data.materials.forEach((m, index) => {
-                        console.log(`Material ${index}:`, {
-                            material_name: m.material_name,
-                            status: m.status,
-                            material_status: m.material_status,
-                            is_delivered: m.is_delivered
-                        });
-                    });
-                    
-                    // Filter only active and received materials
-                    ownerSupplyMaterials = data.materials.filter(m => 
-                        m.status === 'Delivered' && m.material_status === true
-                    );
-                    console.log('Filtered owner supply materials (Delivered + material_status=true):', ownerSupplyMaterials);
-                    console.log('Filter criteria: status=Delivered, material_status=true');
+                    // Use materials directly (backend already filters for Delivered status and material_status = 1)
+                    ownerSupplyMaterials = data.materials;
+                    console.log('Using owner supply materials:', ownerSupplyMaterials.length, 'materials');
                     populateOwnerSupplyTable();
                 } else if (data && data.error === 'Forbidden') {
                     console.log('Access denied to owner supply API, using empty list');
@@ -776,6 +885,7 @@
                         </td>
                     </tr>
                 `;
+                updateOwnerMaterialsButton();
                 return;
             }
 
@@ -783,7 +893,6 @@
                 const row = document.createElement('tr');
                 row.style.cursor = 'pointer';
                 row.dataset.materialIndex = index;
-                row.onclick = () => selectOwnerMaterial(index);
                 row.innerHTML = `
                     <td>${material.material_name}</td>
                     <td class="text-center">${material.quantity_remaining || material.quantity}</td>
@@ -801,8 +910,13 @@
                                onclick="event.stopPropagation()">
                     </td>
                 `;
+                // Set onclick after innerHTML so it doesn't get wiped out
+                row.onclick = () => selectOwnerMaterial(index);
                 tbody.appendChild(row);
             });
+            
+            // Update button state after populating
+            updateOwnerMaterialsButton();
         }
 
         // Populate material select dropdowns
@@ -933,6 +1047,7 @@
                     console.log('Requested quantity:', requestedQuantity);
                     
                     const material = {
+                        project_id: selectedProjectId, // capture project at time of add
                         material_id: materialData.supply_id, // Using supply_id as material_id for owner supply
                         name: materialData.material_name,
                         quantity: requestedQuantity,
@@ -969,6 +1084,7 @@
 
             const selectedMaterial = materialsList.find(m => m.material_id == materialSelect.value);
             const material = {
+                project_id: selectedProjectId, // capture project at time of add
                 material_id: materialSelect.value,
                 name: selectedMaterial.name,
                 quantity: parseFloat(quantity.value),
@@ -1130,11 +1246,23 @@
             // Update materials list
             const materialsList = document.getElementById('confirmMaterialsList');
             materialsList.innerHTML = '';
-            materials.forEach(material => {
-                const li = document.createElement('li');
-                const sourceType = material.source_type === 'owner_supply' ? ' (Owner Supply)' : ' (Company Supply)';
-                li.textContent = `${material.name}${sourceType} - ${material.quantity} ${material.unit}`;
-                materialsList.appendChild(li);
+            // Group materials by project_id for display
+            const byProject = materials.reduce((acc, m) => {
+                const key = m.project_id || 'Unassigned';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(m);
+                return acc;
+            }, {});
+            Object.entries(byProject).forEach(([pid, mats]) => {
+                const header = document.createElement('li');
+                header.innerHTML = `<strong>Project ID: ${pid}</strong>`;
+                materialsList.appendChild(header);
+                mats.forEach(material => {
+                    const li = document.createElement('li');
+                    const src = material.source_type === 'owner_supply' ? ' (Owner Supply)' : ' (Company Supply)';
+                    li.textContent = `- ${material.name}${src} - ${material.quantity} ${material.unit}`;
+                    materialsList.appendChild(li);
+                });
             });
 
             // Show modal without backdrop
@@ -1189,90 +1317,66 @@
             }
 
             try {
-                // Submit to backend
-                const requestData = {
-                    project_id: project.value,
+                // Group materials by project_id and submit separate requests per project
+                const byProject = materials.reduce((acc, m) => {
+                    const key = m.project_id;
+                    if (!key) return acc; // skip if no project captured
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push({
+                        material_id: m.material_id,
+                        name: m.name,
+                        quantity: m.quantity,
+                        unit: m.unit,
+                        source_type: m.source_type
+                    });
+                    return acc;
+                }, {});
+
+                const requests = Object.entries(byProject).map(([pid, mats]) => ({
+                    project_id: pid,
                     source_type: sourceType.value,
-                    purpose: purpose,
-                    materials: materials
-                };
+                    purpose,
+                    materials: mats
+                }));
 
-                const response = await fetch('/manufacturing/request-materials', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Generate a new request ID for display
-                    const requestId = result.request_no || 'RM-' + new Date().getFullYear() + '-' + String(Object.keys(requests).length + 1).padStart(3, '0');
-
-                // Create the new request object
-                const newRequest = {
-                    id: requestId,
-                    project: projectName,
-                        sourceType: sourceTypeName,
-                    requestDate: requestDate,
-                    status: 'Pending',
-                        purpose: purpose,
-                    materials: [...materials]
-                };
-
-                // Add to requests object
-                requests[requestId] = newRequest;
-
-                // Add to the recent requests table
-                const tbody = document.getElementById('recentRequests');
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${requestId}</td>
-                    <td>${projectName}</td>
-                        <td>${sourceTypeName}</td>
-                    <td>${requestDate}</td>
-                    <td><span class="badge bg-warning">Pending</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary me-1" onclick="viewRequestDetails('${requestId}')" title="View Request Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.insertBefore(row, tbody.firstChild);
-
-                // Reset form fields
-                resetFormFields();
-
-                // Hide confirmation content and show success message
-                document.getElementById('confirmationContent').style.display = 'none';
-                document.getElementById('modalFooter').style.display = 'none';
-                document.getElementById('successMessage').innerHTML = 'Material request submitted successfully!';
-                document.getElementById('successMessage').style.display = 'block';
-
-                // Close modal after 2 seconds
-                setTimeout(() => {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('submitConfirmationModal'));
-                    if (modal) {
-                    modal.hide();
-                    }
-                    
-                    // Remove any stuck backdrop
-                    const backdrops = document.querySelectorAll('.modal-backdrop');
-                    backdrops.forEach(backdrop => backdrop.remove());
-                    
-                    // Reset modal content for next use
-                    setTimeout(() => {
-                        document.getElementById('confirmationContent').style.display = 'block';
-                        document.getElementById('modalFooter').style.display = 'block';
-                        document.getElementById('formMessages').style.display = 'none';
-                        document.getElementById('successMessage').style.display = 'none';
-                    }, 500);
-                }, 2000);
-                } else {
-                    throw new Error(result.error || 'Failed to submit request');
+                if (requests.length === 0) {
+                    throw new Error('No materials with assigned project to submit');
                 }
+
+                const results = await Promise.all(requests.map(reqBody => fetch('/manufacturing/request-materials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqBody)
+                }).then(r => r.json())));
+
+                const failed = results.find(r => !r.success);
+                if (failed) {
+                    throw new Error(failed.error || 'Failed to submit one of the requests');
+                }
+
+                // Success: reset and refresh
+                resetFormFields();
+                await loadAllRequestMaterials();
+
+                // Close confirmation modal
+                const confirmationModal = bootstrap.Modal.getInstance(document.getElementById('submitConfirmationModal'));
+                if (confirmationModal) confirmationModal.hide();
+
+                // Show success modal with possibly multiple request numbers
+                const requestNos = results.map(r => r.requestId || r.request_no).filter(Boolean).join(', ');
+                document.getElementById('successRequestNo').textContent = requestNos || 'Multiple';
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'), {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+                successModal.show();
+
+                // Clean any stuck backdrops
+                setTimeout(() => {
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(b => b.remove());
+                }, 100);
 
             } catch (error) {
                 // Show error message if something goes wrong
@@ -1400,6 +1504,8 @@
 
         // Global variable for all request materials
         let allRequestMaterials = [];
+        let approvedMaterialsForDelivery = [];
+        let currentApprovedRequestForDelivery = null;
 
         // Load all request materials from API
         async function loadAllRequestMaterials() {
@@ -1636,6 +1742,266 @@
                     console.error('Error marking materials as received:', error);
                     alert('Failed to mark materials as received. Please try again.');
                 }
+            }
+        }
+
+        // Load approved materials for delivery
+        async function loadApprovedMaterialsForDelivery() {
+            try {
+                console.log('Loading approved materials for delivery...');
+                const response = await fetch('/scm/manufacturing-requests/approved');
+                const data = await response.json();
+                
+                if (data && data.success) {
+                    approvedMaterialsForDelivery = data.requests;
+                    console.log('Approved materials loaded:', approvedMaterialsForDelivery);
+                    renderApprovedMaterialsTable();
+                } else {
+                    console.error('Failed to load approved materials:', data?.error || 'Unknown error');
+                    approvedMaterialsForDelivery = [];
+                    renderApprovedMaterialsTable();
+                }
+            } catch (error) {
+                console.error('Error loading approved materials:', error);
+                approvedMaterialsForDelivery = [];
+                renderApprovedMaterialsTable();
+            }
+        }
+
+        // Render approved materials table
+        function renderApprovedMaterialsTable() {
+            const tbody = document.getElementById('approvedMaterialsTable');
+            tbody.innerHTML = '';
+
+            if (approvedMaterialsForDelivery.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-3">
+                            <i class="fas fa-box-open me-2"></i>No approved materials for delivery
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            approvedMaterialsForDelivery.forEach(request => {
+                const approvedDate = request.approved_at ? new Date(request.approved_at).toLocaleDateString() : 'N/A';
+                const sourceTypeBadge = request.source_type === 'owner_supply' 
+                    ? '<span class="badge bg-primary">Owner Supply</span>' 
+                    : '<span class="badge bg-secondary">Company Supply</span>';
+                
+                const materialsSummary = request.materials && request.materials.length > 0 
+                    ? `${request.materials.length} material(s)` 
+                    : 'No materials';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${request.request_no}</td>
+                    <td>${request.project_name || 'N/A'}</td>
+                    <td>${sourceTypeBadge}</td>
+                    <td>${approvedDate}</td>
+                    <td><span class="badge bg-success">Approved</span></td>
+                    <td>${materialsSummary}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info me-1" onclick="viewApprovedRequestDetails('${request.request_no}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="openDeliveryModalForApproved('${request.request_no}')" title="Record Delivery">
+                            <i class="fas fa-truck"></i> Record Delivery
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // View approved request details
+        function viewApprovedRequestDetails(requestNo) {
+            const request = approvedMaterialsForDelivery.find(r => r.request_no === requestNo);
+            if (!request) {
+                console.error('Request not found:', requestNo);
+                return;
+            }
+
+            // Update modal content
+            document.getElementById('allModalRequestNo').textContent = request.request_no;
+            document.getElementById('allModalProject').textContent = request.project_name || 'N/A';
+            document.getElementById('allModalRequestedBy').textContent = request.requested_by_name || 'N/A';
+            document.getElementById('allModalDepartment').textContent = request.department_name || 'N/A';
+            document.getElementById('allModalSourceType').textContent = request.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply';
+            document.getElementById('allModalRequestDate').textContent = request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A';
+            document.getElementById('allModalApprovedDate').textContent = request.approved_at ? new Date(request.approved_at).toLocaleDateString() : 'N/A';
+            document.getElementById('allModalPurpose').textContent = request.purpose || 'N/A';
+            
+            // Update status
+            document.getElementById('allModalStatus').innerHTML = '<span class="badge bg-success">Approved</span>';
+
+            // Update materials list
+            const materialsList = document.getElementById('allModalMaterialsList');
+            materialsList.innerHTML = '';
+            
+            if (request.materials && request.materials.length > 0) {
+                request.materials.forEach(material => {
+                    const sourceBadge = material.source_type === 'owner_supply' 
+                        ? '<span class="badge bg-primary me-1">Owner</span>' 
+                        : '<span class="badge bg-secondary me-1">Company</span>';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${sourceBadge}${material.material_name || 'Unknown Material'}</td>
+                        <td>${material.quantity || 0}</td>
+                        <td>${material.unit || 'N/A'}</td>
+                        <td>${material.source_type === 'owner_supply' ? 'Owner Supply' : 'Company Supply'}</td>
+                    `;
+                    materialsList.appendChild(row);
+                });
+            } else {
+                materialsList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No materials found</td>
+                    </tr>
+                `;
+            }
+
+            // Hide Mark as Received button for approved materials
+            document.getElementById('markAsReceivedBtn').style.display = 'none';
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('allRequestDetailsModal'), {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            modal.show();
+        }
+
+        // Open delivery modal for approved materials
+        async function openDeliveryModalForApproved(requestNo) {
+            const request = approvedMaterialsForDelivery.find(r => r.request_no === requestNo);
+            if (!request) {
+                console.error('Request not found:', requestNo);
+                return;
+            }
+
+            currentApprovedRequestForDelivery = request;
+
+            // Populate selected materials summary
+            populateApprovedSelectedMaterialsSummary(request.materials);
+
+            // Load drivers
+            await loadDriversForApprovedModal();
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('deliveryInfoModalApproved'), {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            modal.show();
+        }
+
+        // Populate approved selected materials summary
+        function populateApprovedSelectedMaterialsSummary(materials) {
+            const summaryBody = document.getElementById('approvedSelectedMaterialsSummary');
+            summaryBody.innerHTML = '';
+
+            if (materials && materials.length > 0) {
+                materials.forEach(material => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${material.material_name || 'Unknown Material'}</td>
+                        <td>${material.unit || 'N/A'}</td>
+                        <td>${material.quantity}</td>
+                    `;
+                    summaryBody.appendChild(row);
+                });
+            }
+        }
+
+        // Load drivers for approved modal
+        async function loadDriversForApprovedModal() {
+            try {
+                const response = await fetch('/scm/drivers');
+                
+                if (!response.ok) {
+                    console.error('Failed to fetch drivers. Status:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.drivers) {
+                    const driverSelect = document.getElementById('approvedModalDriverId');
+                    driverSelect.innerHTML = '<option value="">Select a driver</option>';
+                    
+                    data.drivers.forEach(driver => {
+                        const option = document.createElement('option');
+                        option.value = driver.employee_id;
+                        option.textContent = driver.full_name;
+                        driverSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+            }
+        }
+
+        // Submit delivery info from approved modal
+        async function submitDeliveryInfoFromApprovedModal() {
+            const driverId = document.getElementById('approvedModalDriverId').value;
+            const vehicleInfo = document.getElementById('approvedModalVehicleInfo').value;
+            
+            if (!driverId) {
+                alert('Please select a driver');
+                return;
+            }
+            
+            if (!vehicleInfo) {
+                alert('Please provide vehicle plate number');
+                return;
+            }
+
+            if (!currentApprovedRequestForDelivery) {
+                alert('No request selected');
+                return;
+            }
+
+            try {
+                const deliveryData = {
+                    request_no: currentApprovedRequestForDelivery.request_no,
+                    delivery_type: 'internal',
+                    driver_id: driverId,
+                    vehicle_info: vehicleInfo,
+                    release_notes: `Material delivery for ${currentApprovedRequestForDelivery.project_name || 'project'}`
+                };
+
+                console.log('Submitting delivery info:', deliveryData);
+
+                const response = await fetch('/scm/material-release', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(deliveryData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Delivery information recorded successfully!');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('deliveryInfoModalApproved'));
+                    modal.hide();
+                    
+                    // Refresh approved materials table
+                    await loadApprovedMaterialsForDelivery();
+                } else {
+                    alert(result.error || 'Failed to record delivery information');
+                }
+            } catch (error) {
+                console.error('Error submitting delivery info:', error);
+                alert('Failed to record delivery information. Please try again.');
             }
         }
     </script>

@@ -8,15 +8,17 @@ const path = require('path');
 const db = require("./db");
 
 const authRoutes = require('./routes/auth.routes');
+const profileRoutes = require('./routes/profile.routes');
 const hrRoutes = require('./departments/hr/routes/hr.routes');
 const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
 const scmRoutes = require('./departments/supply/routes/scm.routes');
+const manuRoutes = require('./departments/manufacturing/routes/manufacturing.routes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors());
 
 const sessionStore = new MySQLStore({
@@ -34,20 +36,22 @@ const sessionStore = new MySQLStore({
 
 // Session Setup
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_secret_key', // Use environment variable
-    resave: true, // Changed to true to prevent session loss
+    secret: process.env.SESSION_SECRET || 'your_secret_key',
+    resave: true,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+        secure: false, // Changed to false to allow HTTP in development and testing
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        sameSite: 'strict', // Protect against CSRF
+        maxAge: 1000 * 60 * 60 * 24,
+        sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects
         path: '/'
     },
-    rolling: true, // Refresh session on activity
-    name: 'sessionId' // Custom session name
+    rolling: true,
+    name: 'sessionId'
 }));
+
+// Session debug middleware removed
 
 // Add session error handling
 app.use((err, req, res, next) => {
@@ -75,17 +79,59 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 app.use(express.static(path.join(__dirname, '..', 'views')));
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/profile', (req, res, next) => {
+    console.log('🔍 Profile route accessed');
+    console.log('Session user:', req.session?.user);
+    
+    // Check user type from session
+    if (req.session?.user?.is_supplier) {
+        console.log('✅ Serving supplier profile');
+        // Serve the supplier profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'supplier.html'));
+    } else if (req.session?.user?.is_external && req.session.user.role_name === 'developer') {
+        console.log('✅ Serving developer profile');
+        // Serve the developer profile page
+        res.sendFile(path.join(__dirname, '..', 'views', 'profiles', 'developer.html'));
+    } else if (req.session?.user?.is_external) {
+        console.log('✅ Serving other external user profile');
+        // For other external users, use regular profile routes
+        profileRoutes(req, res, next);
+    } else {
+        console.log('✅ Serving employee profile');
+        // For internal users (employees), use regular profile routes
+        profileRoutes(req, res, next);
+    }
+});
+
+// Add route for profile API endpoints
+app.use('/api/profile', profileRoutes);
+
 app.use('/hr', hrRoutes);
 app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
 app.use('/scm', scmRoutes);
+app.use('/manufacturing', manuRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
+
+// Developer session check route
+app.get('/developer/check-session', (req, res) => {
+    if (req.session && req.session.user && req.session.user.is_external) {
+        res.json({
+            id: req.session.user.id,
+            username: req.session.user.username,
+            email: req.session.user.email,
+            role_name: req.session.user.role_name
+        });
+    } else {
+        res.status(401).json({ error: 'Not logged in as developer' });
+    }
+});
 
 // Default Route - Login
 app.get('/', (req, res) => {
@@ -114,12 +160,20 @@ app.get('/dashboard', (req, res) => {
         // Employee dashboards (using employee_id)
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
-        'finance_accounting': '/finance admin/finance_payroll.html',
+        'finance_accounting': '/finance admin/finance_dashboard.html',
         'general_foreman': '/manufacturing/manufacturing_dashboard',
+        'foreman_1': '/manufacturing/manufacturing_dashboard',
+        'foreman_2': '/manufacturing/manufacturing_dashboard',
+        'foreman_3': '/manufacturing/manufacturing_dashboard',
+        'foreman_4': '/manufacturing/manufacturing_dashboard',
         'admin_staff': '/hr_employee/attendance',
         'sales_marketing_head': '/crm admin/crm_admin.html',
+        'sales_marketing_coordinator': '/crm admin/crm_admin.html',
+        'documentation_officer': '/crm admin/crm_admin.html',
         'logistics': '/scm admin/scm-dashboard.html',
         'agents': '/agents/agent_dashboard.html',
+        'driver_1': '/driver/driver_material_release',
+        'driver_2': '/driver/driver_material_release',
         // External user dashboards (using username)
         'developer': '/developer/developer_dashboard',
         'supplier': '/supplier/supplier_dashboard.html'

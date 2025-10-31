@@ -463,8 +463,8 @@
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="delivery-tab" data-bs-toggle="tab" data-bs-target="#delivery-pane" type="button" role="tab">
-              <i class="fas fa-truck me-1"></i> Delivery Information
+            <button class="nav-link" id="release-tab" data-bs-toggle="tab" data-bs-target="#release-pane" type="button" role="tab">
+              <i class="fas fa-boxes me-1"></i> Release Materials
             </button>
           </li>
         </ul>
@@ -473,10 +473,20 @@
         <div class="tab-content" id="materialsTabContent">
           <!-- Received Materials Pane -->
           <div class="tab-pane fade show active" id="received-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+              <div>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllReceived()">Select All</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllReceived()">Deselect All</button>
+              </div>
+              <button type="button" class="btn btn-sm btn-success" onclick="openDeliveryInfoModal()">
+                <i class="fas fa-truck me-1"></i> Record Delivery
+              </button>
+            </div>
             <div class="table-responsive mt-3">
               <table class="table table-sm">
                 <thead>
                   <tr>
+                    <th width="50">✓</th>
                     <th>Material</th>
                     <th>Unit</th>
                     <th>Quantity</th>
@@ -492,51 +502,26 @@
             </div>
           </div>
 
-          <!-- Delivery Information Pane -->
-          <div class="tab-pane fade" id="delivery-pane" role="tabpanel">
-            <form id="deliveryForm" class="mt-3">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Driver ID</label>
-                    <input type="text" class="form-control" id="driverId" placeholder="Enter driver ID">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Vehicle Plate Number</label>
-                    <input type="text" class="form-control" id="vehicleInfo" placeholder="Enter vehicle plate number">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">External Driver Name (if applicable)</label>
-                    <input type="text" class="form-control" id="externalDriverName" placeholder="Enter external driver name">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">External Vehicle Details (if applicable)</label>
-                    <input type="text" class="form-control" id="externalVehicleDetails" placeholder="Enter external vehicle details">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Courier Service (if applicable)</label>
-                    <input type="text" class="form-control" id="courierService" placeholder="Enter courier service">
-                  </div>
-                </div>
-              </div>
-              <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-primary" onclick="submitDeliveryInfo()">
-                  <i class="fas fa-save me-1"></i> Submit Delivery Info
-                </button>
-              </div>
-            </form>
+          <!-- Release Materials Pane -->
+          <div class="tab-pane fade" id="release-pane" role="tabpanel">
+            <div class="table-responsive mt-3">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Released Date</th>
+                    <th>Driver</th>
+                    <th>Vehicle</th>
+                  </tr>
+                </thead>
+                <tbody id="releaseMaterialsBody">
+                  <!-- Released materials will be populated here -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -577,8 +562,10 @@
         <div class="row">
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">Driver ID</label>
-              <input type="text" class="form-control" id="driverId" placeholder="Enter driver ID">
+              <label class="form-label">Driver</label>
+              <select class="form-select" id="driverId">
+                <option value="">Select a driver</option>
+              </select>
             </div>
           </div>
           <div class="col-md-6">
@@ -617,6 +604,64 @@
     </div>
   </div>
 
+
+  <!-- Delivery Information Modal -->
+  <div class="modal fade" id="deliveryInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Record Delivery Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Selected Materials Summary -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Selected Materials for Release:</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Material</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Quantity to Release</th>
+                  </tr>
+                </thead>
+                <tbody id="selectedMaterialsSummary">
+                  <!-- Summary will be populated here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <form id="deliveryInfoForm">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Driver</label>
+                  <select class="form-select" id="modalDriverId">
+                    <option value="">Select a driver</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Vehicle Plate Number</label>
+                  <input type="text" class="form-control" id="modalVehicleInfo" placeholder="Enter vehicle plate number">
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="submitDeliveryInfoFromModal()">
+            <i class="fas fa-save me-1"></i> Submit Delivery Info
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Update Status Modal -->
   <div class="modal fade" id="updateStatusModal" tabindex="-1">
@@ -1067,6 +1112,10 @@ function showReceivedMaterialsInline(receivedMaterials) {
     receivedMaterials.forEach(material => {
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td>
+                <input type="checkbox" class="form-check-input received-material-checkbox" 
+                       value="${material.supply_id}">
+            </td>
             <td>${material.material_name}</td>
             <td>${material.unit || 'N/A'}</td>
             <td>${material.quantity}</td>
@@ -1308,6 +1357,243 @@ function showAlert(message, type) {
             alertDiv.remove();
         }
     }, 5000);
+}
+
+// Select all received materials
+function selectAllReceived() {
+    const checkboxes = document.querySelectorAll('.received-material-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+// Deselect all received materials
+function deselectAllReceived() {
+    const checkboxes = document.querySelectorAll('.received-material-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// Submit delivery info from modal
+async function submitDeliveryInfoFromModal() {
+    const driverId = document.getElementById('modalDriverId').value;
+    const vehicleInfo = document.getElementById('modalVehicleInfo').value;
+    
+    if (!driverId) {
+        showAlert('Please select a driver', 'warning');
+        return;
+    }
+    
+    if (!vehicleInfo) {
+        showAlert('Please provide vehicle plate number', 'warning');
+        return;
+    }
+    
+    try {
+        const checkboxes = document.querySelectorAll('.received-material-checkbox:checked');
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const checkbox of checkboxes) {
+            const supplyId = checkbox.value;
+            const material = allMaterials.find(m => m.supply_id == supplyId);
+            
+            if (!material) continue;
+            
+            // Update the material status to released
+            try {
+                const response = await fetch('/scm/material-release', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        request_no: material.request_no || null,
+                        delivery_type: 'internal',
+                        driver_id: driverId,
+                        vehicle_info: vehicleInfo,
+                        release_notes: `Released for ${material.project_name || 'project'}`
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            } catch (error) {
+                console.error('Error recording delivery:', error);
+                errorCount++;
+            }
+        }
+        
+        if (successCount > 0) {
+            showAlert(`Successfully recorded delivery for ${successCount} material(s)`, 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deliveryInfoModal'));
+            modal.hide();
+            
+            // Clear form
+            document.getElementById('deliveryInfoForm').reset();
+            
+            // Refresh data
+            loadMaterials();
+            loadReleasedMaterials();
+        }
+        
+        if (errorCount > 0) {
+            showAlert(`Failed to record delivery for ${errorCount} material(s)`, 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting delivery info:', error);
+        showAlert('Error submitting delivery information', 'error');
+    }
+}
+
+// Load released materials
+async function loadReleasedMaterials() {
+    try {
+        const response = await fetch('/scm/owners-supply');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Filter materials that have been released (have release_status and material_status = 0)
+            const releasedMaterials = data.materials.filter(m => 
+                m.status === 'Delivered' && 
+                m.release_status && 
+                (m.material_status === false || m.material_status === 0)
+            );
+            const releaseBody = document.getElementById('releaseMaterialsBody');
+            
+            releaseBody.innerHTML = '';
+            
+            if (releasedMaterials.length === 0) {
+                releaseBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No released materials found</td></tr>';
+            } else {
+                releasedMaterials.forEach(material => {
+                    const row = document.createElement('tr');
+                    const driverInfo = material.driver_name || 
+                                     (material.driver_id ? `Driver ID: ${material.driver_id}` : 'N/A');
+                    const vehicleInfo = material.vehicle_info || material.vehicle_details || 'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${material.material_name}</td>
+                        <td>${material.unit || 'N/A'}</td>
+                        <td>${material.quantity_remaining || material.quantity}</td>
+                        <td><span class="badge bg-info">Released</span></td>
+                        <td>${formatDate(material.release_date || material.delivered_date) || 'N/A'}</td>
+                        <td>${driverInfo}</td>
+                        <td>${vehicleInfo}</td>
+                    `;
+                    releaseBody.appendChild(row);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading released materials:', error);
+    }
+}
+
+// Helper function to format date
+function formatDate(dateString) {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+// Load drivers into modal dropdown
+async function loadDrivers() {
+    try {
+        const response = await fetch('/scm/drivers');
+        
+        if (!response.ok) {
+            console.error('Failed to fetch drivers. Status:', response.status);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.drivers && Array.isArray(data.drivers)) {
+            const driverSelect = document.getElementById('modalDriverId');
+            const driverSelectForm = document.getElementById('driverId');
+            
+            if (!driverSelect) {
+                console.error('Driver select element not found!');
+                return;
+            }
+            
+            // Clear existing options except the first one
+            [driverSelect, driverSelectForm].forEach(select => {
+                if (select) {
+                    select.innerHTML = '<option value="">Select a driver</option>';
+                    
+                    // Add each driver as an option
+                    data.drivers.forEach(driver => {
+                        const option = document.createElement('option');
+                        option.value = driver.employee_id;
+                        option.textContent = driver.full_name;
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading drivers:', error);
+    }
+}
+
+// Open delivery info modal with drivers loaded
+function openDeliveryInfoModal() {
+    const checkboxes = document.querySelectorAll('.received-material-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        showAlert('Please select at least one material to record delivery', 'warning');
+        return;
+    }
+    
+    // Populate selected materials summary
+    populateSelectedMaterialsSummary(checkboxes);
+    
+    // Load drivers before showing modal
+    loadDrivers().then(() => {
+        // Show the modal
+        const modalElement = document.getElementById('deliveryInfoModal');
+        
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            console.error('Modal element not found!');
+        }
+    }).catch(error => {
+        console.error('Error loading drivers:', error);
+    });
+}
+
+// Populate selected materials summary
+function populateSelectedMaterialsSummary(checkboxes) {
+    const summaryBody = document.getElementById('selectedMaterialsSummary');
+    summaryBody.innerHTML = '';
+    
+    checkboxes.forEach(checkbox => {
+        const supplyId = checkbox.value;
+        const material = allMaterials.find(m => m.supply_id == supplyId);
+        
+        if (material) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${material.material_name}</td>
+                <td>${material.unit || 'N/A'}</td>
+                <td>${material.quantity}</td>
+                <td>${material.quantity}</td>
+            `;
+            summaryBody.appendChild(row);
+        }
+    });
 }
 
 // Add the sidebar toggle logic

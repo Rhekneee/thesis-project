@@ -1012,16 +1012,8 @@ const HRModel = {
     // Check if already checked in
     alreadyCheckedIn: async (userId, date) => {
         try {
-            // Log the parameters to verify
-            console.log(`Checking if user ${userId} has checked in on ${date}`);
-    
-            // Query to check for today's check-in
             const sql = `SELECT check_in FROM attendance WHERE user_id = ? AND DATE(date) = DATE(?)`;
             const [rows] = await db.execute(sql, [userId, date]);
-    
-            // Log the result for debugging
-            console.log(`Query result for user ${userId} on ${date}:`, rows);
-    
             return rows.length > 0 && rows[0].check_in !== null;
         } catch (error) {
             console.error('Error checking check-in status:', error);
@@ -1031,64 +1023,52 @@ const HRModel = {
     
     // CHECK-IN LOGIC
     checkIn: async (userId, checkInTime, date, userLat, userLng) => {
-        console.log('🔍 Check-in attempt:', { userId, checkInTime, date, userLat, userLng });
-        
-        const officeLat = 14.327791594318544;
-        const officeLng = 120.94059104947334;
+        const officeLat = 14.343377281933318
+        const officeLng = 120.979644495176
         const allowedRadius = 500;
 
+        // const officeLat = 14.327791594318544;
+        // const officeLng = 120.94059104947334;
+        // const allowedRadius = 500;
         
-    
         try {
             // Check if the user is within the allowed radius
             const distance = HRModel.getDistanceMeters(officeLat, officeLng, userLat, userLng);
-            console.log('📍 Distance from office:', Math.round(distance), 'meters');
             
             if (distance > allowedRadius) {
-                console.log('❌ User outside allowed range');
                 return { error: `You are outside the allowed range (${Math.round(distance)}m).` };
             }
 
             // Check if the user has already checked in
-            console.log('🔍 Checking if user already checked in...');
             const alreadyIn = await HRModel.alreadyCheckedIn(userId, date);
-            console.log('📝 Already checked in:', alreadyIn);
             
             if (alreadyIn) {
                 return { error: "You have already checked in today." };
             }
 
             const checkInDate = new Date(checkInTime);
-            console.log('⏰ Check-in date object:', checkInDate);
 
             // Ensure the checkInTime is valid
             if (isNaN(checkInDate.getTime())) {
-                console.log('❌ Invalid check-in time format');
                 return { error: "Invalid check-in time format." };
             }
 
             // Convert to Philippine Time (PHT) from UTC (UTC +8 hours)
             const localTime = new Date(checkInDate.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-            console.log('🌏 Local time (PHT):', localTime);
         
             const hourPHT = localTime.getHours();
             const minutesPHT = localTime.getMinutes();
             const secondsPHT = localTime.getSeconds();
-            console.log('⏰ Time components:', { hourPHT, minutesPHT, secondsPHT });
 
             // Check if the employee has an approved half-day request for the day
-            console.log('🔍 Checking for approved half-day request...');
             const request = await HRModel.checkRequestApproval(userId, date, "halfDay");
-            console.log('📝 Half-day request status:', request);
         
             // If no approved half-day request, enforce the 9 AM check-in time
             if (!request && hourPHT < 9) {
-                console.log('❌ Too early to check in');
                 return { error: "You can only check in after 9:00 AM unless approved for half-day." };
             }
 
             let status = "Present";
-            console.log('📊 Initial status:', status);
 
             // If the employee has an approved half-day request
             if (request) {
@@ -1097,62 +1077,43 @@ const HRModel = {
                 } else if (hourPHT >= 12 && hourPHT < 18) {
                     status = "Half Day";
                 }
-                console.log('📊 Updated status (with half-day):', status);
             } else if (!request && (hourPHT > 9 || (hourPHT === 9 && minutesPHT > 10))) {
                 status = "Late";
-                console.log('📊 Updated status (late):', status);
             }        
         
             // Format the check-in time
             const checkInFormatted = `${String(hourPHT).padStart(2, '0')}:${String(minutesPHT).padStart(2, '0')}:${String(secondsPHT).padStart(2, '0')}`;
-            console.log('⏰ Formatted check-in time:', checkInFormatted);
         
-            console.log('🔍 Checking for existing attendance record...');
             const [existing] = await db.execute(
                 `SELECT attendance_id FROM attendance WHERE user_id = ? AND date = ?`,
                 [userId, date]
             );
-            console.log('📝 Existing record found:', existing.length > 0);
         
             if (existing.length > 0) {
-                console.log('📝 Updating existing attendance record...');
                 const sql = `UPDATE attendance SET check_in = ?, status = ? WHERE user_id = ? AND date = ?`;
                 await db.execute(sql, [checkInFormatted, status, userId, date]);
             } else {
-                console.log('📝 Inserting new attendance record...');
                 const sql = `INSERT INTO attendance (user_id, date, check_in, status) VALUES (?, ?, ?, ?)`;
                 await db.execute(sql, [userId, date, checkInFormatted, status]);
             }
         
-            console.log('✅ Check-in recorded successfully');
             return { success: true, message: "Check-in recorded." };
         } catch (error) {
-            console.error('❌ Error in checkIn function:', error);
-            console.error('Error details:', {
-                message: error.message,
-                code: error.code,
-                sqlMessage: error.sqlMessage,
-                sql: error.sql
-            });
-            throw error; // Re-throw the error to be handled by the controller
+            console.error('Error in checkIn function:', error);
+            throw error;
         }
     },
 
         
     checkOut: async (userId, checkOutTime, date) => {
         try {
-            console.log('Check-out function called with:', { userId, checkOutTime, date });
-
             // Convert check-out time to Philippine Time (PHT)
             const checkOutDate = new Date(checkOutTime);
             const hourPHT = checkOutDate.getUTCHours() + 8;
             const minutesPHT = checkOutDate.getUTCMinutes();
 
-            console.log('⏰ Check-out time (PHT):', { hourPHT, minutesPHT });
-
             // Check if it's before 6 PM
             if (hourPHT < 18) {
-                console.log('❌ Check-out attempted before 6 PM');
                 return { error: "Check-out is only available after 6:00 PM." };
             }
 
@@ -1163,7 +1124,6 @@ const HRModel = {
             );
 
             if (!checkInRecord || !checkInRecord[0].check_in) {
-                console.log('❌ No check-in record found');
                 return { error: "You must check in first." };
             }
 
@@ -1193,13 +1153,6 @@ const HRModel = {
                 status = 'Overtime';
             }
 
-            console.log('📊 Attendance calculations:', {
-                totalHours,
-                adjustedHours,
-                overtimeHours,
-                status
-            });
-
             // Update attendance record with calculated values
             const sql = `
                 UPDATE attendance
@@ -1220,15 +1173,13 @@ const HRModel = {
             ]);
 
             if (result.affectedRows === 0) {
-                console.log('❌ No rows updated during check-out');
                 return { error: "Check-in required before check-out." };
             }
 
-            console.log('✅ Check-out recorded successfully');
             return { success: true, message: "Check-out recorded successfully." };
 
         } catch (error) {
-            console.error('❌ Error during check-out:', error);
+            console.error('Error during check-out:', error);
             return { error: error.message || 'Internal Server Error' };
         }
     },    
@@ -1397,10 +1348,20 @@ const HRModel = {
 
     getAttendanceHistory: async (userId) => {
         const sql = `
-          SELECT date, check_in, check_out, status, total_hours, overtime_hours 
-          FROM attendance 
-          WHERE user_id = ? 
-          ORDER BY date DESC
+          SELECT 
+            a.date, 
+            a.check_in, 
+            a.check_out, 
+            a.status, 
+            a.total_hours, 
+            a.overtime_hours,
+            a.attendance_id,
+            GROUP_CONCAT(ap.image_path) as all_photos
+          FROM attendance a
+          LEFT JOIN attendance_photos ap ON a.attendance_id = ap.attendance_id
+          WHERE a.user_id = ? 
+          GROUP BY a.attendance_id, a.date, a.check_in, a.check_out, a.status, a.total_hours, a.overtime_hours
+          ORDER BY a.date DESC
         `;
         const [rows] = await db.execute(sql, [userId]);
         return rows;
@@ -6362,5 +6323,126 @@ const HRModel = {
 =======
 >>>>>>> aa1bb20 (Initial commit)
 };
+// ==================== JOB POSTINGS (moved from CRM) ====================
+// Data-access moved from CRM to HR for job posting management
+HRModel.getAllJobPostings = async ({ limit = 10, offset = 0, search = '' } = {}) => {
+  const baseWhere = [];
+  const params = [];
+  if (search) {
+    baseWhere.push('(p.position_name LIKE ? OR r.name LIKE ? OR jp.location LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+  const whereSql = baseWhere.length ? `WHERE ${baseWhere.join(' AND ')}` : '';
 
+  const countSql = `
+    SELECT COUNT(*) as total
+    FROM job_postings jp
+    JOIN positions p ON jp.position_id = p.position_id
+    JOIN roles r ON p.role_id = r.id
+    ${whereSql}
+  `;
+  const [countRows] = await db.execute(countSql, params);
+  const total = countRows?.[0]?.total || 0;
+
+  const listSql = `
+    SELECT jp.*, p.position_name, p.salary, r.name as role_name, r.id as role_id
+    FROM job_postings jp
+    JOIN positions p ON jp.position_id = p.position_id
+    JOIN roles r ON p.role_id = r.id
+    ${whereSql}
+    ORDER BY jp.date_posted DESC
+    LIMIT ${parseInt(limit, 10)} OFFSET ${parseInt(offset, 10)}
+  `;
+  const [rows] = await db.execute(listSql, params);
+  return rows;
+};
+
+HRModel.countJobPostings = async ({ search = '' } = {}) => {
+  const baseWhere = [];
+  const params = [];
+  if (search) {
+    baseWhere.push('(p.position_name LIKE ? OR r.name LIKE ? OR jp.location LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+  const whereSql = baseWhere.length ? `WHERE ${baseWhere.join(' AND ')}` : '';
+  const sql = `
+    SELECT COUNT(*) as total
+    FROM job_postings jp
+    JOIN positions p ON jp.position_id = p.position_id
+    JOIN roles r ON p.role_id = r.id
+    ${whereSql}
+  `;
+  const [rows] = await db.execute(sql, params);
+  return rows?.[0]?.total || 0;
+};
+
+HRModel.getJobPostingById = async (jobId) => {
+  const sql = `
+    SELECT jp.*, p.position_name, p.salary, r.name as role_name, r.id as role_id
+    FROM job_postings jp
+    JOIN positions p ON jp.position_id = p.position_id
+    JOIN roles r ON p.role_id = r.id
+    WHERE jp.job_id = ?
+  `;
+  const [rows] = await db.execute(sql, [jobId]);
+  return rows?.[0] || null;
+};
+
+HRModel.createJobPosting = async (data) => {
+  const sql = `
+    INSERT INTO job_postings (
+      position_id, job_description, qualifications, location, application_deadline, how_to_apply
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  const [result] = await db.execute(sql, [
+    data.position_id,
+    data.job_description,
+    data.qualifications,
+    data.location,
+    data.application_deadline,
+    data.how_to_apply
+  ]);
+  return result.insertId;
+};
+
+HRModel.updateJobPosting = async (jobId, data) => {
+  const sql = `
+    UPDATE job_postings SET
+      position_id = ?,
+      job_description = ?,
+      qualifications = ?,
+      location = ?,
+      application_deadline = ?,
+      how_to_apply = ?
+    WHERE job_id = ?
+  `;
+  const [result] = await db.execute(sql, [
+    data.position_id,
+    data.job_description,
+    data.qualifications,
+    data.location,
+    data.application_deadline,
+    data.how_to_apply,
+    jobId
+  ]);
+  return result.affectedRows > 0;
+};
+
+HRModel.deleteJobPosting = async (jobId) => {
+  const [result] = await db.execute('DELETE FROM job_postings WHERE job_id = ?', [jobId]);
+  return result.affectedRows > 0;
+};
+
+HRModel.getAllPositions = async () => {
+  const sql = `
+    SELECT p.position_id, p.position_name, p.salary, r.name as role_name, r.id as role_id
+    FROM positions p
+    JOIN roles r ON p.role_id = r.id
+    ORDER BY r.name, p.position_name
+  `;
+  const [rows] = await db.execute(sql);
+  return rows || [];
+};
+
+// Place module export at the very end, after Job Posting section
 module.exports = HRModel;

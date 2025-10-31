@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Releases</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Table and form styles */
+        .attendance-table {
+            margin-top: 20px;
+        }
+
+        .attendance-table th, .attendance-table td {
+            text-align: center;
+        }
+        /* Button Customization */
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        .btn-secondary{
+            background-color: #0ed370;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* Flexbox container to align buttons */
+        .attendance-buttons {
+            display: flex;
+            align-items: flex-start; /* Aligns the buttons to the top */
+            margin-bottom: 20px; /* Adjust bottom margin if needed */
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease; /* Smooth transition on color change */
+        }
+
+        .sort-icon.active {
+            color: #007bff; /* Change this to your preferred active color */
+        }
+
+        .sort-icon:hover {
+            color: #0056b3; /* Optional: Hover effect */
+        }
+
+        /* Align the entries per page to the right */
+        #entriesPerPage {
+            width: auto;
+            max-width: 150px; /* Limit max width */
+            margin-bottom: 5px; 
+        }
+
+        /* Add margin to the label for spacing between label and dropdown */
+        .form-label {
+            margin-right: 10px;
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Modal Custom Styles to match previous project style */
+        .modal-content {
+            background-color: #f5f7fa;
+            border-radius: 8px;
+            border: none; /* Remove default border */
+        }
+
+        .modal-header {
+            background-color: #0052a5;
+            color: white;
+            border-bottom: 2px solid #004b8d; /* Slightly darker border to define the header */
+            padding: 15px 20px;
+        }
+
+        .modal-body {
+            font-size: 1.1rem;
+            color: #333;
+            padding: 20px;
+        }
+
+        .modal-footer {
+            background-color: #f5f7fa;
+            text-align: right;
+            border-top: 2px solid #e1e1e1; /* Light border to separate footer */
+            padding: 15px 20px;
+        }
+
+        .modal-footer .btn-secondary {
+            background-color: #007bff; /* Matching the button to primary color */
+            color: white;
+        }
+
+        .modal-footer .btn-secondary:hover {
+            background-color: #0056b3;
+        }
+
+        /* Success Modal Animation */
+        #successModal .fas.fa-check-circle {
+            animation: checkmark 0.5s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Confirmation Modal Styling */
+        #confirmationModal .modal-content {
+            border: 2px solid #0052a5;
+        }
+
+        #confirmationModal .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            border-left: 4px solid #ffc107;
+        }
+
+        /* Card Shadow Enhancement */
+        .card.shadow-sm {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        /* Button Hover Effects */
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+       <!-- Topbar -->
+       <div class="topbar">
+        <div class="topbar-left">
+            <div class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="notification-icon" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge"></span>
+            </div>
+            <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                <div class="profile-info">
+                    <div class="profile-name"></div>
+                    <div class="profile-position"></div>
+                </div>
+                <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                    <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                    <span class="profile-name">John Doe</span>
+                    <span class="profile-position">HR Manager</span>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Leave Request</div>
+                    <div class="notification-time">5 minutes ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">Payroll Processed</div>
+                    <div class="notification-time">1 hour ago</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">New Employee Added</div>
+                    <div class="notification-time">2 hours ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+            <span class="company-title">MDB Construction</span>
+        </div>
+        <ul class="list-unstyled">
+            <li class="nav-item">
+                <a class="nav-item" href="/driver/driver_attendance">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-item" href="/driver/driver_material_release">
+                    <i class="fas fa-box"></i>
+                    <span>Material Releases</span>
+                </a>
+            </li>
+        </ul>
+        <!-- Move Logout outside the main ul -->
+        <div class="logout-container">
+            <a href="/logout" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="logout-text">Logout</span>
+                </a>
+        </div>
+    </div>
+        <!-- Sidebar end -->
+
+        <!-- Main content area -->
+        <div id="content">
+            <div class="container-fluid">
+                <h2 class="mb-4">
+                    <i class="fas fa-box"></i> My Material Releases
+                </h2>
+                
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered" id="materialReleasesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Request No</th>
+                                        <th>Material</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
+                                        <th>Project</th>
+                                        <th>Location</th>
+                                        <th>Vehicle Info</th>
+                                        <th>Released Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materialReleasesBody">
+                                    <tr>
+                                        <td colspan="10" class="text-center py-5">
+                                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                            <p class="mt-3 text-muted">Loading material releases...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="noMaterialsMessage" class="text-center py-5" style="display: none;">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Material Releases Assigned</h5>
+                            <p class="text-muted">You don't have any material releases assigned to you yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">
+                        <i class="fas fa-question-circle"></i> Confirm Delivery
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-truck fa-3x text-primary mb-3"></i>
+                        <h6>Are you sure you have delivered this material to the site?</h6>
+                        <p class="text-muted mb-0" id="confirmationDetails"></p>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Note:</strong> This action cannot be undone. Make sure the materials have been delivered to the site.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmReceivedBtn">
+                        <i class="fas fa-check-circle"></i> Yes, Mark as Received
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h4 class="mb-3">Delivery Confirmed!</h4>
+                    <p class="text-muted mb-0">The material has been successfully marked as received.</p>
+                    <p class="text-muted small">Status has been updated to "Received"</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check"></i> OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</body>
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script>
+        // Load material releases on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attach event listener to confirmation button
+            document.getElementById('confirmReceivedBtn').addEventListener('click', confirmMarkAsReceived);
+            
+            loadMaterialReleases();
+        });
+
+        // Function to load material releases from the API
+        async function loadMaterialReleases() {
+            try {
+                console.log('📦 Loading driver material releases...');
+                
+                const response = await fetch('/scm/driver/material-releases');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch material releases');
+                }
+
+                const data = await response.json();
+                
+                console.log('✅ Material releases loaded:', data);
+                
+                if (data.success && data.releases && data.releases.length > 0) {
+                    displayMaterialReleases(data.releases);
+                } else {
+                    showNoMaterialsMessage();
+                }
+            } catch (error) {
+                console.error('❌ Error loading material releases:', error);
+                showErrorMessage();
+            }
+        }
+
+        // Function to display material releases in the table
+        function displayMaterialReleases(releases) {
+            // Store releases globally for confirmation modal
+            window.currentReleases = releases;
+            
+            const tbody = document.getElementById('materialReleasesBody');
+            const noMaterialsDiv = document.getElementById('noMaterialsMessage');
+            
+            // Show table, hide no materials message
+            tbody.parentElement.parentElement.style.display = 'block';
+            noMaterialsDiv.style.display = 'none';
+            
+            tbody.innerHTML = '';
+            
+            releases.forEach(release => {
+                const row = document.createElement('tr');
+                
+                // Determine status badge from request_material table
+                // Status can be: 'pending', 'approved', 'released', 'backordered', 'received'
+                let statusBadge = '';
+                if (release.material_status === 'released') {
+                    statusBadge = '<span class="badge bg-info"><i class="fas fa-truck"></i> Released</span>';
+                } else if (release.material_status === 'backordered') {
+                    statusBadge = '<span class="badge bg-warning"><i class="fas fa-clock"></i> Backordered</span>';
+                } else if (release.material_status === 'received') {
+                    statusBadge = '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Received</span>';
+                } else if (release.material_status === 'approved') {
+                    statusBadge = '<span class="badge bg-primary"><i class="fas fa-check"></i> Approved</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-secondary">' + (release.material_status || 'Pending') + '</span>';
+                }
+                
+                // Format date
+                const releasedDate = release.released_at ? new Date(release.released_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'N/A';
+                
+                row.innerHTML = `
+                    <td>${release.request_no || 'N/A'}</td>
+                    <td>${release.material_name || 'N/A'}</td>
+                    <td>
+                        ${release.quantity}
+                        ${release.is_backordered ? `<span class="text-warning" title="Backordered out of ${release.original_quantity}"><i class="fas fa-exclamation-triangle"></i></span>` : ''}
+                    </td>
+                    <td>${release.unit || 'N/A'}</td>
+                    <td>${release.project_name || 'N/A'}</td>
+                    <td>${release.project_location || 'N/A'}</td>
+                    <td>${release.vehicle_info || 'N/A'}</td>
+                    <td>${releasedDate}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        ${release.material_status !== 'received' ? `
+                            <button class="btn btn-sm btn-success" onclick="markAsReceived(${release.release_id})" title="Mark as Received">
+                                <i class="fas fa-check-circle"></i> Mark as Received
+                            </button>
+                        ` : `
+                            <span class="text-success">
+                                <i class="fas fa-check-circle"></i> Delivered
+                            </span>
+                        `}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            console.log(`✅ Displayed ${releases.length} material releases`);
+        }
+
+        // Function to show no materials message
+        function showNoMaterialsMessage() {
+            const tbody = document.getElementById('materialReleasesBody');
+            const noMaterialsDiv = document.getElementById('noMaterialsMessage');
+            const table = tbody.parentElement.parentElement;
+            
+            table.style.display = 'none';
+            noMaterialsDiv.style.display = 'block';
+        }
+
+        // Function to show error message
+        function showErrorMessage() {
+            const tbody = document.getElementById('materialReleasesBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        <p class="mt-3 text-danger">Failed to load material releases. Please try again later.</p>
+                        <button class="btn btn-primary mt-2" onclick="loadMaterialReleases()">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        let currentReleaseId = null;
+
+        // Function to mark material release as received - shows confirmation modal
+        function markAsReceived(releaseId) {
+            currentReleaseId = releaseId;
+            
+            // Find the release details
+            const releases = window.currentReleases || [];
+            const release = releases.find(r => r.release_id === releaseId);
+            
+            if (release) {
+                document.getElementById('confirmationDetails').innerHTML = `
+                    <strong>${release.material_name}</strong><br>
+                    Quantity: ${release.quantity} ${release.unit}<br>
+                    <small class="text-muted">Project: ${release.project_name || 'N/A'}</small>
+                `;
+            } else {
+                document.getElementById('confirmationDetails').innerHTML = 
+                    '<small class="text-muted">Loading details...</small>';
+            }
+            
+            // Show confirmation modal
+            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            confirmationModal.show();
+        }
+
+        // Function to confirm and mark as received after modal confirmation
+        async function confirmMarkAsReceived() {
+            if (!currentReleaseId) return;
+
+            try {
+                console.log('📦 Marking release as received:', currentReleaseId);
+
+                const response = await fetch(`/scm/driver/material-releases/${currentReleaseId}/received`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to mark as received');
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Successfully marked as received');
+                    
+                    // Hide confirmation modal
+                    const confirmationModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                    confirmationModal.hide();
+                    
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Reload the material releases list after showing success modal
+                    setTimeout(() => {
+                        loadMaterialReleases();
+                    }, 1500);
+                    
+                    // Close success modal after 2 seconds
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('successModal'));
+                        if (modal) modal.hide();
+                    }, 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('❌ Error marking as received:', error);
+                alert('Failed to mark material as received. Please try again.');
+            }
+        }
+
+
+        // Function to show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+            
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+        }
+    </script>
+</body>
+
+</html>
