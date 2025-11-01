@@ -2108,6 +2108,42 @@ const ManufacturingController = {
       console.error('Error in payment cancel callback:', error);
       return res.status(500).json({ success: false, error: 'Payment cancellation error' });
     }
+  },
+
+  /**
+   * Submit vtour permission request
+   */
+  submitVtourPermission: async (req, res) => {
+    try {
+      const { developer_id, project_id, remarks } = req.body;
+      
+      if (!developer_id || !project_id) {
+        return res.status(400).json({ success: false, message: 'Developer ID and Project ID are required.' });
+      }
+
+      const permissionId = await ManufacturingModel.createVtourPermission({
+        developer_id,
+        project_id,
+        remarks
+      });
+
+      res.json({ success: true, message: 'Permission request submitted successfully', id: permissionId });
+    } catch (error) {
+      console.error('Error submitting vtour permission:', error);
+      
+      // Handle special case for existing pending permissions
+      if (error.code === 'PENDING_EXISTS') {
+        return res.status(400).json({ 
+          success: false, 
+          message: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to submit permission request' 
+      });
+    }
   }
 };
 

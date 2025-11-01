@@ -156,4 +156,7 @@ router.post('/projects/:projectId/rating', ManufacturingController.submitProject
 router.get('/projects/:projectId/rating', ManufacturingController.getProjectRating);
 router.get('/ratings/summary', ManufacturingController.getRatingsSummary);
 
+// ==================== VTOUR PERMISSIONS ====================
+router.post('/vtour-permissions', ManufacturingController.submitVtourPermission);
+
 module.exports = router;
