@@ -705,6 +705,32 @@
         </div>
     </div>
 
+    <!-- Remarks Modal for Rejecting Vtour Permission -->
+    <div class="modal fade" id="rejectRemarksModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-comment-alt me-2"></i>Add Remarks
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Please provide a reason for rejecting this virtual tour permission request.</p>
+                    <textarea id="rejectRemarks" class="form-control" rows="4" placeholder="Enter remarks here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmRejectBtn">
+                        <i class="fas fa-times me-2"></i>Confirm Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -1380,6 +1406,7 @@
                             <p class="mb-2"><strong><i class="fas fa-calendar me-2"></i>Request Date:</strong> ${formatDate(permission.request_date)}</p>
                             ${permission.approved_at ? `<p class="mb-2"><strong><i class="fas fa-check-circle me-2"></i>Approved At:</strong> ${formatDate(permission.approved_at)}</p>` : ''}
                             ${permission.remarks ? `<p class="mb-2"><strong><i class="fas fa-comment me-2"></i>Remarks:</strong></p><p class="text-muted small">${permission.remarks}</p>` : ''}
+                            ${permission.reason ? `<p class="mb-2"><strong><i class="fas fa-exclamation-circle me-2"></i>Reason:</strong></p><p class="text-muted small">${permission.reason}</p>` : ''}
                         </div>
                         <div class="d-flex gap-2 mt-3">
                             ${permission.approval_status === 'pending' ? 
@@ -1400,15 +1427,49 @@
 
         // Update vtour permission status
         async function updateVtourPermission(permissionId, status) {
-            if (!confirm(`Are you sure you want to ${status === 'approved' ? 'approve' : 'reject'} this virtual tour permission request?`)) {
+            // If rejecting, show remarks modal first
+            if (status === 'denied') {
+                // Clear previous remarks
+                document.getElementById('rejectRemarks').value = '';
+                
+                // Show remarks modal
+                const remarksModal = new bootstrap.Modal(document.getElementById('rejectRemarksModal'));
+                remarksModal.show();
+                
+                // Store permission ID for use in confirm button
+                document.getElementById('rejectRemarksModal').setAttribute('data-permission-id', permissionId);
+                
+                // Handle confirm reject button click
+                const confirmBtn = document.getElementById('confirmRejectBtn');
+                confirmBtn.onclick = async function() {
+                    const reason = document.getElementById('rejectRemarks').value.trim();
+                    
+                    if (!reason) {
+                        showWarningMessage('Please provide a reason for rejection.');
+                        return;
+                    }
+                    
+                    remarksModal.hide();
+                    await submitVtourPermissionUpdate(permissionId, status, null, reason);
+                };
                 return;
             }
+            
+            // For approval, show confirmation first
+            if (!confirm(`Are you sure you want to approve this virtual tour permission request?`)) {
+                return;
+            }
+            
+            await submitVtourPermissionUpdate(permissionId, status);
+        }
 
+        // Submit the permission update to the backend
+        async function submitVtourPermissionUpdate(permissionId, status, remarks = null, reason = null) {
             try {
                 const response = await fetch(`/manufacturing/vtour-permissions/${permissionId}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
+                    body: JSON.stringify({ status, remarks, reason })
                 });
                 const data = await response.json();
 

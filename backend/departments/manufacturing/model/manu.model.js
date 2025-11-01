@@ -2374,6 +2374,7 @@ const ManufacturingModel = {
           vp.approval_status,
           vp.approved_at,
           vp.remarks,
+          vp.reason,
           p.project_name,
           p.location,
           p.project_code
@@ -2394,15 +2395,15 @@ const ManufacturingModel = {
   /**
    * Update vtour permission status
    */
-  updateVtourPermissionStatus: async (permissionId, status) => {
+  updateVtourPermissionStatus: async (permissionId, status, remarks = null, reason = null) => {
     try {
       const query = `
         UPDATE vtour_permissions 
-        SET approval_status = ?, approved_at = NOW()
+        SET approval_status = ?, approved_at = NOW(), remarks = ?, reason = ?
         WHERE id = ?
       `;
       
-      const [result] = await db.query(query, [status, permissionId]);
+      const [result] = await db.query(query, [status, remarks, reason, permissionId]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Error updating vtour permission status:', error);

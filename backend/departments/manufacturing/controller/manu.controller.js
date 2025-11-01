@@ -2182,7 +2182,7 @@ const ManufacturingController = {
   updateVtourPermissionStatus: async (req, res) => {
     try {
       const permissionId = Number(req.params.permissionId);
-      const { status } = req.body;
+      const { status, remarks, reason } = req.body;
 
       if (!permissionId || !status) {
         return res.status(400).json({
@@ -2198,7 +2198,7 @@ const ManufacturingController = {
         });
       }
 
-      const updated = await ManufacturingModel.updateVtourPermissionStatus(permissionId, status);
+      const updated = await ManufacturingModel.updateVtourPermissionStatus(permissionId, status, remarks || null, reason || null);
 
       if (!updated) {
         return res.status(404).json({
