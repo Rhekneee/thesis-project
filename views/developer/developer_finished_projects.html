@@ -324,48 +324,103 @@
 
             <h2>Completed Projects</h2>
 
-            <div class="search-container">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search by project name...">
-                <select id="filterDropdown" class="form-select" onchange="handleFilterChange()" aria-label="Filter projects by status">
-                    <option value="all">All Projects</option>
-                    <option value="rated">Rated</option>
-                    <option value="to-rate">To Rate</option>
-                </select>
-                <div id="entriesPerPageContainer" class="entries-per-page">
-                    <label for="entriesPerPageSelect">Entries per page:</label>
-                    <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                    </select>
-                </div>
-            </div>
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs mb-4" id="projectsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="to-rate-tab" data-bs-toggle="tab" data-bs-target="#to-rate" type="button" role="tab" aria-controls="to-rate" aria-selected="true">
+                        <i class="fas fa-star me-2"></i>To Rate
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="rated-tab" data-bs-toggle="tab" data-bs-target="#rated" type="button" role="tab" aria-controls="rated" aria-selected="false">
+                        <i class="fas fa-check-circle me-2"></i>Already Rated
+                    </button>
+                </li>
+            </ul>
 
-            <!-- Projects Table -->
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
-                                <th>Image</th>
-                                <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(4)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortTable(5)">Status <i class="fas fa-sort sort-icon"></i></th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="projectsList"></tbody>
-                    </table>
-                </div>
-            </div>
+            <!-- Tab Content -->
+            <div class="tab-content" id="projectsTabContent">
+                <!-- To Rate Tab -->
+                <div class="tab-pane fade show active" id="to-rate" role="tabpanel" aria-labelledby="to-rate-tab">
+                    <div class="search-container">
+                        <input type="text" id="searchBarToRate" class="form-control" placeholder="Search by project name...">
+                        <div id="entriesPerPageContainer" class="entries-per-page">
+                            <label for="entriesPerPageSelect">Entries per page:</label>
+                            <select id="entriesPerPageSelect" class="form-select" onchange="setEntriesPerPage()">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-3">
-                <div id="showingEntries" class="text-muted"></div>
-                <nav aria-label="Project pagination">
-                    <ul class="pagination mb-0" id="paginationControls"></ul>
-                </nav>
+                    <!-- Projects Table -->
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                                        <th>Image</th>
+                                        <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                                        <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                        <th onclick="sortTable(4)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="projectsListToRate"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-3">
+                        <div id="showingEntries" class="text-muted"></div>
+                        <nav aria-label="Project pagination">
+                            <ul class="pagination mb-0" id="paginationControls"></ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Already Rated Tab -->
+                <div class="tab-pane fade" id="rated" role="tabpanel" aria-labelledby="rated-tab">
+                    <div class="search-container">
+                        <input type="text" id="searchBarRated" class="form-control" placeholder="Search by project name...">
+                        <div id="entriesPerPageContainerRated" class="entries-per-page">
+                            <label for="entriesPerPageSelectRated">Entries per page:</label>
+                            <select id="entriesPerPageSelectRated" class="form-select" onchange="setEntriesPerPage()">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Projects Table -->
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                                        <th>Image</th>
+                                        <th onclick="sortTable(2)">Project Name <i class="fas fa-sort sort-icon"></i></th>
+                                        <th onclick="sortTable(3)">Location <i class="fas fa-sort sort-icon"></i></th>
+                                        <th onclick="sortTable(4)">Completion Date <i class="fas fa-sort sort-icon"></i></th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="projectsListRated"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="entriesMessageRated" class="d-flex justify-content-between align-items-center mt-3">
+                        <div id="showingEntriesRated" class="text-muted"></div>
+                        <nav aria-label="Project pagination">
+                            <ul class="pagination mb-0" id="paginationControlsRated"></ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -651,6 +706,8 @@
                         hasRated: false,
                         feedback: null
                     }));
+                    // Check ratings for each project
+                    await checkProjectRatings();
                     renderProjects();
                 } else {
                     console.error('Failed to load completed projects:', data.error);
@@ -662,11 +719,28 @@
             }
         }
 
+        // Check which projects have ratings
+        async function checkProjectRatings() {
+            for (let project of projects) {
+                try {
+                    const resp = await fetch(`/manufacturing/projects/${encodeURIComponent(project.id)}/rating`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data && data.success && data.rating) {
+                            project.hasRated = true;
+                            project.developerRating = 5; // Placeholder
+                            project.feedback = data.rating.feedback || '';
+                        }
+                    }
+                } catch(_) {}
+            }
+        }
+
         // Show error message if projects fail to load
         function showProjectsError() {
             // Clear table rows and show message below the table only
-            const projectsList = document.getElementById('projectsList');
-            projectsList.innerHTML = '';
+            const projectsList = document.getElementById('projectsListToRate');
+            if (projectsList) projectsList.innerHTML = '';
             const showingEntries = document.getElementById('showingEntries');
             if (showingEntries) {
                 showingEntries.textContent = 'No completed projects found';
@@ -683,7 +757,10 @@
 
         // Initialize event listeners
         function initializeEventListeners() {
-            document.getElementById('searchBar').addEventListener('input', filterProjects);
+            const searchBarToRate = document.getElementById('searchBarToRate');
+            const searchBarRated = document.getElementById('searchBarRated');
+            if (searchBarToRate) searchBarToRate.addEventListener('input', filterProjects);
+            if (searchBarRated) searchBarRated.addEventListener('input', filterProjects);
             initializeRatingStars();
             // Real-time profanity filtering for feedback input
             const feedbackInput = document.getElementById('projectFeedback');
@@ -906,33 +983,46 @@
 
         // Render projects
         function renderProjects(filteredProjects = null) {
-            const projectsList = document.getElementById('projectsList');
+            // Split projects into to-rate and rated
+            const toRateProjects = projects.filter(p => !p.hasRated);
+            const ratedProjects = projects.filter(p => p.hasRated);
+
+            // Render To Rate tab
+            renderProjectTable('projectsListToRate', 'showingEntries', 'entriesMessage', 'paginationControls', toRateProjects);
+            
+            // Render Rated tab
+            renderProjectTable('projectsListRated', 'showingEntriesRated', 'entriesMessageRated', 'paginationControlsRated', ratedProjects);
+        }
+
+        // Render a single project table
+        function renderProjectTable(listId, entriesId, messageId, paginationId, projectsToRender) {
+            const projectsList = document.getElementById(listId);
+            if (!projectsList) return;
             projectsList.innerHTML = '';
 
-            const projectsToRender = filteredProjects || projects;
             if (!projectsToRender || projectsToRender.length === 0) {
-                const showingEntries = document.getElementById('showingEntries');
+                const showingEntries = document.getElementById(entriesId);
                 if (showingEntries) {
-                    showingEntries.textContent = 'No completed projects found';
+                    showingEntries.textContent = 'No projects found';
                     showingEntries.classList.add('w-100', 'text-center');
                 }
-                const entriesMsg = document.getElementById('entriesMessage');
+                const entriesMsg = document.getElementById(messageId);
                 if (entriesMsg) {
                     entriesMsg.classList.remove('justify-content-between');
                     entriesMsg.classList.add('justify-content-center');
                 }
-                const paginationControls = document.getElementById('paginationControls');
+                const paginationControls = document.getElementById(paginationId);
                 if (paginationControls) paginationControls.style.display = 'none';
                 return;
             }
 
             // Restore default alignment when there are items
-            const entriesMsg = document.getElementById('entriesMessage');
+            const entriesMsg = document.getElementById(messageId);
             if (entriesMsg) {
                 entriesMsg.classList.remove('justify-content-center');
                 entriesMsg.classList.add('justify-content-between');
             }
-            const showingEntries = document.getElementById('showingEntries');
+            const showingEntries = document.getElementById(entriesId);
             if (showingEntries) {
                 showingEntries.classList.remove('w-100', 'text-center');
                 showingEntries.classList.add('text-muted');
@@ -943,6 +1033,7 @@
 
             paginatedProjects.forEach(project => {
                 const row = document.createElement('tr');
+                const isRated = project.hasRated;
                 row.innerHTML = `
                     <td>${project.id}</td>
                     <td>
@@ -952,16 +1043,10 @@
                     <td>${project.location}</td>
                     <td>${formatDate(project.completionDate)}</td>
                     <td>
-                        ${project.developerRating ? 
-                            `<span class="badge bg-success">Rated</span>` : 
-                            `<span class="badge bg-warning text-dark">To Rate</span>`
-                        }
-                    </td>
-                    <td>
                         <button class="btn btn-sm btn-primary me-1" onclick="showProjectDetails(${project.id}, true)">
                             <i class="fas fa-eye"></i>
                         </button>
-                        ${!project.developerRating ? 
+                        ${!isRated ? 
                             `<button class="btn btn-sm btn-warning" onclick="showProjectDetails(${project.id}, false)">
                                 <i class="fas fa-star"></i>
                             </button>` : 
@@ -972,7 +1057,7 @@
                 projectsList.appendChild(row);
             });
 
-            updatePagination(projectsToRender.length);
+            updatePagination(projectsToRender.length, entriesId, paginationId);
         }
 
         // Show project details
@@ -1052,8 +1137,7 @@
                 0: 'id',
                 2: 'name',
                 3: 'location',
-                4: 'completionDate',
-                5: 'developerRating'
+                4: 'completionDate'
             };
 
             const columnName = columnMap[columnIndex];
@@ -1075,13 +1159,6 @@
                     valueB = new Date(valueB).getTime();
                 }
 
-                if (columnName === 'developerRating' || columnName === 'hasRated') {
-                    // Sort by rating status (null values last)
-                    if (valueA === null && valueB === null) return 0;
-                    if (valueA === null) return 1;
-                    if (valueB === null) return -1;
-                }
-
                 if (typeof valueA === 'string') {
                     valueA = valueA.toLowerCase();
                     valueB = valueB.toLowerCase();
@@ -1099,15 +1176,7 @@
 
         // Filter projects
         function filterProjects() {
-            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
-
-            const filteredProjects = projects.filter(project => {
-                return project.name.toLowerCase().includes(searchTerm) ||
-                       project.location.toLowerCase().includes(searchTerm);
-            });
-
-            currentPage = 1;
-            renderProjects(filteredProjects);
+            renderProjects();
         }
 
         // Set entries per page
@@ -1118,8 +1187,9 @@
         }
 
         // Update pagination
-        function updatePagination(totalItems) {
-            const paginationControls = document.getElementById('paginationControls');
+        function updatePagination(totalItems, entriesId, paginationId) {
+            const paginationControls = document.getElementById(paginationId);
+            if (!paginationControls) return;
             const totalPages = Math.ceil(totalItems / itemsPerPage);
             
             // Clear existing pagination
@@ -1163,12 +1233,13 @@
             }
 
             // Update entries message
-            updateEntriesMessage(totalItems);
+            updateEntriesMessage(totalItems, entriesId);
         }
 
         // Update entries message function
-        function updateEntriesMessage(totalItems) {
-            const showingEntries = document.getElementById('showingEntries');
+        function updateEntriesMessage(totalItems, entriesId) {
+            const showingEntries = document.getElementById(entriesId);
+            if (!showingEntries) return;
             if (totalItems === 0) {
                 showingEntries.textContent = 'No entries to display';
                 return;
@@ -1192,19 +1263,6 @@
                 renderProjects();
             }
             return false;
-        }
-
-        // Handle filter change function
-        function handleFilterChange() {
-            const filter = document.getElementById('filterDropdown').value;
-            const filteredProjects = filter === 'all' 
-                ? [...projects] 
-                : filter === 'rated'
-                    ? projects.filter(p => p.developerRating)
-                    : projects.filter(p => !p.developerRating);
-            
-            currentPage = 1; // Reset to first page when filter changes
-            renderProjects(filteredProjects);
         }
     </script>
     <script>
