@@ -2323,6 +2323,41 @@ const ManufacturingModel = {
     } catch (error) {
       console.warn('paymongo_webhook_events insert skipped:', error.code || error.message);
     }
+  },
+
+  /**
+   * Create vtour permission request
+   */
+  createVtourPermission: async (data) => {
+    try {
+      const { developer_id, project_id, remarks } = data;
+      
+      // Check if developer already has a pending permission request
+      const checkQuery = `
+        SELECT id FROM vtour_permissions 
+        WHERE developer_id = ? AND approval_status = 'pending'
+        LIMIT 1
+      `;
+      const [pendingPermissions] = await db.query(checkQuery, [developer_id]);
+      
+      if (pendingPermissions && pendingPermissions.length > 0) {
+        const error = new Error('You already have a pending permission request. Please wait for approval or rejection before submitting a new one.');
+        error.code = 'PENDING_EXISTS';
+        throw error;
+      }
+      
+      const query = `
+        INSERT INTO vtour_permissions (
+          developer_id, project_id, remarks, request_date, approval_status
+        ) VALUES (?, ?, ?, NOW(), 'pending')
+      `;
+      
+      const [result] = await db.query(query, [developer_id, project_id, remarks || null]);
+      return result.insertId;
+    } catch (error) {
+      console.error('Error creating vtour permission:', error);
+      throw error;
+    }
   }
 };
 
