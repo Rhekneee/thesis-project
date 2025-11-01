@@ -2358,6 +2358,56 @@ const ManufacturingModel = {
       console.error('Error creating vtour permission:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get all vtour permissions for a developer
+   */
+  getVtourPermissionsByDeveloper: async (developerId) => {
+    try {
+      const query = `
+        SELECT 
+          vp.id,
+          vp.project_id,
+          vp.developer_id,
+          vp.request_date,
+          vp.approval_status,
+          vp.approved_at,
+          vp.remarks,
+          p.project_name,
+          p.location,
+          p.project_code
+        FROM vtour_permissions vp
+        LEFT JOIN projects p ON vp.project_id = p.id
+        WHERE vp.developer_id = ?
+        ORDER BY vp.request_date DESC
+      `;
+      
+      const [rows] = await db.query(query, [developerId]);
+      return rows;
+    } catch (error) {
+      console.error('Error getting vtour permissions by developer:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update vtour permission status
+   */
+  updateVtourPermissionStatus: async (permissionId, status) => {
+    try {
+      const query = `
+        UPDATE vtour_permissions 
+        SET approval_status = ?, approved_at = NOW()
+        WHERE id = ?
+      `;
+      
+      const [result] = await db.query(query, [status, permissionId]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error updating vtour permission status:', error);
+      throw error;
+    }
   }
 };
 

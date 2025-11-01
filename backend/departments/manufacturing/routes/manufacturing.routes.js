@@ -143,8 +143,6 @@ router.get('/payments/success', ManufacturingController.paymentSuccess);
 router.get('/payments/cancel', ManufacturingController.paymentCancel);
 
 // ========== ATTENDANCE ROUTES ==========
-
-// QR code scanning and attendance recording
 router.post('/attendance/scan-qr', ManufacturingController.scanQRCode);
 router.post('/attendance/record', ManufacturingController.recordAttendance);
 router.get('/attendance/worker/:workerId', ManufacturingController.getWorkerAttendance);
@@ -158,5 +156,7 @@ router.get('/ratings/summary', ManufacturingController.getRatingsSummary);
 
 // ==================== VTOUR PERMISSIONS ====================
 router.post('/vtour-permissions', ManufacturingController.submitVtourPermission);
+router.get('/vtour-permissions/developer', ManufacturingController.getVtourPermissionsByDeveloper);
+router.put('/vtour-permissions/:permissionId/status', ManufacturingController.updateVtourPermissionStatus);
 
 module.exports = router;

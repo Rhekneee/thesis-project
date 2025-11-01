@@ -98,6 +98,42 @@
             font-size: 0.9em;
         }
 
+        /* Virtual Tour Permission Card Styles */
+        .vtour-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .vtour-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .vtour-status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .vtour-status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .vtour-status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .vtour-status-denied {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
         /* Add new table container styles */
         .table-container {
             background-color: #ffffff;
@@ -336,6 +372,11 @@
                         <i class="fas fa-check-circle me-2"></i>Already Rated
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vtour-tab" data-bs-toggle="tab" data-bs-target="#vtour" type="button" role="tab" aria-controls="vtour" aria-selected="false">
+                        <i class="fas fa-vr-cardboard me-2"></i>Virtual Tour Permissions
+                    </button>
+                </li>
             </ul>
 
             <!-- Tab Content -->
@@ -419,6 +460,13 @@
                         <nav aria-label="Project pagination">
                             <ul class="pagination mb-0" id="paginationControlsRated"></ul>
                         </nav>
+                    </div>
+                </div>
+
+                <!-- Virtual Tour Permissions Tab -->
+                <div class="tab-pane fade" id="vtour" role="tabpanel" aria-labelledby="vtour-tab">
+                    <div class="row g-3" id="vtourPermissionsContainer">
+                        <!-- Filled by JS -->
                     </div>
                 </div>
             </div>
@@ -684,6 +732,9 @@
             loadCompletedProjects();
             initializeEventListeners();
             getUserInfo();
+            
+            // Load vtour permissions
+            loadVtourPermissions();
         });
 
         // Load completed projects from backend
@@ -767,6 +818,14 @@
             if (feedbackInput) {
                 feedbackInput.addEventListener('input', () => {
                     feedbackInput.value = filterProfanity(feedbackInput.value);
+                });
+            }
+            
+            // Reload vtour permissions when the tab is shown
+            const vtourTab = document.getElementById('vtour-tab');
+            if (vtourTab) {
+                vtourTab.addEventListener('shown.bs.tab', function () {
+                    loadVtourPermissions();
                 });
             }
         }
@@ -1263,6 +1322,106 @@
                 renderProjects();
             }
             return false;
+        }
+
+        // Load virtual tour permissions
+        async function loadVtourPermissions() {
+            try {
+                const response = await fetch('/manufacturing/vtour-permissions/developer');
+                const data = await response.json();
+                
+                if (data.success && data.permissions) {
+                    renderVtourPermissions(data.permissions);
+                } else {
+                    console.error('Failed to load vtour permissions:', data.error);
+                    document.getElementById('vtourPermissionsContainer').innerHTML = '<p class="text-muted">No virtual tour permission requests found.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading vtour permissions:', error);
+                document.getElementById('vtourPermissionsContainer').innerHTML = '<p class="text-danger">Failed to load virtual tour permissions.</p>';
+            }
+        }
+
+        // Render virtual tour permission cards
+        function renderVtourPermissions(permissions) {
+            const container = document.getElementById('vtourPermissionsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!permissions || permissions.length === 0) {
+                container.innerHTML = '<div class="col-12"><p class="text-muted text-center">No virtual tour permission requests found.</p></div>';
+                return;
+            }
+
+            permissions.forEach(permission => {
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6 col-lg-4';
+                
+                const statusClass = `vtour-status-${permission.approval_status}`;
+                const statusText = permission.approval_status.charAt(0).toUpperCase() + permission.approval_status.slice(1);
+                
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'N/A';
+                    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                    return new Date(dateString).toLocaleDateString(undefined, options);
+                };
+
+                col.innerHTML = `
+                    <div class="vtour-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">${permission.project_name || 'N/A'}</h5>
+                                <p class="text-muted small mb-0">${permission.project_code || ''}</p>
+                            </div>
+                            <span class="vtour-status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2"><strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong> ${permission.location || 'N/A'}</p>
+                            <p class="mb-2"><strong><i class="fas fa-calendar me-2"></i>Request Date:</strong> ${formatDate(permission.request_date)}</p>
+                            ${permission.approved_at ? `<p class="mb-2"><strong><i class="fas fa-check-circle me-2"></i>Approved At:</strong> ${formatDate(permission.approved_at)}</p>` : ''}
+                            ${permission.remarks ? `<p class="mb-2"><strong><i class="fas fa-comment me-2"></i>Remarks:</strong></p><p class="text-muted small">${permission.remarks}</p>` : ''}
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            ${permission.approval_status === 'pending' ? 
+                                `<button class="btn btn-success btn-sm flex-fill" onclick="updateVtourPermission(${permission.id}, 'approved')">
+                                    <i class="fas fa-check me-2"></i>Approve
+                                </button>
+                                <button class="btn btn-danger btn-sm flex-fill" onclick="updateVtourPermission(${permission.id}, 'denied')">
+                                    <i class="fas fa-times me-2"></i>Reject
+                                </button>` : 
+                                '<p class="text-muted text-center mb-0 w-100"><i class="fas fa-info-circle me-2"></i>No action available</p>'
+                            }
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        // Update vtour permission status
+        async function updateVtourPermission(permissionId, status) {
+            if (!confirm(`Are you sure you want to ${status === 'approved' ? 'approve' : 'reject'} this virtual tour permission request?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/manufacturing/vtour-permissions/${permissionId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccessMessage(`Virtual tour permission request ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
+                    loadVtourPermissions();
+                } else {
+                    showWarningMessage(data.error || 'Failed to update permission status');
+                }
+            } catch (error) {
+                console.error('Error updating vtour permission:', error);
+                showWarningMessage('Failed to update permission status');
+            }
         }
     </script>
     <script>

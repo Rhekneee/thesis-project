@@ -2144,6 +2144,80 @@ const ManufacturingController = {
         message: error.message || 'Failed to submit permission request' 
       });
     }
+  },
+
+  /**
+   * Get vtour permissions for a developer
+   */
+  getVtourPermissionsByDeveloper: async (req, res) => {
+    try {
+      const user = req.session?.user || {};
+      const developerId = user.id;
+
+      if (!developerId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Developer not authenticated'
+        });
+      }
+
+      const permissions = await ManufacturingModel.getVtourPermissionsByDeveloper(developerId);
+      
+      res.json({
+        success: true,
+        permissions
+      });
+    } catch (error) {
+      console.error('Error getting vtour permissions:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get vtour permissions'
+      });
+    }
+  },
+
+  /**
+   * Update vtour permission status
+   */
+  updateVtourPermissionStatus: async (req, res) => {
+    try {
+      const permissionId = Number(req.params.permissionId);
+      const { status } = req.body;
+
+      if (!permissionId || !status) {
+        return res.status(400).json({
+          success: false,
+          error: 'Permission ID and status are required'
+        });
+      }
+
+      if (!['approved', 'denied'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid status. Must be "approved" or "denied"'
+        });
+      }
+
+      const updated = await ManufacturingModel.updateVtourPermissionStatus(permissionId, status);
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          error: 'Permission not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Permission ${status === 'approved' ? 'approved' : 'rejected'} successfully`
+      });
+    } catch (error) {
+      console.error('Error updating vtour permission status:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update permission status'
+      });
+    }
   }
 };
 
