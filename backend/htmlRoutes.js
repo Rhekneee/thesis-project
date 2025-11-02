@@ -56,6 +56,24 @@ const htmlRoutes = (app) => {
 // });
 
 
+// ====================
+  // Superadmin Routes
+  // ====================
+  app.get('/superadmin/superdashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'superadmin', 'superdashboard.html')); // Adjusted path
+  });
+  app.get('/superadmin/superuser', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'superadmin', 'superuser.html')); // Adjusted path
+  });
+  app.get('/superadmin/superdepartment', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'superadmin', 'superdepartment.html')); // Adjusted path
+  });
+  app.get('/superadmin/superrole', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'superadmin', 'superrole.html')); // Adjusted path
+  });
+ app.get('/superadmin/superdata', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'superadmin', 'superdata.html')); // Adjusted path
+  });
 
 // ====================
   // CRM Website Routes

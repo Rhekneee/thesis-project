@@ -1435,7 +1435,7 @@ const ManufacturingController = {
   // Save daily log entry for manufacturing progress tracking
   saveDailyLogProgress: async (req, res) => {
     try {
-      const { projectId, divisionName, logDate, description, materials, totalMaterialCost } = req.body;
+      const { projectId, divisionName, logDate, description, materials, totalMaterialCost, workers } = req.body;
       
       console.log('📝 Saving daily log:', { projectId, divisionName, logDate, description: description?.substring(0, 50) });
       
@@ -1446,7 +1446,7 @@ const ManufacturingController = {
         });
       }
 
-      const logId = await ManufacturingModel.saveDailyLogEntry(projectId, divisionName, logDate, description, materials || [], totalMaterialCost || 0);
+      const logId = await ManufacturingModel.saveDailyLogEntry(projectId, divisionName, logDate, description, materials || [], totalMaterialCost || 0, workers || []);
       
       console.log('✅ Daily log saved with ID:', logId);
       

@@ -252,6 +252,11 @@
         .modal-xl {
             max-width: 1200px;
         }
+        
+        /* Custom size for daily log modal */
+        #dailyLogModal .modal-dialog {
+            max-width: 1400px;
+        }
         .badge {
             font-size: 0.9em;
             padding: 8px 12px;
@@ -423,6 +428,15 @@
 
         #successModal .modal-backdrop {
             z-index: 1059;
+        }
+
+        /* Ensure confirmation modal appears above daily log modal */
+        #confirmProgressModal {
+            z-index: 1065 !important;
+        }
+
+        #confirmProgressModal .modal-backdrop {
+            z-index: 1064 !important;
         }
         
         .project-image-container {
@@ -1012,25 +1026,56 @@
                         </div>
                     </div>
 
-                    <div class="mt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0">Materials Used</h6>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="addMaterialRowBtn">
-                                <i class="fas fa-plus me-2"></i>Add Material
-                            </button>
+                    <div class="row mt-4 g-3">
+                        <!-- Materials Used Column -->
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0"><i class="fas fa-box me-2"></i>Materials Used</h6>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="addMaterialRowBtn">
+                                    <i class="fas fa-plus me-2"></i>Add Material
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Material Name</th>
+                                            <th style="width: 100px;" class="text-end">Qty</th>
+                                            <th style="width: 100px;" class="text-end">Price</th>
+                                            <th style="width: 50px;" class="text-center">X</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="materialsBody"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Material Name</th>
-                                        <th style="width: 140px;" class="text-end">Quantity</th>
-                                        <th style="width: 180px;" class="text-end">Price</th>
-                                        <th style="width: 60px;" class="text-center">Remove</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="materialsBody"></tbody>
-                            </table>
+
+                        <!-- Labor Used Column -->
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Labor Used</h6>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-primary btn-sm" id="fetchWorkersBtn">
+                                        <i class="fas fa-sync me-2"></i>Fetch from Today
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addLaborRowBtn">
+                                        <i class="fas fa-plus me-2"></i>Add Worker
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Worker Name</th>
+                                            <th style="width: 90px;" class="text-end">Hours</th>
+                                            <th style="width: 90px;" class="text-end">OT</th>
+                                            <th style="width: 50px;" class="text-center">X</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="laborBody"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -1456,6 +1501,8 @@
 
         // Daily Log modal actions
         document.getElementById('addMaterialRowBtn').addEventListener('click', addMaterialRow);
+        document.getElementById('addLaborRowBtn').addEventListener('click', addLaborRow);
+        document.getElementById('fetchWorkersBtn').addEventListener('click', fetchAndPopulateWorkers);
         document.getElementById('saveDailyLogBtn').addEventListener('click', saveDailyLogFromModal);
 
         // Billing summary
@@ -2087,7 +2134,7 @@
     }
 
     // Update project button click handler
-    function updateProject(projectId) {
+    async function updateProject(projectId) {
         const project = state.records.find(p => p.id === projectId);
         if (!project) return;
 
@@ -2116,8 +2163,8 @@
             initializeChart();
         }
 
-        // Load division progress
-        loadDivisionProgress();
+        // Load division progress (await to ensure data is loaded before updating select options)
+        await loadDivisionProgress();
 
         // Load daily logs
         loadDailyLogs();
@@ -2125,7 +2172,7 @@
         // Load project materials (owner supply + requested materials)
         loadProjectMaterials();
 
-        // Update division selection gating
+        // Update division selection gating (after data is loaded)
         updateDivisionSelectOptions();
     }
     
@@ -2578,20 +2625,43 @@
         
         document.getElementById('dailyLogForm').reset();
         document.getElementById('materialsBody').innerHTML = '';
+        document.getElementById('laborBody').innerHTML = '';
+        
         // Refresh project materials so newly released company items appear
         try {
             await loadProjectMaterials();
         } catch (e) {}
-        // Add one blank material row by default
-        addMaterialRow();
-        // Pre-fill date with today (Philippines timezone)
+        
+        // Load workers for the selected date
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
         const dateEl = document.getElementById('logDate');
-        if (dateEl) dateEl.value = today;
+        if (dateEl) {
+            dateEl.value = today;
+            // Add listener to reload workers when date changes
+            dateEl.removeEventListener('change', handleDateChange);
+            dateEl.addEventListener('change', handleDateChange);
+        }
+        await loadWorkersForDate(today);
+        
+        // Add one blank material row by default
+        addMaterialRow();
+        // Don't add labor row by default - user must click "Fetch from Today"
+        
         // Allow closing - we'll just warn if they try to close with unsaved data
         canCloseDailyLogModal = false;
 
         dailyLogModal.show();
+    }
+
+    // Handle date change in daily log modal
+    async function handleDateChange(e) {
+        const date = e.target.value;
+        if (date) {
+            await loadWorkersForDate(date);
+            // Refresh labor rows with new workers
+            document.getElementById('laborBody').innerHTML = '';
+            addLaborRow();
+        }
     }
 
     // Handle modal close attempts
@@ -2601,13 +2671,22 @@
             const dateInput = document.getElementById('logDate').value;
             const descInput = document.getElementById('logDescription').value;
             
-            // If there's any data entered, ask for confirmation
+            // If there's any data entered, ask for confirmation using modal
             if (dateInput || descInput) {
-                const confirmClose = confirm('You have unsaved changes. Are you sure you want to close?');
-                if (!confirmClose) {
-                    e.preventDefault();
-                    return;
-                }
+                // Prevent the modal from closing
+                e.preventDefault();
+                
+                // Show confirmation modal
+                showConfirmationDialog('You have unsaved changes. Are you sure you want to close?', () => {
+                    // User confirmed - close daily log modal
+                    // Reset the flag and close the daily log modal
+                    canCloseDailyLogModal = true;
+                    const dailyLogModalInstance = bootstrap.Modal.getInstance(document.getElementById('dailyLogModal'));
+                    if (dailyLogModalInstance) {
+                        dailyLogModalInstance.hide();
+                    }
+                });
+                return;
             }
         }
         // Allow closing
@@ -2709,6 +2788,153 @@
         tbody.appendChild(tr);
     }
 
+    // Store available workers globally for labor rows
+    let availableWorkers = [];
+
+    // Load workers from attendance for a specific date
+    async function loadWorkersForDate(date) {
+        if (!currentProjectId) return;
+        
+        try {
+            const response = await fetch(`/manufacturing/attendance/project/${currentProjectId}?date=${date}`);
+            const data = await response.json();
+            
+            if (data.success && data.records) {
+                // Store workers with attendance information
+                availableWorkers = data.records.map(record => ({
+                    attendance_id: record.id,
+                    worker_id: record.worker_id,
+                    full_name: `${record.firstname} ${record.middlename || ''} ${record.lastname}`.trim(),
+                    role: record.role_name || '',
+                    time_in: record.time_in,
+                    time_out: record.time_out,
+                    status: record.status,
+                    hours_worked: record.hours_worked || 0,
+                    overtime_hours: record.overtime_hours || 0
+                }));
+                console.log(`✅ Loaded ${availableWorkers.length} workers for date ${date}`);
+            } else {
+                availableWorkers = [];
+                console.log('ℹ️ No workers found for this date');
+            }
+        } catch (error) {
+            console.error('❌ Error loading workers:', error);
+            availableWorkers = [];
+        }
+    }
+
+    // Add a new labor row (select from attendance records for the date)
+    function addLaborRow() {
+        const tbody = document.getElementById('laborBody');
+        const tr = document.createElement('tr');
+        
+        // Build options from available workers
+        const options = availableWorkers.map(worker => {
+            return `<option value="${worker.worker_id}"
+                data-attendance-id="${worker.attendance_id}"
+                data-hours="${worker.hours_worked}"
+                data-ot="${worker.overtime_hours}">
+                ${escapeHtml(worker.full_name)}${worker.role ? ' - ' + worker.role : ''}
+            </option>`;
+        }).join('');
+        
+        tr.innerHTML = `
+            <td>
+                <select class="form-select labor-select" required>
+                    <option value="" selected disabled>Select worker</option>
+                    ${options || '<option disabled>No workers available for this date</option>'}
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control text-end labor-hours" placeholder="0" min="0" max="24" step="0.01" required>
+            </td>
+            <td>
+                <input type="number" class="form-control text-end labor-ot" placeholder="0" min="0" step="0.01" required>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>`;
+        
+        // Bind change event to auto-fill hours and OT from attendance
+        tr.querySelector('.labor-select').addEventListener('change', function() {
+            const sel = this.selectedOptions[0];
+            const hoursInput = tr.querySelector('.labor-hours');
+            const otInput = tr.querySelector('.labor-ot');
+            const hours = Number(sel?.dataset.hours || 0);
+            const ot = Number(sel?.dataset.ot || 0);
+            if (hoursInput) hoursInput.value = hours;
+            if (otInput) otInput.value = ot;
+        });
+        
+        tbody.appendChild(tr);
+    }
+
+    // Fetch and populate workers from today's attendance automatically
+    async function fetchAndPopulateWorkers() {
+        const dateInput = document.getElementById('logDate');
+        if (!dateInput || !dateInput.value) {
+            showWarningMessage('Please select a date first.');
+            return;
+        }
+
+        const date = dateInput.value;
+        
+        // Only fetch if the date is today
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+        if (date !== today) {
+            showWarningMessage('You can only fetch workers from today\'s attendance.');
+            return;
+        }
+        
+        // Load workers for today's date
+        await loadWorkersForDate(date);
+        
+        // Clear existing labor rows
+        document.getElementById('laborBody').innerHTML = '';
+        
+        // If no workers found, show message
+        if (availableWorkers.length === 0) {
+            showWarningMessage('No workers found in today\'s attendance.');
+            return;
+        }
+        
+        // Populate automatically with all workers from attendance
+        availableWorkers.forEach(worker => {
+            // Create a row with pre-filled values
+            const tbody = document.getElementById('laborBody');
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td>
+                    <select class="form-select labor-select" required>
+                        <option value="${worker.worker_id}" selected
+                            data-attendance-id="${worker.attendance_id}"
+                            data-hours="${worker.hours_worked}"
+                            data-ot="${worker.overtime_hours}">
+                            ${escapeHtml(worker.full_name)}${worker.role ? ' - ' + worker.role : ''}
+                        </option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control text-end labor-hours" value="${worker.hours_worked || 0}" min="0" max="24" step="0.01" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control text-end labor-ot" value="${worker.overtime_hours || 0}" min="0" step="0.01" required>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>`;
+            
+            tbody.appendChild(tr);
+        });
+        
+        showSuccessMessage(`Loaded ${availableWorkers.length} worker(s) from today's attendance.`);
+    }
+
     // Save daily log from modal
     function saveDailyLogFromModal() {
         console.log('🎯 saveDailyLogFromModal function called');
@@ -2722,7 +2948,9 @@
         }
 
         const materialRows = Array.from(document.querySelectorAll('#materialsBody tr'));
+        const laborRows = Array.from(document.querySelectorAll('#laborBody tr'));
         const project = state.records.find(p => p.id === currentProjectId);
+        
         const materials = materialRows.map(row => {
             const sel = row.querySelector('.material-select');
             const qtyEl = row.querySelector('.material-qty');
@@ -2741,13 +2969,35 @@
             };
         }).filter(Boolean);
 
-        // Require at least one material with quantity > 0
-        if (!materials.length || !materials.some(m => Number(m.quantity) > 0)) {
-            showWarningMessage('Please add at least one material with quantity greater than 0.');
+        const workers = laborRows.map(row => {
+            const sel = row.querySelector('.labor-select');
+            const hoursEl = row.querySelector('.labor-hours');
+            const otEl = row.querySelector('.labor-ot');
+            const workerId = sel?.value;
+            const attendanceId = sel?.selectedOptions[0]?.dataset.attendanceId;
+            if (!workerId) return null;
+            const hours = Number(hoursEl?.value || 0);
+            const ot = Number(otEl?.value || 0);
+            const worker = availableWorkers.find(w => w.worker_id == workerId);
+            return {
+                workerId: workerId,
+                attendanceId: attendanceId,
+                fullName: worker?.full_name || '',
+                hoursWorked: hours,
+                overtimeHours: ot
+            };
+        }).filter(Boolean);
+
+        // Require at least one material with quantity > 0 OR at least one worker
+        const hasMaterials = materials.length > 0 && materials.some(m => Number(m.quantity) > 0);
+        const hasWorkers = workers.length > 0 && workers.some(w => Number(w.hoursWorked) > 0);
+        
+        if (!hasMaterials && !hasWorkers) {
+            showWarningMessage('Please add at least one material with quantity > 0 OR at least one worker with hours > 0.');
             return;
         }
 
-        // Compute total cost
+        // Compute total material cost
         const totalCost = materials.reduce((sum, m) => sum + (m.subtotal || 0), 0);
 
         // Get the division from the stored value
@@ -2764,7 +3014,8 @@
             division: currentDivision,
             description: descInput.value.trim(),
             materials,
-            totalCost
+            totalCost,
+            workers
         };
 
         // Validation and persist; also decrement remaining quantities
@@ -2797,7 +3048,8 @@
                 logDate: dateInput.value,
                 description: descInput.value.trim(),
                 materials: materials,
-                totalMaterialCost: totalCost
+                totalMaterialCost: totalCost,
+                workers: workers
             }),
             credentials: 'include'
         });

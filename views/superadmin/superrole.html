@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard with Toggle Sidebar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    <style>
+
+    #admin-panel {
+        margin: 30px;
+    }
+
+    .table {
+        width: 100%;
+        margin-top: 30px;
+    }
+
+    .sidebar a:hover {
+        background-color: #575757;
+        text-decoration: none;
+    }
+
+    .search-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .search-container input {
+        max-width: 300px;
+        width: 100%;
+        margin-right: 10px;
+    }
+
+    #entriesMessage {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sort-icon {
+        cursor: pointer;
+    }
+
+    .sort-icon.active {
+        color: #007bff;
+    }
+
+    .pagination {
+        justify-content: center;
+    }
+    </style>
+    
+</head>
+
+<body>
+    <div id="wrapper">
+              <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">New Leave Request</div>
+            <div class="notification-time">5 minutes ago</div>
+        </div>
+        <div class="notification-item">
+            <div class="notification-title">Payroll Processed</div>
+            <div class="notification-time">1 hour ago</div>
+        </div>
+        <div class="notification-item">
+                <span class="profile-name">John Doe</span>
+                <span class="profile-position">HR Manager</span>
+            </div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                <span>Notifications</span>
+                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Leave Request</div>
+                <div class="notification-time">5 minutes ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">Payroll Processed</div>
+                <div class="notification-time">1 hour ago</div>
+            </div>
+            <div class="notification-item">
+                <div class="notification-title">New Employee Added</div>
+                <div class="notification-time">2 hours ago</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+ <!-- Sidebar -->
+ <div id="sidebar">
+    <div class="sidebar-header">
+        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+        <span class="company-title">MDB Construction</span>
+    </div>
+    <ul class="list-unstyled">
+        <li class="nav-item active">
+            <a class="nav-item" href="/superadmin/superdashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-item" href="/superadmin/superuser"><i class="fas fa-users"></i> <span>User Management</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-item" href="/superadmin/superdepartment"><i class="fas fa-building"></i> <span>Department Management</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-item" href="/superadmin/superrole"><i class="fas fa-user-tie"></i> <span>Role Management</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-item" href="/superadmin/superdata"><i class="fas fa-database"></i> <span>Data Management</span></a>
+        </li>
+      
+    </ul>
+    <!-- Move Logout outside the main ul -->
+    <div class="logout-container">
+        <a href="/logout" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+    </div>
+</div>
+
+        
+
+        <div id="content">
+            <div id="admin-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3><i class="fas fa-user-tie me-2"></i>Role Management</h3>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Add Role
+                    </button>
+                </div>
+
+                <p class="text-muted mb-4">Define roles per department or global roles.</p>
+
+                <div class="search-container">
+                    <input type="text" id="searchBar" class="form-control" placeholder="Search by role name or department..." onkeyup="filterRoles()">
+                    <div>
+                        <label for="entriesPerPage">Entries per page:</label>
+                        <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                </div>
+
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">ID <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(1)">Role Name <i class="fas fa-sort sort-icon"></i></th>
+                            <th onclick="sortTable(2)">Department <i class="fas fa-sort sort-icon"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rolesList">
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div id="entriesMessage">
+                    <span id="showingEntries">Showing 0 to 0 of 0 entries</span>
+                    <nav>
+                        <ul class="pagination" id="paginationControls">
+                            <!-- Pagination buttons will be dynamically inserted here -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Role Modal -->
+    <div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roleModalTitle">
+                        <i class="fas fa-plus me-2"></i>Add Role
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roleForm">
+                        <div class="mb-3">
+                            <label for="roleName" class="form-label">Role Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="roleName" placeholder="e.g., HR Manager, Finance Staff" required>
+                            <div class="invalid-feedback" id="nameError"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="roleDepartment" class="form-label">Department</label>
+                            <select class="form-select" id="roleDepartment">
+                                <option value="">Select Department (Optional - Global Role)</option>
+                            </select>
+                            <small class="form-text text-muted">Leave empty for global roles</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRole()">
+                        <i class="fas fa-save me-2"></i>Save Role
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Alert -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="alertContainer"></div>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/public/js/side_top.js"></script>
+
+    <script>
+        let roles = [];
+        let departments = [];
+        let filteredRoles = null;
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+        let editingRoleId = null;
+
+        // Fetch all roles on page load
+        async function fetchRoles() {
+            try {
+                const response = await fetch('/superadmin/roles', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/';
+                        return;
+                    }
+                    throw new Error('Failed to fetch roles');
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    roles = result.data || [];
+                    currentPage = 1;
+                    renderRoles();
+                } else {
+                    console.error('Error fetching roles:', result.message);
+                    showAlert('Error loading roles: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error fetching roles:', error);
+                showAlert('Error loading roles. Please refresh the page.', 'danger');
+            }
+        }
+
+        // Fetch departments for dropdown
+        async function fetchDepartments() {
+            try {
+                const response = await fetch('/superadmin/departments', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch departments');
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    departments = result.data || [];
+                    populateDepartmentDropdown();
+                }
+            } catch (error) {
+                console.error('Error fetching departments:', error);
+            }
+        }
+
+        // Populate department dropdown
+        function populateDepartmentDropdown() {
+            const select = document.getElementById('roleDepartment');
+            select.innerHTML = '<option value="">Select Department (Optional - Global Role)</option>';
+            
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Render roles table
+        function renderRoles() {
+            const list = filteredRoles || roles;
+            const startIndex = itemsPerPage === 'all' ? 0 : (currentPage - 1) * itemsPerPage;
+            const endIndex = itemsPerPage === 'all' ? list.length : Math.min(startIndex + itemsPerPage, list.length);
+            const pageData = list.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('rolesList');
+            
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No roles found</td></tr>';
+                updateEntriesMessage(0, 0, 0);
+                renderPagination();
+                return;
+            }
+
+            tbody.innerHTML = pageData.map(role => {
+                const departmentName = role.department_name || '<span class="text-muted">Global</span>';
+
+                return `
+                    <tr>
+                        <td>${role.id}</td>
+                        <td>${role.name || '-'}</td>
+                        <td>${departmentName}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${role.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateEntriesMessage(startIndex + 1, endIndex, list.length);
+            renderPagination();
+        }
+
+        // Update entries message
+        function updateEntriesMessage(start, end, total) {
+            const showingEntries = document.getElementById('showingEntries');
+            if (showingEntries) {
+                if (total === 0) {
+                    showingEntries.textContent = 'Showing 0 to 0 of 0 entries';
+                } else {
+                    showingEntries.textContent = `Showing ${start} to ${end} of ${total} entries`;
+                }
+            }
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const list = filteredRoles || roles;
+            const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(list.length / itemsPerPage);
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.classList.add('page-item');
+                if (i === currentPage) li.classList.add('active');
+                li.innerHTML = `<a class="page-link" href="#" onclick="event.preventDefault(); goToPage(${i})">${i}</a>`;
+                controls.appendChild(li);
+            }
+        }
+
+        // Go to specific page
+        function goToPage(page) {
+            currentPage = page;
+            renderRoles();
+        }
+
+        // Set entries per page
+        function setEntriesPerPage() {
+            const value = document.getElementById('entriesPerPage').value;
+            itemsPerPage = value === 'all' ? 'all' : parseInt(value);
+            currentPage = 1;
+            renderRoles();
+        }
+
+        // Filter roles
+        function filterRoles() {
+            const term = document.getElementById('searchBar').value.toLowerCase().trim();
+            
+            if (term) {
+                filteredRoles = roles.filter(role => 
+                    (role.name && role.name.toLowerCase().includes(term)) ||
+                    (role.department_name && role.department_name.toLowerCase().includes(term))
+                );
+            } else {
+                filteredRoles = null;
+            }
+            
+            currentPage = 1;
+            renderRoles();
+        }
+
+        // Sort table
+        function sortTable(colIndex) {
+            const list = [...(filteredRoles || roles)];
+            const sortKeys = ['id', 'name', 'department_name'];
+            const sortKey = sortKeys[colIndex];
+
+            if (currentSortColumn === colIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = colIndex;
+                currentSortDirection = 'asc';
+            }
+
+            list.sort((a, b) => {
+                let aVal = a[sortKey] || '';
+                let bVal = b[sortKey] || '';
+
+                if (aVal === null || aVal === undefined) aVal = '';
+                if (bVal === null || bVal === undefined) bVal = '';
+
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+
+                if (currentSortDirection === 'asc') {
+                    return aVal.localeCompare(bVal);
+                } else {
+                    return bVal.localeCompare(aVal);
+                }
+            });
+
+            document.querySelectorAll('.sort-icon').forEach(icon => icon.classList.remove('active'));
+            const icons = document.querySelectorAll('th i');
+            if (icons[colIndex]) {
+                icons[colIndex].classList.add('active');
+                icons[colIndex].classList.remove('fa-sort');
+                icons[colIndex].classList.add(currentSortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+            }
+
+            if (filteredRoles) {
+                filteredRoles = list;
+            } else {
+                roles = list;
+            }
+
+            currentPage = 1;
+            renderRoles();
+        }
+
+        // Open Add Modal
+        function openAddModal() {
+            editingRoleId = null;
+            document.getElementById('roleModalTitle').innerHTML = '<i class="fas fa-plus me-2"></i>Add Role';
+            document.getElementById('roleForm').reset();
+            document.getElementById('roleDepartment').value = '';
+            document.getElementById('roleName').classList.remove('is-invalid');
+            document.getElementById('nameError').textContent = '';
+            new bootstrap.Modal(document.getElementById('roleModal')).show();
+        }
+
+        // Open Edit Modal
+        async function openEditModal(id) {
+            try {
+                editingRoleId = id;
+                const response = await fetch(`/superadmin/roles/${id}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch role');
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('roleModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Role';
+                    document.getElementById('roleName').value = result.data.name;
+                    document.getElementById('roleDepartment').value = result.data.department_id || '';
+                    document.getElementById('roleName').classList.remove('is-invalid');
+                    document.getElementById('nameError').textContent = '';
+                    new bootstrap.Modal(document.getElementById('roleModal')).show();
+                } else {
+                    showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error fetching role:', error);
+                showAlert('Failed to fetch role details', 'danger');
+            }
+        }
+
+        // Save Role (Add or Edit)
+        async function saveRole() {
+            const nameInput = document.getElementById('roleName');
+            const departmentSelect = document.getElementById('roleDepartment');
+            const name = nameInput.value.trim();
+            const departmentId = departmentSelect.value || null;
+
+            if (!name) {
+                nameInput.classList.add('is-invalid');
+                document.getElementById('nameError').textContent = 'Role name is required';
+                return;
+            }
+
+            nameInput.classList.remove('is-invalid');
+            document.getElementById('nameError').textContent = '';
+
+            try {
+                const url = editingRoleId 
+                    ? `/superadmin/roles/${editingRoleId}`
+                    : '/superadmin/roles';
+                const method = editingRoleId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        name, 
+                        department_id: departmentId 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('roleModal')).hide();
+                    showAlert(result.message, 'success');
+                    await fetchRoles();
+                } else {
+                    showAlert(result.message, 'danger');
+                    if (result.message.includes('name')) {
+                        nameInput.classList.add('is-invalid');
+                        document.getElementById('nameError').textContent = result.message;
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving role:', error);
+                showAlert('Failed to save role', 'danger');
+            }
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            const alert = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            alertContainer.innerHTML = alert;
+            
+            setTimeout(() => {
+                const alertElement = document.getElementById(alertId);
+                if (alertElement) {
+                    bootstrap.Alert.getOrCreateInstance(alertElement).close();
+                }
+            }, 3000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchDepartments();
+            fetchRoles();
+        });
+    </script>
+</body>
+
+</html>

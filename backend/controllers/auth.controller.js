@@ -97,7 +97,56 @@ exports.login = async (req, res) => {
 <<<<<<< HEAD
         const { employee_id, password } = req.body;
 
-        // First check if it's a developer trying to log in using username
+        // First check if it's a superadmin trying to log in using username
+        const checkSuperadminSQL = `
+            SELECT u.id, u.username, u.password, u.role_id, r.name AS role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.username = ? AND r.name = 'superadmin' AND u.is_active = 1
+        `;
+        
+        const [superadmins] = await db.query(checkSuperadminSQL, [employee_id]);
+        
+        if (superadmins.length > 0) {
+            const superadmin = superadmins[0];
+            const isPasswordValid = await bcrypt.compare(password, superadmin.password);
+            
+            if (!isPasswordValid) {
+                return res.status(401).json({ message: "Invalid credentials." });
+            }
+            
+            // Get user details for session
+            const [userDetails] = await db.query(`
+                SELECT u.id, u.email, u.username, u.role_id, r.name AS role_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.id = ?
+            `, [superadmin.id]);
+
+            if (userDetails.length > 0) {
+                const user = userDetails[0];
+                
+                // Fetch permissions for the user's role
+                const permissions = await getPermissionsForRole(user.role_id);
+
+                req.session.user = {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    role_name: user.role_name,
+                    role_id: user.role_id,
+                    is_superadmin: true,
+                    permissions
+                };
+                
+                return res.status(200).json({ 
+                    message: "Login successful",
+                    redirect: "/dashboard"
+                });
+            }
+        }
+
+        // Check if it's a developer trying to log in using username
         const checkDeveloperSQL = `
             SELECT u.id, u.username, u.password, da.status
             FROM users u
