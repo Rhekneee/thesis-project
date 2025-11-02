@@ -465,6 +465,14 @@
 
                 <!-- Virtual Tour Permissions Tab -->
                 <div class="tab-pane fade" id="vtour" role="tabpanel" aria-labelledby="vtour-tab">
+                    <div class="search-container mb-3">
+                        <select id="vtourFilterDropdown" class="form-select" style="max-width: 200px;" onchange="filterVtourPermissions()">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="denied">Denied</option>
+                        </select>
+                    </div>
                     <div class="row g-3" id="vtourPermissionsContainer">
                         <!-- Filled by JS -->
                     </div>
@@ -705,6 +713,32 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal for Approving Vtour Permission -->
+    <div class="modal fade" id="approveConfirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>Confirm Approval
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-exclamation-circle text-primary mb-3" style="font-size: 48px;"></i>
+                    <p class="mb-0">Are you sure you want to approve this virtual tour permission request?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                        <i class="fas fa-check me-2"></i>Confirm Approval
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Remarks Modal for Rejecting Vtour Permission -->
     <div class="modal fade" id="rejectRemarksModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -739,6 +773,7 @@
     <script>
         // Completed projects data - will be fetched from backend
         let projects = [];
+        let vtourPermissions = [];
 
         const ratingDescriptions = {
             1: 'Poor - Needs significant improvement',
@@ -1357,6 +1392,7 @@
                 const data = await response.json();
                 
                 if (data.success && data.permissions) {
+                    vtourPermissions = data.permissions;
                     renderVtourPermissions(data.permissions);
                 } else {
                     console.error('Failed to load vtour permissions:', data.error);
@@ -1366,6 +1402,20 @@
                 console.error('Error loading vtour permissions:', error);
                 document.getElementById('vtourPermissionsContainer').innerHTML = '<p class="text-danger">Failed to load virtual tour permissions.</p>';
             }
+        }
+
+        // Filter virtual tour permissions
+        function filterVtourPermissions() {
+            const filterValue = document.getElementById('vtourFilterDropdown').value;
+            
+            let filteredPermissions;
+            if (filterValue === 'all') {
+                filteredPermissions = vtourPermissions;
+            } else {
+                filteredPermissions = vtourPermissions.filter(p => p.approval_status === filterValue);
+            }
+            
+            renderVtourPermissions(filteredPermissions);
         }
 
         // Render virtual tour permission cards
@@ -1408,17 +1458,16 @@
                             ${permission.remarks ? `<p class="mb-2"><strong><i class="fas fa-comment me-2"></i>Remarks:</strong></p><p class="text-muted small">${permission.remarks}</p>` : ''}
                             ${permission.reason ? `<p class="mb-2"><strong><i class="fas fa-exclamation-circle me-2"></i>Reason:</strong></p><p class="text-muted small">${permission.reason}</p>` : ''}
                         </div>
-                        <div class="d-flex gap-2 mt-3">
-                            ${permission.approval_status === 'pending' ? 
-                                `<button class="btn btn-success btn-sm flex-fill" onclick="updateVtourPermission(${permission.id}, 'approved')">
+                        ${permission.approval_status === 'pending' ? 
+                            `<div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-success btn-sm flex-fill" onclick="updateVtourPermission(${permission.id}, 'approved')">
                                     <i class="fas fa-check me-2"></i>Approve
                                 </button>
                                 <button class="btn btn-danger btn-sm flex-fill" onclick="updateVtourPermission(${permission.id}, 'denied')">
                                     <i class="fas fa-times me-2"></i>Reject
-                                </button>` : 
-                                '<p class="text-muted text-center mb-0 w-100"><i class="fas fa-info-circle me-2"></i>No action available</p>'
-                            }
-                        </div>
+                                </button>
+                            </div>` : ''
+                        }
                     </div>
                 `;
                 container.appendChild(col);
@@ -1450,26 +1499,35 @@
                     }
                     
                     remarksModal.hide();
-                    await submitVtourPermissionUpdate(permissionId, status, null, reason);
+                    await submitVtourPermissionUpdate(permissionId, status, undefined, reason);
                 };
                 return;
             }
             
-            // For approval, show confirmation first
-            if (!confirm(`Are you sure you want to approve this virtual tour permission request?`)) {
-                return;
-            }
+            // For approval, show confirmation modal
+            const approveModal = new bootstrap.Modal(document.getElementById('approveConfirmationModal'));
+            approveModal.show();
             
-            await submitVtourPermissionUpdate(permissionId, status);
+            // Handle confirm approve button click
+            const confirmApproveBtn = document.getElementById('confirmApproveBtn');
+            confirmApproveBtn.onclick = async function() {
+                approveModal.hide();
+                await submitVtourPermissionUpdate(permissionId, status);
+            };
         }
 
         // Submit the permission update to the backend
-        async function submitVtourPermissionUpdate(permissionId, status, remarks = null, reason = null) {
+        async function submitVtourPermissionUpdate(permissionId, status, remarks, reason) {
             try {
+                // Build request body - only include fields that are explicitly provided
+                const body = { status };
+                if (remarks !== undefined) body.remarks = remarks;
+                if (reason !== undefined) body.reason = reason;
+                
                 const response = await fetch(`/manufacturing/vtour-permissions/${permissionId}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status, remarks, reason })
+                    body: JSON.stringify(body)
                 });
                 const data = await response.json();
 

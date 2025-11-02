@@ -398,6 +398,20 @@
         .table-striped tbody tr:hover {
             background-color: rgba(0, 123, 255, 0.05);
         }
+
+        /* Loading modal should be on top of all other modals */
+        #loadingModal {
+            z-index: 1070 !important;
+        }
+
+        #loadingModal .modal-backdrop {
+            z-index: 1060 !important;
+        }
+
+        /* Ensure dynamic modal dialog resizes properly */
+        #dynamicModalDialog {
+            max-width: 1000px;
+        }
     </style>
 </head>
 
@@ -868,6 +882,30 @@
             renderProjects(filteredProjects);
         }
 
+        // Function to show loading message
+        function showLoadingMessage(message) {
+            const loadingElement = document.getElementById('loadingMessage');
+            const loadingModalElement = document.getElementById('loadingModal');
+            
+            if (loadingElement && loadingModalElement) {
+                loadingElement.textContent = message;
+                const loadingModal = new bootstrap.Modal(loadingModalElement);
+                loadingModal.show();
+            } else {
+                // Fallback to alert if modal elements don't exist
+                alert(message);
+                console.log('Loading:', message);
+            }
+        }
+
+        // Function to hide loading message
+        function hideLoadingMessage() {
+            const loadingModal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+            if (loadingModal) {
+                loadingModal.hide();
+            }
+        }
+
         // Function to show success message
         function showSuccessMessage(message) {
             const successElement = document.getElementById('successMessage');
@@ -990,6 +1028,17 @@
             getUserInfo();
         });
 
+        // Handle browser back button - hide any open modals when returning to this page
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // User navigated back to this page
+                hideLoadingMessage();
+                // Also hide any other open modals
+                const dynamicModal = bootstrap.Modal.getInstance(document.getElementById('dynamicModal'));
+                if (dynamicModal) dynamicModal.hide();
+            }
+        });
+
         // Stage Billing: list for a project
         async function openStageBillings(projectId) {
             try {
@@ -1044,37 +1093,128 @@
                 if (!data || !data.success || !data.detail) { showWarningMessage('No detail found.'); return; }
                 const { base, materials, materials_total, labor_total } = data.detail;
                 
-                // Store billing detail for payment
-                currentBillingDetail = { base, materials, materials_total, labor_total };
+                // Store billing detail for payment (add amount_due to base)
+                const amountDue = (materials_total || 0) + (labor_total || 0);
+                currentBillingDetail = { base: { ...base, amount_due: amountDue }, materials, materials_total, labor_total };
                 
-                const cont = document.getElementById('stageBillingDetailBody');
-                const fmt = (n) => `₱${Number(n||0).toLocaleString()}`;
-                let html = '';
-                html += `<div class="mb-3"><strong>Billing No:</strong> ${base.billing_number} &nbsp;&nbsp; <strong>Division:</strong> ${base.division_name || '-'}</div>`;
-                html += `<div class="row g-3 mb-3">
-                    <div class="col-md-3"><div class="small text-muted">Start Date</div><div>${base.start_date||''}</div></div>
-                    <div class="col-md-3"><div class="small text-muted">End Date</div><div>${base.end_date||''}</div></div>
-                    <div class="col-md-3"><div class="small text-muted">Progress %</div><div>${Number(base.progress_percent||0)}%</div></div>
-                    <div class="col-md-3"><div class="small text-muted">Status</div><div>${base.billing_status||''}</div></div>
-                </div>`;
-                html += `<div class="table-responsive mb-3">
-                    <table class="table table-sm table-bordered">
-                        <thead class="table-light"><tr><th>Date</th><th>Division</th><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
-                        <tbody>
-                        ${ (materials||[]).map(m => `<tr><td>${m.date||''}</td><td>${m.division_name||''}</td><td>${m.name||''}</td><td class='text-end'>${Number(m.quantity||0)}</td><td class='text-end'>${fmt(m.unit_price)}</td><td class='text-end'>${fmt(m.subtotal)}</td></tr>`).join('') || `<tr><td colspan='6' class='text-center text-muted'>No materials</td></tr>` }
-                        </tbody>
-                        <tfoot>
-                          <tr><th colspan="5" class="text-end">Materials Total</th><th class="text-end">${fmt(materials_total)}</th></tr>
-                          <tr><th colspan="5" class="text-end">Labor Total</th><th class="text-end">${fmt(labor_total)}</th></tr>
-                          <tr><th colspan="5" class="text-end">Amount Due</th><th class="text-end">${fmt((materials_total||0) + (labor_total||0))}</th></tr>
-                        </tfoot>
-                    </table>
-                </div>`;
-                cont.innerHTML = html;
-                new bootstrap.Modal(document.getElementById('stageBillingDetailModal')).show();
+                // Show billing details in dynamic modal
+                showBillingDetailsInModal(base, materials, materials_total, labor_total);
             } catch (e) {
                 showWarningMessage('Failed to load billing detail.');
             }
+        }
+
+        // Show billing details in dynamic modal
+        function showBillingDetailsInModal(base, materials, materials_total, labor_total) {
+            // Restore modal-xl size for billing details
+            const modalDialog = document.getElementById('dynamicModalDialog');
+            modalDialog.classList.add('modal-xl');
+            
+            const fmt = (n) => `₱${Number(n||0).toLocaleString()}`;
+            let html = '';
+            html += `<div class="mb-3"><strong>Billing No:</strong> ${base.billing_number} &nbsp;&nbsp; <strong>Division:</strong> ${base.division_name || '-'}</div>`;
+            html += `<div class="row g-3 mb-3">
+                <div class="col-md-3"><div class="small text-muted">Start Date</div><div>${base.start_date||''}</div></div>
+                <div class="col-md-3"><div class="small text-muted">End Date</div><div>${base.end_date||''}</div></div>
+                <div class="col-md-3"><div class="small text-muted">Progress %</div><div>${Number(base.progress_percent||0)}%</div></div>
+                <div class="col-md-3"><div class="small text-muted">Status</div><div>${base.billing_status||''}</div></div>
+            </div>`;
+            html += `<div class="table-responsive mb-3">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>Date</th><th>Division</th><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
+                    <tbody>
+                    ${ (materials||[]).map(m => `<tr><td>${m.date||''}</td><td>${m.division_name||''}</td><td>${m.name||''}</td><td class='text-end'>${Number(m.quantity||0)}</td><td class='text-end'>${fmt(m.unit_price)}</td><td class='text-end'>${fmt(m.subtotal)}</td></tr>`).join('') || `<tr><td colspan='6' class='text-center text-muted'>No materials</td></tr>` }
+                    </tbody>
+                    <tfoot>
+                      <tr><th colspan="5" class="text-end">Materials Total</th><th class="text-end">${fmt(materials_total)}</th></tr>
+                      <tr><th colspan="5" class="text-end">Labor Total</th><th class="text-end">${fmt(labor_total)}</th></tr>
+                      <tr><th colspan="5" class="text-end">Amount Due</th><th class="text-end">${fmt((materials_total||0) + (labor_total||0))}</th></tr>
+                    </tfoot>
+                </table>
+            </div>`;
+            
+            // Set modal content
+            document.getElementById('dynamicModalTitle').innerHTML = '<i class="fas fa-list-alt me-2"></i>Stage Billing Detail';
+            document.getElementById('dynamicModalBody').innerHTML = html;
+            document.getElementById('dynamicModalFooter').innerHTML = `
+                <button type="button" class="btn btn-success" onclick="showPaymentFormInModal()"><i class="fas fa-credit-card me-2"></i>Pay Now</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `;
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('dynamicModal')).show();
+        }
+
+        // Show payment form in the same dynamic modal
+        function showPaymentFormInModal() {
+            const amountDue = currentBillingDetail?.base?.amount_due || 0;
+            
+            // Change modal size for payment form
+            const modalDialog = document.getElementById('dynamicModalDialog');
+            modalDialog.classList.remove('modal-xl');
+            modalDialog.classList.add('modal-dialog-centered');
+            
+            let html = `
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select id="paymentMethodSelect" class="form-select">
+                        <option value="manual">Manual Payment (Upload Proof)</option>
+                        <option value="paymongo">Online Payment (PayMongo)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Amount to Pay (PHP)</label>
+                    <input type="number" id="amountPaidInput" class="form-control" step="0.01" min="0" value="${amountDue.toFixed(2)}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Payment Reference/Tracking Number</label>
+                    <input type="text" id="paymentReferenceInput" class="form-control" placeholder="Optional">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Remarks</label>
+                    <textarea id="paymentRemarksInput" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                </div>
+                <div class="mb-3" id="proofUploadSection" style="display: block;">
+                    <label class="form-label">Upload Payment Proof</label>
+                    <input type="file" id="proofFileInput" class="form-control" accept="image/*,application/pdf">
+                    <small class="text-muted">Accepted formats: JPG, PNG, PDF</small>
+                </div>
+                <div id="paymongoPaymentSection" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Online Payment via PayMongo</strong>
+                        <p class="mb-0 mt-2">You will be redirected to a secure PayMongo checkout page where you can pay using:</p>
+                        <ul class="mb-0 mt-2">
+                            <li>Credit or Debit Card</li>
+                            <li>GCash</li>
+                            <li>GrabPay</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            // Set modal content
+            document.getElementById('dynamicModalTitle').innerHTML = '<i class="fas fa-credit-card me-2"></i>Make Payment';
+            document.getElementById('dynamicModalBody').innerHTML = html;
+            document.getElementById('dynamicModalFooter').innerHTML = `
+                <button type="button" class="btn btn-secondary" onclick="showBillingDetailsInModal(currentBillingDetail.base, currentBillingDetail.materials, currentBillingDetail.materials_total, currentBillingDetail.labor_total)"><i class="fas fa-arrow-left me-2"></i>Back</button>
+                <button type="button" class="btn btn-primary" onclick="processPayment()"><i class="fas fa-lock me-2"></i>Process Payment</button>
+            `;
+            
+            // Initialize payment method toggle
+            document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
+                const method = e.target.value;
+                const proofSection = document.getElementById('proofUploadSection');
+                const paymongoSection = document.getElementById('paymongoPaymentSection');
+                
+                if (method === 'paymongo') {
+                    proofSection.style.display = 'none';
+                    paymongoSection.style.display = 'block';
+                } else {
+                    proofSection.style.display = 'block';
+                    paymongoSection.style.display = 'none';
+                }
+            });
         }
 
         // Update getUserInfo function to use the correct developer session endpoint
@@ -1156,47 +1296,7 @@
         // ========== PAYMENT FUNCTIONALITY ==========
         let currentBillingDetail = null;
 
-        // Initialize Payment
-        document.addEventListener('DOMContentLoaded', () => {
-            // Payment method toggle
-            document.getElementById('paymentMethodSelect').addEventListener('change', (e) => {
-                const method = e.target.value;
-                const proofSection = document.getElementById('proofUploadSection');
-                const paymongoSection = document.getElementById('paymongoPaymentSection');
-                
-                if (method === 'paymongo') {
-                    proofSection.style.display = 'none';
-                    paymongoSection.style.display = 'block';
-                } else {
-                    proofSection.style.display = 'block';
-                    paymongoSection.style.display = 'none';
-                }
-            });
-
-            // Pay Now button
-            document.getElementById('payStageBillingBtn').addEventListener('click', () => {
-                if (!currentBillingDetail) {
-                    showWarningMessage('No billing information available.');
-                    return;
-                }
-
-                const amountDue = parseFloat(currentBillingDetail.base.amount_due || 0);
-                document.getElementById('amountPaidInput').value = amountDue.toFixed(2);
-                document.getElementById('paymentMethodSelect').value = 'manual';
-                document.getElementById('proofUploadSection').style.display = 'block';
-                document.getElementById('paymongoPaymentSection').style.display = 'none';
-                document.getElementById('proofFileInput').value = '';
-                document.getElementById('paymentReferenceInput').value = '';
-                document.getElementById('paymentRemarksInput').value = '';
-
-                new bootstrap.Modal(document.getElementById('paymentModal')).show();
-            });
-
-            // Process payment button
-            document.getElementById('processPaymentBtn').addEventListener('click', processPayment);
-        });
-
-        // Process payment
+        // Process payment (called from payment form button)
         async function processPayment() {
             const paymentMethod = document.getElementById('paymentMethodSelect').value;
             const amount = parseFloat(document.getElementById('amountPaidInput').value);
@@ -1243,8 +1343,7 @@
                 const data = await response.json();
                 if (data.success) {
                     showSuccessMessage('Payment submitted successfully! It will be reviewed.');
-                    bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
-                    bootstrap.Modal.getInstance(document.getElementById('stageBillingDetailModal')).hide();
+                    bootstrap.Modal.getInstance(document.getElementById('dynamicModal')).hide();
                     // Reload projects to refresh costs
                     await loadProjects();
                     renderProjects();
@@ -1260,6 +1359,9 @@
         // Process PayMongo payment
         async function processPaymongoPayment(amount, reference, remarks) {
             try {
+                // Show loading modal
+                showLoadingMessage('Redirecting to secure payment page...');
+                
                 // Create payment intent on server
                 const response = await fetch('/manufacturing/create-payment-intent', {
                     method: 'POST',
@@ -1275,18 +1377,20 @@
 
                 const data = await response.json();
                 if (!data.success) {
+                    hideLoadingMessage();
                     showWarningMessage(data.error || 'Failed to create payment intent.');
                     return;
                 }
 
-                // Redirect to PayMongo Checkout
+                // Redirect to PayMongo Checkout (loading modal will stay visible)
                 if (data.url) {
-                    showSuccessMessage('Redirecting to secure payment page...');
                     window.location.href = data.url;
                 } else {
+                    hideLoadingMessage();
                     showWarningMessage('Payment URL not received from server.');
                 }
             } catch (error) {
+                hideLoadingMessage();
                 console.error('Error processing PayMongo payment:', error);
                 showWarningMessage('Failed to process payment.');
             }
@@ -1324,74 +1428,33 @@
         </div>
     </div>
 
-    <!-- Stage Billing Detail Modal -->
-    <div class="modal fade" id="stageBillingDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
+    <!-- Unified Dynamic Modal for Billing Details and Payment -->
+    <div class="modal fade" id="dynamicModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" id="dynamicModalDialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i>Stage Billing Detail</h5>
+                    <h5 class="modal-title" id="dynamicModalTitle"><i class="fas fa-list-alt me-2"></i>Stage Billing Detail</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="stageBillingDetailBody"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="payStageBillingBtn"><i class="fas fa-credit-card me-2"></i>Pay Now</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="modal-body" id="dynamicModalBody">
+                    <!-- Content will be swapped dynamically -->
+                </div>
+                <div class="modal-footer" id="dynamicModalFooter">
+                    <!-- Footer will be swapped dynamically -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Payment Modal -->
-    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <!-- Loading Modal (Separate, always on top) -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>Make Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Payment Method</label>
-                        <select id="paymentMethodSelect" class="form-select">
-                            <option value="manual">Manual Payment (Upload Proof)</option>
-                            <option value="paymongo">Online Payment (PayMongo)</option>
-                        </select>
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Amount to Pay (PHP)</label>
-                        <input type="number" id="amountPaidInput" class="form-control" step="0.01" min="0" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Payment Reference/Tracking Number</label>
-                        <input type="text" id="paymentReferenceInput" class="form-control" placeholder="Optional">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Remarks</label>
-                        <textarea id="paymentRemarksInput" class="form-control" rows="3" placeholder="Optional notes"></textarea>
-                    </div>
-                    <!-- Proof upload section for manual payment -->
-                    <div class="mb-3" id="proofUploadSection" style="display: block;">
-                        <label class="form-label">Upload Payment Proof</label>
-                        <input type="file" id="proofFileInput" class="form-control" accept="image/*,application/pdf">
-                        <small class="text-muted">Accepted formats: JPG, PNG, PDF</small>
-                    </div>
-                    <!-- PayMongo payment section -->
-                    <div id="paymongoPaymentSection" style="display: none;">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Online Payment via PayMongo</strong>
-                            <p class="mb-0 mt-2">You will be redirected to a secure PayMongo checkout page where you can pay using:</p>
-                            <ul class="mb-0 mt-2">
-                                <li>Credit or Debit Card</li>
-                                <li>GCash</li>
-                                <li>GrabPay</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="processPaymentBtn"><i class="fas fa-lock me-2"></i>Process Payment</button>
+                    <h5 id="loadingMessage">Please wait...</h5>
                 </div>
             </div>
         </div>
