@@ -1577,7 +1577,7 @@ const ManufacturingModel = {
   },
 
   // Save daily log entry (for manufacturing progress tracking)
-  saveDailyLogEntry: async (projectId, divisionName, logDate, description, materialsArray, totalMaterialCost) => {
+  saveDailyLogEntry: async (projectId, divisionName, logDate, description, materialsArray, totalMaterialCost, workersArray) => {
     try {
       // Get division_id from division_master
       const [divisionRows] = await db.execute(`
@@ -1599,9 +1599,40 @@ const ManufacturingModel = {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [projectId, divisionId, logDate, description, materialUsed, quantity, totalMaterialCost]);
       
-      console.log(`✅ Daily log saved: ${description.substring(0, 30)}... (ID: ${result.insertId})`);
+      const logId = result.insertId;
+      console.log(`✅ Daily log saved: ${description.substring(0, 30)}... (ID: ${logId})`);
       
-      return result.insertId;
+      // Save workers to daily_log_workers table
+      if (workersArray && workersArray.length > 0) {
+        for (const worker of workersArray) {
+          // Get worker's daily rate from construction_roles
+          const [roleRows] = await db.query(`
+            SELECT cr.daily_rate 
+            FROM construction_workers cw
+            JOIN construction_roles cr ON cw.role_id = cr.id
+            WHERE cw.id = ?
+          `, [worker.workerId]);
+          
+          const dailyRate = roleRows.length > 0 ? Number(roleRows[0].daily_rate || 0) : 0;
+          
+          // Calculate labor cost: (hours_worked * daily_rate / 8) + (overtime_hours * daily_rate / 8 * 1.25)
+          const regularHours = Number(worker.hoursWorked || 0);
+          const otHours = Number(worker.overtimeHours || 0);
+          const hourlyRate = dailyRate / 8; // Assuming 8-hour day
+          const laborCost = (regularHours * hourlyRate) + (otHours * hourlyRate * 1.25);
+          
+          // Insert into daily_log_workers
+          await db.execute(`
+            INSERT INTO daily_log_workers (
+              daily_log_id, worker_id, attendance_id, hours_worked, overtime_hours, labor_cost
+            ) VALUES (?, ?, ?, ?, ?, ?)
+          `, [logId, worker.workerId, worker.attendanceId, regularHours, otHours, laborCost]);
+          
+          console.log(`✅ Worker ${worker.workerId} added to daily log with labor cost: ₱${laborCost.toFixed(2)}`);
+        }
+      }
+      
+      return logId;
     } catch (error) {
       console.error('❌ Error saving daily log entry:', error);
       throw error;

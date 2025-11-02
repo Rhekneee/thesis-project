@@ -14,6 +14,7 @@ const crmRoutes = require('./departments/crm/routes/crm.routes');
 const financeRoutes = require('./departments/finance/routes/finance.routes');
 const scmRoutes = require('./departments/supply/routes/scm.routes');
 const manuRoutes = require('./departments/manufacturing/routes/manufacturing.routes');
+const superadminRoutes = require('./departments/superadmin/superroutes');
 const htmlRoutes = require('./htmlRoutes'); 
 
 const app = express();
@@ -115,6 +116,7 @@ app.use('/crm', crmRoutes);
 app.use('/finance', financeRoutes);
 app.use('/scm', scmRoutes);
 app.use('/manufacturing', manuRoutes);
+app.use('/superadmin', superadminRoutes);
 
 // Use HTML routes for HR Manager pages
 htmlRoutes(app);
@@ -158,6 +160,7 @@ app.get('/dashboard', (req, res) => {
     // Role-based dashboard mapping
     const roleDashboards = {
         // Employee dashboards (using employee_id)
+        'superadmin': '/superadmin/superdashboard.html',
         'owner': 'owner_dashboard.html',
         'office_administrator': '/hr admin/hr_admin.html',
         'finance_accounting': '/finance admin/finance_dashboard.html',
