@@ -1,30 +1,14 @@
 const db = require("../../../db");
-<<<<<<< HEAD
-<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 
 const CRMModel = {
     // Check if the applicant's email already exists in the database
     checkVisitRequestEmail: async (email) => {
         const query = "SELECT COUNT(*) AS count FROM site_visit_requests WHERE email = ?";
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-
-const CRMModel = {
-    // 🔹 Check if an applicant email already exists
-    checkApplicantEmail: async (email) => {
-        const query = "SELECT COUNT(*) AS count FROM applications WHERE email = ?";
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
         const [rows] = await db.execute(query, [email]);
         return rows[0].count > 0;
     },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     // Developers: list all developer accounts
     getAllDevelopers: async () => {
         const query = `
@@ -64,44 +48,17 @@ const CRMModel = {
     },
 
     // Get all applications from the database
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-    // 🔹 Store application
-    storeApplication: async (data) => {
-        const query = `
-            INSERT INTO applications (full_name, email, phone, address, resume, status, created_at)
-            VALUES (?, ?, ?, ?, ?, 'Pending', NOW())`;
-        await db.execute(query, [data.full_name, data.email, data.phone, data.address, data.resume]); // Change 'resume_path' to 'resume'
-    },
-
-
-    // 🔹 Get all applications
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
     getAllApplications: async () => {
         const query = "SELECT * FROM applications";
         const [rows] = await db.execute(query);
         return rows;
     },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     // Get a specific application by its ID
-=======
-    // 🔹 Get application by ID
->>>>>>> 85f9240 (Initial commit)
-=======
-    // 🔹 Get application by ID
->>>>>>> aa1bb20 (Initial commit)
     getApplicationById: async (id) => {
         const query = "SELECT * FROM applications WHERE id = ?";
         const [rows] = await db.execute(query, [id]);
         return rows[0] || null;
-<<<<<<< HEAD
-<<<<<<< HEAD
     },
 
     // Store applicant data into the database
@@ -766,10 +723,142 @@ const CRMModel = {
             assigned_inquiries: parseInt(result.assigned_inquiries) || 0,
             pending_inquiries: parseInt(result.pending_inquiries) || 0
         };
-=======
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
+    },
+
+    // ========== DEVELOPER APPROVAL MANAGEMENT ==========
+    
+    // Get pending developers
+    getPendingDevelopers: async () => {
+        const query = `
+            SELECT * FROM developer_accounts 
+            WHERE status = 'pending'
+            ORDER BY created_at DESC
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
+    },
+
+    // Get developer by ID (for approval/rejection)
+    getDeveloperByIdForApproval: async (id) => {
+        try {
+            const [developer] = await db.execute(`
+                SELECT * FROM developer_accounts WHERE id = ?
+            `, [id]);
+
+            if (!developer || developer.length === 0) {
+                throw new Error('Developer not found');
+            }
+
+            // If the developer has a user account, get that too
+            if (developer[0].user_id) {
+                const [user] = await db.execute(`
+                    SELECT id, email, username, is_active 
+                    FROM users 
+                    WHERE id = ?
+                `, [developer[0].user_id]);
+
+                if (user && user.length > 0) {
+                    return {
+                        ...developer[0],
+                        user_id: user[0].id,
+                        user_email: user[0].email,
+                        user_name: user[0].username,
+                        user_status: user[0].is_active
+                    };
+                }
+            }
+
+            return developer[0];
+        } catch (error) {
+            console.error('Error in getDeveloperByIdForApproval:', error);
+            throw new Error('Failed to fetch developer details: ' + error.message);
+        }
+    },
+
+    // Approve developer
+    approveDeveloper: async (developerId) => {
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // 1. Get developer data
+            const developer = await CRMModel.getDeveloperByIdForApproval(developerId);
+            if (!developer) {
+                throw new Error('Developer not found');
+            }
+
+            // 2. Use the developer's original password from registration
+            const originalPassword = developer.password_hash; // This is already hashed from registration
+
+            // 3. Check if user account already exists, if not create one
+            const [existingUser] = await connection.execute(
+                'SELECT id FROM users WHERE id = ?', 
+                [developerId]
+            );
+
+            if (existingUser.length === 0) {
+                // Create new user account with original password using the developer's ID
+                const createUserQuery = `
+                    INSERT INTO users (id, email, username, password, role_id, is_active, created_at)
+                    VALUES (?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), 1, NOW())
+                `;
+                await connection.execute(createUserQuery, [
+                    developerId, // Use the developer's ID as the user ID
+                    developer.email,
+                    developer.username,
+                    originalPassword // Use the original hashed password
+                ]);
+            } else {
+                // Update existing user account with original password
+                const updateUserQuery = `
+                    UPDATE users 
+                    SET password = ?, 
+                        role_id = (SELECT id FROM roles WHERE name = 'developer'),
+                        is_active = 1
+                    WHERE id = ?
+                `;
+                await connection.execute(updateUserQuery, [
+                    originalPassword, // Use the original hashed password
+                    developerId
+                ]);
+            }
+
+            // 4. Update developer status
+            const updateDeveloperQuery = `
+                UPDATE developer_accounts 
+                SET status = 'active', 
+                    updated_at = NOW()
+                WHERE id = ?
+            `;
+            await connection.execute(updateDeveloperQuery, [developerId]);
+
+            await connection.commit();
+            return { 
+                userId: developerId, // The user ID is the same as developer ID
+                developerId,
+                originalPassword: "Use your original registration password", // Note for email
+                message: "Developer approved successfully. They can now log in using their username and original password."
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error("Error approving developer:", error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Reject developer
+    rejectDeveloper: async (developerId, reason) => {
+        const query = `
+            UPDATE developer_accounts 
+            SET status = 'rejected',
+                rejection_reason = ?,
+                updated_at = NOW()
+            WHERE id = ?
+        `;
+        await db.execute(query, [reason, developerId]);
     }
 };
 

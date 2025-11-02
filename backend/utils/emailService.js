@@ -91,8 +91,11 @@ const sendHireNotification = async (to) => {
 };
 
 // Email notification for rejection
-const sendRejectNotification = async (to) => {
+const sendRejectNotification = async (to, remarks = null) => {
     try {
+        // Escape HTML in remarks for security
+        const escapedRemarks = remarks ? remarks.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: to,
@@ -103,6 +106,10 @@ const sendRejectNotification = async (to) => {
                     <p>Dear Applicant,</p>
                     <p>Thank you for your interest in joining M.D. Buendia Construction Inc. We appreciate the time and effort you invested in your application.</p>
                     <p>After careful consideration, we regret to inform you that you have not been selected for the position at this time.</p>
+                    ${remarks ? `
+                        <p><strong>Remarks from HR Department:</strong></p>
+                        <div style="background-color: #f8f9fa; border-left: 4px solid #e74c3c; padding: 12px 16px; margin: 16px 0; border-radius: 4px; white-space: pre-wrap;">${escapedRemarks}</div>
+                    ` : ''}
                     <p>We encourage you to apply for future openings that match your skills and experience.</p>
                     <br>
                     <p>We wish you all the best in your job search.</p>

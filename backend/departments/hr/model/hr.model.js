@@ -1395,9 +1395,14 @@ const HRModel = {
     },
 
     // Update the application status (Pending, Ready for Interview, Accepted, Rejected)
-    updateApplicationStatus: async (id, status) => {
-        const query = "UPDATE applications SET status = ? WHERE id = ?";
-        await db.execute(query, [status, id]);
+    updateApplicationStatus: async (id, status, remarks = null) => {
+        if (status === 'Rejected' && remarks) {
+            const query = "UPDATE applications SET status = ?, rejection_reason = ? WHERE id = ?";
+            await db.execute(query, [status, remarks, id]);
+        } else {
+            const query = "UPDATE applications SET status = ? WHERE id = ?";
+            await db.execute(query, [status, id]);
+        }
     },
 
 
@@ -3079,179 +3084,6 @@ const HRModel = {
             throw error;
         }
     },
-
-    // Developer Management Methods
-    getPendingDevelopers: async () => {
-        const query = `
-            SELECT * FROM developer_accounts 
-            WHERE status = 'pending'
-            ORDER BY created_at DESC
-        `;
-        const [rows] = await db.execute(query);
-        return rows;
-    },
-
-    getDeveloperById: async (id) => {
-        try {
-            // First get the developer account
-            const [developer] = await db.execute(`
-                SELECT * FROM developer_accounts WHERE id = ?
-            `, [id]);
-
-            if (!developer || developer.length === 0) {
-                throw new Error('Developer not found');
-            }
-
-            // If the developer has a user account, get that too
-            if (developer[0].user_id) {
-                const [user] = await db.execute(`
-                    SELECT id, email, username, is_active 
-                    FROM users 
-                    WHERE id = ?
-                `, [developer[0].user_id]);
-
-                if (user && user.length > 0) {
-                    return {
-                        ...developer[0],
-                        user_id: user[0].id,
-                        user_email: user[0].email,
-                        user_name: user[0].username,
-                        user_status: user[0].is_active
-                    };
-                }
-            }
-
-            return developer[0];
-        } catch (error) {
-            console.error('Error in getDeveloperById:', error);
-            throw new Error('Failed to fetch developer details: ' + error.message);
-        }
-    },
-
-    getAllDevelopers: async () => {
-        const query = `
-            SELECT da.*, u.id as user_id, u.email as user_email
-            FROM developer_accounts da
-            LEFT JOIN users u ON da.user_id = u.id
-            ORDER BY da.created_at DESC
-        `;
-        const [rows] = await db.execute(query);
-        return rows;
-    },
-
-    approveDeveloper: async (developerId) => {
-        const connection = await db.getConnection();
-        await connection.beginTransaction();
-
-        try {
-            // 1. Get developer data
-            const developer = await HRModel.getDeveloperById(developerId);
-            if (!developer) {
-                throw new Error('Developer not found');
-            }
-
-            // 2. Use the developer's original password from registration
-            const originalPassword = developer.password_hash; // This is already hashed from registration
-
-            // 3. Check if user account already exists, if not create one
-            const [existingUser] = await connection.execute(
-                'SELECT id FROM users WHERE id = ?', 
-                [developerId]
-            );
-
-            if (existingUser.length === 0) {
-                // Create new user account with original password using the developer's ID
-                const createUserQuery = `
-                    INSERT INTO users (id, email, username, password, role_id, is_active, created_at)
-                    VALUES (?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'developer'), 1, NOW())
-                `;
-                await connection.execute(createUserQuery, [
-                    developerId, // Use the developer's ID as the user ID
-                    developer.email,
-                    developer.username,
-                    originalPassword // Use the original hashed password
-                ]);
-            } else {
-                // Update existing user account with original password
-                const updateUserQuery = `
-                    UPDATE users 
-                    SET password = ?, 
-                        role_id = (SELECT id FROM roles WHERE name = 'developer'),
-                        is_active = 1
-                    WHERE id = ?
-                `;
-                await connection.execute(updateUserQuery, [
-                    originalPassword, // Use the original hashed password
-                    developerId
-                ]);
-            }
-
-            // 4. Update developer status
-            const updateDeveloperQuery = `
-                UPDATE developer_accounts 
-                SET status = 'active', 
-                    updated_at = NOW()
-                WHERE id = ?
-            `;
-            await connection.execute(updateDeveloperQuery, [developerId]);
-
-            await connection.commit();
-            return { 
-                userId: developerId, // The user ID is the same as developer ID
-                developerId,
-                originalPassword: "Use your original registration password", // Note for email
-                message: "Developer approved successfully. They can now log in using their username and original password."
-            };
-
-        } catch (error) {
-            await connection.rollback();
-            console.error("Error approving developer:", error);
-            throw error;
-        } finally {
-            connection.release();
-        }
-    },
-
-    // Add a function to check developer status
-    checkDeveloperStatus: async (email) => {
-        try {
-            const query = `
-                SELECT status 
-                FROM developer_accounts 
-                WHERE email = ?
-            `;
-            const [result] = await db.execute(query, [email]);
-            
-            if (result.length === 0) {
-                return { status: 'not_found' };
-            }
-            
-            return { 
-                status: result[0].status,
-                message: result[0].status === 'pending' ? 
-                    'Your account is pending approval. Please wait for admin approval.' : 
-                    result[0].status === 'rejected' ? 
-                    'Your account has been rejected. Please contact the administrator.' :
-                    'Your account is active. You can now log in.'
-            };
-        } catch (error) {
-            console.error("Error checking developer status:", error);
-            throw error;
-        }
-    },
-
-    rejectDeveloper: async (developerId, reason) => {
-        const query = `
-            UPDATE developer_accounts 
-            SET status = 'rejected',
-                rejection_reason = ?,
-                updated_at = NOW()
-            WHERE id = ?
-        `;
-        await db.execute(query, [reason, developerId]);
-    },
-
-  
 
     // Initialize pre-onboarding documents for a new employee
     initializePreOnboardingDocuments: async (employeeId, userId, roleId) => {

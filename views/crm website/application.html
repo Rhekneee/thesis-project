@@ -27,7 +27,7 @@
 
           /* Header and Navigation */
           .navbar {
-            background: #000000 !important;
+            background: #1a1a1a !important;
             padding: 1rem 0;
             box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             position: fixed;
@@ -1126,17 +1126,20 @@
 </style>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      <img src="/public/image/mdb.jpg" alt="mdb" class="img-fluid logo-img" />
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-      aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+   <!-- navbar -->
+   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+
+
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <img src="/public/image/mdb-removebg-preview.png" alt="mdb" class="img-fluid logo-img">
+
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto mb-2 mg-lg-0">
@@ -1151,19 +1154,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/crm/faqs">FAQ's</a>
                 </li>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ms-auto mb-2 mg-lg-0">
-        <li class="nav-item">
-            <a class="nav-link active" href="/crm/index">Home</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/crm/list_properties">Properties</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/crm/developer">Developers</a>
-        <li class="nav-item">
-            <a class="nav-link" href="/crm/faqs">FAQ's</a>
-        </li>
 
                 <li class="nav-item">
                     <a class="nav-link" href="/crm/contact">Contact Us</a>
@@ -1275,7 +1265,7 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="footer-brand">
                         <div class="footer-logo">
-                            <img src="/public/image/mdb.jpg" alt="MDB Construction" class="footer-logo-img">
+                            <img src="/public/image/mdb-removebg-preview.png" alt="MDB Construction" class="footer-logo-img">
                         </div>
                         <h5 class="footer-brand-title">M.D. Buendia Construction</h5>
                         <p class="footer-tagline">BUILDING WITH VISION, QUALITY, AND PRIDE</p>
@@ -1845,10 +1835,23 @@
 
         // Function to load job postings from backend
         function loadJobPostings() {
-            fetch('/crm/job-postings')
-                .then(response => response.json())
+            fetch('/hr/job-postings')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    jobPostingsData = data.jobPostings;
+                    // HR API returns { success: true, data: [...] }
+                    if (data.success && data.data) {
+                        jobPostingsData = data.data;
+                    } else if (data.jobPostings) {
+                        // Fallback for old format
+                        jobPostingsData = data.jobPostings;
+                    } else {
+                        jobPostingsData = [];
+                    }
                     populateJobTable();
                 })
                 .catch(error => console.error('Error loading job postings:', error));

@@ -731,36 +731,44 @@
       <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
       <span class="company-title">MDB Construction</span>
   </div>
-    <ul class="list-unstyled">
-      <li class="nav-item">
-        <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
-      </li>
-      <li class="nav-item">
-        git rebase --continue
-        <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
-      </li>
-      <li class="nav-item">
-        <a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a>
-      </li>
-      
-      <li class="nav-item">
-        <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
-      </li>
-      <li class="nav-item">
-        <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
-      </li>
-     
-      <li class="nav-item">
-        <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
-      </li>
-      <li class="nav-item">
-        <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span>Request Material</span></a>
-      </li>
-      <li class="nav-item">
-          <a href="/scm/supplier_dashboard"><i class="fas fa-user-tie"></i> <span> Supplier Dashboard</span></a>
-      </li>
-      <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
-    </ul>
+  <ul class="list-unstyled">
+    <li class="nav-item">
+      <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#supplyrequest" aria-expanded="false">
+        <i class="fas fa-users"></i> Supplier
+      </a>
+      <ul class="collapse" id="supplyrequest">
+          <li class="nav-item"><a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a></li>
+          <li class="nav-item"><a href="/scm/product_request"><i class="fas fa-user-tie"></i> <span> Product Request</span></a></li>
+        </ul>
+    </li>
+    
+    <li class="nav-item">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
+        <i class="fas fa-file-invoice"></i> Purchase Request
+      </a>
+      <ul class="collapse" id="PurchaseRequest">
+        <li class="nav-item"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
+        <li class="nav-item"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
+      </ul>
+    </li>
+   
+    <li class="nav-item">
+      <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/owners_supply"><i class="fas fa-user-tie"></i> <span> Owners Supply</span></a>
+    </li>
+    <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+  </ul>
   </div>
 
   <div id="content">
@@ -782,34 +790,17 @@
       </div>
     </div>
 
-    <div class="materials-list">
-      <h5>Suppliers</h5>
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Contact Name</th>
-              <th>Contact Email</th>
-              <th>Contact Phone</th>
-              <th>Address</th>
-              <th>City</th>
-              <th>Postal Code</th>
-              <th>Country</th>
-              <th>Account #</th>
-              <th>Payment Terms</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="supplierBody">
-            <!-- Table content will be dynamically inserted here -->
-          </tbody>
-        </table>
-      </div>
-      <div id="paginationControls" class="pagination">
-        <!-- Pagination buttons will be dynamically inserted here -->
-      </div>
+    <!-- Card Layout Container -->
+    <div class="cards-container" id="supplierCards">
+      <!-- Cards will be dynamically generated here -->
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div id="entriesMessage" class="text-muted small"></div>
+      <nav aria-label="Table pagination">
+        <ul class="pagination mb-0" id="paginationControls">
+          <!-- Pagination buttons will be dynamically inserted here -->
+        </ul>
+      </nav>
     </div>
   </div>
 
@@ -821,13 +812,7 @@
         <div class="form-group">
           <label for="supplierName">Supplier Name</label>
           <input type="text" id="supplierName" placeholder="Enter supplier name" required />
-        <div class="form-group">
-          <label for="supplierName">Supplier Name</label>
-          <input type="text" id="supplierName" placeholder="Enter supplier name" required />
         </div>
-        <div class="form-group">
-          <label for="supplierContact">Contact Phone</label>
-          <input type="text" id="supplierContact" placeholder="Enter 11-digit contact number" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
         <div class="form-group">
           <label for="supplierContact">Contact Phone</label>
           <input type="text" id="supplierContact" placeholder="Enter 11-digit contact number" required maxlength="11" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
@@ -867,6 +852,30 @@
             <option value="online payment">Online Payment</option>
           </select>
         </div>
+        <div class="form-group">
+          <label for="supplierType">Supplier Type</label>
+          <select id="supplierType" required>
+            <option value="manual">Manual</option>
+            <option value="registered">Registered</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Categories</label>
+          <div class="category-options">
+            <label class="category-option">
+              <input type="checkbox" id="categoryEquipment" value="equipment">
+              <span>Equipment</span>
+            </label>
+            <label class="category-option">
+              <input type="checkbox" id="categoryOfficeSupplies" value="office_supplies">
+              <span>Office Supplies</span>
+            </label>
+            <label class="category-option">
+              <input type="checkbox" id="categoryConstruction" value="construction">
+              <span>Construction</span>
+            </label>
+          </div>
+        </div>
         <div style="text-align: center; width: 100%;">
           <button class="action-btn" type="submit" style="width:50%; text-align: center;">Add</button>
         </div>
@@ -892,7 +901,6 @@
   <!-- Edit Supplier Modal -->
   <div id="editSupplierModal" class="modal">
     <div class="modal-content" style="max-width: 600px; min-width: 400px; width: 100%;">
-    <div class="modal-content" style="max-width: 600px; min-width: 400px; width: 100%;">
       <button class="close-btn" onclick="closeEditSupplierModal()">&times;</button>
       <h3>Edit Supplier</h3><br>
       <form id="editSupplierForm" style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: stretch;">
@@ -906,6 +914,24 @@
         <div class="form-group"><label for="editCountry">Country</label><input type="text" id="editCountry" required /></div>
         <div class="form-group"><label for="editAccountNumber">Account Number</label><input type="text" id="editAccountNumber" required /></div>
         <div class="form-group"><label for="editPaymentTerms">Payment Terms</label><input type="text" id="editPaymentTerms" required /></div>
+        <div class="form-group"><label for="editSupplierType">Supplier Type</label><select id="editSupplierType" required><option value="manual">Manual</option><option value="registered">Registered</option></select></div>
+        <div class="form-group">
+          <label>Categories</label>
+          <div class="category-options">
+            <label class="category-option">
+              <input type="checkbox" id="editCategoryEquipment" value="equipment">
+              <span>Equipment</span>
+            </label>
+            <label class="category-option">
+              <input type="checkbox" id="editCategoryOfficeSupplies" value="office_supplies">
+              <span>Office Supplies</span>
+            </label>
+            <label class="category-option">
+              <input type="checkbox" id="editCategoryConstruction" value="construction">
+              <span>Construction</span>
+            </label>
+          </div>
+        </div>
         <div class="form-group"><label for="editStatus">Status</label><input type="text" id="editStatus" required /></div>
         <div style="text-align: center; width: 100%; margin-top: 12px;">
           <button class="action-btn" type="button" onclick="confirmEditSupplier()" style="width:50%; text-align: center;">Save Changes</button>
@@ -932,24 +958,278 @@
     </div>
   </div>
 
-  <!-- View Supplier Modal -->
-  <div id="viewSupplierModal" class="modal">
-    <div class="modal-content" style="max-width: 600px; min-width: 400px; width: 100%;">
-      <button class="close-btn" onclick="closeViewSupplierModal()">&times;</button>
-      <h3 style="margin-bottom: 24px;">Supplier Details</h3>
-      <div style="display: flex; flex-wrap: wrap; gap: 24px 32px;">
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Name:</strong><br><span id="viewSupplierNameText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Name:</strong><br><span id="viewContactNameText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Email:</strong><br><span id="viewContactEmailText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Contact Phone:</strong><br><span id="viewContactPhoneText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Address:</strong><br><span id="viewSupplierLocationText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>City:</strong><br><span id="viewCityText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Postal Code:</strong><br><span id="viewPostalCodeText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Country:</strong><br><span id="viewCountryText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Account Number:</strong><br><span id="viewAccountNumberText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Payment Terms:</strong><br><span id="viewPaymentTermsText"></span></div>
-        <div style="flex: 1 1 45%; min-width: 200px;"><strong>Status:</strong><br><span id="viewStatusText"></span></div>
+  <!-- View Supplier Modal (combined: details + materials) -->
+  <div id="viewSupplierModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 95vw; width: 95vw; margin: 2rem auto;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewSupplierModalLabel">
+            <i class="fas fa-eye"></i> View Supplier
+          </h5>
+          <button type="button" class="btn-close" onclick="closeViewSupplierModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- Supplier Details Section -->
+          <div class="mb-4">
+            <div class="supplier-info-header mb-4">
+              <h5 class="mb-1"><i class="fas fa-building me-2 text-primary"></i><span id="viewSupplierName"></span></h5>
+              <p class="text-muted mb-0"><i class="fas fa-map-marker-alt me-1"></i><span id="viewAddress"></span>, <span id="viewCity"></span>, <span id="viewCountry"></span></p>
+            </div>
+            
+            <div class="row g-4">
+              <!-- Contact Information -->
+              <div class="col-md-6">
+                <div class="info-section">
+                  <h6 class="section-title"><i class="fas fa-phone me-2"></i>Contact Information</h6>
+                  <div class="info-item">
+                    <span class="info-label">Contact Person:</span>
+                    <span class="info-value" id="viewContactName"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value" id="viewContactEmail"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value" id="viewContactPhone"></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Business Information -->
+              <div class="col-md-6">
+                <div class="info-section">
+                  <h6 class="section-title"><i class="fas fa-briefcase me-2"></i>Business Information</h6>
+                  <div class="info-item">
+                    <span class="info-label">Account Number:</span>
+                    <span class="info-value" id="viewAccountNumber"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Payment Terms:</span>
+                    <span class="info-value" id="viewPaymentTerms"></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Postal Code:</span>
+                    <span class="info-value" id="viewPostalCode"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Materials Section -->
+          <div>
+            <h6 class="mb-3"><i class="fas fa-boxes me-2"></i>Supplier Materials</h6>
+            
+            <!-- Materials Table Toolbar (only for Registered suppliers) -->
+            <div class="materials-toolbar mb-3" id="materialsToolbar" style="display: none;">
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <div class="input-group" style="max-width: 400px;">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" id="materialsSearchInput" class="form-control" placeholder="Search materials...">
+                  </div>
+                </div>
+                <div class="col-md-6 text-end">
+                  <div class="d-flex align-items-center gap-2 justify-content-end">
+                    <label for="materialsEntriesSelect" class="text-muted small mb-0">Show</label>
+                    <select id="materialsEntriesSelect" class="form-select form-select-sm" style="width: 80px;">
+                      <option value="5" selected>5</option>
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="all">All</option>
+                    </select>
+                    <span class="text-muted small">entries</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Materials Table -->
+            <div class="materials-table-container">
+              <div class="table-responsive">
+                <table class="table materials-table">
+                  <thead>
+                    <tr>
+                      <th class="sortable" data-sort="material">
+                        <i class="fa-solid fa-box me-1"></i>Material
+                        <i class="fa-solid fa-sort sort-icon"></i>
+                      </th>
+                      <th class="sortable" data-sort="unit">
+                        <i class="fa-solid fa-ruler me-1"></i>Unit
+                        <i class="fa-solid fa-sort sort-icon"></i>
+                      </th>
+                      <th class="sortable" data-sort="price">
+                        <i class="fa-solid fa-dollar-sign me-1"></i>Price
+                        <i class="fa-solid fa-sort sort-icon"></i>
+                      </th>
+                      <th class="text-center">
+                        <i class="fa-solid fa-cogs me-1"></i>Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="materialsTableBody">
+                    <!-- Rows injected dynamically -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State for Manual suppliers -->
+              <div id="materialsEmptyState" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                <h5 class="text-warning">Materials Not Available</h5>
+                <p class="text-muted">Manual suppliers cannot view materials because they don't have access to the supplier portal to set prices.</p>
+                <p class="text-muted small">Only registered suppliers can manage their materials and pricing through the portal.</p>
+              </div>
+            </div>
+
+            <!-- Materials Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <div id="materialsEntriesMessage" class="text-muted small"></div>
+              <nav aria-label="Materials pagination">
+                <ul class="pagination mb-0" id="materialsPagination"></ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeViewSupplierModal()">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+    </div>
+  </div>
+
+  <!-- Order History Modal (copied structure) -->
+  <div id="orderHistoryModal" class="modal">
+    <div class="modal-content" style="max-width: 960px; width: 100%;">
+      <button class="close-btn" onclick="closeOrderHistoryModal()">&times;</button>
+      <h3 style="margin-bottom: 12px;"><i class="fa fa-history"></i> Order History</h3>
+      <div id="orderHistoryMeta" style="margin-bottom: 12px; color: #6b7280; font-size: 14px;"></div>
+
+      <!-- Toolbar -->
+      <div class="materials-toolbar mb-3" style="background:#f8f9fa; border-radius:8px; padding:12px; border:1px solid #e9ecef;">
+        <div class="row" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div class="col" style="flex:1; min-width:260px;">
+            <div class="input-group" style="max-width: 420px;">
+              <span class="input-group-text bg-white"><i class="fa fa-search text-muted"></i></span>
+              <input type="text" id="orderHistorySearchInput" class="form-control" placeholder="Search orders...">
+            </div>
+          </div>
+          <div class="col text-end" style="margin-left:auto;">
+            <div class="d-flex align-items-center gap-2 justify-content-end" style="display:flex; align-items:center; gap:8px;">
+              <label for="orderHistoryEntriesSelect" class="text-muted small mb-0">Show</label>
+              <select id="orderHistoryEntriesSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="all">All</option>
+              </select>
+              <span class="text-muted small">entries</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Table container -->
+      <div class="materials-table-container" style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); border:1px solid #e9ecef;">
+        <div class="table-responsive">
+          <table class="table materials-table" style="margin:0;">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="orderId"><i class="fa fa-hashtag me-1"></i>Order ID <i class="fa fa-sort sort-icon"></i></th>
+                <th class="sortable" data-sort="date"><i class="fa fa-calendar me-1"></i>Date <i class="fa fa-sort sort-icon"></i></th>
+                <th class="sortable" data-sort="total"><i class="fa fa-coins me-1"></i>Total Amount <i class="fa fa-sort sort-icon"></i></th>
+                <th class="sortable" data-sort="status"><i class="fa fa-info-circle me-1"></i>Status <i class="fa fa-sort sort-icon"></i></th>
+                <th class="text-center"><i class="fa fa-cogs me-1"></i>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orderHistoryBody"></tbody>
+          </table>
+        </div>
+        <div id="orderHistoryEmptyState" class="empty-state" style="display:none; text-align:center; padding:40px; color:#6c757d;">
+          <i class="fa fa-history" style="font-size:36px; opacity:0.6;"></i>
+          <h5>No order history found</h5>
+          <p>Try adjusting your search criteria</p>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div id="orderHistoryEntriesMessage" class="text-muted small"></div>
+        <ul class="pagination mb-0" id="orderHistoryPagination" style="display:flex; gap:6px; list-style:none; padding:0; margin:0;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Material Modal (Logistics Only) -->
+  <div class="modal" id="addMaterialModal">
+    <div class="modal-content" style="max-width: 720px; width: 100%;">
+      <button class="close-btn" onclick="closeAddMaterialModal()">&times;</button>
+      <h3>Add New Material</h3>
+      <p class="text-muted" id="addMatSupplierLabel"></p>
+      <form id="addMaterialForm" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group">
+          <label>Brand Type <span style="color:#dc3545">*</span></label>
+          <select id="itemType" required>
+            <option value="Branded">Branded</option>
+            <option value="Brandless">Brandless</option>
+          </select>
+          <small id="typeHelp" class="text-muted">Select Brandless for generic items (e.g., Plywood, Cement).</small>
+        </div>
+        <div class="form-group">
+          <label>Brand Name <span id="brandReqStar" style="color:#dc3545; display:none;">*</span></label>
+          <div class="material-dropdown-container" id="brandDropdownContainer">
+            <input type="text" id="brandName" placeholder="e.g., Boysen (leave blank if Brandless)" autocomplete="off" />
+            <div class="material-dropdown" id="brandDropdown" style="display:none;"></div>
+          </div>
+          <small class="text-muted">If Brandless, you may leave this empty and use a generic item name below.</small>
+        </div>
+        <div class="form-group">
+          <label>Item Name <span style="color:#dc3545">*</span></label>
+          <input type="text" id="itemName" placeholder="e.g., Boysen Semi-Gloss" required />
+        </div>
+        <div class="form-group">
+          <label>Variant</label>
+          <input type="text" id="matVariant" placeholder="e.g., 1L, 16L, 50kg (optional)" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="itemDescription" placeholder="Short description (optional)" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="itemCategory" required>
+              <option value="Equipment">Equipment</option>
+              <option value="Construction">Construction</option>
+              <option value="Office Supplies">Office Supplies</option>
+            </select>
+          </div>
+          <div class="form-group"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Unit <span style="color:#dc3545">*</span></label>
+            <input type="text" id="matUnit" placeholder="e.g., L, pcs, kg" required />
+          </div>
+          <div class="form-group">
+            <label>Price <span style="color:#dc3545">*</span></label>
+            <input type="number" step="0.01" min="0" id="matPrice" placeholder="e.g., 850.00" required />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" step="0.01" min="0" id="matQty" placeholder="e.g., 0" />
+          </div>
+          <div class="form-group">
+            <label>Effective Date</label>
+            <input type="date" id="matEffectiveDate" disabled />
+          </div>
+        </div>
+        <div style="text-align:center; margin-top:8px;">
+          <button class="action-btn" type="submit" style="width:50%;">Submit</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -969,10 +1249,21 @@
     // Initialize variables
     let suppliers = [];
     let filteredSuppliers = [];
-    let suppliersPerPage = 5;
+    let suppliersPerPage = 6;
     let currentPage = 1;
     let itemIdToDelete = null;
     let currentEditSupplierId = null;
+
+    // Sample order history (frontend-only)
+    const supplierOrderHistory = {
+      1: [
+        { orderId: 'ORD-001', date: '2024-01-20', material: 'Steel Rod 10mm', quantity: 50, total: 60000, status: 'Completed' },
+        { orderId: 'ORD-015', date: '2024-02-15', material: 'Steel Plate 4x8', quantity: 20, total: 70000, status: 'Completed' }
+      ],
+      2: [
+        { orderId: 'ORD-002', date: '2024-01-25', material: 'I-Beam 6m', quantity: 15, total: 123000, status: 'Completed' }
+      ]
+    };
 
     // Setup form event listeners
     function setupEventListeners() {
@@ -999,10 +1290,17 @@
       const country = document.getElementById('country').value.trim();
       const account_number = document.getElementById('accountNumber').value.trim();
       const payment_terms = document.getElementById('paymentTerms').value;
+      const supplier_type = document.getElementById('supplierType').value;
+      
+      // Get selected categories
+      const categories = [];
+      if (document.getElementById('categoryEquipment').checked) categories.push('equipment');
+      if (document.getElementById('categoryOfficeSupplies').checked) categories.push('office_supplies');
+      if (document.getElementById('categoryConstruction').checked) categories.push('construction');
 
       // Validate all fields
       if (!supplier_name || !contact_name || !contact_email || !contact_phone || 
-          !address || !city || !postal_code || !country || !account_number || !payment_terms) {
+          !address || !city || !postal_code || !country || !account_number || !payment_terms || !supplier_type) {
         showToast("Please fill out all fields.");
         return;
       }
@@ -1017,6 +1315,12 @@
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(contact_email)) {
         showToast("Please enter a valid email address.");
+        return;
+      }
+
+      // Require at least one category
+      if (!Array.isArray(categories) || categories.length === 0) {
+        showToast("Please select at least one category.");
         return;
       }
 
@@ -1036,7 +1340,9 @@
             postal_code,
             country,
             account_number,
-            payment_terms
+            payment_terms,
+            supplier_type,
+            categories
           })
         });
 
@@ -1045,6 +1351,8 @@
         if (response.ok) {
           closeAddSupplierModal();
           showSuccessModal(supplier_name, result.defaultPassword);
+          // Refresh the supplier list
+          await fetchSuppliers();
         } else {
           showToast(result.error || "Failed to add supplier.");
         }
@@ -1062,8 +1370,17 @@
           throw new Error('Failed to fetch suppliers');
         }
         suppliers = await response.json();
+        // Add default values for card display
+        suppliers = suppliers.map(supplier => ({
+          ...supplier,
+          type: supplier.supplier_type || supplier.type || 'manual',
+          dateAdded: supplier.dateAdded || supplier.created_at || new Date().toISOString().split('T')[0],
+          rating: supplier.rating || Math.floor(Math.random() * 3) + 3,
+          logo: supplier.logo || null,
+          categories: supplier.categories ? supplier.categories.split(',') : []
+        }));
         filteredSuppliers = [...suppliers];
-        renderTable();
+        renderCards();
       } catch (error) {
         console.error('Error fetching suppliers:', error);
         showToast('Error loading suppliers: ' + error.message);
@@ -1071,14 +1388,15 @@
     }
 
     // Initialize the page
-    function initializePage() {
+    async function initializePage() {
       console.log('Initializing page...');
-      setupEventListeners(); // Setup event listeners first
-      fetchSuppliers(); // Then fetch suppliers
-      const select = document.getElementById('entriesPerPage');
-      if (select) {
-        suppliersPerPage = parseInt(select.value);
-      }
+      setupEventListeners();
+      await fetchSuppliers();
+      // Keep the default value of 6, don't override with dropdown value
+      // const select = document.getElementById('entriesPerPage');
+      // if (select) {
+      //   suppliersPerPage = parseInt(select.value);
+      // }
     }
 
     // Call initialize when the page loads
@@ -1091,47 +1409,121 @@
     // Also try to initialize when the window loads
     window.addEventListener('load', initializePage);
 
-    // Make sure the table renders when navigating to the page
+    // Make sure the cards render when navigating to the page
     document.addEventListener('visibilitychange', function() {
       if (!document.hidden) {
-        console.log('Page became visible, re-rendering table...');
-        renderTable();
+        console.log('Page became visible, re-rendering cards...');
+        renderCards();
       }
     });
 
-    // Render table function
-    function renderTable() {
-      const tableBody = document.getElementById('supplierBody');
-      if (!tableBody) return;
-      tableBody.innerHTML = '';
+    // Helper function to get initials from supplier name
+    function getInitials(name) {
+      return name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    }
+
+    // Render cards function
+    function renderCards() {
+      const container = document.getElementById('supplierCards');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
       const start = (currentPage - 1) * suppliersPerPage;
       const end = currentPage * suppliersPerPage;
       const currentSuppliers = filteredSuppliers.slice(start, end);
+      
+      if (currentSuppliers.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'text-center py-5';
+        emptyState.innerHTML = `
+          <div class="text-muted">
+            <i class="fas fa-search fa-3x mb-3"></i>
+            <h5>No suppliers found</h5>
+            <p>Try adjusting your search criteria</p>
+          </div>
+        `;
+        container.appendChild(emptyState);
+        return;
+      }
+
       currentSuppliers.forEach(supplier => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${supplier.supplier_name || ''}</td>
-          <td>${supplier.contact_name || ''}</td>
-          <td>${supplier.contact_email || ''}</td>
-          <td>${supplier.contact_phone || ''}</td>
-          <td>${supplier.address || ''}</td>
-          <td>${supplier.city || ''}</td>
-          <td>${supplier.postal_code || ''}</td>
-          <td>${supplier.country || ''}</td>
-          <td>${supplier.account_number || ''}</td>
-          <td>${supplier.payment_terms || ''}</td>
-          <td>${supplier.status || 'active'}</td>
-          <td>
-            <button class="btn btn-sm btn-secondary me-1" onclick="openViewSupplierModal(${supplier.supplier_id})" title="View Supplier">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="btn btn-sm btn-info me-1" onclick="openEditSupplierModal(${supplier.supplier_id})" title="Edit Supplier">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${supplier.supplier_id})" title="Delete Supplier">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
+        const card = document.createElement('div');
+        card.className = 'supplier-card';
+        
+        const logoHtml = supplier.logo 
+          ? `<img src="${supplier.logo}" alt="${supplier.supplier_name} Logo" class="supplier-logo" />`
+          : `<div class="logo-placeholder initials-logo" data-initials="${getInitials(supplier.supplier_name)}" data-type="${(supplier.type || 'manual').charAt(0).toUpperCase() + (supplier.type || 'manual').slice(1)}">${getInitials(supplier.supplier_name)}</div>`;
+        
+        // Generate star rating HTML
+        const rating = supplier.rating || 0;
+        const starsHtml = Array.from({length: 5}, (_, i) => {
+          if (i < Math.floor(rating)) {
+            return '<i class="fas fa-star star filled"></i>';
+          } else if (i === Math.floor(rating) && rating % 1 !== 0) {
+            return '<i class="fas fa-star-half-alt star filled"></i>';
+          } else {
+            return '<i class="far fa-star star"></i>';
+          }
+        }).join('');
+        
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-status">
+              <span class="supplier-type ${supplier.type || 'manual'}">${(supplier.type || 'manual').charAt(0).toUpperCase() + (supplier.type || 'manual').slice(1)}</span>
+              <div class="supplier-date">
+                <i class="fas fa-calendar-plus"></i>
+                <span class="date-value">${supplier.dateAdded || 'N/A'}</span>
+              </div>
+            </div>
+            <div class="card-rating">
+              <div class="star-rating">${starsHtml}</div>
+              <span class="rating-value">${rating.toFixed(1)}</span>
+            </div>
+            <div class="card-menu">
+              <button class="menu-toggle-btn" data-supplier-id="${supplier.supplier_id}">
+                <i class="fa fa-ellipsis-v"></i>
+              </button>
+              <div class="menu-dropdown">
+                <button class="menu-item view" onclick="openViewSupplierModal(${supplier.supplier_id})"><i class="fa fa-eye"></i> View</button>
+                <button class="menu-item order-history" onclick="openOrderHistoryModal(${supplier.supplier_id})"><i class="fa fa-history"></i> Order History</button>
+                <button class="menu-item edit" onclick="openAddMaterialModal(${supplier.supplier_id}, '${supplier.supplier_name.replace(/'/g, "\'")}')"><i class="fa fa-plus"></i> Add Material</button>
+                <button class="menu-item edit" onclick="openEditSupplierModal(${supplier.supplier_id})"><i class="fa fa-pen"></i> Edit</button>
+                <button class="menu-item delete" onclick="openDeleteModal(${supplier.supplier_id})"><i class="fa fa-trash"></i> Delete</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="supplier-info logo-section">
+              <div class="logo-container">
+                ${logoHtml}
+                <div class="logo-type-badge">
+                  <div class="status-text ${supplier.status === 'Inactive' ? 'inactive' : 'active'}">${supplier.status === 'Inactive' ? 'Inactive' : 'Active'}</div>
+                </div>
+              </div>
+              <div class="supplier-name-section">
+                <div class="supplier-name">${supplier.supplier_name}</div>
+                <div class="supplier-categories">
+                  ${supplier.categories && supplier.categories.length > 0 
+                    ? supplier.categories.map(category => 
+                        `<span class="category-badge ${category}">${category.replace('_', ' ')}</span>`
+                      ).join('')
+                    : '<span class="category-badge" style="background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6;">No categories</span>'
+                  }
+                </div>
+                <div class="supplier-details">
+                  <div class="detail-row">
+                    <i class="fa fa-phone"></i>
+                    <span class="info-value">${supplier.contact_phone}</span>
+                  </div>
+                  <div class="detail-row">
+                    <i class="fa fa-map-marker-alt"></i>
+                    <span class="info-value">${supplier.city}, ${supplier.country}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         `;
         container.appendChild(card);
 
@@ -1154,6 +1546,7 @@
           }, { once: true });
         }
       });
+      
       renderPagination();
       updateEntriesMessage();
     }
@@ -1191,7 +1584,12 @@
 
     function goToPage(page) {
       currentPage = page;
-      renderTable();
+      // Ensure we maintain the default 6 entries per page unless user changed it
+      if (suppliersPerPage === 6) {
+        renderCards();
+      } else {
+      renderCards();
+      }
     }
 
     function setEntriesPerPage() {
@@ -1229,10 +1627,6 @@
                supplier.contact_name.toLowerCase().includes(searchTermLower) ||
                supplier.contact_email.toLowerCase().includes(searchTermLower) ||
                supplier.contact_phone.includes(searchTermLower);
-        return supplier.supplier_name.toLowerCase().includes(searchTermLower) ||
-               supplier.contact_name.toLowerCase().includes(searchTermLower) ||
-               supplier.contact_email.toLowerCase().includes(searchTermLower) ||
-               supplier.contact_phone.includes(searchTermLower);
       });
       
       currentPage = 1;
@@ -1263,12 +1657,26 @@
 
     async function confirmDelete() {
       if (itemIdToDelete !== null) {
-        const index = suppliers.findIndex(supplier => supplier.supplier_id === itemIdToDelete);
-        if (index !== -1) {
-          suppliers.splice(index, 1);
-          filteredSuppliers = [...suppliers];
-          renderTable();
-          showToast("Supplier deleted successfully!");
+        try {
+          const response = await fetch(`/scm/suppliers/${itemIdToDelete}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            const index = suppliers.findIndex(supplier => supplier.supplier_id === itemIdToDelete);
+            if (index !== -1) {
+              suppliers.splice(index, 1);
+              filteredSuppliers = [...suppliers];
+              renderCards();
+              showToast("Supplier deleted successfully!");
+            }
+          } else {
+            const result = await response.json();
+            showToast(result.error || "Failed to delete supplier.");
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showToast("Error: " + error.message);
         }
       }
       closeDeleteModal();
@@ -1297,7 +1705,6 @@
 
     function openEditSupplierModal(supplierId) {
       const supplier = suppliers.find(s => s.supplier_id === supplierId);
-      const supplier = suppliers.find(s => s.supplier_id === supplierId);
       if (supplier) {
         currentEditSupplierId = supplierId;
         document.getElementById('editSupplierName').value = supplier.supplier_name || '';
@@ -1310,6 +1717,14 @@
         document.getElementById('editCountry').value = supplier.country || '';
         document.getElementById('editAccountNumber').value = supplier.account_number || '';
         document.getElementById('editPaymentTerms').value = supplier.payment_terms || '';
+        document.getElementById('editSupplierType').value = supplier.supplier_type || supplier.type || 'manual';
+        
+        // Set category checkboxes
+        const categories = supplier.categories || [];
+        document.getElementById('editCategoryEquipment').checked = categories.includes('equipment');
+        document.getElementById('editCategoryOfficeSupplies').checked = categories.includes('office_supplies');
+        document.getElementById('editCategoryConstruction').checked = categories.includes('construction');
+        
         document.getElementById('editStatus').value = supplier.status || 'active';
         document.getElementById('editSupplierModal').style.display = 'block';
       }
@@ -1349,14 +1764,55 @@
         return;
       }
 
-      const supplier = suppliers.find(s => s.supplier_id === currentEditSupplierId);
-      if (supplier) {
-        supplier.supplier_name = name;
-        supplier.contact_phone = contact;
-        supplier.address = location;
-        filteredSuppliers = [...suppliers];
-        renderTable();
-        showToast("Supplier updated successfully!");
+      try {
+        const response = await fetch(`/scm/suppliers/${currentEditSupplierId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            supplier_name: name,
+            contact_name: contactName,
+            contact_email: contactEmail,
+            contact_phone: contact,
+            address: location,
+            city: city,
+            postal_code: postalCode,
+            country: country,
+            account_number: accountNumber,
+            payment_terms: paymentTerms,
+            supplier_type: supplierType,
+            categories: categories
+          })
+        });
+
+        if (response.ok) {
+          const supplier = suppliers.find(s => s.supplier_id === currentEditSupplierId);
+          if (supplier) {
+            supplier.supplier_name = name;
+            supplier.contact_name = contactName;
+            supplier.contact_email = contactEmail;
+            supplier.contact_phone = contact;
+            supplier.address = location;
+            supplier.city = city;
+            supplier.postal_code = postalCode;
+            supplier.country = country;
+            supplier.account_number = accountNumber;
+            supplier.payment_terms = paymentTerms;
+            supplier.supplier_type = supplierType;
+            supplier.type = supplierType;
+            supplier.categories = categories;
+            filteredSuppliers = [...suppliers];
+            renderCards();
+            showToast("Supplier updated successfully!");
+          }
+        } else {
+          const result = await response.json();
+          showToast(result.error || "Failed to update supplier.");
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast("Error: " + error.message);
       }
 
       closeEditSupplierModal();
@@ -1370,79 +1826,6 @@
       document.getElementById('addSupplierModal').style.display = 'none';
       document.getElementById('addSupplierForm').reset();
     }
-
-    // Add event listener for the Add Supplier button
-    document.getElementById('addSupplierBtn').addEventListener('click', openAddSupplierModal);
-
-    // Add event listener for the Add Supplier form
-    document.getElementById('addSupplierForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      // Get form values
-      const supplier_name = document.getElementById('supplierName').value.trim();
-      const contact_phone = document.getElementById('supplierContact').value.trim();
-      const contact_name = document.getElementById('contactName').value.trim();
-      const contact_email = document.getElementById('contactEmail').value.trim();
-      const address = document.getElementById('supplierLocation').value.trim();
-      const city = document.getElementById('city').value.trim();
-      const postal_code = document.getElementById('postalCode').value.trim();
-      const country = document.getElementById('country').value.trim();
-      const account_number = document.getElementById('accountNumber').value.trim();
-      const payment_terms = document.getElementById('paymentTerms').value;
-
-      // Validate all fields
-      if (!supplier_name || !contact_name || !contact_email || !contact_phone || 
-          !address || !city || !postal_code || !country || !account_number || !payment_terms) {
-        showToast("Please fill out all fields.");
-        return;
-      }
-
-      // Validate phone number
-      if (!/^\d{11}$/.test(contact_phone)) {
-        showToast("Phone number must be exactly 11 digits.");
-        return;
-      }
-
-      // Validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(contact_email)) {
-        showToast("Please enter a valid email address.");
-        return;
-      }
-
-      try {
-        const response = await fetch('/scm/suppliers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            supplier_name,
-            contact_name,
-            contact_email,
-            contact_phone,
-            address,
-            city,
-            postal_code,
-            country,
-            account_number,
-            payment_terms
-          })
-        });
-
-        const result = await response.json();
-        
-        if (response.ok) {
-          closeAddSupplierModal();
-          showSuccessModal(supplier_name, result.defaultPassword);
-        } else {
-          showToast(result.error || "Failed to add supplier.");
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        showToast("Error: " + error.message);
-      }
-    });
 
     // Add these new functions for the success modal
     function showSuccessModal(username, password) {
@@ -1459,24 +1842,440 @@
 
     function openViewSupplierModal(supplierId) {
       const supplier = suppliers.find(s => s.supplier_id === supplierId);
-      if (supplier) {
-        document.getElementById('viewSupplierNameText').textContent = supplier.supplier_name || '';
-        document.getElementById('viewContactNameText').textContent = supplier.contact_name || '';
-        document.getElementById('viewContactEmailText').textContent = supplier.contact_email || '';
-        document.getElementById('viewContactPhoneText').textContent = supplier.contact_phone || '';
-        document.getElementById('viewSupplierLocationText').textContent = supplier.address || '';
-        document.getElementById('viewCityText').textContent = supplier.city || '';
-        document.getElementById('viewPostalCodeText').textContent = supplier.postal_code || '';
-        document.getElementById('viewCountryText').textContent = supplier.country || '';
-        document.getElementById('viewAccountNumberText').textContent = supplier.account_number || '';
-        document.getElementById('viewPaymentTermsText').textContent = supplier.payment_terms || '';
-        document.getElementById('viewStatusText').textContent = supplier.status || 'active';
-        document.getElementById('viewSupplierModal').style.display = 'block';
+      if (!supplier) return;
+      
+      // Update modal title with supplier name
+      const modalTitle = document.getElementById('viewSupplierModalLabel');
+      if (modalTitle) {
+        modalTitle.innerHTML = `<i class="fas fa-eye"></i> View Supplier - ${supplier.supplier_name}`;
       }
+      
+      // Populate supplier details
+      const setVal = (id, val) => { 
+        const el = document.getElementById(id); 
+        if (el) el.textContent = val || ''; 
+      };
+      setVal('viewSupplierName', supplier.supplier_name);
+      setVal('viewContactName', supplier.contact_name);
+      setVal('viewContactEmail', supplier.contact_email);
+      setVal('viewContactPhone', supplier.contact_phone);
+      setVal('viewAddress', supplier.address);
+      setVal('viewCity', supplier.city);
+      setVal('viewPostalCode', supplier.postal_code);
+      setVal('viewCountry', supplier.country);
+      setVal('viewAccountNumber', supplier.account_number);
+      setVal('viewPaymentTerms', supplier.payment_terms);
+      
+      // Handle materials section based on supplier type
+      const materialsBody = document.getElementById('materialsTableBody');
+      const emptyState = document.getElementById('materialsEmptyState');
+      const toolbar = document.getElementById('materialsToolbar');
+      
+      if (supplier.supplier_type === 'manual' || supplier.supplier_type === 'Manual') {
+        // For Manual suppliers, show the special message
+        if (materialsBody) materialsBody.style.display = 'none';
+        if (emptyState) {
+          emptyState.style.display = 'block';
+          emptyState.innerHTML = `
+            <i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <h5 class="text-warning">Materials Not Available</h5>
+            <p class="text-muted">Manual suppliers cannot view materials because they don't have access to the supplier portal to set prices.</p>
+            <p class="text-muted small">Only registered suppliers can manage their materials and pricing through the portal.</p>
+          `;
+        }
+        if (toolbar) toolbar.style.display = 'none';
+      } else {
+        // For Registered suppliers, fetch and show real materials
+        if (toolbar) toolbar.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
+        
+        // Show loading state
+        if (materialsBody) {
+          materialsBody.style.display = '';
+          materialsBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading materials...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading materials...</p>
+              </td>
+            </tr>
+          `;
+        }
+        
+        // Fetch real materials from backend
+        fetchSupplierMaterials(supplierId);
+      }
+      
+      // Show modal using custom implementation
+      document.getElementById('viewSupplierModal').style.display = 'block';
+    }
+
+    // New function to fetch supplier materials
+    async function fetchSupplierMaterials(supplierId) {
+      try {
+        const response = await fetch(`/scm/materials/supplier/${supplierId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch materials');
+        }
+        
+        const data = await response.json();
+        const materials = data.materials || data || [];
+        
+        const materialsBody = document.getElementById('materialsTableBody');
+        if (!materialsBody) return;
+        
+        if (materials.length === 0) {
+          materialsBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <i class="fa-solid fa-box-open text-muted" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p class="text-muted mb-0">No materials found for this supplier</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+        
+        // Clear loading state and populate with real data
+        materialsBody.innerHTML = '';
+        
+        materials.forEach((material, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="material-name">${material.name || 'N/A'}</td>
+            <td class="unit-cell">${material.unit || 'N/A'}</td>
+            <td class="price-cell">₱ ${Number(material.price || 0).toLocaleString()}</td>
+            <td class="text-center">
+              <button class="material-action-btn select" onclick="handleMaterialSelect('${supplierId}', ${idx})" title="Select Material">
+                <i class="fa-solid fa-check"></i> Select
+              </button>
+            </td>
+          `;
+          materialsBody.appendChild(tr);
+        });
+        
+        // Store materials for selection handling
+        window.currentSupplierMaterials = materials;
+        
+      } catch (error) {
+        console.error('Error fetching supplier materials:', error);
+        const materialsBody = document.getElementById('materialsTableBody');
+        if (materialsBody) {
+          materialsBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <i class="fa-solid fa-exclamation-triangle text-danger" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p class="text-danger mb-0">Error loading materials</p>
+                <small class="text-muted">Please try again later</small>
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function handleMaterialSelect(supplierId, itemIndex) {
+      const materials = window.currentSupplierMaterials || [];
+      const item = materials[itemIndex];
+      
+      if (!item) return;
+      
+      showToast(`Selected: ${item.name} - ₱ ${Number(item.price || 0).toLocaleString()}`, 'success');
+      console.log('Selected material:', item);
     }
 
     function closeViewSupplierModal() {
       document.getElementById('viewSupplierModal').style.display = 'none';
+    }
+
+    function openOrderHistoryModal(supplierId) {
+      const supplier = suppliers.find(s => s.supplier_id === supplierId);
+      const body = document.getElementById('orderHistoryBody');
+      const meta = document.getElementById('orderHistoryMeta');
+      if (!supplier || !body || !meta) return;
+
+      meta.textContent = `${supplier.supplier_name} • ${supplier.contact_phone} • ${supplier.city}, ${supplier.country}`;
+      body.innerHTML = '';
+      const rows = supplierOrderHistory[supplierId] || [];
+      const empty = document.getElementById('orderHistoryEmptyState');
+      const entriesMsg = document.getElementById('orderHistoryEntriesMessage');
+      const pagination = document.getElementById('orderHistoryPagination');
+
+      // simple pagination/search controls
+      const perSelect = document.getElementById('orderHistoryEntriesSelect');
+      const searchInput = document.getElementById('orderHistorySearchInput');
+      const perValue = perSelect?.value || '5';
+      const searchTerm = (searchInput?.value || '').toLowerCase();
+      const filtered = rows.filter(r => `${r.orderId} ${r.date} ${r.total} ${r.status}`.toLowerCase().includes(searchTerm));
+
+      const per = perValue === 'all' ? filtered.length || 1 : parseInt(perValue, 10);
+      const totalPages = Math.max(1, Math.ceil(filtered.length / per));
+      let page = 1;
+
+      function renderPage() {
+        body.innerHTML = '';
+        if (filtered.length === 0) {
+          empty.style.display = 'block';
+        } else {
+          empty.style.display = 'none';
+          const start = (page - 1) * per;
+          const end = start + per;
+          // sort
+          const activeSort = document.querySelector('#orderHistoryModal th.sortable.active');
+          let sorted = [...filtered];
+          if (activeSort) {
+            const key = activeSort.getAttribute('data-sort');
+            const asc = activeSort.getAttribute('data-asc') === 'true';
+            sorted.sort((a,b) => {
+              if (key === 'total') return (a.total - b.total) * (asc ? 1 : -1);
+              if (key === 'date') return (new Date(a.date) - new Date(b.date)) * (asc ? 1 : -1);
+              const av = (a[key] || '').toString();
+              const bv = (b[key] || '').toString();
+              return av.localeCompare(bv) * (asc ? 1 : -1);
+            });
+          }
+          sorted.slice(start, end).forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${r.orderId}</td>
+              <td>${r.date}</td>
+              <td>${new Intl.NumberFormat('en-PH',{ style:'currency', currency:'PHP'}).format(r.total)}</td>
+              <td><span class="status-pill ${r.status.replace(/\s/g,'-')}">${r.status}</span></td>
+              <td class="text-start" style="display:flex; gap:8px; justify-content:flex-start;">
+                <button class="action-btn" style="padding:6px 10px; background:#0d6efd;" onclick="viewOrder('${r.orderId}')">View</button>
+                <button class="action-btn" style="padding:6px 10px; background:#198754;" onclick="viewInvoice('${r.orderId}')">Invoice</button>
+              </td>
+            `;
+            body.appendChild(tr);
+          });
+        }
+        // entries message
+        if (entriesMsg) {
+          const start = filtered.length ? (page - 1) * per + 1 : 0;
+          const end = Math.min(page * per, filtered.length);
+          entriesMsg.textContent = `Showing ${start} to ${end} of ${filtered.length} entries`;
+        }
+        // pagination
+        if (pagination) {
+          pagination.innerHTML = '';
+          for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = 'action-btn' + (i === page ? ' active' : '');
+            btn.style.padding = '6px 10px';
+            btn.onclick = () => { page = i; renderPage(); };
+            li.appendChild(btn);
+            pagination.appendChild(li);
+          }
+        }
+      }
+
+      // bind controls
+      if (perSelect) perSelect.onchange = () => { openOrderHistoryModal(supplierId); };
+      if (searchInput) searchInput.oninput = () => { openOrderHistoryModal(supplierId); };
+      // sortable headers
+      document.querySelectorAll('#orderHistoryModal th.sortable').forEach(th => {
+        th.onclick = (e) => {
+          document.querySelectorAll('#orderHistoryModal th.sortable').forEach(x => { if (x!==th) { x.classList.remove('active'); x.removeAttribute('data-asc'); } });
+          const currentAsc = th.getAttribute('data-asc') === 'true';
+          th.setAttribute('data-asc', (!currentAsc).toString());
+          th.classList.add('active');
+          renderPage();
+        };
+      });
+
+      renderPage();
+      document.getElementById('orderHistoryModal').style.display = 'block';
+    }
+
+    function closeOrderHistoryModal() {
+      document.getElementById('orderHistoryModal').style.display = 'none';
+    }
+
+    // Actions in order history
+    function viewOrder(orderId) {
+      showToast(`Viewing order ${orderId}`);
+    }
+    function viewInvoice(orderId) {
+      showToast(`Opening invoice for ${orderId}`);
+    }
+
+    let addMatSupplierId = null;
+    let cachedBrands = [];
+    let cachedMaterials = [];
+    function openAddMaterialModal(supplierId, supplierName) {
+      addMatSupplierId = supplierId;
+      const lbl = document.getElementById('addMatSupplierLabel');
+      if (lbl) lbl.textContent = `Supplier: ${supplierName} (ID: ${supplierId})`;
+      document.getElementById('addMaterialModal').style.display = 'block';
+      ensureBrandAndMaterialCaches();
+      setupBrandAutocomplete();
+      setupItemNameAutocomplete();
+    }
+    function closeAddMaterialModal() {
+      document.getElementById('addMaterialModal').style.display = 'none';
+      document.getElementById('addMaterialForm').reset();
+      addMatSupplierId = null;
+    }
+
+    async function ensureBrandAndMaterialCaches() {
+      try {
+        // fetch once per open (cheap; backend should have endpoints; fallback empty on error)
+        const [brandsRes, materialsRes] = await Promise.all([
+          fetch('/scm/materials'), // we can derive brand list from materials if brands endpoint not available
+          fetch('/scm/materials')
+        ]);
+        const materials = materialsRes.ok ? await materialsRes.json() : [];
+        cachedMaterials = Array.isArray(materials) ? materials : [];
+        if (brandsRes.ok) {
+          const rows = await brandsRes.json();
+          // build unique brand list from materials (rows may equal materials)
+          const brands = new Set((Array.isArray(rows) ? rows : []).map(r => r.brand_name).filter(Boolean));
+          // also include from materials for safety
+          cachedMaterials.forEach(r => { if (r.brand_name) brands.add(r.brand_name); });
+          cachedBrands = Array.from(brands).sort((a,b)=>String(a).localeCompare(String(b)));
+        } else {
+          const brands = new Set(cachedMaterials.map(r => r.brand_name).filter(Boolean));
+          cachedBrands = Array.from(brands).sort((a,b)=>String(a).localeCompare(String(b)));
+        }
+      } catch (e) {
+        console.warn('Failed loading brand/material cache', e);
+        cachedBrands = [];
+        cachedMaterials = [];
+      }
+    }
+
+    function setupBrandAutocomplete() {
+      const input = document.getElementById('brandName');
+      const dropdown = document.getElementById('brandDropdown');
+      const container = document.getElementById('brandDropdownContainer');
+      if (!input || !dropdown || !container) return;
+
+      function render(list) {
+        dropdown.innerHTML = '';
+        list.forEach(name => {
+          const div = document.createElement('div');
+          div.className = 'material-option';
+          div.textContent = name;
+          div.addEventListener('click', () => {
+            input.value = name;
+            dropdown.style.display = 'none';
+            // when brand selected, refresh item suggestion list immediately
+            refreshItemSuggestions();
+          });
+          dropdown.appendChild(div);
+        });
+        dropdown.style.display = list.length ? 'block' : 'none';
+      }
+
+      input.addEventListener('focus', () => {
+        const q = (input.value || '').toLowerCase();
+        const list = cachedBrands.filter(b => String(b).toLowerCase().includes(q)).slice(0, 50);
+        render(list);
+      });
+      input.addEventListener('input', () => {
+        const q = (input.value || '').toLowerCase();
+        const list = cachedBrands.filter(b => String(b).toLowerCase().includes(q)).slice(0, 50);
+        render(list);
+      });
+      document.addEventListener('click', (e) => { if (!container.contains(e.target)) dropdown.style.display = 'none'; });
+      input.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    function setupItemNameAutocomplete() { /* removed per request: suggestions only under brand field */ }
+
+    // Submit Add Material (logistics only; backend enforces)
+    (function(){
+      const form = document.getElementById('addMaterialForm');
+      if (!form) return;
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!addMatSupplierId) { showToast('Missing supplier.'); return; }
+        const name = document.getElementById('itemName').value.trim();
+        const variant = (document.getElementById('matVariant').value || '').trim();
+        const description = document.getElementById('itemDescription').value.trim();
+        const category = document.getElementById('itemCategory').value;
+        const type = document.getElementById('itemType').value;
+        const brand = (document.getElementById('brandName').value || '').trim();
+        // Always use the brand name as entered, regardless of type
+        let normalizedBrand = brand;
+        if (brand) {
+          try {
+            const lower = brand.toLowerCase();
+            const match = (cachedBrands || []).find(b => String(b).toLowerCase() === lower) 
+                      || (cachedBrands || []).find(b => String(b).toLowerCase().startsWith(lower))
+                      || null;
+            if (match) normalizedBrand = match;
+          } catch (_) { /* noop */ }
+        }
+
+        const unit = document.getElementById('matUnit').value.trim();
+        const price = document.getElementById('matPrice').value;
+        const quantity = document.getElementById('matQty').value; // reserved for future use
+        const effective_date = '';
+
+        if (!name || !unit || !price) { showToast('Please fill required fields.'); return; }
+
+        try {
+          const res = await fetch('/scm/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              supplier_id: addMatSupplierId,
+              brand_name: normalizedBrand,
+              name,
+              variant,
+              type,
+              description: description, // Use the actual description field
+              category: category,       // Send category in the correct field
+              unit,
+              price,
+              quantity,
+              effective_date
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(data.error || 'Failed to add material'); return; }
+          // Show success modal for immediate success (not pending)
+          closeAddMaterialModal();
+          openMaterialSuccessModal();
+        } catch (err) {
+          console.error(err);
+          showToast('Error adding material');
+        }
+      });
+      // Toggle brand name requirement based on type
+      const typeSel = document.getElementById('itemType');
+      const brandInput = document.getElementById('brandName');
+      function syncBrandRequirement() {
+        if (typeSel.value === 'Branded') {
+          brandInput.required = true;
+          brandInput.placeholder = 'e.g., Boysen';
+          const star = document.getElementById('brandReqStar');
+          if (star) star.style.display = '';
+        } else {
+          brandInput.required = false;
+          brandInput.placeholder = 'Generic item – leave blank (e.g., Plywood as item name)';
+          const star = document.getElementById('brandReqStar');
+          if (star) star.style.display = 'none';
+        }
+      }
+      if (typeSel && brandInput) {
+        typeSel.addEventListener('change', syncBrandRequirement);
+        syncBrandRequirement();
+      }
+    })();
+
+    function openMaterialSuccessModal() {
+      const m = document.getElementById('materialSuccessModal');
+      if (m) m.style.display = 'block';
+    }
+    function closeMaterialSuccessModal() {
+      const m = document.getElementById('materialSuccessModal');
+      if (m) m.style.display = 'none';
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
