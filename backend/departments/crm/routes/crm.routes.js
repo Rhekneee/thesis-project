@@ -143,6 +143,11 @@ router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoor
 // Developers (Clients page)
 router.get('/api/developers', CRMController.getAllDevelopers);
 
+// ========== DEVELOPER APPROVAL ROUTES ==========
+router.get('/developers/pending', CRMController.getPendingDevelopers);
+router.get('/developers/:id', CRMController.getDeveloperByIdForApproval);
+router.post('/developers/:id/approve', CRMController.approveDeveloper);
+router.post('/developers/:id/reject', CRMController.rejectDeveloper);
 
 // (Removed) Non-API Inquiry Routes to avoid shadowing HTML route at /crm/inquiries
 // Use the /api prefixed routes above instead

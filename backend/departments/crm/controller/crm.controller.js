@@ -1332,6 +1332,94 @@ const CRMController = {
                 error: "Failed to fetch coordinator performance" 
             });
         }
+    },
+
+    // ========== DEVELOPER APPROVAL MANAGEMENT ==========
+
+    // Get pending developers
+    getPendingDevelopers: async (req, res) => {
+        try {
+            const developers = await CRMModel.getPendingDevelopers();
+            res.json(developers);
+        } catch (error) {
+            console.error('Error fetching pending developers:', error);
+            res.status(500).json({ error: 'Failed to fetch pending developers' });
+        }
+    },
+
+    // Get developer by ID for approval/rejection
+    getDeveloperByIdForApproval: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const developer = await CRMModel.getDeveloperByIdForApproval(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            res.json(developer);
+        } catch (error) {
+            console.error('Error fetching developer details:', error);
+            res.status(500).json({ error: 'Failed to fetch developer details' });
+        }
+    },
+
+    // Approve developer
+    approveDeveloper: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const developer = await CRMModel.getDeveloperByIdForApproval(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            if (developer.status !== 'pending') {
+                return res.status(400).json({ error: 'Developer is not in pending status' });
+            }
+            
+            const result = await CRMModel.approveDeveloper(id);
+            
+            res.json({ 
+                success: true,
+                message: 'Developer approved successfully',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error approving developer:', error);
+            res.status(500).json({ error: 'Failed to approve developer' });
+        }
+    },
+
+    // Reject developer
+    rejectDeveloper: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { reason } = req.body;
+            
+            if (!reason) {
+                return res.status(400).json({ error: 'Rejection reason is required' });
+            }
+            
+            const developer = await CRMModel.getDeveloperByIdForApproval(id);
+            
+            if (!developer) {
+                return res.status(404).json({ error: 'Developer not found' });
+            }
+            
+            if (developer.status !== 'pending') {
+                return res.status(400).json({ error: 'Developer is not in pending status' });
+            }
+            
+            await CRMModel.rejectDeveloper(id, reason);
+            res.json({ 
+                success: true,
+                message: 'Developer rejected successfully' 
+            });
+        } catch (error) {
+            console.error('Error rejecting developer:', error);
+            res.status(500).json({ error: 'Failed to reject developer' });
+        }
     }
 };
 

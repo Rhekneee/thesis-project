@@ -1054,15 +1054,20 @@ softDeleteOrRestoreEmployee: async (req, res) => {
 
     // Method to update application status (Pending, Ready for Interview, Accepted, Rejected)
     updateApplicationStatus: async (req, res) => {
-        const { id, status } = req.body; // Get the ID and status from the request body
+        const { id, status, remarks } = req.body; // Get the ID, status, and remarks from the request body
         try {
             // Validate the status value
             if (!['Pending', 'Ready for Interview', 'Accepted', 'Rejected'].includes(status)) {
                 return res.status(400).json({ error: "Invalid status value" });
             }
 
-            // Update the status in the database
-            await HRModel.updateApplicationStatus(id, status);
+            // If status is Rejected, remarks are required
+            if (status === 'Rejected' && (!remarks || remarks.trim() === '')) {
+                return res.status(400).json({ error: "Remarks are required when rejecting an application" });
+            }
+
+            // Update the status in the database (with remarks if provided)
+            await HRModel.updateApplicationStatus(id, status, remarks || null);
 
             // Fetch the applicant's details using the ID
             const application = await HRModel.getApplicationById(id);
@@ -1143,7 +1148,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             } else if (status === 'Accepted') {
                 await sendHireNotification(application.email);
             } else if (status === 'Rejected') {
-                await sendRejectNotification(application.email);
+                await sendRejectNotification(application.email, remarks || null);
             }
 
             res.status(200).json({ message: `Status updated to ${status}` });
@@ -2700,100 +2705,6 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         } catch (error) {
             console.error('Error getting dashboard KPIs:', error);
             res.status(500).json({ error: 'Failed to fetch dashboard KPIs' });
-        }
-    },
-
-    // Developer Management Controllers
-    getPendingDevelopers: async (req, res) => {
-        try {
-            const developers = await HRModel.getPendingDevelopers();
-            res.json(developers);
-        } catch (error) {
-            console.error('Error fetching pending developers:', error);
-            res.status(500).json({ error: 'Failed to fetch pending developers' });
-        }
-    },
-
-    getDeveloperById: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const developer = await HRModel.getDeveloperById(id);
-            
-            if (!developer) {
-                return res.status(404).json({ error: 'Developer not found' });
-            }
-            
-            res.json(developer);
-        } catch (error) {
-            console.error('Error fetching developer details:', error);
-            res.status(500).json({ error: 'Failed to fetch developer details' });
-        }
-    },
-
-    approveDeveloper: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const developer = await HRModel.getDeveloperById(id);
-            
-            if (!developer) {
-                return res.status(404).json({ error: 'Developer not found' });
-            }
-            
-            if (developer.status !== 'pending') {
-                return res.status(400).json({ error: 'Developer is not in pending status' });
-            }
-            
-            const result = await HRModel.approveDeveloper(id);
-            
-            // Send approval email to developer
-            try {
-                const developerPortalLink = `${req.protocol}://${req.get('host')}/developer/dashboard`;
-                await sendDeveloperApprovalNotification(
-                    developer.email,
-                    developer.username,
-                    result.tempPassword,
-                    developerPortalLink
-                );
-                console.log('Developer approval email sent successfully');
-            } catch (emailError) {
-                console.error('Error sending developer approval email:', emailError);
-                // Don't fail the approval if email fails
-            }
-            
-            res.json({ 
-                message: 'Developer approved successfully',
-                emailSent: true
-            });
-        } catch (error) {
-            console.error('Error approving developer:', error);
-            res.status(500).json({ error: 'Failed to approve developer' });
-        }
-    },
-
-    rejectDeveloper: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { reason } = req.body;
-            
-            if (!reason) {
-                return res.status(400).json({ error: 'Rejection reason is required' });
-            }
-            
-            const developer = await HRModel.getDeveloperById(id);
-            
-            if (!developer) {
-                return res.status(404).json({ error: 'Developer not found' });
-            }
-            
-            if (developer.status !== 'pending') {
-                return res.status(400).json({ error: 'Developer is not in pending status' });
-            }
-            
-            await HRModel.rejectDeveloper(id, reason);
-            res.json({ message: 'Developer rejected successfully' });
-        } catch (error) {
-            console.error('Error rejecting developer:', error);
-            res.status(500).json({ error: 'Failed to reject developer' });
         }
     },
 

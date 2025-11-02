@@ -1331,7 +1331,17 @@ const ManufacturingModel = {
           cw.middlename,
           cw.lastname,
           cr.role_name,
-          p.project_name
+          p.project_name,
+          CASE 
+            WHEN ar.time_in IS NOT NULL AND ar.time_out IS NOT NULL THEN
+              ROUND(TIMESTAMPDIFF(SECOND, ar.time_in, ar.time_out) / 3600.0, 2)
+            ELSE 0
+          END as hours_worked,
+          CASE 
+            WHEN ar.time_in IS NOT NULL AND ar.time_out IS NOT NULL THEN
+              GREATEST(0, ROUND((TIMESTAMPDIFF(SECOND, ar.time_in, ar.time_out) / 3600.0) - 8, 2))
+            ELSE 0
+          END as overtime_hours
         FROM attendance_construction ar
         JOIN construction_workers cw ON ar.worker_id = cw.id
         LEFT JOIN construction_roles cr ON cw.role_id = cr.id
@@ -1412,8 +1422,13 @@ const ManufacturingModel = {
           p.end_date,
           p.status
         FROM projects p
-        WHERE p.status = 'completed' AND p.developer_id = ?
-        ORDER BY p.end_date DESC
+        WHERE p.developer_id = ?
+          AND (
+            p.status = 'completed' 
+            OR p.end_date IS NOT NULL
+            OR p.status IN ('contract_generated', 'developer_approved')
+          )
+        ORDER BY p.end_date DESC, p.id DESC
       `, [developerId]);
       return rows;
     } catch (error) {
