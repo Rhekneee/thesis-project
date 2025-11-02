@@ -2397,13 +2397,33 @@ const ManufacturingModel = {
    */
   updateVtourPermissionStatus: async (permissionId, status, remarks = null, reason = null) => {
     try {
+      // Only update remarks and reason if they are explicitly provided
+      // For approval without remarks/reason, preserve existing values
+      const setRemarks = remarks !== null ? `remarks = ?` : '';
+      const setReason = reason !== null ? `reason = ?` : '';
+      
+      const updates = ['approval_status = ?', 'approved_at = NOW()'];
+      const values = [status];
+      
+      if (setRemarks) {
+        updates.push(setRemarks);
+        values.push(remarks);
+      }
+      
+      if (setReason) {
+        updates.push(setReason);
+        values.push(reason);
+      }
+      
+      values.push(permissionId);
+      
       const query = `
         UPDATE vtour_permissions 
-        SET approval_status = ?, approved_at = NOW(), remarks = ?, reason = ?
+        SET ${updates.join(', ')}
         WHERE id = ?
       `;
       
-      const [result] = await db.query(query, [status, remarks, reason, permissionId]);
+      const [result] = await db.query(query, values);
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Error updating vtour permission status:', error);

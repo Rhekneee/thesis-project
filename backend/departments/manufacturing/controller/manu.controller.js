@@ -2198,7 +2198,13 @@ const ManufacturingController = {
         });
       }
 
-      const updated = await ManufacturingModel.updateVtourPermissionStatus(permissionId, status, remarks || null, reason || null);
+      // Pass undefined if remarks/reason not provided (they will be preserved in DB)
+      const updated = await ManufacturingModel.updateVtourPermissionStatus(
+        permissionId, 
+        status, 
+        remarks !== undefined ? remarks : undefined, 
+        reason !== undefined ? reason : undefined
+      );
 
       if (!updated) {
         return res.status(404).json({
