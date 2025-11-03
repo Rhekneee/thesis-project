@@ -315,7 +315,7 @@ class FinanceModel {
         }
     }
     // Get pending payroll periods
-    static async getpendingPayrollPeriods() {
+    static async getPendingPayrollPeriods() {
         try {
             const [periods] = await db.query(`
                 SELECT 
@@ -2659,6 +2659,185 @@ class FinanceModel {
             return result[0].count > 0;
         } catch (error) {
             console.error('Error checking approved payrolls:', error);
+            throw error;
+        }
+    }
+
+    // =============================================
+    // DASHBOARD OVERVIEW
+    // Get aggregated data for finance dashboard overview
+    // =============================================
+
+    // Get dashboard overview data (opening balance, total payments, pending payroll count)
+    static async getDashboardOverview() {
+        try {
+            // Get total opening balance from all bank accounts
+            const [bankAccounts] = await db.query(`
+                SELECT COALESCE(SUM(opening_balance), 0) as total_opening_balance
+                FROM bank_accounts
+                WHERE status = 'active'
+            `);
+
+            // Get total payments received from stage billing payments
+            const [cashInflows] = await db.query(`
+                SELECT COALESCE(SUM(amount_paid), 0) as total_payments_received
+                FROM stage_billing_payment sbp
+                LEFT JOIN stage_billing_summary sbs ON sbp.stage_billing_id = sbs.id
+            `);
+
+            // Get count of pending payroll periods
+            const [pendingPayroll] = await db.query(`
+                SELECT COUNT(*) as pending_payroll_count
+                FROM payroll_periods
+                WHERE status = 'pending'
+            `);
+
+            return {
+                opening_balance: parseFloat(bankAccounts[0]?.total_opening_balance || 0),
+                total_payments_received: parseFloat(cashInflows[0]?.total_payments_received || 0),
+                pending_payroll_count: parseInt(pendingPayroll[0]?.pending_payroll_count || 0)
+            };
+        } catch (error) {
+            console.error('Error fetching dashboard overview:', error);
+            throw error;
+        }
+    }
+
+    // =============================================
+    // DASHBOARD PURCHASE EXPENSES
+    // Get purchase expenses breakdown from purchases table (status = 'Received')
+    // Supports: monthly, quarterly, yearly views
+    // =============================================
+
+    static async getDashboardPayrollExpenses(period = 'monthly') {
+        try {
+            const currentYear = new Date().getFullYear();
+            let expenses = [];
+
+            if (period === 'monthly') {
+                // Get monthly purchase expenses from purchases table with status 'Received' for current year
+                const [monthlyExpenses] = await db.query(`
+                    SELECT 
+                        MONTH(COALESCE(p.invoice_date, p.created_date)) as period_num,
+                        COALESCE(SUM(p.invoice_amount), 0) as total_expenses
+                    FROM purchases p
+                    WHERE p.status = 'Received'
+                    AND YEAR(COALESCE(p.invoice_date, p.created_date)) = ?
+                    GROUP BY MONTH(COALESCE(p.invoice_date, p.created_date))
+                    ORDER BY period_num ASC
+                `, [currentYear]);
+
+                // Format expenses array with all 12 months
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                const expensesMap = {};
+                monthlyExpenses.forEach(expense => {
+                    expensesMap[expense.period_num] = parseFloat(expense.total_expenses || 0);
+                });
+
+                for (let month = 1; month <= 12; month++) {
+                    expenses.push({
+                        label: monthNames[month - 1],
+                        amount: expensesMap[month] || 0
+                    });
+                }
+            } else if (period === 'quarterly') {
+                // Get quarterly purchase expenses from purchases table with status 'Received' for current year
+                const [quarterlyExpenses] = await db.query(`
+                    SELECT 
+                        QUARTER(COALESCE(p.invoice_date, p.created_date)) as period_num,
+                        COALESCE(SUM(p.invoice_amount), 0) as total_expenses
+                    FROM purchases p
+                    WHERE p.status = 'Received'
+                    AND YEAR(COALESCE(p.invoice_date, p.created_date)) = ?
+                    GROUP BY QUARTER(COALESCE(p.invoice_date, p.created_date))
+                    ORDER BY period_num ASC
+                `, [currentYear]);
+
+                // Format expenses array with all 4 quarters
+                const quarterNames = ['Q1', 'Q2', 'Q3', 'Q4'];
+                
+                const expensesMap = {};
+                quarterlyExpenses.forEach(expense => {
+                    expensesMap[expense.period_num] = parseFloat(expense.total_expenses || 0);
+                });
+
+                for (let quarter = 1; quarter <= 4; quarter++) {
+                    expenses.push({
+                        label: quarterNames[quarter - 1],
+                        amount: expensesMap[quarter] || 0
+                    });
+                }
+            } else if (period === 'yearly') {
+                // Get yearly purchase expenses from purchases table with status 'Received' for last 5 years
+                const [yearlyExpenses] = await db.query(`
+                    SELECT 
+                        YEAR(COALESCE(p.invoice_date, p.created_date)) as period_num,
+                        COALESCE(SUM(p.invoice_amount), 0) as total_expenses
+                    FROM purchases p
+                    WHERE p.status = 'Received'
+                    AND YEAR(COALESCE(p.invoice_date, p.created_date)) >= ?
+                    GROUP BY YEAR(COALESCE(p.invoice_date, p.created_date))
+                    ORDER BY period_num DESC
+                    LIMIT 5
+                `, [currentYear - 4]);
+
+                // Format expenses array with years (most recent first)
+                const expensesMap = {};
+                yearlyExpenses.forEach(expense => {
+                    expensesMap[expense.period_num] = parseFloat(expense.total_expenses || 0);
+                });
+
+                // Get last 5 years (current year and 4 previous)
+                for (let yearOffset = 4; yearOffset >= 0; yearOffset--) {
+                    const year = currentYear - yearOffset;
+                    expenses.push({
+                        label: year.toString(),
+                        amount: expensesMap[year] || 0
+                    });
+                }
+            }
+
+            return {
+                expenses: expenses,
+                period: period
+            };
+        } catch (error) {
+            console.error('Error fetching dashboard purchase expenses:', error);
+            throw error;
+        }
+    }
+
+    // =============================================
+    // DASHBOARD EMPLOYMENT STATUS
+    // Get employment status counts (Full-time vs Intern)
+    // =============================================
+
+    static async getDashboardEmploymentStatus() {
+        try {
+            // Get count of full-time employees
+            const [fullTimeResult] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM employees
+                WHERE employment_status = 'Full-time'
+                AND is_deleted = 0
+            `);
+
+            // Get count of intern employees
+            const [internResult] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM employees
+                WHERE employment_status = 'Intern'
+                AND is_deleted = 0
+            `);
+
+            return {
+                full_time_count: parseInt(fullTimeResult[0]?.count || 0),
+                intern_count: parseInt(internResult[0]?.count || 0)
+            };
+        } catch (error) {
+            console.error('Error fetching dashboard employment status:', error);
             throw error;
         }
     }

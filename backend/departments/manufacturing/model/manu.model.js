@@ -1,6 +1,115 @@
 const db = require("../../../db");
 
 const ManufacturingModel = {
+  // =============================================
+  // DASHBOARD KPIs (Manufacturing) - Dedicated Endpoint
+  // Returns: active foremen, new foremen this month, project completion rate,
+  // active contracts percent, average project rating with month delta
+  // =============================================
+  getDashboardKpis: async () => {
+    try {
+      // Active foremen (employees.role_id 9-12)
+      const [foremenRows] = await db.query(`
+        SELECT COUNT(*) AS cnt
+        FROM employees e
+        WHERE e.is_deleted = 0 AND e.role_id BETWEEN 9 AND 12
+      `);
+      let activeForemen = Number(foremenRows?.[0]?.cnt || 0);
+      // Fallback: if zero, attempt role name-based detection (foreman roles)
+      if (activeForemen === 0) {
+        try {
+          const [nameBased] = await db.query(`
+            SELECT COUNT(*) AS cnt
+            FROM employees e
+            JOIN roles r ON e.role_id = r.id
+            WHERE e.is_deleted = 0 AND LOWER(r.name) LIKE '%foreman%'
+          `);
+          activeForemen = Number(nameBased?.[0]?.cnt || 0);
+        } catch (_) {}
+      }
+
+      // New foremen this month (best-effort: uses employees.created_at if present)
+      let newForemenThisMonth = 0;
+      try {
+        const [newRows] = await db.query(`
+          SELECT COUNT(*) AS cnt
+          FROM employees e
+          WHERE e.is_deleted = 0
+            AND e.role_id BETWEEN 9 AND 12
+            AND YEAR(e.created_at) = YEAR(CURDATE())
+            AND MONTH(e.created_at) = MONTH(CURDATE())
+        `);
+        newForemenThisMonth = Number(newRows?.[0]?.cnt || 0);
+      } catch (_) {
+        newForemenThisMonth = 0; // fallback if created_at doesn't exist
+      }
+
+      // Project completion rate = completed / total
+      const [projTotals] = await db.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM projects) AS total_projects,
+          (SELECT COUNT(*) FROM projects WHERE LOWER(TRIM(status)) = 'completed') AS completed_projects
+      `);
+      const totalProjects = Number(projTotals?.[0]?.total_projects || 0);
+      const completedProjects = Number(projTotals?.[0]?.completed_projects || 0);
+      const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
+
+      // Active contracts percent and this/last month change
+      const [contractTotals] = await db.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM contracts) AS total_contracts,
+          (SELECT COUNT(*) FROM contracts WHERE LOWER(status) = 'active') AS active_contracts
+      `);
+      const totalContracts = Number(contractTotals?.[0]?.total_contracts || 0);
+      const activeContracts = Number(contractTotals?.[0]?.active_contracts || 0);
+      const activeContractsPercent = totalContracts > 0 ? Math.round((activeContracts / totalContracts) * 100) : 0;
+
+      // Active contracts: current month vs previous month (count change)
+      const [activeMonthRows] = await db.query(`
+        SELECT 
+          SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND LOWER(status) = 'active' THEN 1 ELSE 0 END) AS active_this_month,
+          SUM(CASE WHEN YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND LOWER(status) = 'active' THEN 1 ELSE 0 END) AS active_prev_month
+        FROM contracts
+      `);
+      const activeThisMonth = Number(activeMonthRows?.[0]?.active_this_month || 0);
+      const activePrevMonth = Number(activeMonthRows?.[0]?.active_prev_month || 0);
+      const activeContractsDelta = activeThisMonth - activePrevMonth;
+
+      // Average rating (overall) and month delta from project_ratings
+      let avgRating = 0, ratingDelta = 0;
+      try {
+        const [avgRows] = await db.query(`
+          SELECT ROUND(AVG(total_score), 2) AS avg_score FROM project_ratings
+        `);
+        avgRating = Number(avgRows?.[0]?.avg_score || 0);
+
+        const [monthRatings] = await db.query(`
+          SELECT 
+            ROUND(AVG(CASE WHEN YEAR(rated_at) = YEAR(CURDATE()) AND MONTH(rated_at) = MONTH(CURDATE()) THEN total_score END), 2) AS avg_this,
+            ROUND(AVG(CASE WHEN YEAR(rated_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(rated_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) THEN total_score END), 2) AS avg_prev
+          FROM project_ratings
+        `);
+        const avgThis = Number(monthRatings?.[0]?.avg_this || 0);
+        const avgPrev = Number(monthRatings?.[0]?.avg_prev || 0);
+        ratingDelta = Number((avgThis - avgPrev).toFixed(2));
+      } catch (_) {
+        avgRating = 0; ratingDelta = 0;
+      }
+
+      return {
+        active_foremen: activeForemen,
+        new_foremen_this_month: newForemenThisMonth,
+        completion_rate_percent: completionRate,
+        contracts_active_percent: activeContractsPercent,
+        contracts_active_delta_this_month: activeContractsDelta,
+        average_rating: avgRating,
+        average_rating_delta: ratingDelta
+      };
+    } catch (error) {
+      console.error('Error fetching manufacturing dashboard KPIs:', error);
+      throw error;
+    }
+  },
   // Store proposal
   storeProject: async (data) => {
     try {

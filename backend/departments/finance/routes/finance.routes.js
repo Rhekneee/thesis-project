@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const financeController = require('../controller/finance.controller');
 const { isFinanceAdmin } = require('../middleware/finance.middleware');
+const path = require('path');
+const fs = require('fs');
 
 // Public webhook (must not require session/middleware)
 router.post('/webhooks/paymongo', express.json({ type: '*/*' }), (req, res, next) => {
@@ -10,7 +12,68 @@ router.post('/webhooks/paymongo', express.json({ type: '*/*' }), (req, res, next
   next();
 }, financeController.paymongoWebhook);
 
-// Apply finance admin middleware to all routes
+// Add route to serve default profile picture (public - no middleware required)
+router.get('/default-profile-picture', (req, res) => {
+    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads', 'profile_pictures');
+    const defaultPicturePath = path.join(uploadsDir, 'default-profile.png');
+    
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    // Check if default picture exists
+    if (fs.existsSync(defaultPicturePath)) {
+        res.sendFile(defaultPicturePath);
+        return;
+    }
+
+    // If default picture doesn't exist, try to create it
+    try {
+        // Check if canvas is installed
+        let canvas;
+        try {
+            canvas = require('canvas');
+        } catch (error) {
+            console.error('Canvas package not installed:', error);
+            // If canvas is not installed, send a simple SVG circle
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                <circle cx="100" cy="100" r="100" fill="#e0e0e0"/>
+            </svg>`;
+            res.type('image/svg+xml');
+            res.send(svg);
+            return;
+        }
+
+        // Create a simple gray circle using canvas
+        const c = canvas.createCanvas(200, 200);
+        const ctx = c.getContext('2d');
+        
+        // Draw gray circle
+        ctx.fillStyle = '#e0e0e0';
+        ctx.beginPath();
+        ctx.arc(100, 100, 100, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Save the image
+        const buffer = c.toBuffer('image/png');
+        fs.writeFileSync(defaultPicturePath, buffer);
+        
+        // Send the image
+        res.type('image/png');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Error creating default profile picture:', error);
+        // Fallback to SVG
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+            <circle cx="100" cy="100" r="100" fill="#e0e0e0"/>
+        </svg>`;
+        res.type('image/svg+xml');
+        res.send(svg);
+    }
+});
+
+// Apply finance admin middleware to all routes below
 router.use(isFinanceAdmin);
 
 // Payroll Periods Management Routes
@@ -200,5 +263,19 @@ router.get('/payroll-periods/:payrollPeriodId/check-bank-submission', isFinanceA
 
 // Check if payroll period has approved payrolls
 router.get('/payroll-periods/:payrollPeriodId/check-approved-payrolls', isFinanceAdmin, financeController.checkApprovedPayrolls);
+
+// =============================================
+// DASHBOARD OVERVIEW ROUTES
+// These routes handle dashboard overview data
+// =============================================
+
+// Get dashboard overview data
+router.get('/dashboard/overview', isFinanceAdmin, financeController.getDashboardOverview);
+
+// Get dashboard payroll expenses data
+router.get('/dashboard/payroll-expenses', isFinanceAdmin, financeController.getDashboardPayrollExpenses);
+
+// Get dashboard employment status data
+router.get('/dashboard/employment-status', isFinanceAdmin, financeController.getDashboardEmploymentStatus);
 
 module.exports = router;

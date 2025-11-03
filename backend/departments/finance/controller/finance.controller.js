@@ -1931,4 +1931,103 @@ exports.checkApprovedPayrolls = async (req, res) => {
                 message: error.message || 'Failed to check approved payrolls' 
             });
         }
+    };
+
+// =============================================
+// DASHBOARD OVERVIEW
+// Get aggregated data for finance dashboard
+// =============================================
+
+// Get dashboard overview data
+exports.getDashboardOverview = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Unauthorized: No session found' 
+            });
+        }
+
+        const overview = await FinanceModel.getDashboardOverview();
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                opening_balance: overview.opening_balance,
+                total_payments_received: overview.total_payments_received,
+                pending_payroll_count: overview.pending_payroll_count
+            }
+        });
+    } catch (error) {
+        console.error('Error in getDashboardOverview:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Failed to fetch dashboard overview' 
+        });
+    }
+};
+
+// =============================================
+// DASHBOARD PAYROLL EXPENSES
+// Get payroll expenses breakdown for dashboard
+// =============================================
+
+// Get dashboard payroll expenses data
+exports.getDashboardPayrollExpenses = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Unauthorized: No session found' 
+            });
+        }
+
+        const expenses = await FinanceModel.getDashboardPayrollExpenses();
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                expenses: expenses.expenses
+            }
+        });
+    } catch (error) {
+        console.error('Error in getDashboardPayrollExpenses:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Failed to fetch dashboard payroll expenses' 
+        });
+    }
+};
+
+// =============================================
+// DASHBOARD EMPLOYMENT STATUS
+// Get employment status counts (Full-time vs Intern)
+// =============================================
+
+// Get dashboard employment status data
+exports.getDashboardEmploymentStatus = async (req, res) => {
+    try {
+        if (!req.session?.user) {
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Unauthorized: No session found' 
+            });
+        }
+
+        const status = await FinanceModel.getDashboardEmploymentStatus();
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                full_time_count: status.full_time_count,
+                intern_count: status.intern_count
+            }
+        });
+    } catch (error) {
+        console.error('Error in getDashboardEmploymentStatus:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Failed to fetch dashboard employment status' 
+        });
+    }
 };

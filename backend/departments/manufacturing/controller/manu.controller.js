@@ -118,6 +118,18 @@ const constructionWorkerUpload = multer({
 }).single('picture');
 
 const ManufacturingController = {
+  // =============================================
+  // DASHBOARD KPIs (Manufacturing) - Dedicated Endpoint
+  // =============================================
+  getDashboardKpis: async (req, res) => {
+    try {
+      const kpis = await ManufacturingModel.getDashboardKpis();
+      return res.json({ success: true, data: kpis });
+    } catch (error) {
+      console.error('Error in getDashboardKpis:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch dashboard KPIs' });
+    }
+  },
   createProject: async (req, res) => {
     try {
       const {

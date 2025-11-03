@@ -154,6 +154,11 @@ router.post('/projects/:projectId/rating', ManufacturingController.submitProject
 router.get('/projects/:projectId/rating', ManufacturingController.getProjectRating);
 router.get('/ratings/summary', ManufacturingController.getRatingsSummary);
 
+// =============================================
+// DASHBOARD KPIs (Manufacturing) - Dedicated Endpoint
+// =============================================
+router.get('/dashboard/kpis', ManufacturingController.getDashboardKpis);
+
 // ==================== VTOUR PERMISSIONS ====================
 router.post('/vtour-permissions', ManufacturingController.submitVtourPermission);
 router.get('/vtour-permissions/developer', ManufacturingController.getVtourPermissionsByDeveloper);

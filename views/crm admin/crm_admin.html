@@ -97,6 +97,9 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.08);
             padding: 24px;
             margin-top: 24px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .chart-container h4 {
@@ -104,6 +107,18 @@
             font-weight: 600;
             margin-bottom: 20px;
             font-size: 18px;
+        }
+
+        .chart-container canvas {
+            max-height: 300px;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .chart-container #recentInquiriesList,
+        .chart-container #recentFaqsList {
+            flex: 1;
+            min-height: 300px;
         }
 
         #content h2 {
@@ -136,6 +151,20 @@
             
             .page-hero {
                 padding: 16px;
+            }
+
+            .chart-container {
+                margin-top: 16px;
+                padding: 16px;
+            }
+
+            .chart-container h4 {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+
+            .chart-container canvas {
+                max-height: 250px;
             }
         }
     </style>
@@ -181,29 +210,8 @@
             <div class="notification-time">1 hour ago</div>
         </div>
         <div class="notification-item">
-                <span class="profile-name">John Doe</span>
-                <span class="profile-position">HR Manager</span>
-            </div>
-        </div>
-        
-        <!-- Notification Dropdown -->
-        <div class="notification-dropdown" id="notificationDropdown">
-            <div class="notification-header">
-                <span>Notifications</span>
-                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-            </div>
-            <div class="notification-item">
-                <div class="notification-title">New Leave Request</div>
-                <div class="notification-time">5 minutes ago</div>
-            </div>
-            <div class="notification-item">
-                <div class="notification-title">Payroll Processed</div>
-                <div class="notification-time">1 hour ago</div>
-            </div>
-            <div class="notification-item">
-                <div class="notification-title">New Employee Added</div>
-                <div class="notification-time">2 hours ago</div>
-            </div>
+            <div class="notification-title">New Employee Added</div>
+            <div class="notification-time">2 hours ago</div>
         </div>
     </div>
 </div>
@@ -331,7 +339,7 @@
                 <div class="col-12 col-lg-6">
                     <div class="chart-container">
                         <h4><i class="fas fa-clock me-2"></i>Recent Inquiries</h4>
-                        <div id="recentInquiriesList" style="max-height: 400px; overflow-y: auto;">
+                        <div id="recentInquiriesList" style="overflow-y: auto; flex: 1;">
                             <!-- Recent inquiries will be dynamically inserted here -->
                         </div>
                     </div>
@@ -339,7 +347,7 @@
                 <div class="col-12 col-lg-6">
                     <div class="chart-container">
                         <h4><i class="fas fa-question-circle me-2"></i>Recent FAQs Updates</h4>
-                        <div id="recentFaqsList" style="max-height: 400px; overflow-y: auto;">
+                        <div id="recentFaqsList" style="overflow-y: auto; flex: 1;">
                             <!-- Recent FAQs will be dynamically inserted here -->
                         </div>
                     </div>
@@ -354,10 +362,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
+        // Global variable to store inquiries
+        let mockInquiries = [];
     
-        // Handle coordinator-only sections visibility
+        // Handle coordinator-only sections visibility and load dashboard data
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔍 DEBUG: Starting coordinator visibility script...');
+            
+            // Load dashboard data on page load
+            loadDashboardData();
             
             // Function to show coordinator items (for non-coordinators)
             function showCoordinatorItems() {
@@ -401,28 +414,26 @@
         });
 
        // Load dashboard data
-       function loadDashboardData() {
-            // Load inquiries data from localStorage
-            const savedInquiries = localStorage.getItem('crm_inquiries');
-            if (savedInquiries) {
-                try {
-                    const parsed = JSON.parse(savedInquiries);
-                    mockInquiries = parsed;
-                } catch(e) {
-                    console.log('Error parsing inquiries data');
-                    // Use default mock data
-                    mockInquiries = [
-                        { id: 1, full_name: "John Doe", email: "john@example.com", status: "new", created_at: new Date().toISOString() },
-                        { id: 2, full_name: "Jane Smith", email: "jane@example.com", status: "replied", created_at: new Date(Date.now() - 86400000).toISOString() },
-                        { id: 3, full_name: "Mike Johnson", email: "mike@example.com", status: "archived", created_at: new Date(Date.now() - 172800000).toISOString() }
-                    ];
+       async function loadDashboardData() {
+            try {
+                // Fetch inquiries from API
+                const response = await fetch('/crm/api/inquiries');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch inquiries');
                 }
-            } else {
-                mockInquiries = [
-                    { id: 1, full_name: "John Doe", email: "john@example.com", status: "new", created_at: new Date().toISOString() },
-                    { id: 2, full_name: "Jane Smith", email: "jane@example.com", status: "replied", created_at: new Date(Date.now() - 86400000).toISOString() },
-                    { id: 3, full_name: "Mike Johnson", email: "mike@example.com", status: "archived", created_at: new Date(Date.now() - 172800000).toISOString() }
-                ];
+                const data = await response.json();
+                
+                // Use inquiries from API response
+                if (data.success && data.inquiries) {
+                    mockInquiries = data.inquiries;
+                } else {
+                    console.error('Invalid API response:', data);
+                    mockInquiries = [];
+                }
+            } catch (error) {
+                console.error('Error loading inquiries:', error);
+                // Fallback to empty array if API fails
+                mockInquiries = [];
             }
 
             updateKPIStats();
@@ -433,8 +444,28 @@
 
         // Update KPI Statistics
         function updateKPIStats() {
+            // Total inquiries - count all inquiries
             const total = mockInquiries.length;
-            const new_count = mockInquiries.filter(i => i.status === 'new').length;
+            
+            // New inquiries - count inquiries created today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+            
+            const new_count = mockInquiries.filter(i => {
+                if (!i.created_at) return false;
+                // Handle both ISO format and 'YYYY-MM-DD HH:MM' format from API
+                let inquiryDate;
+                if (i.created_at.includes('T')) {
+                    // ISO format
+                    inquiryDate = new Date(i.created_at);
+                } else {
+                    // 'YYYY-MM-DD HH:MM' format from API
+                    inquiryDate = new Date(i.created_at.replace(' ', 'T'));
+                }
+                inquiryDate.setHours(0, 0, 0, 0); // Start of inquiry date
+                return inquiryDate.getTime() === today.getTime(); // Created today
+            }).length;
+            
             const replied_count = mockInquiries.filter(i => i.status === 'replied').length;
             
             // Load FAQs from localStorage
@@ -475,6 +506,15 @@
                         backgroundColor: ['#0d6efd', '#28a745', '#6c757d'],
                         hoverOffset: 4
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
                 }
             });
 
@@ -504,9 +544,16 @@
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
                     scales: {
                         y: {
                             beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }

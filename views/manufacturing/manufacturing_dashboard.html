@@ -258,10 +258,10 @@
                         <div class="kpi-icon text-primary">
                             <i class="fas fa-hard-hat"></i>
                         </div>
-                        <div class="kpi-value">15</div>
+                        <div class="kpi-value" id="kpiActiveForemen">0</div>
                         <div class="kpi-label">Active Foremen</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 3 new this month
+                        <div class="trend-indicator trend-up" id="kpiNewForemenDelta">
+                            <i class="fas fa-arrow-up"></i> 0 new this month
                         </div>
                     </div>
                 </div>
@@ -270,10 +270,10 @@
                         <div class="kpi-icon text-success">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <div class="kpi-value">85%</div>
+                        <div class="kpi-value" id="kpiCompletionRate">0%</div>
                         <div class="kpi-label">Project Completion Rate</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 5% from last month
+                        <div class="trend-indicator trend-up" id="kpiCompletionDelta" style="visibility:hidden;">
+                            <i class="fas fa-arrow-up"></i> 
                         </div>
                     </div>
                 </div>
@@ -282,10 +282,10 @@
                         <div class="kpi-icon text-warning">
                             <i class="fas fa-folder-plus"></i>
                         </div>
-                        <div class="kpi-value">12</div>
-                        <div class="kpi-label">New Projects</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 3 from last month
+                        <div class="kpi-value" id="kpiActiveContractsPercent">0%</div>
+                        <div class="kpi-label">Active Contracts</div>
+                        <div class="trend-indicator trend-up" id="kpiActiveContractsDelta">
+                            <i class="fas fa-arrow-up"></i> +0 this month
                         </div>
                     </div>
                 </div>
@@ -294,10 +294,10 @@
                         <div class="kpi-icon text-info">
                             <i class="fas fa-star"></i>
                         </div>
-                        <div class="kpi-value">4.8</div>
+                        <div class="kpi-value" id="kpiAverageRating">0.0</div>
                         <div class="kpi-label">Average Rating</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 0.2 from last month
+                        <div class="trend-indicator trend-up" id="kpiAverageRatingDelta">
+                            <i class="fas fa-arrow-up"></i> +0.0 from last month
                         </div>
                     </div>
                 </div>
@@ -385,10 +385,48 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            initializeSidebar();
+            if (typeof initializeSidebar === 'function') {
+                initializeSidebar();
+            }
             initializeCharts();
             renderRecentProjects();
+            loadManufacturingKpis();
         });
+
+        async function loadManufacturingKpis() {
+            try {
+                const res = await fetch('/manufacturing/dashboard/kpis', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load KPIs');
+                const data = await res.json();
+                if (!data.success || !data.data) throw new Error('Invalid KPI response');
+
+                const k = data.data;
+                // Active foremen
+                const elForemen = document.getElementById('kpiActiveForemen');
+                const elForemenDelta = document.getElementById('kpiNewForemenDelta');
+                if (elForemen) elForemen.textContent = (k.active_foremen || 0).toString();
+                if (elForemenDelta) elForemenDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.new_foremen_this_month || 0)} new this month`;
+
+                // Completion rate
+                const elComp = document.getElementById('kpiCompletionRate');
+                if (elComp) elComp.textContent = `${Number(k.completion_rate_percent || 0)}%`;
+
+                // Active contracts percent + delta
+                const elActPct = document.getElementById('kpiActiveContractsPercent');
+                const elActDelta = document.getElementById('kpiActiveContractsDelta');
+                if (elActPct) elActPct.textContent = `${Number(k.contracts_active_percent || 0)}%`;
+                if (elActDelta) elActDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.contracts_active_delta_this_month >= 0 ? '+' : '')}${k.contracts_active_delta_this_month || 0} this month`;
+
+                // Average rating + delta
+                const elAvg = document.getElementById('kpiAverageRating');
+                const elAvgDelta = document.getElementById('kpiAverageRatingDelta');
+                if (elAvg) elAvg.textContent = (Number(k.average_rating || 0)).toFixed(1);
+                if (elAvgDelta) elAvgDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.average_rating_delta >= 0 ? '+' : '')}${Number(k.average_rating_delta || 0).toFixed(1)} from last month`;
+
+            } catch (e) {
+                console.error('Manufacturing KPI load error:', e);
+            }
+        }
 
         // Initialize charts
         function initializeCharts() {

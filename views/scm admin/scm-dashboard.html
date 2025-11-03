@@ -142,6 +142,25 @@
      position: relative;
      height: 300px;
    }
+
+   /* Status badge styles */
+   .low-inventory-table .badge {
+     padding: 4px 8px;
+     border-radius: 4px;
+     font-size: 0.85em;
+     font-weight: 600;
+     text-transform: uppercase;
+   }
+
+   .low-inventory-table .badge.bg-danger {
+     background-color: #dc3545 !important;
+     color: white;
+   }
+
+   .low-inventory-table .badge.bg-warning {
+     background-color: #ffc107 !important;
+     color: #000;
+   }
  </style>
 
   <title>Dashboard UI</title>
@@ -262,17 +281,17 @@
     <div class="card-container">
       <div class="total-card">
         <h3>Total Stock</h3>
-        <h1>1000 Units</h1>
+        <h1 id="totalStock">0 Units</h1>
       </div>
     
       <div class="total-card">
         <h3>Total Material Types</h3>
-        <h1>1000</h1>
+        <h1 id="totalMaterialTypes">0</h1>
       </div>
     
       <div class="total-card">
         <h3>Total Purchase</h3>
-        <h1>₱1000000</h1>
+        <h1 id="totalPurchase">₱0</h1>
       </div>
     </div>
 
@@ -280,17 +299,19 @@
    
 
     <div class="low-inventory-card">
-      <h2 class="low-inventory-title">Low Inventory<i style="margin-left: 10px;" class="bi bi-exclamation-triangle-fill low-inventory-icon"></i></h2>
+      <h2 class="low-inventory-title">Low & Medium Inventory<i style="margin-left: 10px;" class="bi bi-exclamation-triangle-fill low-inventory-icon"></i></h2>
       <table class="low-inventory-table">
         <thead>
           <tr>
+            <th>Rank</th>
             <th>Name</th>
             <th>Quantity</th>
+            <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody class="low-inventory-body">
-          <!-- Low stock items will be inserted dynamically -->
+          <!-- Low and medium stock items will be inserted dynamically -->
         </tbody>
       </table>
       <div class="low-inventory-pagination">
@@ -308,9 +329,9 @@
       <table class="low-inventory-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Rank</th>
             <th>Name</th>
-            <th>Ratings</th>
+            <th>Total Received</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -332,6 +353,16 @@
     </div>
     
   </div>
+
+  <!-- Monthly Purchases Bar Chart -->
+  <div class="dashboard-row" style="margin-top: 20px;">
+    <div class="card chart-card" style="grid-column: 1 / -1;">
+      <h2>Monthly Purchases Monitor</h2>
+      <div class="chart-container">
+        <canvas id="monthlyPurchasesChart"></canvas>
+      </div>
+    </div>
+  </div>
     
     
     
@@ -346,55 +377,151 @@
 
 
 <script>
-    /* piechart */
-    const ctx = document.getElementById('inventoryPieChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: ['Cement', 'Steel', 'Sand', 'Gravel'],
-        datasets: [{
-          label: 'Materials',
-          data: [12, 19, 7, 9],
-          backgroundColor: [
-            '#38bdf8', // Blue
-            '#34d399', // Green
-            '#facc15', // Yellow
-            '#f87171'  // Red
-          ],
-          borderColor: '#0f172a',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        plugins: {
-          legend: {
-            labels: {
-              color: '#fff' // Text color for legend
-            }
-          }
-        }
-      }
-    });
-
-    /* low stock alert */
-      const lowStockItems = [
-        { name: 'Cement', quantity: 3 },
-        { name: 'Steel', quantity: 5 },
-        { name: 'Sand', quantity: 2 },
-        { name: 'Gravel', quantity: 4 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Nails', quantity: 3 },
-        { name: 'Paint', quantity: 1 }
-      ];
+    /* low stock alert - Declare variables first */
+    let lowStockItems = [];
+    let lowStockCurrentPage = 1;
+    const lowStockItemsPerPage = 3;
     
-      let lowStockCurrentPage = 1;
-      const lowStockItemsPerPage = 3;
+    // Load dashboard data
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('/scm/materials');
+            if (!response.ok) throw new Error('Failed to load materials');
+            const materials = await response.json();
+            
+            // Calculate totals
+            const totalStock = materials.reduce((sum, m) => sum + parseFloat(m.quantity || 0), 0);
+            const totalMaterialTypes = materials.length;
+            
+            // Update DOM
+            document.getElementById('totalStock').textContent = `${totalStock.toLocaleString()} Units`;
+            document.getElementById('totalMaterialTypes').textContent = totalMaterialTypes.toLocaleString();
+            
+            // Load low and medium stock items dynamically, ranked from low to medium
+            // Filter items with 'Low Stock' or 'Medium Stock' status (dynamically determined by DB)
+            lowStockItems = materials
+                .filter(m => m.stock_status === 'Low Stock' || m.stock_status === 'Medium Stock')
+                .sort((a, b) => {
+                    // First sort by stock_status (Low Stock comes before Medium Stock)
+                    if (a.stock_status !== b.stock_status) {
+                        if (a.stock_status === 'Low Stock') return -1;
+                        if (b.stock_status === 'Low Stock') return 1;
+                    }
+                    // Then sort by quantity (lowest first)
+                    return parseFloat(a.quantity || 0) - parseFloat(b.quantity || 0);
+                })
+                .map((m, index) => ({
+                    rank: index + 1,
+                    name: m.name,
+                    quantity: parseFloat(m.quantity || 0),
+                    unit: m.unit || '',
+                    stock_status: m.stock_status
+                }));
+            
+            // Reset pagination
+            lowStockCurrentPage = 1;
+            renderLowStockTable();
+            
+            // Fetch purchases once and use for both total purchase and top suppliers
+            const purchasesResponse = await fetch('/scm/purchases');
+            if (purchasesResponse.ok) {
+                const purchases = await purchasesResponse.json();
+                // Calculate total purchase from purchases with "Received" status (yearly)
+                await calculateTotalPurchase(purchases);
+                // Load top suppliers based on purchases with "Received" status
+                await loadTopSuppliers(purchases);
+                // Initialize monthly purchases bar chart
+                if (typeof Chart !== 'undefined') {
+                    initializeMonthlyPurchasesChart(purchases);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+        }
+    }
+    
+    // Load top suppliers from purchases with "Received" status
+    async function loadTopSuppliers(purchases) {
+        try {
+            if (!purchases) {
+                const response = await fetch('/scm/purchases');
+                if (!response.ok) throw new Error('Failed to load purchases');
+                purchases = await response.json();
+            }
+            
+            // Filter purchases with "Received" status
+            const receivedPurchases = purchases.filter(p => p.status === 'Received');
+            
+            // Group by supplier_id and count purchases
+            const supplierCounts = {};
+            receivedPurchases.forEach(purchase => {
+                const supplierId = purchase.supplier_id;
+                const supplierName = purchase.supplier_name || 'Unknown Supplier';
+                
+                if (!supplierCounts[supplierId]) {
+                    supplierCounts[supplierId] = {
+                        supplier_id: supplierId,
+                        name: supplierName,
+                        totalReceived: 0
+                    };
+                }
+                supplierCounts[supplierId].totalReceived++;
+            });
+            
+            // Convert to array and sort by total received (highest first)
+            topSuppliers = Object.values(supplierCounts)
+                .sort((a, b) => b.totalReceived - a.totalReceived);
+            
+            // Reset pagination
+            topSuppliersCurrentPage = 1;
+            renderTopSuppliersTable();
+        } catch (error) {
+            console.error('Error loading top suppliers:', error);
+            topSuppliers = [];
+            renderTopSuppliersTable();
+        }
+    }
+    
+    // Calculate total purchase from purchases with "Received" status (yearly)
+    async function calculateTotalPurchase(purchases) {
+        try {
+            if (!purchases) {
+                const response = await fetch('/scm/purchases');
+                if (!response.ok) throw new Error('Failed to load purchases');
+                purchases = await response.json();
+            }
+            
+            // Filter purchases with "Received" status
+            const receivedPurchases = purchases.filter(p => p.status === 'Received');
+            
+            // Get current year for yearly calculation
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            // Filter purchases from current year
+            const yearlyPurchases = receivedPurchases.filter(purchase => {
+                if (!purchase.created_date && !purchase.invoice_date) return false;
+                
+                // Try invoice_date first, fallback to created_date
+                const dateStr = purchase.invoice_date || purchase.created_date;
+                if (!dateStr) return false;
+                
+                const purchaseDate = new Date(dateStr);
+                return purchaseDate.getFullYear() === currentYear;
+            });
+            
+            // Sum invoice_amount
+            const totalPurchase = yearlyPurchases.reduce((sum, p) => {
+                return sum + parseFloat(p.invoice_amount || 0);
+            }, 0);
+            
+            // Update DOM with yearly total
+            document.getElementById('totalPurchase').textContent = `₱${totalPurchase.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${currentYear})`;
+        } catch (error) {
+            console.error('Error calculating total purchase:', error);
+            document.getElementById('totalPurchase').textContent = '₱0.00';
+        }
+    }
     
       function renderLowStockTable() {
         const tbody = document.querySelector('.low-inventory-body');
@@ -403,11 +530,18 @@
         const end = start + lowStockItemsPerPage;
         const currentItems = lowStockItems.slice(start, end);
     
-        currentItems.forEach(item => {
+        currentItems.forEach((item, index) => {
           const row = document.createElement('tr');
+          // Calculate global rank (considering pagination)
+          const globalRank = start + index + 1;
+          // Determine status badge color
+          const statusClass = item.stock_status === 'Low Stock' ? 'badge bg-danger' : 'badge bg-warning';
+          const statusText = item.stock_status === 'Low Stock' ? 'Low Stock' : 'Medium Stock';
           row.innerHTML = `
+            <td><strong>#${globalRank}</strong></td>
             <td>${item.name}</td>
-            <td>${item.quantity}</td>
+            <td>${item.quantity.toLocaleString()} ${item.unit || ''}</td>
+            <td><span class="${statusClass}">${statusText}</span></td>
             <td><button class="low-inventory-btn">View</button></td>
           `;
           tbody.appendChild(row);
@@ -420,6 +554,11 @@
         const container = document.querySelector('.low-inventory-pagination');
         container.innerHTML = '';
         const totalPages = Math.ceil(lowStockItems.length / lowStockItemsPerPage);
+    
+        if (totalPages === 0) {
+          container.innerHTML = '<span>No low stock items</span>';
+          return;
+        }
     
         const prevBtn = document.createElement('button');
         prevBtn.className = 'low-inventory-page-btn';
@@ -450,40 +589,36 @@
         };
         container.appendChild(nextBtn);
       }
-    
-      // Initial render
-      renderLowStockTable();
    
     
 
 
       /* top supplier */
-      
-  const topSuppliers = [
-    { id: '001', name: 'XYZ Supplies', ratings: 4.8 },
-    { id: '002', name: 'ABC Traders', ratings: 4.6 },
-    { id: '003', name: 'LMN Distributors', ratings: 4.9 },
-    { id: '004', name: 'PQR Merchants', ratings: 4.7 },
-    { id: '005', name: 'DEF Enterprises', ratings: 4.5 },
-    { id: '006', name: 'GHI Suppliers', ratings: 4.8 }
-  ];
-
-  let topSuppliersCurrentPage = 1;
-  const topSuppliersPerPage = 3;
+      let topSuppliers = [];
+      let topSuppliersCurrentPage = 1;
+      const topSuppliersPerPage = 3;
 
   function renderTopSuppliersTable() {
     const tbody = document.getElementById('topSuppliersBody');
     tbody.innerHTML = '';
+    
+    if (topSuppliers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No suppliers found</td></tr>';
+      return;
+    }
+    
     const start = (topSuppliersCurrentPage - 1) * topSuppliersPerPage;
     const end = start + topSuppliersPerPage;
     const currentSuppliers = topSuppliers.slice(start, end);
 
-    currentSuppliers.forEach(supplier => {
+    currentSuppliers.forEach((supplier, index) => {
       const row = document.createElement('tr');
+      // Calculate global rank (considering pagination)
+      const globalRank = start + index + 1;
       row.innerHTML = `
-        <td>${supplier.id}</td>
+        <td><strong>#${globalRank}</strong></td>
         <td>${supplier.name}</td>
-        <td>${supplier.ratings}</td>
+        <td>${supplier.totalReceived} orders</td>
         <td><button class="low-inventory-btn">View</button></td>
       `;
       tbody.appendChild(row);
@@ -527,28 +662,287 @@
     container.appendChild(nextBtn);
   }
 
-  // Initial render
-  renderTopSuppliersTable();
-
 
       
       
 
 </script>
-
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Add the sidebar toggle logic
-document.getElementById('sidebar-toggle').onclick = function() {
-    const sidebar = document.getElementById('sidebar');
-    const content = document.getElementById('content');
-    if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-        sidebar.style.display = 'block';
-        content.style.marginLeft = '300px';
-    } else {
-        sidebar.style.display = 'none';
-        content.style.marginLeft = '0';
+    // Initialize pie chart after Chart.js is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load dashboard data first
+        loadDashboardData();
+        
+        // Wait a bit for Chart.js to be available, then initialize
+        const initChart = () => {
+            if (typeof Chart !== 'undefined') {
+                initializeInventoryDistributionChart();
+            } else {
+                setTimeout(initChart, 100);
+            }
+        };
+        initChart();
+    });
+    
+    // Initialize inventory distribution pie chart from request_material
+    async function initializeInventoryDistributionChart() {
+        try {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                setTimeout(() => initializeInventoryDistributionChart(), 500);
+                return;
+            }
+            
+            console.log('Fetching request materials from /manufacturing/gather-request-material');
+            const response = await fetch('/manufacturing/gather-request-material');
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API response error:', response.status, errorText);
+                throw new Error(`Failed to load request materials: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Request materials response:', data);
+            
+            // Handle different response formats - API returns { success: true, requestMaterials: [...] }
+            let requests = Array.isArray(data) ? data : (data.requestMaterials || data.requests || data.data || []);
+            
+            if (!Array.isArray(requests)) {
+                console.error('Invalid response format - expected array:', typeof data, data);
+                requests = [];
+            }
+            
+            console.log('Processed requests array:', requests.length, 'requests');
+            
+            // Filter requests with source_type of 'company_supply'/'Company Supply' or 'owner_supply'/'Owner Supply'
+            const filteredRequests = requests.filter(r => {
+                const sourceType = (r.source_type || '').toLowerCase().replace(/\s+/g, '_');
+                return sourceType === 'company_supply' || sourceType === 'owner_supply';
+            });
+            
+            // Sum quantities by source_type
+            const companySupplyTotal = { count: 0, quantity: 0 };
+            const ownerSupplyTotal = { count: 0, quantity: 0 };
+            
+            filteredRequests.forEach(request => {
+                const sourceType = (request.source_type || '').toLowerCase().replace(/\s+/g, '_');
+                
+                // Count requests
+                if (sourceType === 'company_supply') {
+                    companySupplyTotal.count++;
+                } else if (sourceType === 'owner_supply') {
+                    ownerSupplyTotal.count++;
+                }
+                
+                // Sum quantities from materials
+                if (request.materials && Array.isArray(request.materials)) {
+                    request.materials.forEach(material => {
+                        const qty = parseFloat(material.quantity || 0);
+                        if (sourceType === 'company_supply') {
+                            companySupplyTotal.quantity += qty;
+                        } else if (sourceType === 'owner_supply') {
+                            ownerSupplyTotal.quantity += qty;
+                        }
+                    });
+                }
+            });
+            
+            const ctx = document.getElementById('inventoryPieChart');
+            if (!ctx) {
+                console.error('Canvas element not found: inventoryPieChart');
+                return;
+            }
+            
+            // Check if we have data to display
+            const totalQuantity = companySupplyTotal.quantity + ownerSupplyTotal.quantity;
+            if (totalQuantity === 0) {
+                console.warn('No data to display in inventory distribution chart');
+                // Show empty state message
+                ctx.parentElement.innerHTML = `
+                    <h2>Inventory Distribution</h2>
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <p>No data available</p>
+                        <p style="font-size: 0.9em;">No request materials found with Company Supply or Owner Supply source type</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Destroy existing chart if it exists
+            if (window.inventoryPieChartInstance) {
+                window.inventoryPieChartInstance.destroy();
+            }
+            
+            console.log('Creating inventory distribution chart with data:', {
+                companySupply: companySupplyTotal.quantity,
+                ownerSupply: ownerSupplyTotal.quantity
+            });
+            
+            window.inventoryPieChartInstance = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Company Supply', 'Owner Supply'],
+                    datasets: [{
+                        label: 'Request Materials',
+                        data: [companySupplyTotal.quantity, ownerSupplyTotal.quantity],
+                        backgroundColor: [
+                            '#38bdf8', // Blue for Company Supply
+                            '#34d399'  // Green for Owner Supply
+                        ],
+                        borderColor: '#0f172a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%', // Convert to donut chart (60% inner radius)
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#333',
+                                padding: 15,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value.toLocaleString()} units (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing inventory distribution chart:', error);
+            const ctx = document.getElementById('inventoryPieChart');
+            if (ctx && ctx.parentElement) {
+                ctx.parentElement.innerHTML = `
+                    <h2>Inventory Distribution</h2>
+                    <div style="text-align: center; padding: 40px; color: #dc3545;">
+                        <p>Error loading chart data</p>
+                        <p style="font-size: 0.9em;">${error.message || 'Unknown error'}</p>
+                    </div>
+                `;
+            }
+        }
     }
-};
+    
+    // Initialize monthly purchases bar chart
+    async function initializeMonthlyPurchasesChart(purchases) {
+        try {
+            if (!purchases) {
+                const response = await fetch('/scm/purchases');
+                if (!response.ok) throw new Error('Failed to load purchases');
+                purchases = await response.json();
+            }
+            
+            // Filter purchases with "Received" status
+            const receivedPurchases = purchases.filter(p => p.status === 'Received');
+            
+            // Get current year
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            // Group purchases by month (for current year)
+            const monthlyData = {
+                January: 0, February: 0, March: 0, April: 0,
+                May: 0, June: 0, July: 0, August: 0,
+                September: 0, October: 0, November: 0, December: 0
+            };
+            
+            receivedPurchases.forEach(purchase => {
+                const dateStr = purchase.invoice_date || purchase.created_date;
+                if (!dateStr) return;
+                
+                const purchaseDate = new Date(dateStr);
+                if (purchaseDate.getFullYear() === currentYear) {
+                    const monthName = purchaseDate.toLocaleString('default', { month: 'long' });
+                    const invoiceAmount = parseFloat(purchase.invoice_amount || 0);
+                    if (monthlyData.hasOwnProperty(monthName)) {
+                        monthlyData[monthName] += invoiceAmount;
+                    }
+                }
+            });
+            
+            // Create bar chart (wait for Chart.js if needed)
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not loaded yet, retrying...');
+                setTimeout(() => initializeMonthlyPurchasesChart(purchases), 500);
+                return;
+            }
+            
+            const ctx = document.getElementById('monthlyPurchasesChart');
+            if (ctx) {
+                // Destroy existing chart if it exists
+                if (window.monthlyPurchasesChartInstance) {
+                    window.monthlyPurchasesChartInstance.destroy();
+                }
+                
+                window.monthlyPurchasesChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(monthlyData),
+                        datasets: [{
+                            label: 'Purchase Amount (₱)',
+                            data: Object.values(monthlyData),
+                            backgroundColor: '#2196f3',
+                            borderColor: '#1976d2',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return '₱' + context.parsed.y.toLocaleString('en-US', { 
+                                            minimumFractionDigits: 2, 
+                                            maximumFractionDigits: 2 
+                                        });
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₱' + value.toLocaleString('en-US', { 
+                                            minimumFractionDigits: 0, 
+                                            maximumFractionDigits: 0 
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing monthly purchases chart:', error);
+        }
+    }
 </script>
 </body>
 </html>
