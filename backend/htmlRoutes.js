@@ -339,6 +339,9 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'hr admin', 'job_posting.html')); // Adjusted path
   });
 
+  app.get('/hr/hr_employee_attendance', (req, res) => {      
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr employee', 'Individual_attendance.html')); // Adjusted path
+  });
   // Removed HR payroll forecasting route
   
 // ====================

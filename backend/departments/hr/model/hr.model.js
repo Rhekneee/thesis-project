@@ -1312,6 +1312,7 @@ const HRModel = {
                 LEFT JOIN attendance a ON e.user_id = a.user_id
                 LEFT JOIN employee_dates ed ON e.employee_id = ed.employee_id
                 WHERE e.is_deleted = 0
+                AND (r.name IS NULL OR LOWER(r.name) <> 'owner')
                 GROUP BY e.employee_id, e.full_name, e.role_id, r.name, p.salary`;
 
             const params = [
@@ -1629,14 +1630,16 @@ const HRModel = {
         return Math.round(tax * 100) / 100; // Round to 2 decimal places
     },
 
-    // Calculate deductions for an employee based on their salary and payroll period
-    calculateDeductions: async (employeeSalary, payrollPeriod = 'second') => {
+    // ===== PAYROLL ONLY: Calculate deductions with support for deduction mode (split vs monthly)
+    // Calculate deductions for an employee based on salary, payroll period, and deduction mode
+    calculateDeductions: async (employeeSalary, payrollPeriod = 'second', deductionMode = 'split') => {
         try {
             const [deductions] = await db.query(`
-                SELECT id, deduction_type, fixed_amount, description, category, is_active, effective_date, created_at, updated_at
-                FROM payroll_deductions 
+                SELECT id, deduction_type, salary_min, salary_max, total_rate,
+                       employee_percentage, employer_percentage, is_active
+                FROM deductions 
                 WHERE is_active = 1 
-                ORDER BY category, deduction_type
+                ORDER BY deduction_type
             `);
 
             let totalDeductions = 0;
@@ -1645,15 +1648,29 @@ const HRModel = {
             const deductionDetails = [];
             const nextPeriodDeductions = []; // Deductions that will apply to next period
 
+            
+
             for (const deduction of deductions) {
                 let deductionAmount = 0;
                 
-                // Calculate amount based on fixed amount or percentage
-                if (deduction.fixed_amount > 0) {
-                    deductionAmount = deduction.fixed_amount;
-                } else if (deduction.percentage > 0) {
-                    deductionAmount = (employeeSalary * deduction.percentage) / 100;
+                // Calculate employee share only, using salary range brackets when provided
+                const inRange = (val, min, max) => {
+                    if (min == null && max == null) return true;
+                    if (min == null) return val <= Number(max);
+                    if (max == null) return val >= Number(min);
+                    return val >= Number(min) && val <= Number(max);
+                };
+
+                if (Number(deduction.fixed_amount) > 0) {
+                    deductionAmount = Number(deduction.fixed_amount);
+                } else if (inRange(Number(employeeSalary), deduction.salary_min, deduction.salary_max) && Number(deduction.employee_percentage) > 0) {
+                    deductionAmount = (Number(employeeSalary) * Number(deduction.employee_percentage)) / 100;
+                } else if (Number(deduction.percentage) > 0) {
+                    // Fallback if legacy percentage column exists
+                    deductionAmount = (Number(employeeSalary) * Number(deduction.percentage)) / 100;
                 }
+
+                
 
                 // Special handling for Income Tax (progressive tax brackets)
                 if (deduction.deduction_type === 'Income Tax') {
@@ -1661,40 +1678,82 @@ const HRModel = {
                 }
 
                 if (deductionAmount > 0) {
-                    // Apply deduction logic based on period
-                    const shouldApplyDeduction = payrollPeriod === 'second' || deduction.deduction_type === 'Income Tax';
-                    
-                    if (shouldApplyDeduction) {
-                        // Apply deduction in current period
-                        totalDeductions += deductionAmount;
+                    // Apply deduction logic based on selected mode
+                    if (deductionMode === 'split') {
+                        // Split equally across first and second halves
+                        const splitAmount = Math.round((deductionAmount / 2) * 100) / 100;
                         
-                        if (deduction.tax_status === 'taxable') {
-                            taxableDeductions += deductionAmount;
+                        // Always apply half in the current period
+                        totalDeductions += splitAmount;
+                        const taxStatus = deduction.tax_status || 'non_taxable';
+                        if (taxStatus === 'taxable') {
+                            taxableDeductions += splitAmount;
                         } else {
-                            nonTaxableDeductions += deductionAmount;
+                            nonTaxableDeductions += splitAmount;
                         }
-
                         deductionDetails.push({
+                            id: deduction.id,
                             deduction_type: deduction.deduction_type,
-                            amount: deductionAmount,
-                            tax_status: deduction.tax_status,
+                            amount: splitAmount,
+                            tax_status: taxStatus,
                             category: deduction.category,
                             description: deduction.description,
-                            applied_in_current_period: true
+                            applied_in_current_period: true,
+                            mode: 'split'
                         });
+                        // In first half, show the other half as next period info
+                        if (payrollPeriod === 'first') {
+                            nextPeriodDeductions.push({
+                                id: deduction.id,
+                                deduction_type: deduction.deduction_type,
+                                amount: splitAmount,
+                                tax_status: taxStatus,
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: false,
+                                mode: 'split'
+                            });
+                        }
                     } else {
-                        // Show deduction for next period (first half only)
-                        nextPeriodDeductions.push({
+                        // 'monthly' mode: apply full amount only in second half (or always for income tax)
+                        const shouldApplyDeduction = payrollPeriod === 'second' || deduction.deduction_type === 'Income Tax';
+                        
+                        if (shouldApplyDeduction) {
+                            totalDeductions += deductionAmount;
+                            const taxStatus2 = deduction.tax_status || 'non_taxable';
+                            if (taxStatus2 === 'taxable') {
+                                taxableDeductions += deductionAmount;
+                            } else {
+                                nonTaxableDeductions += deductionAmount;
+                            }
+                        deductionDetails.push({
+                            id: deduction.id,
                             deduction_type: deduction.deduction_type,
-                            amount: deductionAmount,
-                            tax_status: deduction.tax_status,
-                            category: deduction.category,
-                            description: deduction.description,
-                            applied_in_current_period: false
-                        });
+                                amount: deductionAmount,
+                                tax_status: taxStatus2,
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: true,
+                                mode: 'monthly'
+                            });
+                        } else {
+                            // First half preview of what will apply in second
+                            nextPeriodDeductions.push({
+                                id: deduction.id,
+                                deduction_type: deduction.deduction_type,
+                                amount: deductionAmount,
+                                tax_status: deduction.tax_status || 'non_taxable',
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: false,
+                                mode: 'monthly'
+                            });
+                        }
                     }
                 }
             }
+
+            
 
             return {
                 totalDeductions,
@@ -4242,13 +4301,13 @@ const HRModel = {
     // Payroll Periods Management
     // =========================
 
-    // Create a new payroll period
-    createPayrollPeriod: async (periodName, startDate, endDate) => {
+    // ===== PAYROLL ONLY: Create a new payroll period with deduction_mode
+    createPayrollPeriod: async (periodName, startDate, endDate, deductionMode = 'split') => {
         try {
             const [result] = await db.query(`
-                INSERT INTO payroll_periods (period_name, start_date, end_date, status, created_at)
-                VALUES (?, ?, ?, 'pending', NOW())
-            `, [periodName, startDate, endDate]);
+                INSERT INTO payroll_periods (period_name, start_date, end_date, deduction_mode, status, created_at)
+                VALUES (?, ?, ?, ?, 'pending', NOW())
+            `, [periodName, startDate, endDate, deductionMode]);
             
             return result.insertId;
         } catch (error) {
@@ -4293,6 +4352,20 @@ const HRModel = {
         }
     },
 
+    // ===== PAYROLL ONLY: Update deduction_mode for a payroll period
+    updatePayrollPeriodDeductionMode: async (periodId, deductionMode) => {
+        try {
+            await db.query(`
+                UPDATE payroll_periods
+                SET deduction_mode = ?
+                WHERE id = ?
+            `, [deductionMode, periodId]);
+        } catch (error) {
+            console.error("❌ Error updating payroll period deduction_mode:", error);
+            throw error;
+        }
+    },
+
     // Get all payroll entries for a specific period
     getPayrollEntriesByPeriod: async (periodId) => {
         try {
@@ -4317,6 +4390,21 @@ const HRModel = {
         }
     },
 
+    // Count payroll rows linked to a period (any status)
+    countPayrollByPeriod: async (periodId) => {
+        try {
+            const [rows] = await db.query(`
+                SELECT COUNT(*) AS cnt
+                FROM payroll
+                WHERE payroll_period_id = ?
+            `, [periodId]);
+            return rows[0]?.cnt || 0;
+        } catch (error) {
+            console.error("❌ Error counting payroll by period:", error);
+            throw error;
+        }
+    },
+
     // Update payroll period status
     updatePayrollPeriodStatus: async (periodId, status) => {
         try {
@@ -4332,8 +4420,8 @@ const HRModel = {
         }
     },
 
-    // Find or create payroll period for given dates
-    findOrCreatePayrollPeriod: async (startDate, endDate, periodName = null) => {
+    // ===== PAYROLL ONLY: Find or create payroll period for given dates (respects deduction_mode when creating)
+    findOrCreatePayrollPeriod: async (startDate, endDate, periodName = null, deductionMode = 'split') => {
         try {
             // First, try to find existing period by dates
             const [existing] = await db.query(`
@@ -4358,7 +4446,7 @@ const HRModel = {
             }
             
             console.log('Creating new payroll period:', periodName);
-            const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
+            const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate, deductionMode);
             return periodId;
         } catch (error) {
             console.error("❌ Error finding or creating payroll period:", error);
@@ -4560,7 +4648,10 @@ const HRModel = {
                     r.payroll_period || '',
                     r.status || 'pending',
                     r.monthly_salary || 0,
-                    periodId // payroll_period_id
+                    periodId, // payroll_period_id
+                    r.sss_deduction_id || null,
+                    r.philhealth_deduction_id || null,
+                    r.pagibig_deduction_id || null
                 ];
             });
 
@@ -4570,7 +4661,8 @@ const HRModel = {
                 `INSERT INTO payroll 
                  (employee_id, position_id, basic_salary_snapshot, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
-                  absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id)
+                  absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id,
+                  sss_deduction_id, philhealth_deduction_id, pagibig_deduction_id)
                  VALUES ?`, [values]
             );
 

@@ -169,7 +169,7 @@ app.get('/dashboard', (req, res) => {
         'foreman_2': '/manufacturing/manufacturing_dashboard',
         'foreman_3': '/manufacturing/manufacturing_dashboard',
         'foreman_4': '/manufacturing/manufacturing_dashboard',
-        'admin_staff': '/hr_employee/attendance',
+        'Recruitment staff': '/hr_employee/verifying_documents.html',
         'sales_marketing_head': '/crm admin/crm_admin.html',
         'sales_marketing_coordinator': '/crm admin/crm_admin.html',
         'documentation_officer': '/crm admin/crm_admin.html',

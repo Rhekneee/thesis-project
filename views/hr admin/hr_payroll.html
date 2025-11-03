@@ -150,10 +150,18 @@
         #payrollTable th:nth-child(11), #payrollTable td:nth-child(11) { width: 90px; } /* Semi-Monthly */
         #payrollTable th:nth-child(12), #payrollTable td:nth-child(12) { width: 80px; } /* Daily Rate */
         #payrollTable th:nth-child(13), #payrollTable td:nth-child(13) { width: 90px; } /* Absence Deduction */
-        #payrollTable th:nth-child(14), #payrollTable td:nth-child(14) { width: 80px; } /* Gross Pay */
-        #payrollTable th:nth-child(15), #payrollTable td:nth-child(15) { width: 90px; } /* Total Deductions */
-        #payrollTable th:nth-child(16), #payrollTable td:nth-child(16) { width: 80px; } /* Net Pay */
-        #payrollTable th:nth-child(17), #payrollTable td:nth-child(17) { width: 100px; } /* Actions */
+        #payrollTable th:nth-child(14), #payrollTable td:nth-child(14) { width: 80px; } /* SSS */
+        #payrollTable th:nth-child(15), #payrollTable td:nth-child(15) { width: 90px; } /* PhilHealth */
+        #payrollTable th:nth-child(16), #payrollTable td:nth-child(16) { width: 90px; } /* Pag-IBIG */
+        #payrollTable th:nth-child(17), #payrollTable td:nth-child(17) { width: 90px; } /* Total Deductions */
+        #payrollTable th:nth-child(18), #payrollTable td:nth-child(18) { width: 80px; } /* Net Pay */
+        
+
+        /* Hide Daily Rate during generated preview (show Monthly and Semi-Monthly) */
+        #payrollTable.generated th:nth-child(12),
+        #payrollTable.generated td:nth-child(12) {
+            display: none;
+        }
 
         /* Table container with horizontal scroll */
         .table-container {
@@ -981,10 +989,23 @@
                                         <option value="first">First Half</option>
                                         <option value="second">Second Half</option>
                                     </select>
+                                    
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Sub Tabs for Regular Payroll -->
+                        <ul class="nav nav-tabs mb-3" id="regularSubTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="gen-tab" data-bs-toggle="tab" data-bs-target="#genPane" type="button" role="tab" aria-controls="genPane" aria-selected="true">Generate</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#historyPane" type="button" role="tab" aria-controls="historyPane" aria-selected="false">Payroll History</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                        <div class="tab-pane fade show active" id="genPane" role="tabpanel" aria-labelledby="gen-tab">
                         <!-- Payroll Info -->
                         <div class="alert alert-info mb-3" role="alert">
                             <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Payroll</h6>
@@ -1002,15 +1023,7 @@
                                 <i class="fas fa-times-circle"></i> Cancel Payroll
                             </button>
 
-                            <div class="dropdown">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" id="payrollActions" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-clock"></i> <span id="selectedAction">Load Pending Payroll</span>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="payrollActions">
-                                    <li><a class="dropdown-item active" href="#" data-action="pending" data-icon="fa-clock"><i class="fas fa-clock"></i> Load Pending Payroll</a></li>
-                                    <li><a class="dropdown-item" href="#" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i> Load Approved Payroll</a></li>
-                                </ul>
-                            </div>
+                            
                         </div>
 
                         <!-- Payroll Summary Section -->
@@ -1066,10 +1079,11 @@
                                     <th>Semi-Monthly</th>
                                     <th>Daily Rate</th>
                                     <th>Absence Deduction</th>
-                                    <th>Gross Pay</th>
+                                    <th>SSS</th>
+                                    <th>PhilHealth</th>
+                                    <th>Pag-IBIG</th>
                                     <th>Total Deductions</th>
                                     <th>Net Pay</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1096,6 +1110,55 @@
                                 <ul class="pagination mb-0" id="payrollPagination"></ul>
                             </nav>
                         </div>
+                        </div> <!-- end genPane -->
+
+                        <!-- Payroll History Pane -->
+                        <div class="tab-pane fade" id="historyPane" role="tabpanel" aria-labelledby="history-tab">
+                            <div class="glass-card p-3 mb-3">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <button id="loadPendingHistory" class="btn btn-outline-secondary btn-sm"><i class="fas fa-clock me-1"></i>Pending</button>
+                                    <button id="loadApprovedHistory" class="btn btn-outline-success btn-sm"><i class="fas fa-check-circle me-1"></i>Approved</button>
+                                    <button id="downloadApprovedExcel" class="btn btn-outline-primary btn-sm ms-auto" style="display: none;"><i class="fa-solid fa-file-excel me-1"></i>Download Excel</button>
+                                </div>
+                            </div>
+                            <div class="data-table table-responsive">
+                                <table id="payrollHistoryTable" class="table mb-0 align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee ID</th>
+                                            <th>Name</th>
+                                            <th>Position</th>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th>Days Present</th>
+                                            <th>Days Absent</th>
+                                            <th>Total Deductions</th>
+                                            <th>Net Pay</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3" id="historyPaginationContainer">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="historyEntriesSelect" class="text-muted small mb-0">Show</label>
+                                    <select id="historyEntriesSelect" class="form-select form-select-sm" style="width: auto;">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <span class="text-muted small">entries</span>
+                                </div>
+                                <div id="historyEntriesMessage" class="text-muted small"></div>
+                                <nav aria-label="History table pagination">
+                                    <ul class="pagination mb-0" id="historyPagination"></ul>
+                                </nav>
+                            </div>
+                        </div> <!-- end historyPane -->
+                        </div> <!-- end sub tab-content -->
                     </div>
 
                     <!-- Construction Payroll Tab -->
@@ -1450,12 +1513,15 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/public/js/side_top.js"></script>
     <script>
     // Dynamically set BASE_URL based on current origin
     const BASE_URL = window.location.hostname === 'localhost' 
         ? 'http://localhost:4000/hr' 
         : `${window.location.origin}/hr`;
+    // Track generated (pre-submit) payroll state to control UI (e.g., hide Edit button)
+    window.isGeneratingPayroll = false;
 
     // ===== Employee Payroll Info Panel helpers =====
     function formatDateDisplay(date) {
@@ -1656,37 +1722,23 @@
         const currentDay = new Date().getDate();
         document.getElementById('period').value = currentDay <= 15 ? 'first' : 'second';
 
-        // Set initial active state for dropdown
-        const defaultAction = document.querySelector('[data-action="pending"]');
-        defaultAction.classList.add('active');
-        
-        // Handle dropdown item clicks
-        document.querySelectorAll('.dropdown-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Remove active class from all items
-                document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-                
-                // Add active class to clicked item
-                this.classList.add('active');
-                
-                // Update button text and icon
-                const action = this.getAttribute('data-action');
-                const icon = this.getAttribute('data-icon');
-                const text = this.textContent.trim();
-                
-                document.getElementById('selectedAction').textContent = text;
-                document.getElementById('payrollActions').querySelector('i').className = `fas ${icon}`;
-                
-                // Trigger the appropriate action
-                if (action === 'pending') {
-                    handleLoadPendingPayroll();
-                } else if (action === 'approved') {
-                    handleLoadApprovedPayroll();
-                }
-            });
+        // History tab buttons
+        const btnPending = document.getElementById('loadPendingHistory');
+        const btnApproved = document.getElementById('loadApprovedHistory');
+        const btnDownloadApproved = document.getElementById('downloadApprovedExcel');
+        if (btnPending) btnPending.addEventListener('click', () => { 
+            window.historyStatus = 'pending'; 
+            const dl = document.getElementById('downloadApprovedExcel');
+            if (dl) dl.style.display = 'none';
+            handleLoadPendingPayroll(); 
         });
+        if (btnApproved) btnApproved.addEventListener('click', () => { 
+            window.historyStatus = 'approved'; 
+            const dl = document.getElementById('downloadApprovedExcel');
+            if (dl) dl.style.display = 'inline-block';
+            handleLoadApprovedPayroll(); 
+        });
+        if (btnDownloadApproved) btnDownloadApproved.addEventListener('click', downloadApprovedExcel);
 
         // Handle Generate Payroll button click
         document.getElementById('generatePayroll').addEventListener('click', handleGeneratePayroll);
@@ -1738,20 +1790,13 @@
             generateButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
             generateButton.disabled = true;
 
-            const response = await fetch(`${BASE_URL}/payroll/generate`, {
+        const response = await fetch(`${BASE_URL}/payroll/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ month, year, period })
+            body: JSON.stringify({ month, year, period })
             });
 
             const data = await response.json();
-            console.log('=== API Response ===');
-            console.log('Response status:', response.status);
-            console.log('Response data:', data);
-            console.log('Data type:', typeof data);
-            console.log('Data keys:', Object.keys(data));
-            console.log('Has payrollData:', !!data.payrollData);
-            console.log('PayrollData length:', data.payrollData ? data.payrollData.length : 'undefined');
             
             // Additional debugging for forecast issues
             if (data.error) {
@@ -1849,6 +1894,9 @@
                     gross_pay: entry.gross_pay,
                     total_deductions: entry.total_deductions,
                     net_pay: entry.net_pay,
+                    sss_deduction_id: entry.sss_deduction_id || null,
+                    philhealth_deduction_id: entry.philhealth_deduction_id || null,
+                    pagibig_deduction_id: entry.pagibig_deduction_id || null,
                     payroll_period: entry.payroll_period,
                     period_type: entry.period_type,
                     status: 'pending',
@@ -1905,6 +1953,12 @@
             // Clear the table and temporary data
             document.querySelector('#payrollTable tbody').innerHTML = '';
             window.temporaryPayrollData = null;
+            // Exit generated preview state
+            window.isGeneratingPayroll = false;
+            const payrollTableEl3 = document.getElementById('payrollTable');
+            if (payrollTableEl3) {
+                payrollTableEl3.classList.remove('generated');
+            }
             
         } catch (error) {
             console.error('Error submitting payroll:', error);
@@ -1925,11 +1979,13 @@
             }
 
             const data = await response.json();
-            if (!data.payroll || data.payroll.length === 0) {
-                showAlert('info', 'No pending payroll records available.');
-                document.querySelector('#payrollTable tbody').innerHTML = ''; // Clear the table
-            } else {
-                populateTable(data.payroll);
+            // History pane expects an array in data.payroll
+            populateHistoryTable((data && data.payroll) || []);
+            // Not in generated preview when loading pending from server
+            window.isGeneratingPayroll = false;
+            const payrollTableEl = document.getElementById('payrollTable');
+            if (payrollTableEl) {
+                payrollTableEl.classList.remove('generated');
             }
         } catch (error) {
             console.error('Error loading pending payroll:', error);
@@ -1945,10 +2001,184 @@
             }
 
             const data = await response.json();
-            populateTableforapproved(data.payroll || []);
+            populateHistoryTable((data && data.payroll) || []);
+            // Not in generated preview when viewing approved
+            window.isGeneratingPayroll = false;
+            const payrollTableEl = document.getElementById('payrollTable');
+            if (payrollTableEl) {
+                payrollTableEl.classList.remove('generated');
+            }
         } catch (error) {
             console.error('Error loading approved payroll:', error);
             showAlert('danger', 'Failed to load approved payroll. Please try again.');
+        }
+    }
+
+    // History pagination state and helpers
+    const historyPaginationState = {
+        currentPage: 1,
+        pageSize: 10,
+        totalRecords: 0
+    };
+
+    function populateHistoryTable(rows) {
+        window.historyData = rows || [];
+        // Initialize pagination
+        const entriesSelect = document.getElementById('historyEntriesSelect');
+        if (entriesSelect && !entriesSelect.dataset.bound) {
+            entriesSelect.addEventListener('change', handleHistoryEntriesChange);
+            entriesSelect.dataset.bound = '1';
+        }
+        const pager = document.getElementById('historyPagination');
+        if (pager && !pager.dataset.bound) {
+            pager.addEventListener('click', handleHistoryPaginationClick);
+            pager.dataset.bound = '1';
+        }
+        initializeHistoryPagination();
+        showHistoryPage(1);
+    }
+
+    function initializeHistoryPagination() {
+        historyPaginationState.totalRecords = (window.historyData || []).length;
+        historyPaginationState.currentPage = 1;
+        const entriesSelect = document.getElementById('historyEntriesSelect');
+        if (entriesSelect) historyPaginationState.pageSize = parseInt(entriesSelect.value) || 10;
+        renderHistoryPagination();
+        updateHistoryEntriesMessage();
+    }
+
+    function showHistoryPage(page) {
+        const rows = window.historyData || [];
+        const size = historyPaginationState.pageSize;
+        const startIndex = (page - 1) * size;
+        const endIndex = Math.min(startIndex + size, rows.length);
+        const pageRows = rows.slice(startIndex, endIndex);
+
+        const tbody = document.querySelector('#payrollHistoryTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!pageRows.length) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="10" class="text-center py-4 text-muted">No records found</td>`;
+            tbody.appendChild(tr);
+        } else {
+            const fmt = (n) => `₱${(Number(n)||0).toFixed(2)}`;
+            const fdate = (s) => (s ? new Date(s).toLocaleDateString() : '');
+            pageRows.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.employee_id}</td>
+                    <td>${item.full_name || item.employee_name || 'N/A'}</td>
+                    <td>${item.position || 'N/A'}</td>
+                    <td>${fdate(item.start_date)}</td>
+                    <td>${fdate(item.end_date)}</td>
+                    <td>${item.days_present ?? 0}</td>
+                    <td>${item.days_absent ?? 0}</td>
+                    <td>${fmt(item.total_deductions)}</td>
+                    <td>${fmt(item.net_salary || item.net_pay)}</td>
+                    <td>${(item.status || 'pending').toString().charAt(0).toUpperCase()}${(item.status || 'pending').toString().slice(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        historyPaginationState.currentPage = page;
+        renderHistoryPagination();
+        updateHistoryEntriesMessage();
+    }
+
+    function renderHistoryPagination() {
+        const pagination = document.getElementById('historyPagination');
+        if (!pagination) return;
+        const totalPages = Math.ceil(historyPaginationState.totalRecords / historyPaginationState.pageSize) || 1;
+        pagination.innerHTML = '';
+
+        const addItem = (label, page, disabled = false, active = false) => {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.dataset.page = page;
+            a.textContent = label;
+            li.appendChild(a);
+            pagination.appendChild(li);
+        };
+
+        addItem('Prev', String(historyPaginationState.currentPage - 1), historyPaginationState.currentPage === 1);
+        const windowSize = 5;
+        let start = Math.max(1, historyPaginationState.currentPage - Math.floor(windowSize / 2));
+        let end = Math.min(totalPages, start + windowSize - 1);
+        start = Math.max(1, Math.min(start, end - windowSize + 1));
+        for (let p = start; p <= end; p++) addItem(String(p), String(p), false, p === historyPaginationState.currentPage);
+        addItem('Next', String(historyPaginationState.currentPage + 1), historyPaginationState.currentPage === totalPages);
+    }
+
+    function updateHistoryEntriesMessage() {
+        const msg = document.getElementById('historyEntriesMessage');
+        if (!msg) return;
+        const start = historyPaginationState.totalRecords ? ((historyPaginationState.currentPage - 1) * historyPaginationState.pageSize + 1) : 0;
+        const end = Math.min(historyPaginationState.currentPage * historyPaginationState.pageSize, historyPaginationState.totalRecords);
+        msg.textContent = historyPaginationState.totalRecords ? `Showing ${start} to ${end} of ${historyPaginationState.totalRecords} entries` : 'No entries to show';
+    }
+
+    function handleHistoryEntriesChange() {
+        const entriesSelect = document.getElementById('historyEntriesSelect');
+        if (!entriesSelect) return;
+        historyPaginationState.pageSize = parseInt(entriesSelect.value) || 10;
+        historyPaginationState.currentPage = 1;
+        showHistoryPage(1);
+    }
+
+    function handleHistoryPaginationClick(e) {
+        const a = e.target.closest('a.page-link');
+        if (!a) return;
+        e.preventDefault();
+        const target = Number(a.dataset.page);
+        const totalPages = Math.ceil(historyPaginationState.totalRecords / historyPaginationState.pageSize) || 1;
+        if (!isNaN(target) && target >= 1 && target <= totalPages) {
+            showHistoryPage(target);
+        }
+    }
+
+    // Download approved history as Excel
+    function downloadApprovedExcel() {
+        try {
+            if (window.historyStatus !== 'approved') {
+                showAlert('info', 'Load Approved payrolls first to download.');
+                return;
+            }
+            const rows = (window.historyData || []).map(item => ({
+                EmployeeID: item.employee_id,
+                Name: item.full_name || item.employee_name || 'N/A',
+                Position: item.position || 'N/A',
+                Start: item.start_date ? new Date(item.start_date).toLocaleDateString() : '',
+                End: item.end_date ? new Date(item.end_date).toLocaleDateString() : '',
+                DaysPresent: item.days_present ?? 0,
+                DaysAbsent: item.days_absent ?? 0,
+                TotalDeductions: Number(item.total_deductions || 0),
+                NetPay: Number(item.net_salary || item.net_pay || 0),
+                Status: (item.status || 'approved')
+            }));
+            if (!rows.length) {
+                showAlert('info', 'No approved payrolls to download.');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                showAlert('danger', 'Excel library not loaded.');
+                return;
+            }
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Approved Payrolls');
+            const pad = (n) => String(n).padStart(2, '0');
+            const d = new Date();
+            const fname = `approved-payrolls-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.xlsx`;
+            XLSX.writeFile(wb, fname);
+        } catch (err) {
+            console.error('Download Excel error:', err);
+            showAlert('danger', 'Failed to generate Excel.');
         }
     }
 
@@ -1969,11 +2199,16 @@
             return;
         }
 
-        console.log('Payroll data found:', data.payrollData.length, 'entries');
-        console.log('First entry:', data.payrollData[0]);
+        
 
         // Store the data globally for later use
         window.temporaryPayrollData = data.payrollData;
+        // Mark as generated preview state so actions like Edit can be hidden
+        window.isGeneratingPayroll = true;
+        const payrollTableEl = document.getElementById('payrollTable');
+        if (payrollTableEl) {
+            payrollTableEl.classList.add('generated');
+        }
 
         // Initialize pagination
         initializePayrollPagination();
@@ -2332,7 +2567,6 @@
             console.log('Fetching deductions breakdown for employee:', employeeId, 'salary:', salary);
             
             const response = await fetch(`${BASE_URL}/employee/${employeeId}/deductions-breakdown?salary=${salary}`);
-            console.log('Response status:', response.status);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -2862,6 +3096,12 @@
                 
                 // Clear temporary data
                 window.temporaryPayrollData = null;
+                // Exit generated preview state
+                window.isGeneratingPayroll = false;
+                const payrollTableEl2 = document.getElementById('payrollTable');
+                if (payrollTableEl2) {
+                    payrollTableEl2.classList.remove('generated');
+                }
                 
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('cancelPayrollModal'));
@@ -3924,14 +4164,11 @@
                 <td class="semi-monthly-payout">₱${parseFloat(entry.semi_monthly_payout || 0).toLocaleString()}</td>
                 <td class="daily-rate">₱${parseFloat(entry.daily_rate || 0).toFixed(2)}</td>
                 <td class="absence-deduction">₱${parseFloat(entry.absence_deduction || 0).toFixed(2)}</td>
-                <td class="gross-pay">₱${parseFloat(entry.gross_pay || 0).toFixed(2)}</td>
+                <td class="sss-amount">₱${parseFloat(entry.sss_amount || 0).toFixed(2)}</td>
+                <td class="philhealth-amount">₱${parseFloat(entry.philhealth_amount || 0).toFixed(2)}</td>
+                <td class="pagibig-amount">₱${parseFloat(entry.pagibig_amount || 0).toFixed(2)}</td>
                 <td class="deduction-amount">₱${parseFloat(entry.total_deductions || 0).toFixed(2)}</td>
                 <td class="net-salary">₱${parseFloat(entry.net_pay || 0).toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editPayrollEntry(${startIndex + index})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                </td>
             `;
             
             tbody.appendChild(row);
