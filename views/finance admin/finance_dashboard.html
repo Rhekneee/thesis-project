@@ -187,6 +187,89 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Smooth transitions for role-based content */
+        #adminTitle, #accountantTitle,
+        #adminContent, #accountantContent {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Prevent flicker - ensure elements are hidden initially */
+        #adminTitle, #accountantTitle,
+        #adminContent, #accountantContent {
+            display: none;
+            opacity: 0;
+        }
+
+        /* KPI Cards for Accountant Dashboard */
+        .kpi-card {
+            margin: 10px 0;
+            height: 100%;
+        }
+
+        .kpi-card .card-body {
+            text-align: center;
+        }
+
+        .kpi-card h5 {
+            margin-bottom: 10px;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .kpi-card h2 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* Purchase Request List */
+        .purchase-request-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+
+        .purchase-request-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .purchase-request-item .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .purchase-request-item .request-id {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .purchase-request-item .request-date {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .purchase-request-item .request-details {
+            font-size: 0.85rem;
+            color: #495057;
+            margin-top: 4px;
+        }
+
+        .purchase-request-item .request-amount {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -276,8 +359,12 @@
     </div>
 
     <div id="content">
-        <h2><i class="fas fa-chart-line"></i> Finance Overview</h2>
+        <!-- Role-specific titles -->
+        <h2 id="adminTitle"><i class="fas fa-chart-line"></i> Finance Overview</h2>
+        <h2 id="accountantTitle"><i class="fas fa-chart-line"></i> Accountant Dashboard</h2>
 
+        <!-- Admin Content -->
+        <div id="adminContent">
         <!-- Overview Cards -->
         <div class="overview-cards">
             <!-- Opening Balance Card -->
@@ -340,6 +427,63 @@
                 </div>
             </div>
         </div>
+        </div>
+        <!-- End Admin Content -->
+
+        <!-- Accountant Content -->
+        <div id="accountantContent">
+            <div class="container-fluid">
+                <!-- KPI Cards -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card kpi-card">
+                            <div class="card-body text-center">
+                                <h5>Total Pending Purchase Request</h5>
+                                <h2 id="accountantPendingPurchaseRequest">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card kpi-card">
+                            <div class="card-body text-center">
+                                <h5>Total Pending Payroll</h5>
+                                <h2 id="accountantPendingPayroll">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout: Left (Recent Purchase Requests) and Right (Calendar) -->
+                <div class="row" style="margin: 16px 0;">
+                    <!-- Left Column - Recent Purchase Requests (Larger) -->
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3">Recent Purchase Requests (Converted to PO)</h5>
+                                <div id="recentPurchaseRequestsList">
+                                    <!-- Purchase requests will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column - Calendar (Smaller) -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="accountantCalendarNavPrev" title="Previous Month">&lt;</button>
+                                    <h6 class="mb-0" id="accountantCalendarTitle">Calendar</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="accountantCalendarNavNext" title="Next Month">&gt;</button>
+                                </div>
+                                <div id="accountantCalendarUnified"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Accountant Content -->
     </div>
 
     <!-- Move all scripts to the end of body -->
@@ -351,6 +495,10 @@
     <script>
         // Dashboard functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize role-based dashboard first
+            initRoleBasedDashboard();
+
+            // Load admin dashboard data
             loadFinanceOverview();
             loadPayrollExpenses('monthly'); // Load with default monthly period
             loadEmploymentStatus();
@@ -364,6 +512,270 @@
                 });
             }
         });
+
+        // Role-based dashboard initialization
+        async function initRoleBasedDashboard() {
+            try {
+                const response = await fetch('/finance/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch session');
+                }
+
+                const data = await response.json();
+                const roleName = data?.user?.role_name || '';
+                const roleLower = roleName.toLowerCase();
+
+                // Check if role is accountant
+                const isAccountant = roleLower === 'accountant' || 
+                                   roleLower === 'finance_accounting';
+
+                // Get title elements
+                const adminTitle = document.getElementById('adminTitle');
+                const accountantTitle = document.getElementById('accountantTitle');
+
+                // Get content containers
+                const adminContent = document.getElementById('adminContent');
+                const accountantContent = document.getElementById('accountantContent');
+
+                // Helper function to smoothly show an element
+                function showElement(element) {
+                    if (!element) return;
+                    element.style.display = 'block';
+                    void element.offsetHeight;
+                    requestAnimationFrame(() => {
+                        element.style.opacity = '1';
+                    });
+                }
+
+                // Helper function to smoothly hide an element
+                function hideElement(element) {
+                    if (!element || element.style.display === 'none') return;
+                    element.style.opacity = '0';
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 300);
+                }
+
+                // Show appropriate title and content based on role
+                if (isAccountant) {
+                    showElement(accountantTitle);
+                    showElement(accountantContent);
+                    hideElement(adminTitle);
+                    hideElement(adminContent);
+                    setTimeout(() => {
+                        initAccountantDashboard();
+                    }, 350);
+                } else {
+                    showElement(adminTitle);
+                    showElement(adminContent);
+                    hideElement(accountantTitle);
+                    hideElement(accountantContent);
+                }
+            } catch (error) {
+                console.error('Error initializing role-based dashboard:', error);
+                // Default to admin view on error
+                const adminTitle = document.getElementById('adminTitle');
+                const adminContent = document.getElementById('adminContent');
+                if (adminTitle) {
+                    adminTitle.style.display = 'block';
+                    adminTitle.style.opacity = '1';
+                }
+                if (adminContent) {
+                    adminContent.style.display = 'block';
+                    adminContent.style.opacity = '1';
+                }
+            }
+        }
+
+        // Accountant Dashboard Functions
+        let accountantCalendarYear = new Date().getFullYear();
+        let accountantCalendarMonth = new Date().getMonth();
+
+        function renderAccountantCalendar() {
+            const container = document.getElementById('accountantCalendarUnified');
+            const title = document.getElementById('accountantCalendarTitle');
+            if (!container || !title) return;
+            
+            const first = new Date(accountantCalendarYear, accountantCalendarMonth, 1);
+            const last = new Date(accountantCalendarYear, accountantCalendarMonth + 1, 0);
+            const startDay = (first.getDay() + 6) % 7; // Monday as first
+            const daysInMonth = last.getDate();
+            
+            title.textContent = first.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+            
+            let html = '<table class="table table-sm table-bordered mb-0" style="font-size:12px; table-layout:fixed; width:100%;">';
+            const thStyle = 'padding:6px 8px; white-space:nowrap; text-align:center; font-size:11px;';
+            html += `<thead><tr>
+                <th style="${thStyle}">Mon</th>
+                <th style="${thStyle}">Tue</th>
+                <th style="${thStyle}">Wed</th>
+                <th style="${thStyle}">Thu</th>
+                <th style="${thStyle}">Fri</th>
+                <th style="${thStyle}">Sat</th>
+                <th style="${thStyle}">Sun</th>
+            </tr></thead><tbody><tr>`;
+            
+            const tdEmpty = '<td style="height:35px; padding:6px 8px;"></td>';
+            for (let i = 0; i < startDay; i++) html += tdEmpty;
+            
+            let day = 1;
+            let col = startDay;
+            const today = new Date();
+            const isTodayMonth = (accountantCalendarYear === today.getFullYear() && accountantCalendarMonth === today.getMonth());
+            const todayDate = today.getDate();
+            
+            while (day <= daysInMonth) {
+                const isToday = isTodayMonth && (day === todayDate);
+                const baseStyle = 'height:35px; padding:6px 8px; text-align:center; font-size:11px;';
+                const todayStyle = 'background:#d1e9ff; border:1px solid #90caf9; border-radius:4px; font-weight:700;';
+                html += `<td style="${baseStyle}${isToday ? todayStyle : ''}">${day}</td>`;
+                day++;
+                col++;
+                if (col === 7 && day <= daysInMonth) { 
+                    html += '</tr><tr>'; 
+                    col = 0; 
+                }
+            }
+            
+            if (col > 0 && col < 7) { 
+                for (let i = col; i < 7; i++) html += tdEmpty; 
+            }
+            html += '</tr></tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Calendar navigation handlers for accountant
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'accountantCalendarNavPrev') {
+                e.preventDefault();
+                accountantCalendarMonth -= 1;
+                if (accountantCalendarMonth < 0) { 
+                    accountantCalendarMonth = 11; 
+                    accountantCalendarYear -= 1; 
+                }
+                renderAccountantCalendar();
+            } else if (e.target && e.target.id === 'accountantCalendarNavNext') {
+                e.preventDefault();
+                accountantCalendarMonth += 1;
+                if (accountantCalendarMonth > 11) { 
+                    accountantCalendarMonth = 0; 
+                    accountantCalendarYear += 1; 
+                }
+                renderAccountantCalendar();
+            }
+        });
+
+        // Fetch accountant KPIs
+        async function updateAccountantKPIs() {
+            try {
+                // Fetch pending purchase requests count
+                const purchaseRes = await fetch('/finance/purchase-requests', { credentials: 'include' });
+                if (purchaseRes.ok) {
+                    const purchaseData = await purchaseRes.json();
+                    const pendingCount = purchaseData.requests 
+                        ? purchaseData.requests.filter(r => r.status === 'Pending').length 
+                        : 0;
+                    const pendingEl = document.getElementById('accountantPendingPurchaseRequest');
+                    if (pendingEl) {
+                        pendingEl.textContent = pendingCount;
+                    }
+                } else {
+                    const pendingEl = document.getElementById('accountantPendingPurchaseRequest');
+                    if (pendingEl) pendingEl.textContent = '0';
+                }
+
+                // Fetch pending payroll count
+                const payrollRes = await fetch('/finance/payroll-periods/pending', { credentials: 'include' });
+                if (payrollRes.ok) {
+                    const payrollData = await payrollRes.json();
+                    const pendingCount = Array.isArray(payrollData.periods) ? payrollData.periods.length : 0;
+                    const pendingEl = document.getElementById('accountantPendingPayroll');
+                    if (pendingEl) {
+                        pendingEl.textContent = pendingCount;
+                    }
+                } else {
+                    const pendingEl = document.getElementById('accountantPendingPayroll');
+                    if (pendingEl) pendingEl.textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error updating accountant KPIs:', error);
+                const purchaseEl = document.getElementById('accountantPendingPurchaseRequest');
+                const payrollEl = document.getElementById('accountantPendingPayroll');
+                if (purchaseEl) purchaseEl.textContent = 'Error';
+                if (payrollEl) payrollEl.textContent = 'Error';
+            }
+        }
+
+        // Fetch recent purchase requests (Converted to PO)
+        async function loadRecentPurchaseRequests() {
+            try {
+                const res = await fetch('/finance/purchase-requests', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch purchase requests');
+                
+                const data = await res.json();
+                const requests = data.requests || [];
+                
+                // Filter for "Converted to PO" status and limit to 5
+                const convertedRequests = requests
+                    .filter(r => r.status === 'Converted to PO')
+                    .slice(0, 5);
+                
+                const listEl = document.getElementById('recentPurchaseRequestsList');
+                if (!listEl) return;
+                
+                if (convertedRequests.length === 0) {
+                    listEl.innerHTML = '<p class="text-muted text-center">No recent purchase requests converted to PO</p>';
+                    return;
+                }
+                
+                listEl.innerHTML = convertedRequests.map(request => {
+                    const date = new Date(request.created_date);
+                    const formattedDate = date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                    });
+                    
+                    return `
+                        <div class="purchase-request-item">
+                            <div class="request-header">
+                                <span class="request-id">PR-${request.pr_id}</span>
+                                <span class="request-date">${formattedDate}</span>
+                            </div>
+                            <div class="request-details">
+                                ${request.material_name || 'N/A'} ${request.variant ? `(${request.variant})` : ''}
+                            </div>
+                            <div class="request-amount">
+                                ₱${parseFloat(request.total_price || 0).toLocaleString('en-US', { 
+                                    minimumFractionDigits: 2, 
+                                    maximumFractionDigits: 2 
+                                })}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading recent purchase requests:', error);
+                const listEl = document.getElementById('recentPurchaseRequestsList');
+                if (listEl) {
+                    listEl.innerHTML = '<p class="text-danger text-center">Error loading purchase requests</p>';
+                }
+            }
+        }
+
+        // Initialize accountant dashboard when content is shown
+        function initAccountantDashboard() {
+            updateAccountantKPIs();
+            loadRecentPurchaseRequests();
+            renderAccountantCalendar();
+            
+            // Set up periodic refresh
+            setInterval(updateAccountantKPIs, 5 * 60 * 1000); // Every 5 minutes
+            setInterval(loadRecentPurchaseRequests, 5 * 60 * 1000); // Every 5 minutes
+        }
 
         // Load all finance overview data from single dashboard endpoint
         async function loadFinanceOverview() {

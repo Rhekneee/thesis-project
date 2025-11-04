@@ -102,6 +102,16 @@
             flex-direction: column;
         }
 
+        /* Smooth transitions for coordinator dashboard */
+        #coordinatorTitle, #coordinatorDashboard {
+            transition: opacity 0.3s ease-in-out;
+        }
+        /* Prevent flicker - ensure elements are hidden initially */
+        #coordinatorTitle, #coordinatorDashboard {
+            display: none;
+            opacity: 0;
+        }
+
         .chart-container h4 {
             color: #2c3e50;
             font-weight: 600;
@@ -281,9 +291,54 @@
                     <p class="mb-0 opacity-75">Monitor and manage inquiries and FAQs</p>
                 </div>
             </div>
+
+            <!-- COORDINATOR DASHBOARD TITLE (hidden by default) -->
+            <h2 id="coordinatorTitle" class="mb-4" style="display: none; opacity: 0;">Coordinator Dashboard</h2>
+
+            <!-- COORDINATOR DASHBOARD SECTION (hidden by default) -->
+            <div id="coordinatorDashboard" style="display: none; opacity: 0;">
+                <!-- KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Assigned Inquiries</h5>
+                                <p class="card-text" id="coordTotalAssigned">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <h5 class="card-title">New Today (Assigned)</h5>
+                                <p class="card-text" id="coordNewAssignedToday">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unequal columns: Left larger (trend), Right smaller (assigned list) -->
+                <div class="row g-3">
+                    <!-- Left: Trend of Completed Inquiries -->
+                    <div class="col-12 col-lg-8">
+                        <div class="chart-container">
+                            <h4><i class="fas fa-chart-line me-2"></i>Completed Inquiries Trend</h4>
+                            <canvas id="coordCompletedTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: List of Assigned Inquiries -->
+                    <div class="col-12 col-lg-4">
+                        <div class="chart-container">
+                            <h4><i class="fas fa-list me-2"></i>Assigned Inquiries</h4>
+                            <div id="coordAssignedList" style="overflow-y:auto; flex:1; min-height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- KPI Cards -->
-            <div class="row g-3 mb-4">
+            <div id="defaultKpiRow" class="row g-3 mb-4">
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card kpi-card">
                         <div class="card-body">
@@ -319,7 +374,7 @@
             </div>
 
             <!-- Chart Section -->
-            <div class="row g-3">
+            <div id="defaultChartsRow" class="row g-3">
                 <div class="col-12 col-lg-6">
                     <div class="chart-container">
                         <h4><i class="fas fa-chart-pie me-2"></i>Inquiries by Status</h4>
@@ -335,7 +390,7 @@
             </div>
 
             <!-- Recent Activity Section -->
-            <div class="row g-3 mt-3">
+            <div id="defaultRecentRow" class="row g-3 mt-3">
                 <div class="col-12 col-lg-6">
                     <div class="chart-container">
                         <h4><i class="fas fa-clock me-2"></i>Recent Inquiries</h4>
@@ -369,7 +424,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔍 DEBUG: Starting coordinator visibility script...');
             
-            // Load dashboard data on page load
+            // Role-based dashboard init (head + coordinator handled; head dashboard hidden)
+            initCoordinatorRoleDashboard();
+
+            // Load default admin dashboard data on page load (will be hidden if coordinator/head)
             loadDashboardData();
             
             // Function to show coordinator items (for non-coordinators)
@@ -558,6 +616,139 @@
                     }
                 }
             });
+        }
+
+        // ===== COORDINATOR DASHBOARD (INTENDED) =====
+        function showElement(el) {
+            if (!el) return;
+            el.style.display = 'block';
+            void el.offsetHeight;
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+        }
+
+        function hideElement(el) {
+            if (!el || el.style.display === 'none') return;
+            el.style.opacity = '0';
+            setTimeout(() => { el.style.display = 'none'; }, 300);
+        }
+
+        async function initCoordinatorRoleDashboard() {
+            try {
+                const profileRes = await fetch('/api/profile', { credentials: 'include' });
+                if (!profileRes.ok) return;
+                const profile = await profileRes.json();
+                const role = (profile?.role_name || '').toLowerCase();
+                const isCoordinator = role === 'sales_marketing_coordinator';
+                const isHead = role === 'sales_marketing_head';
+
+                if (isCoordinator || isHead) {
+                    // Hide default admin sections
+                    hideElement(document.getElementById('defaultKpiRow'));
+                    hideElement(document.getElementById('defaultChartsRow'));
+                    hideElement(document.getElementById('defaultRecentRow'));
+
+                    // Show coordinator dashboard (head dashboard intentionally hidden per request)
+                    showElement(document.getElementById('coordinatorTitle'));
+                    showElement(document.getElementById('coordinatorDashboard'));
+
+                    // Load coordinator data
+                    updateCoordinatorKpis();
+                    loadCoordinatorAssignedList();
+                    renderCoordinatorCompletedTrend();
+
+                    // Periodic refresh
+                    setInterval(() => {
+                        updateCoordinatorKpis();
+                        loadCoordinatorAssignedList();
+                        renderCoordinatorCompletedTrend();
+                    }, 60 * 1000);
+                }
+            } catch (e) {
+                console.error('Error initializing coordinator dashboard:', e);
+            }
+        }
+
+        async function updateCoordinatorKpis() {
+            try {
+                const res = await fetch('/crm/dashboard/coordinator/kpis', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch KPIs');
+                const data = await res.json();
+                document.getElementById('coordTotalAssigned').textContent = data.totalAssigned ?? 0;
+                document.getElementById('coordNewAssignedToday').textContent = data.newAssignedToday ?? 0;
+            } catch (e) {
+                console.error('Error updating coordinator KPIs:', e);
+            }
+        }
+
+        async function loadCoordinatorAssignedList() {
+            const container = document.getElementById('coordAssignedList');
+            if (!container) return;
+            try {
+                const res = await fetch('/crm/dashboard/coordinator/assigned-list?limit=10', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch assigned list');
+                const json = await res.json();
+                const rows = Array.isArray(json.data) ? json.data : [];
+                if (rows.length === 0) {
+                    container.innerHTML = '<p class="text-muted text-center">No assigned inquiries</p>';
+                    return;
+                }
+                container.innerHTML = rows.map((r, idx) => `
+                    <div class="mb-3 p-3 bg-light rounded" style="border-left: 4px solid #0d6efd">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${escapeHtml(r.full_name || 'Unknown')}</h6>
+                                <p class="text-muted mb-1" style="font-size: 0.9rem;"><i class="fas fa-envelope"></i> ${escapeHtml(r.email || '')}</p>
+                            </div>
+                            <span class="badge bg-primary">Assigned</span>
+                        </div>
+                        <p class="text-muted mb-0" style="font-size: 0.8rem;"><i class="fas fa-clock"></i> ${escapeHtml(r.submitted_at || '')}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading coordinator assigned list:', e);
+                container.innerHTML = '<p class="text-muted text-center">Failed to load assigned inquiries</p>';
+            }
+        }
+
+        let coordCompletedTrendChart;
+        async function renderCoordinatorCompletedTrend() {
+            try {
+                const res = await fetch('/crm/dashboard/coordinator/completed-trend?days=14', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch trend');
+                const json = await res.json();
+                const rows = Array.isArray(json.data) ? json.data : [];
+                const labels = rows.map(r => r.day);
+                const data = rows.map(r => r.total);
+
+                const ctx = document.getElementById('coordCompletedTrendChart');
+                if (!ctx) return;
+                if (coordCompletedTrendChart) coordCompletedTrendChart.destroy();
+                coordCompletedTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Completed Inquiries',
+                            data,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13,110,253,0.15)',
+                            tension: 0.25,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
+                            x: { title: { display: true, text: 'Date' } }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error rendering coordinator trend:', e);
+            }
         }
 
         // Load Recent Inquiries

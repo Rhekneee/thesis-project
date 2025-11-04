@@ -130,6 +130,60 @@ const ManufacturingController = {
       return res.status(500).json({ success: false, error: 'Failed to fetch dashboard KPIs' });
     }
   },
+
+  // ===== FOREMAN DASHBOARD ENDPOINTS (INTENDED) =====
+  // INTENDED: Total projects by foreman_code (employee_id)
+  getForemanProjectCount: async (req, res) => {
+    try {
+      const foremanCode = req.query.foremanCode || req.session?.user?.employee_id;
+      if (!foremanCode) return res.status(400).json({ success: false, error: 'foremanCode is required' });
+      const total = await ManufacturingModel.getForemanProjectCount(foremanCode);
+      return res.json({ success: true, total });
+    } catch (error) {
+      console.error('INTENDED: Error in getForemanProjectCount:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch foreman project count' });
+    }
+  },
+
+  // INTENDED: Total construction workers for foreman projects
+  getForemanWorkersCount: async (req, res) => {
+    try {
+      const foremanCode = req.query.foremanCode || req.session?.user?.employee_id;
+      if (!foremanCode) return res.status(400).json({ success: false, error: 'foremanCode is required' });
+      const total = await ManufacturingModel.getForemanWorkersCount(foremanCode);
+      return res.json({ success: true, total });
+    } catch (error) {
+      console.error('INTENDED: Error in getForemanWorkersCount:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch foreman workers count' });
+    }
+  },
+
+  // INTENDED: Recent planning projects (limit 5)
+  getForemanPlanningProjects: async (req, res) => {
+    try {
+      const foremanCode = req.query.foremanCode || req.session?.user?.employee_id;
+      if (!foremanCode) return res.status(400).json({ success: false, error: 'foremanCode is required' });
+      const limit = parseInt(req.query.limit) || 5;
+      const rows = await ManufacturingModel.getForemanPlanningProjects(foremanCode, limit);
+      return res.json({ success: true, data: rows });
+    } catch (error) {
+      console.error('INTENDED: Error in getForemanPlanningProjects:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch planning projects' });
+    }
+  },
+
+  // INTENDED: Material usage trend (company vs owner) for foreman
+  getForemanMaterialUsageTrend: async (req, res) => {
+    try {
+      const foremanCode = req.query.foremanCode || req.session?.user?.employee_id;
+      if (!foremanCode) return res.status(400).json({ success: false, error: 'foremanCode is required' });
+      const trend = await ManufacturingModel.getForemanMaterialUsageTrend(foremanCode);
+      return res.json({ success: true, data: trend });
+    } catch (error) {
+      console.error('INTENDED: Error in getForemanMaterialUsageTrend:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch material usage trend' });
+    }
+  },
   createProject: async (req, res) => {
     try {
       const {

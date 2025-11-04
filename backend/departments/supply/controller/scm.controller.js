@@ -677,9 +677,16 @@ const SCMController = {
     // Get all inventory items
     getAllInventoryItems: async (req, res) => {
         try {
-            // Authentication check
-            if (!req.session?.user?.role_name === 'logistics') {
-                return res.status(403).json({ error: 'Forbidden: Logistics access required.' });
+            // Authentication check - allow logistics, procurement, and supply chain staff
+            const roleLower = (req.session?.user?.role_name || '').toLowerCase();
+            const isLogistics = req.session?.user?.role_name === 'logistics';
+            const isProcurement = roleLower === 'procurement staff' || roleLower === 'procurement_staff' || roleLower === 'procurement';
+            const isSupplyChain = roleLower === 'supply chain staff' || roleLower === 'supply_chain_staff' || roleLower === 'supply chain' || roleLower === 'supply_chain';
+            const isDeveloper = req.session?.user?.role_id === 1;
+            const isAdmin = [1,26].includes(req.session?.user?.role_id);
+            
+            if (!isLogistics && !isProcurement && !isSupplyChain && !isDeveloper && !isAdmin) {
+                return res.status(403).json({ error: 'Forbidden: Logistics, Procurement, or Supply Chain access required.' });
             }
 
             const items = await SCMModel.getAllInventoryItems();
@@ -1187,6 +1194,7 @@ const SCMController = {
             const roleLower = (u.role_name || '').toLowerCase();
             const allowed = (u.role_name === 'logistics') || 
                            (roleLower === 'supply chain staff' || roleLower === 'supply_chain_staff' || roleLower === 'supply chain' || roleLower === 'supply_chain') ||
+                           (roleLower === 'procurement staff' || roleLower === 'procurement_staff' || roleLower === 'procurement') ||
                            (u.role_name === 'manufacturing') || 
                            (u.role_name === 'general_foreman') || 
                            [1,26].includes(u.role_id);
@@ -2207,6 +2215,86 @@ const SCMController = {
                 success: false,
                 error: 'Failed to update material release status' 
             });
+        }
+    },
+
+    // ===== PROCUREMENT DASHBOARD METHODS =====
+    // Get materials count by category
+    getMaterialsCountByCategory: async (req, res) => {
+        try {
+            const counts = await SCMModel.getMaterialsCountByCategory();
+            res.json({ success: true, data: counts });
+        } catch (error) {
+            console.error('Error in getMaterialsCountByCategory:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch materials count by category' });
+        }
+    },
+
+    // Get pending purchase orders with status "Out for Delivery"
+    getPendingPurchaseOrdersOutForDelivery: async (req, res) => {
+        try {
+            const orders = await SCMModel.getPendingPurchaseOrdersOutForDelivery();
+            res.json({ success: true, data: orders });
+        } catch (error) {
+            console.error('Error in getPendingPurchaseOrdersOutForDelivery:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch pending purchase orders' });
+        }
+    },
+
+    // Get total purchase amount (sum of invoice_amount where status = 'Received')
+    getTotalPurchaseAmount: async (req, res) => {
+        try {
+            const total = await SCMModel.getTotalPurchaseAmount();
+            res.json({ success: true, total });
+        } catch (error) {
+            console.error('Error in getTotalPurchaseAmount:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch total purchase amount' });
+        }
+    },
+
+    // ===== SUPPLY CHAIN DASHBOARD METHODS =====
+    // Get total number of suppliers
+    getTotalSuppliersCount: async (req, res) => {
+        try {
+            const count = await SCMModel.getTotalSuppliersCount();
+            res.json({ success: true, count });
+        } catch (error) {
+            console.error('Error in getTotalSuppliersCount:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch total suppliers count' });
+        }
+    },
+
+    // Get total purchases with "Received" status
+    getTotalReceivedPurchasesCount: async (req, res) => {
+        try {
+            const count = await SCMModel.getTotalReceivedPurchasesCount();
+            res.json({ success: true, count });
+        } catch (error) {
+            console.error('Error in getTotalReceivedPurchasesCount:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch total received purchases count' });
+        }
+    },
+
+    // Get top suppliers with most purchase orders received
+    getTopSuppliersByReceivedOrders: async (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit) || 5;
+            const suppliers = await SCMModel.getTopSuppliersByReceivedOrders(limit);
+            res.json({ success: true, data: suppliers });
+        } catch (error) {
+            console.error('Error in getTopSuppliersByReceivedOrders:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch top suppliers' });
+        }
+    },
+
+    // Get product purchases per category trend (for received purchases)
+    getPurchasesPerCategoryTrend: async (req, res) => {
+        try {
+            const trends = await SCMModel.getPurchasesPerCategoryTrend();
+            res.json({ success: true, data: trends });
+        } catch (error) {
+            console.error('Error in getPurchasesPerCategoryTrend:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch purchases per category trend' });
         }
     }
 };

@@ -2735,6 +2735,75 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },
 
+    // Recruitment Dashboard Controllers
+    // Get new hires count
+    getRecruitmentNewHires: async (req, res) => {
+        try {
+            const count = await HRModel.getNewHiresCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting recruitment new hires:', error);
+            res.status(500).json({ error: 'Failed to fetch new hires count' });
+        }
+    },
+
+    // Get pending applications count
+    getRecruitmentPendingApplications: async (req, res) => {
+        try {
+            const count = await HRModel.getPendingApplicationsCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting pending applications:', error);
+            res.status(500).json({ error: 'Failed to fetch pending applications count' });
+        }
+    },
+
+    // Get job posting trend
+    getRecruitmentJobPostingTrend: async (req, res) => {
+        try {
+            const period = req.query.period || 'monthly';
+            const trendData = await HRModel.getJobPostingTrend(period);
+            res.json(trendData);
+        } catch (error) {
+            console.error('Error getting job posting trend:', error);
+            res.status(500).json({ error: 'Failed to fetch job posting trend' });
+        }
+    },
+
+    // Payroll Dashboard Controllers
+    // Get payroll approved count
+    getPayrollApprovedCount: async (req, res) => {
+        try {
+            const count = await HRModel.getPayrollApprovedCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting payroll approved count:', error);
+            res.status(500).json({ error: 'Failed to fetch payroll approved count' });
+        }
+    },
+
+    // Get total payroll amount (sum of net_salary from released payrolls)
+    getPayrollTotalDeductions: async (req, res) => {
+        try {
+            const total = await HRModel.getTotalDeductions();
+            res.json({ total });
+        } catch (error) {
+            console.error('Error getting total payroll amount:', error);
+            res.status(500).json({ error: 'Failed to fetch total payroll amount' });
+        }
+    },
+
+    // Get department payroll distribution
+    getPayrollDepartmentDistribution: async (req, res) => {
+        try {
+            const data = await HRModel.getDepartmentPayrollDistribution();
+            res.json({ data });
+        } catch (error) {
+            console.error('Error getting department payroll distribution:', error);
+            res.status(500).json({ error: 'Failed to fetch department payroll distribution' });
+        }
+    },
+
     // Pre-onboarding Documents Controllers
     getPreOnboardingDocuments: async (req, res) => {
         try {

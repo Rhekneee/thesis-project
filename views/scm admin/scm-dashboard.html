@@ -14,6 +14,17 @@
 
    #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
 
+   /* Smooth transitions for dashboard sections */
+   #logisticsDashboard, #procurementDashboard, #supplyChainDashboard {
+     transition: opacity 0.3s ease-in-out;
+   }
+
+   /* Prevent flicker - ensure elements are hidden initially */
+   #logisticsDashboard, #procurementDashboard, #supplyChainDashboard {
+     display: none;
+     opacity: 0;
+   }
+
    /* Card styles */
    .card-container {
      display: grid;
@@ -279,6 +290,8 @@
 
   <div id="content">
 
+    <!-- LOGISTICS DASHBOARD SECTION -->
+    <div id="logisticsDashboard" class="dashboard-section" style="display: none; opacity: 0;">
     <div class="card-container">
       <div class="total-card">
         <h3>Total Stock</h3>
@@ -323,8 +336,6 @@
 
 
 
-
-
     <div class="low-inventory-card">
       <h2 class="low-inventory-title">Top Suppliers<i style="margin-left: 10px;" class="bi bi-star-fill low-inventory-icon"></i></h2>
       <table class="low-inventory-table">
@@ -362,18 +373,95 @@
       <div class="chart-container">
         <canvas id="monthlyPurchasesChart"></canvas>
       </div>
+      </div>
     </div>
   </div>
     
-    
-    
+    <!-- PROCUREMENT DASHBOARD SECTION -->
+    <div id="procurementDashboard" class="dashboard-section" style="display: none; opacity: 0;">
+      <div class="card-container">
+        <div class="total-card">
+          <h3>Total Stock</h3>
+          <h1 id="procurementTotalStock">0 Units</h1>
+  </div>
 
-    
-    
-    
-    
+        <div class="total-card">
+          <h3>Total Purchase Amount</h3>
+          <h1 id="procurementTotalPurchaseAmount">₱0</h1>
+        </div>
+      </div>
 
-    
+      <div class="dashboard-row" style="margin-top: 20px;">
+        <!-- Left Column - Larger: Product Count per Category -->
+        <div class="low-inventory-card" style="grid-column: 1 / span 2;">
+          <h2 class="low-inventory-title">Product Count per Category</h2>
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="procurementCategoryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right Column - Smaller: Pending Purchase Orders -->
+        <div class="low-inventory-card">
+          <h2 class="low-inventory-title">Pending Purchase Orders</h2>
+          <h3 style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Out for Delivery</h3>
+          <table class="low-inventory-table">
+            <thead>
+              <tr>
+                <th>Supplier</th>
+                <th>Material</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody id="procurementPendingOrdersBody">
+              <!-- Pending orders will be inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPLY CHAIN DASHBOARD SECTION -->
+    <div id="supplyChainDashboard" class="dashboard-section" style="display: none; opacity: 0;">
+      <div class="card-container">
+        <div class="total-card">
+          <h3>Total Number of Suppliers</h3>
+          <h1 id="supplyChainTotalSuppliers">0</h1>
+        </div>
+      
+        <div class="total-card">
+          <h3>Total Purchases Received</h3>
+          <h1 id="supplyChainTotalReceivedPurchases">0</h1>
+        </div>
+      </div>
+
+      <div class="dashboard-row" style="margin-top: 20px;">
+        <!-- Left Column - Larger: Product Purchases per Category Trend -->
+        <div class="low-inventory-card" style="grid-column: 1 / span 2;">
+          <h2 class="low-inventory-title">Product Purchases per Category Trend</h2>
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="supplyChainCategoryTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right Column - Smaller: Top Suppliers -->
+        <div class="low-inventory-card">
+          <h2 class="low-inventory-title">Top Suppliers</h2>
+          <h3 style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Most Purchase Orders Received</h3>
+          <table class="low-inventory-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Supplier</th>
+                <th>Orders</th>
+              </tr>
+            </thead>
+            <tbody id="supplyChainTopSuppliersBody">
+              <!-- Top suppliers will be inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
 
@@ -382,6 +470,345 @@
     let lowStockItems = [];
     let lowStockCurrentPage = 1;
     const lowStockItemsPerPage = 3;
+    
+    // Role detection and dashboard switching
+    let currentUserRole = null;
+
+    // Detect user role and show appropriate dashboard
+    async function detectUserRole() {
+        try {
+            const response = await fetch('/scm/current-user', { credentials: 'include' });
+            if (response.ok) {
+                const user = await response.json();
+                currentUserRole = user.role_name ? user.role_name.toLowerCase() : null;
+                
+                // Show appropriate dashboard based on role
+                showDashboardByRole();
+            }
+        } catch (error) {
+            console.error('Error detecting user role:', error);
+            // Default to logistics dashboard if detection fails
+            currentUserRole = 'logistics';
+            showDashboardByRole();
+        }
+    }
+
+    function showDashboardByRole() {
+        // Get dashboard elements
+        const logisticsDashboard = document.getElementById('logisticsDashboard');
+        const procurementDashboard = document.getElementById('procurementDashboard');
+        const supplyChainDashboard = document.getElementById('supplyChainDashboard');
+
+        // Helper function to smoothly show an element
+        function showElement(element) {
+            if (!element) return;
+            // Set display first, then fade in
+            element.style.display = 'block';
+            // Force reflow to ensure display is applied
+            void element.offsetHeight;
+            // Fade in smoothly
+            requestAnimationFrame(() => {
+                element.style.opacity = '1';
+            });
+        }
+
+        // Helper function to smoothly hide an element
+        function hideElement(element) {
+            if (!element || element.style.display === 'none') return;
+            // Fade out first
+            element.style.opacity = '0';
+            // Wait for transition to complete before hiding
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 300);
+        }
+
+        // Hide all dashboards first
+        hideElement(logisticsDashboard);
+        hideElement(procurementDashboard);
+        hideElement(supplyChainDashboard);
+
+        // Show appropriate dashboard
+        if (currentUserRole === 'procurement staff' || currentUserRole === 'procurement_staff' || currentUserRole === 'procurement') {
+            showElement(procurementDashboard);
+            setTimeout(() => {
+                loadProcurementDashboard();
+            }, 350);
+        } else if (currentUserRole === 'supply chain staff' || currentUserRole === 'supply_chain_staff' || currentUserRole === 'supply chain' || currentUserRole === 'supply_chain') {
+            showElement(supplyChainDashboard);
+            setTimeout(() => {
+                loadSupplyChainDashboard();
+            }, 350);
+        } else {
+            // Default to logistics dashboard
+            showElement(logisticsDashboard);
+            setTimeout(() => {
+                loadDashboardData();
+            }, 350);
+        }
+    }
+
+    // Load procurement dashboard data
+    async function loadProcurementDashboard() {
+        try {
+            // Load total stock
+            const materialsResponse = await fetch('/scm/materials', { credentials: 'include' });
+            if (materialsResponse.ok) {
+                const materials = await materialsResponse.json();
+                const totalStock = materials.reduce((sum, m) => sum + parseFloat(m.quantity || 0), 0);
+                document.getElementById('procurementTotalStock').textContent = `${totalStock.toLocaleString()} Units`;
+            }
+
+            // Load total purchase amount
+            const purchaseAmountResponse = await fetch('/scm/dashboard/total-purchase-amount', { credentials: 'include' });
+            if (purchaseAmountResponse.ok) {
+                const data = await purchaseAmountResponse.json();
+                if (data.success) {
+                    document.getElementById('procurementTotalPurchaseAmount').textContent = `₱${Number(data.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                }
+            }
+
+            // Load materials count by category
+            const categoryResponse = await fetch('/scm/dashboard/materials-by-category', { credentials: 'include' });
+            if (categoryResponse.ok) {
+                const categoryData = await categoryResponse.json();
+                if (categoryData.success) {
+                    initializeProcurementCategoryChart(categoryData.data);
+                }
+            }
+
+            // Load pending purchase orders
+            const ordersResponse = await fetch('/scm/dashboard/pending-orders-out-for-delivery', { credentials: 'include' });
+            if (ordersResponse.ok) {
+                const ordersData = await ordersResponse.json();
+                if (ordersData.success) {
+                    renderProcurementPendingOrders(ordersData.data);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading procurement dashboard:', error);
+        }
+    }
+
+    // Render pending purchase orders table
+    function renderProcurementPendingOrders(orders) {
+        const tbody = document.getElementById('procurementPendingOrdersBody');
+        tbody.innerHTML = '';
+        
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No pending orders</td></tr>';
+            return;
+        }
+
+        orders.forEach(order => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${order.supplier_name || 'N/A'}</td>
+                <td>${order.material_name || 'N/A'}</td>
+                <td>${order.quantity || 0} ${order.unit || ''}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Initialize procurement category chart
+    function initializeProcurementCategoryChart(categoryData) {
+        if (typeof Chart === 'undefined') {
+            setTimeout(() => initializeProcurementCategoryChart(categoryData), 500);
+            return;
+        }
+
+        const ctx = document.getElementById('procurementCategoryChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (window.procurementCategoryChartInstance) {
+            window.procurementCategoryChartInstance.destroy();
+        }
+
+        // Prepare data
+        const labels = categoryData.map(item => item.category || 'Unknown');
+        const counts = categoryData.map(item => item.count || 0);
+
+        window.procurementCategoryChartInstance = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Product Count',
+                    data: counts,
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107'],
+                    borderColor: ['#0056b3', '#1e7e34', '#e0a800'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed.y} products`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Load supply chain dashboard data
+    async function loadSupplyChainDashboard() {
+        try {
+            // Load total suppliers count
+            const suppliersCountResponse = await fetch('/scm/dashboard/total-suppliers-count', { credentials: 'include' });
+            if (suppliersCountResponse.ok) {
+                const data = await suppliersCountResponse.json();
+                if (data.success) {
+                    document.getElementById('supplyChainTotalSuppliers').textContent = data.count || 0;
+                }
+            }
+
+            // Load total received purchases count
+            const receivedPurchasesResponse = await fetch('/scm/dashboard/total-received-purchases-count', { credentials: 'include' });
+            if (receivedPurchasesResponse.ok) {
+                const data = await receivedPurchasesResponse.json();
+                if (data.success) {
+                    document.getElementById('supplyChainTotalReceivedPurchases').textContent = data.count || 0;
+                }
+            }
+
+            // Load top suppliers
+            const topSuppliersResponse = await fetch('/scm/dashboard/top-suppliers-by-received-orders?limit=5', { credentials: 'include' });
+            if (topSuppliersResponse.ok) {
+                const data = await topSuppliersResponse.json();
+                if (data.success) {
+                    renderSupplyChainTopSuppliers(data.data);
+                }
+            }
+
+            // Load purchases per category trend
+            const categoryTrendResponse = await fetch('/scm/dashboard/purchases-per-category-trend', { credentials: 'include' });
+            if (categoryTrendResponse.ok) {
+                const data = await categoryTrendResponse.json();
+                if (data.success) {
+                    initializeSupplyChainCategoryTrendChart(data.data);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading supply chain dashboard:', error);
+        }
+    }
+
+    // Render top suppliers table for supply chain dashboard
+    function renderSupplyChainTopSuppliers(suppliers) {
+        const tbody = document.getElementById('supplyChainTopSuppliersBody');
+        tbody.innerHTML = '';
+        
+        if (!suppliers || suppliers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No suppliers found</td></tr>';
+            return;
+        }
+
+        suppliers.forEach((supplier, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>#${index + 1}</strong></td>
+                <td>${supplier.supplier_name || 'N/A'}</td>
+                <td>${supplier.total_received_orders || 0}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Initialize supply chain category trend chart
+    function initializeSupplyChainCategoryTrendChart(trendData) {
+        if (typeof Chart === 'undefined') {
+            setTimeout(() => initializeSupplyChainCategoryTrendChart(trendData), 500);
+            return;
+        }
+
+        const ctx = document.getElementById('supplyChainCategoryTrendChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (window.supplyChainCategoryTrendChartInstance) {
+            window.supplyChainCategoryTrendChartInstance.destroy();
+        }
+
+        // Prepare data
+        const labels = trendData.map(item => item.category || 'Unknown');
+        const purchaseCounts = trendData.map(item => item.purchase_count || 0);
+
+        window.supplyChainCategoryTrendChartInstance = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Purchase Orders',
+                    data: purchaseCounts,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.15)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed.y} orders`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        },
+                        title: {
+                            display: true,
+                            text: 'Number of Purchase Orders'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Categories'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            autoSkip: true
+                        }
+                    }
+                }
+            }
+        });
+    }
     
     // Load dashboard data
     async function loadDashboardData() {
@@ -590,8 +1017,6 @@
         };
         container.appendChild(nextBtn);
       }
-   
-    
 
 
       /* top supplier */
@@ -662,8 +1087,6 @@
     };
     container.appendChild(nextBtn);
   }
-
-
       
       
 
@@ -675,8 +1098,8 @@
 <script>
     // Initialize pie chart after Chart.js is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Load dashboard data first
-        loadDashboardData();
+        // Detect user role first
+        detectUserRole();
         
         // Wait a bit for Chart.js to be available, then initialize
         const initChart = () => {

@@ -110,6 +110,100 @@ const ManufacturingModel = {
       throw error;
     }
   },
+  
+  // ===== FOREMAN DASHBOARD METHODS (INTENDED) =====
+  // INTENDED: Get total projects for a foreman by foreman_code (employee_id)
+  getForemanProjectCount: async (foremanCode) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT COUNT(*) AS total
+        FROM projects
+        WHERE foreman_code = ?
+      `, [foremanCode]);
+      return Number(rows?.[0]?.total || 0);
+    } catch (error) {
+      console.error('INTENDED: Error getting foreman project count:', error);
+      throw error;
+    }
+  },
+
+  // INTENDED: Get total construction workers assigned to projects handled by the foreman
+  getForemanWorkersCount: async (foremanCode) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT COUNT(DISTINCT cw.id) AS total
+        FROM projects pr
+        LEFT JOIN construction_workers cw ON cw.project_id = pr.id
+        WHERE pr.foreman_code = ?
+      `, [foremanCode]);
+      return Number(rows?.[0]?.total || 0);
+    } catch (error) {
+      console.error('INTENDED: Error getting foreman workers count:', error);
+      throw error;
+    }
+  },
+
+  // INTENDED: Get recent active projects with status 'planning' for the foreman (limit 5)
+  getForemanPlanningProjects: async (foremanCode, limit = 5) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          pr.id, 
+          pr.project_name, 
+          pr.client_name,
+          pr.location,
+          pr.status, 
+          DATE_FORMAT(pr.start_date, '%Y-%m-%d') AS start_date,
+          DATE_FORMAT(pr.created_at, '%Y-%m-%d %H:%i:%s') AS created_at
+        FROM projects pr
+        WHERE pr.foreman_code = ? AND LOWER(pr.status) = 'planning'
+        ORDER BY pr.created_at DESC
+        LIMIT ?
+      `, [foremanCode, Number(limit)]);
+      return rows;
+    } catch (error) {
+      console.error('INTENDED: Error getting foreman planning projects:', error);
+      throw error;
+    }
+  },
+
+  // INTENDED: Material usage split for a foreman's projects.
+  // Definition: company_supply if there is any daily_logs.total_material_cost > 0 for the project.
+  //             owner_supply counts delivered owners_supply entries for the project (via proposals/contracts linkage may vary).
+  // Best-effort generic implementation across typical schema.
+  getForemanMaterialUsageTrend: async (foremanCode) => {
+    try {
+      // Company supply: count projects with any non-zero material cost in daily_logs
+      const [companyRows] = await db.query(`
+        SELECT COUNT(DISTINCT dl.project_id) AS company_supply
+        FROM daily_logs dl
+        INNER JOIN projects p ON p.id = dl.project_id
+        WHERE p.foreman_code = ? AND COALESCE(dl.total_material_cost, 0) > 0
+      `, [foremanCode]);
+
+      // Owner supply: count delivered owners_supply entries associated to proposals that became projects for this foreman
+      // Assumes projects.project_code encodes contract_id: PRJ-YYYY-#### and contracts.proposal_id maps to owners_supply.proposal_id
+      const [ownerRows] = await db.query(`
+        SELECT COUNT(os.supply_id) AS owner_supply
+        FROM owners_supply os
+        WHERE os.proposal_id IN (
+          SELECT c.proposal_id
+          FROM projects p
+          LEFT JOIN contracts c 
+            ON CAST(SUBSTRING_INDEX(p.project_code, '-', -1) AS UNSIGNED) = c.contract_id
+          WHERE p.foreman_code = ?
+        )
+        AND LOWER(COALESCE(os.status, 'delivered')) = 'delivered'
+      `, [foremanCode]);
+
+      const company_supply = Number(companyRows?.[0]?.company_supply || 0);
+      const owner_supply = Number(ownerRows?.[0]?.owner_supply || 0);
+      return { company_supply, owner_supply };
+    } catch (error) {
+      console.error('INTENDED: Error getting foreman material usage trend:', error);
+      throw error;
+    }
+  },
   // Store proposal
   storeProject: async (data) => {
     try {

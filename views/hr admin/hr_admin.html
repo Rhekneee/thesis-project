@@ -1210,6 +1210,18 @@
             transform: translateX(0) !important;
         }
 
+        /* Smooth transitions for role-based content */
+        #adminTitle, #recruitmentTitle, #payrollTitle,
+        #adminContent, #recruitmentContent, #payrollContent {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Prevent flicker - ensure elements are hidden initially */
+        #adminTitle, #recruitmentTitle, #payrollTitle,
+        #adminContent, #recruitmentContent, #payrollContent {
+            display: none;
+            opacity: 0;
+        }
 
     </style>
     
@@ -1351,9 +1363,14 @@
             </button> -->
 
             <!-- ========== HR Dashboard Content ========== -->
-            <h2>Admin HR Dashboard</h2>
+            <!-- Role-specific titles -->
+            <h2 id="adminTitle">Admin HR Dashboard</h2>
+            <h2 id="recruitmentTitle">Recruitment Staff Dashboard</h2>
+            <h2 id="payrollTitle">Payroll Officer Dashboard</h2>
             
             <div class="container-fluid">
+                <!-- Admin-only content (hidden for Recruitment staff and Payroll Officer) -->
+                <div id="adminContent">
                 <!-- KPI Cards -->
                 <div class="row">
                     <div class="col-md-3">
@@ -1483,6 +1500,124 @@
                     <div class="col-md-12">
                         <h4>Employee Retention Rate</h4>
                         <canvas id="employeeRetentionChart"></canvas>
+                    </div>
+                </div>
+                </div>
+                <!-- End Admin-only content -->
+                
+                <!-- Role-specific content containers -->
+                <div id="recruitmentContent">
+                    <div class="container-fluid">
+                        <!-- KPI Cards -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card kpi-card">
+                                    <div class="card-body text-center">
+                                        <h5>New Hires</h5>
+                                        <h2 id="recruitmentNewHires">-</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card kpi-card">
+                                    <div class="card-body text-center">
+                                        <h5>Pending Applications</h5>
+                                        <h2 id="recruitmentPendingApplications">-</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Two Column Layout: Left (Job Posting Trend) and Right (Calendar) -->
+                        <div class="row" style="margin: 16px 0;">
+                            <!-- Left Column - Job Posting Trend (Larger) -->
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <h5 class="mb-0">Job Posting Trend</h5>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <label for="jobPostingPeriodSelect" class="me-2 mb-0">Period</label>
+                                                <select id="jobPostingPeriodSelect" class="form-select form-select-sm" style="width:auto;">
+                                                    <option value="monthly" selected>Monthly</option>
+                                                    <option value="quarterly">Quarterly</option>
+                                                    <option value="yearly">Yearly</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <canvas id="jobPostingTrendChart" height="140"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column - Calendar (Smaller) -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="recruitmentCalendarNavPrev" title="Previous Month">&lt;</button>
+                                            <h6 class="mb-0" id="recruitmentCalendarTitle">Calendar</h6>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="recruitmentCalendarNavNext" title="Next Month">&gt;</button>
+                                        </div>
+                                        <div id="recruitmentCalendarUnified"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="payrollContent">
+                    <div class="container-fluid">
+                        <!-- KPI Cards -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card kpi-card">
+                                    <div class="card-body text-center">
+                                        <h5>Payroll Approved</h5>
+                                        <h2 id="payrollApprovedCount">-</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card kpi-card">
+                                    <div class="card-body text-center">
+                                        <h5>Total Payroll Amount</h5>
+                                        <h2 id="payrollTotalDeductions">-</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Two Column Layout: Left (Department Payroll) and Right (Calendar) -->
+                        <div class="row" style="margin: 16px 0;">
+                            <!-- Left Column - Department Percentage Payroll (Larger) -->
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="mb-3">Department Payroll Distribution</h5>
+                                        <div style="max-width: 100%; max-height: 400px; margin: 0 auto;">
+                                            <canvas id="departmentPayrollChart"></canvas>
+                                        </div>
+                                        <div id="departmentPayrollLegend" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column - Calendar (Smaller) -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="payrollCalendarNavPrev" title="Previous Month">&lt;</button>
+                                            <h6 class="mb-0" id="payrollCalendarTitle">Calendar</h6>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="payrollCalendarNavNext" title="Next Month">&gt;</button>
+                                        </div>
+                                        <div id="payrollCalendarUnified"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2120,6 +2255,649 @@
         }
 
         // Role-based visibility is now handled by hr_role_visibility.js
+
+        // Function to handle role-based dashboard content visibility
+        async function initRoleBasedDashboard() {
+            try {
+                const response = await fetch('/hr/check-session', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch session');
+                }
+
+                const data = await response.json();
+                const roleName = data?.user?.role_name || '';
+                const roleLower = roleName.toLowerCase();
+                const employeeId = data?.user?.employee_id || '';
+
+                // Check if role is office_administrator (admin)
+                const isAdmin = roleLower === 'office_administrator' || 
+                               roleLower === 'office administrator';
+
+                // Check if role is Recruitment Staff
+                const isRecruitment = (roleLower === 'recruitment staff' || 
+                                      roleLower === 'recruitment_staff') &&
+                                     !employeeId.includes('101') && // Exclude admin employee IDs
+                                     !isAdmin; // Exclude admin
+
+                // Check if role is Payroll Officer
+                const isPayrollOfficer = (roleLower === 'payroll officer' || 
+                                         roleLower === 'payroll_officer') &&
+                                        !employeeId.includes('101') && // Exclude admin employee IDs
+                                        !isRecruitment && // Exclude recruitment staff
+                                        !isAdmin; // Exclude admin
+
+                // Get title elements
+                const adminTitle = document.getElementById('adminTitle');
+                const recruitmentTitle = document.getElementById('recruitmentTitle');
+                const payrollTitle = document.getElementById('payrollTitle');
+
+                // Get content containers
+                const adminContent = document.getElementById('adminContent');
+                const recruitmentContent = document.getElementById('recruitmentContent');
+                const payrollContent = document.getElementById('payrollContent');
+
+                // Helper function to smoothly show an element
+                function showElement(element) {
+                    if (!element) return;
+                    // Set display first, then fade in
+                    element.style.display = 'block';
+                    // Force reflow to ensure display is applied
+                    void element.offsetHeight;
+                    // Fade in smoothly
+                    requestAnimationFrame(() => {
+                        element.style.opacity = '1';
+                    });
+                }
+
+                // Helper function to smoothly hide an element
+                function hideElement(element) {
+                    if (!element || element.style.display === 'none') return;
+                    // Fade out first
+                    element.style.opacity = '0';
+                    // Wait for transition to complete before hiding
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 300);
+                }
+
+                // Show appropriate title and content based on role immediately
+                if (isRecruitment) {
+                    // Show recruitment staff view
+                    showElement(recruitmentTitle);
+                    showElement(recruitmentContent);
+                    // Hide others
+                    hideElement(adminTitle);
+                    hideElement(adminContent);
+                    hideElement(payrollTitle);
+                    hideElement(payrollContent);
+                    // Initialize recruitment dashboard after showing content
+                    setTimeout(() => {
+                        initRecruitmentDashboard();
+                    }, 350);
+                } else if (isPayrollOfficer) {
+                    // Show payroll officer view
+                    showElement(payrollTitle);
+                    showElement(payrollContent);
+                    // Hide others
+                    hideElement(adminTitle);
+                    hideElement(adminContent);
+                    hideElement(recruitmentTitle);
+                    hideElement(recruitmentContent);
+                    // Initialize payroll dashboard after showing content
+                    setTimeout(() => {
+                        initPayrollDashboard();
+                    }, 350);
+                } else {
+                    // Default to admin view (office_administrator or any other role)
+                    showElement(adminTitle);
+                    showElement(adminContent);
+                    // Hide others
+                    hideElement(recruitmentTitle);
+                    hideElement(recruitmentContent);
+                    hideElement(payrollTitle);
+                    hideElement(payrollContent);
+                }
+            } catch (error) {
+                console.error('Error initializing role-based dashboard:', error);
+                // Default to admin view on error
+                const adminTitle = document.getElementById('adminTitle');
+                const adminContent = document.getElementById('adminContent');
+                if (adminTitle) {
+                    adminTitle.style.display = 'block';
+                    adminTitle.style.opacity = '1';
+                }
+                if (adminContent) {
+                    adminContent.style.display = 'block';
+                    adminContent.style.opacity = '1';
+                }
+            }
+        }
+
+        // Recruitment Dashboard Functions
+        let recruitmentCalendarYear = new Date().getFullYear();
+        let recruitmentCalendarMonth = new Date().getMonth();
+        let jobPostingTrendChart = null;
+
+        // Initialize Job Posting Trend Chart
+        function initJobPostingTrendChart() {
+            const canvas = document.getElementById('jobPostingTrendChart');
+            if (!canvas || jobPostingTrendChart) return;
+
+            jobPostingTrendChart = new Chart(canvas, {
+                type: 'line',
+                data: { 
+                    labels: [], 
+                    datasets: [{
+                        label: 'Submitted Applications',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0,123,255,0.15)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    plugins: { 
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { 
+                                precision: 0,
+                                stepSize: 1
+                            } 
+                        },
+                        x: { 
+                            ticks: { maxRotation: 45, autoSkip: true } 
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true
+                }
+            });
+        }
+
+        function renderRecruitmentCalendar() {
+            const container = document.getElementById('recruitmentCalendarUnified');
+            const title = document.getElementById('recruitmentCalendarTitle');
+            if (!container || !title) return;
+            
+            const first = new Date(recruitmentCalendarYear, recruitmentCalendarMonth, 1);
+            const last = new Date(recruitmentCalendarYear, recruitmentCalendarMonth + 1, 0);
+            const startDay = (first.getDay() + 6) % 7; // Monday as first
+            const daysInMonth = last.getDate();
+            
+            title.textContent = first.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+            
+            let html = '<table class="table table-sm table-bordered mb-0" style="font-size:12px; table-layout:fixed; width:100%;">';
+            const thStyle = 'padding:6px 8px; white-space:nowrap; text-align:center; font-size:11px;';
+            html += `<thead><tr>
+                <th style="${thStyle}">Mon</th>
+                <th style="${thStyle}">Tue</th>
+                <th style="${thStyle}">Wed</th>
+                <th style="${thStyle}">Thu</th>
+                <th style="${thStyle}">Fri</th>
+                <th style="${thStyle}">Sat</th>
+                <th style="${thStyle}">Sun</th>
+            </tr></thead><tbody><tr>`;
+            
+            const tdEmpty = '<td style="height:35px; padding:6px 8px;"></td>';
+            for (let i = 0; i < startDay; i++) html += tdEmpty;
+            
+            let day = 1;
+            let col = startDay;
+            const today = new Date();
+            const isTodayMonth = (recruitmentCalendarYear === today.getFullYear() && recruitmentCalendarMonth === today.getMonth());
+            const todayDate = today.getDate();
+            
+            while (day <= daysInMonth) {
+                const isToday = isTodayMonth && (day === todayDate);
+                const baseStyle = 'height:35px; padding:6px 8px; text-align:center; font-size:11px;';
+                const todayStyle = 'background:#d1e9ff; border:1px solid #90caf9; border-radius:4px; font-weight:700;';
+                html += `<td style="${baseStyle}${isToday ? todayStyle : ''}">${day}</td>`;
+                day++;
+                col++;
+                if (col === 7 && day <= daysInMonth) { 
+                    html += '</tr><tr>'; 
+                    col = 0; 
+                }
+            }
+            
+            if (col > 0 && col < 7) { 
+                for (let i = col; i < 7; i++) html += tdEmpty; 
+            }
+            html += '</tr></tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Calendar navigation handlers
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'recruitmentCalendarNavPrev') {
+                e.preventDefault();
+                recruitmentCalendarMonth -= 1;
+                if (recruitmentCalendarMonth < 0) { 
+                    recruitmentCalendarMonth = 11; 
+                    recruitmentCalendarYear -= 1; 
+                }
+                renderRecruitmentCalendar();
+            } else if (e.target && e.target.id === 'recruitmentCalendarNavNext') {
+                e.preventDefault();
+                recruitmentCalendarMonth += 1;
+                if (recruitmentCalendarMonth > 11) { 
+                    recruitmentCalendarMonth = 0; 
+                    recruitmentCalendarYear += 1; 
+                }
+                renderRecruitmentCalendar();
+            }
+        });
+
+        // Fetch recruitment KPIs
+        async function updateRecruitmentKPIs() {
+            try {
+                // Fetch new hires (accepted applications)
+                const newHiresRes = await fetch('/hr/recruitment/new-hires', { credentials: 'include' });
+                if (newHiresRes.ok) {
+                    const newHiresData = await newHiresRes.json();
+                    const newHiresEl = document.getElementById('recruitmentNewHires');
+                    if (newHiresEl) {
+                        newHiresEl.textContent = newHiresData.count || 0;
+                    }
+                } else {
+                    // Fallback: try using existing endpoint
+                    const fallbackRes = await fetch('/hr/dashboard-kpis', { credentials: 'include' });
+                    if (fallbackRes.ok) {
+                        const data = await fallbackRes.json();
+                        const newHiresEl = document.getElementById('recruitmentNewHires');
+                        if (newHiresEl) {
+                            newHiresEl.textContent = data.newHires || 0;
+                        }
+                    }
+                }
+
+                // Fetch pending applications
+                const pendingRes = await fetch('/hr/recruitment/pending-applications', { credentials: 'include' });
+                if (pendingRes.ok) {
+                    const pendingData = await pendingRes.json();
+                    const pendingEl = document.getElementById('recruitmentPendingApplications');
+                    if (pendingEl) {
+                        pendingEl.textContent = pendingData.count || 0;
+                    }
+                } else {
+                    // Fallback: try alternative endpoint
+                    const fallbackRes = await fetch('/hr/getApplicationsByStatus?status=Pending', { credentials: 'include' });
+                    if (fallbackRes.ok) {
+                        const data = await fallbackRes.json();
+                        const pendingEl = document.getElementById('recruitmentPendingApplications');
+                        if (pendingEl) {
+                            pendingEl.textContent = Array.isArray(data) ? data.length : 0;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating recruitment KPIs:', error);
+                // Set error state
+                const newHiresEl = document.getElementById('recruitmentNewHires');
+                const pendingEl = document.getElementById('recruitmentPendingApplications');
+                if (newHiresEl) newHiresEl.textContent = 'Error';
+                if (pendingEl) pendingEl.textContent = 'Error';
+            }
+        }
+
+        // Refresh job posting trend chart
+        async function refreshJobPostingTrend() {
+            const period = document.getElementById('jobPostingPeriodSelect').value;
+            let labels = [], data = [];
+
+            try {
+                const res = await fetch(`/hr/recruitment/job-posting-trend?period=${encodeURIComponent(period)}`, { 
+                    credentials: 'include' 
+                });
+                
+                if (res.ok) {
+                    const json = await res.json();
+                    if (Array.isArray(json.labels) && Array.isArray(json.values)) {
+                        labels = json.labels;
+                        data = json.values;
+                    }
+                }
+            } catch (e) {
+                console.debug('Job posting trend fetch error:', e);
+                // Fallback: generate sample data based on period
+                const now = new Date();
+                if (period === 'monthly') {
+                    // Last 12 months
+                    for (let i = 11; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        labels.push(d.toLocaleString(undefined, { month: 'short', year: 'numeric' }));
+                        data.push(Math.floor(Math.random() * 30) + 5); // Random between 5-35
+                    }
+                } else if (period === 'quarterly') {
+                    // Last 4 quarters
+                    const currentQuarter = Math.floor(now.getMonth() / 3);
+                    for (let i = 3; i >= 0; i--) {
+                        const quarter = (currentQuarter - i + 4) % 4;
+                        const year = quarter > currentQuarter ? now.getFullYear() - 1 : now.getFullYear();
+                        labels.push(`Q${quarter + 1} ${year}`);
+                        data.push(Math.floor(Math.random() * 100) + 20); // Random between 20-120
+                    }
+                } else {
+                    // Last 5 years
+                    for (let i = 4; i >= 0; i--) {
+                        const year = now.getFullYear() - i;
+                        labels.push(year.toString());
+                        data.push(Math.floor(Math.random() * 400) + 100); // Random between 100-500
+                    }
+                }
+            }
+
+            if (jobPostingTrendChart) {
+                jobPostingTrendChart.data.labels = labels;
+                jobPostingTrendChart.data.datasets[0].data = data;
+                jobPostingTrendChart.update();
+            }
+        }
+
+        // Event listener for period selector
+        document.addEventListener('DOMContentLoaded', function() {
+            const periodSelect = document.getElementById('jobPostingPeriodSelect');
+            if (periodSelect) {
+                periodSelect.addEventListener('change', refreshJobPostingTrend);
+            }
+        });
+
+        // Initialize recruitment dashboard when content is shown
+        function initRecruitmentDashboard() {
+            // Initialize chart first
+            initJobPostingTrendChart();
+            
+            // Then load data
+            updateRecruitmentKPIs();
+            refreshJobPostingTrend();
+            renderRecruitmentCalendar();
+            
+            // Set up periodic refresh
+            setInterval(updateRecruitmentKPIs, 5 * 60 * 1000); // Every 5 minutes
+        }
+
+        // Payroll Dashboard Functions
+        let payrollCalendarYear = new Date().getFullYear();
+        let payrollCalendarMonth = new Date().getMonth();
+        let departmentPayrollChart = null;
+
+        // Initialize Department Payroll Chart
+        function initDepartmentPayrollChart() {
+            const canvas = document.getElementById('departmentPayrollChart');
+            if (!canvas || departmentPayrollChart) return;
+
+            departmentPayrollChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Employees',
+                        data: [],
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#20c997', '#6610f2', '#e83e8c', '#fd7e14', '#343a40'],
+                        borderWidth: 1,
+                        borderColor: '#fff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed.y || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} employees (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            },
+                            title: {
+                                display: true,
+                                text: 'Number of Employees'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Departments'
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 10,
+                            bottom: 10,
+                            left: 10,
+                            right: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderPayrollCalendar() {
+            const container = document.getElementById('payrollCalendarUnified');
+            const title = document.getElementById('payrollCalendarTitle');
+            if (!container || !title) return;
+            
+            const first = new Date(payrollCalendarYear, payrollCalendarMonth, 1);
+            const last = new Date(payrollCalendarYear, payrollCalendarMonth + 1, 0);
+            const startDay = (first.getDay() + 6) % 7; // Monday as first
+            const daysInMonth = last.getDate();
+            
+            title.textContent = first.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+            
+            let html = '<table class="table table-sm table-bordered mb-0" style="font-size:12px; table-layout:fixed; width:100%;">';
+            const thStyle = 'padding:6px 8px; white-space:nowrap; text-align:center; font-size:11px;';
+            html += `<thead><tr>
+                <th style="${thStyle}">Mon</th>
+                <th style="${thStyle}">Tue</th>
+                <th style="${thStyle}">Wed</th>
+                <th style="${thStyle}">Thu</th>
+                <th style="${thStyle}">Fri</th>
+                <th style="${thStyle}">Sat</th>
+                <th style="${thStyle}">Sun</th>
+            </tr></thead><tbody><tr>`;
+            
+            const tdEmpty = '<td style="height:35px; padding:6px 8px;"></td>';
+            for (let i = 0; i < startDay; i++) html += tdEmpty;
+            
+            let day = 1;
+            let col = startDay;
+            const today = new Date();
+            const isTodayMonth = (payrollCalendarYear === today.getFullYear() && payrollCalendarMonth === today.getMonth());
+            const todayDate = today.getDate();
+            
+            while (day <= daysInMonth) {
+                const isToday = isTodayMonth && (day === todayDate);
+                const baseStyle = 'height:35px; padding:6px 8px; text-align:center; font-size:11px;';
+                const todayStyle = 'background:#d1e9ff; border:1px solid #90caf9; border-radius:4px; font-weight:700;';
+                html += `<td style="${baseStyle}${isToday ? todayStyle : ''}">${day}</td>`;
+                day++;
+                col++;
+                if (col === 7 && day <= daysInMonth) { 
+                    html += '</tr><tr>'; 
+                    col = 0; 
+                }
+            }
+            
+            if (col > 0 && col < 7) { 
+                for (let i = col; i < 7; i++) html += tdEmpty; 
+            }
+            html += '</tr></tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Calendar navigation handlers for payroll
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'payrollCalendarNavPrev') {
+                e.preventDefault();
+                payrollCalendarMonth -= 1;
+                if (payrollCalendarMonth < 0) { 
+                    payrollCalendarMonth = 11; 
+                    payrollCalendarYear -= 1; 
+                }
+                renderPayrollCalendar();
+            } else if (e.target && e.target.id === 'payrollCalendarNavNext') {
+                e.preventDefault();
+                payrollCalendarMonth += 1;
+                if (payrollCalendarMonth > 11) { 
+                    payrollCalendarMonth = 0; 
+                    payrollCalendarYear += 1; 
+                }
+                renderPayrollCalendar();
+            }
+        });
+
+        // Fetch payroll KPIs
+        async function updatePayrollKPIs() {
+            try {
+                // Fetch payroll approved count
+                const approvedRes = await fetch('/hr/payroll/approved-count', { credentials: 'include' });
+                if (approvedRes.ok) {
+                    const approvedData = await approvedRes.json();
+                    const approvedEl = document.getElementById('payrollApprovedCount');
+                    if (approvedEl) {
+                        approvedEl.textContent = approvedData.count || 0;
+                    }
+                } else {
+                    // Fallback
+                    const approvedEl = document.getElementById('payrollApprovedCount');
+                    if (approvedEl) approvedEl.textContent = '0';
+                }
+
+                // Fetch total payroll amount
+                const deductionsRes = await fetch('/hr/payroll/total-deductions', { credentials: 'include' });
+                if (deductionsRes.ok) {
+                    const deductionsData = await deductionsRes.json();
+                    const deductionsEl = document.getElementById('payrollTotalDeductions');
+                    if (deductionsEl) {
+                        const amount = deductionsData.total || 0;
+                        deductionsEl.textContent = '₱' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                } else {
+                    // Fallback
+                    const deductionsEl = document.getElementById('payrollTotalDeductions');
+                    if (deductionsEl) deductionsEl.textContent = '₱0.00';
+                }
+            } catch (error) {
+                console.error('Error updating payroll KPIs:', error);
+                const approvedEl = document.getElementById('payrollApprovedCount');
+                const deductionsEl = document.getElementById('payrollTotalDeductions');
+                if (approvedEl) approvedEl.textContent = 'Error';
+                if (deductionsEl) deductionsEl.textContent = 'Error';
+            }
+        }
+
+        // Refresh department payroll chart
+        async function refreshDepartmentPayrollChart() {
+            try {
+                const res = await fetch('/hr/payroll/department-distribution', { 
+                    credentials: 'include' 
+                });
+                
+                if (res.ok) {
+                    const json = await res.json();
+                    if (Array.isArray(json.data)) {
+                        const rawLabels = json.data.map(d => d.department_name || `Dept ${d.department_id || ''}`);
+                        // Humanize labels: replace underscores, trim, title-case words
+                        const labels = rawLabels.map(l => {
+                            const cleaned = String(l).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+                            return cleaned.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                        });
+                        const data = json.data.map(d => Number(d.employee_count) || 0);
+                        const palette = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#20c997', '#6610f2', '#e83e8c', '#fd7e14', '#343a40'];
+                        const colors = labels.map((_, i) => palette[i % palette.length]);
+
+                        if (departmentPayrollChart) {
+                            departmentPayrollChart.data.labels = labels;
+                            departmentPayrollChart.data.datasets[0].data = data;
+                            departmentPayrollChart.data.datasets[0].backgroundColor = colors;
+                            departmentPayrollChart.update();
+                        }
+
+                        // Render custom legend
+                        const legendEl = document.getElementById('departmentPayrollLegend');
+                        if (legendEl) {
+                            const total = data.reduce((a, b) => a + b, 0);
+                            legendEl.innerHTML = labels.map((label, i) => {
+                                const value = data[i];
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                const color = colors[i];
+                                return `<span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#333;">
+                                    <span style="display:inline-block; width:12px; height:12px; background:${color}; border-radius:2px; border:1px solid rgba(0,0,0,0.1);"></span>
+                                    <span>${label}: ${value} (${percentage}%)</span>
+                                </span>`;
+                            }).join(' ');
+                        }
+                    }
+                } else {
+                    throw new Error('Failed to fetch department distribution');
+                }
+            } catch (e) {
+                console.debug('Department payroll chart fetch error:', e);
+                // Fallback: show empty chart
+                if (departmentPayrollChart) {
+                    departmentPayrollChart.data.labels = [];
+                    departmentPayrollChart.data.datasets[0].data = [];
+                    departmentPayrollChart.update();
+                }
+            }
+        }
+
+        // Initialize payroll dashboard when content is shown
+        function initPayrollDashboard() {
+            // Initialize chart first
+            initDepartmentPayrollChart();
+            
+            // Then load data
+            updatePayrollKPIs();
+            refreshDepartmentPayrollChart();
+            renderPayrollCalendar();
+            
+            // Set up periodic refresh
+            setInterval(updatePayrollKPIs, 5 * 60 * 1000); // Every 5 minutes
+        }
+
+        // Run role detection immediately when script loads (before DOMContentLoaded)
+        // This prevents flicker by determining role as early as possible
+        (function() {
+            // Check if DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    initRoleBasedDashboard();
+                });
+            } else {
+                // DOM is already loaded, run immediately
+                initRoleBasedDashboard();
+            }
+        })();
 
         // Update the DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', function() {

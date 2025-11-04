@@ -164,4 +164,17 @@ router.post('/vtour-permissions', ManufacturingController.submitVtourPermission)
 router.get('/vtour-permissions/developer', ManufacturingController.getVtourPermissionsByDeveloper);
 router.put('/vtour-permissions/:permissionId/status', ManufacturingController.updateVtourPermissionStatus);
 
+// ===== FOREMAN DASHBOARD ROUTES (INTENDED) =====
+// Total projects by foreman_code (employee_id)
+router.get('/dashboard/foreman/project-count', ManufacturingController.getForemanProjectCount);
+
+// Total construction workers for foreman's projects
+router.get('/dashboard/foreman/workers-count', ManufacturingController.getForemanWorkersCount);
+
+// Recent planning projects for foreman (limit 5)
+router.get('/dashboard/foreman/planning-projects', ManufacturingController.getForemanPlanningProjects);
+
+// Material usage trend (company vs owner) for foreman
+router.get('/dashboard/foreman/material-usage-trend', ManufacturingController.getForemanMaterialUsageTrend);
+
 module.exports = router;

@@ -2955,6 +2955,145 @@ const HRModel = {
         }
     },
 
+    // Recruitment Dashboard Methods
+    // Get pending applications count
+    getPendingApplicationsCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM applications
+                WHERE status = 'Pending'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting pending applications count:', error);
+            throw error;
+        }
+    },
+
+    // Get job posting trend data (monthly, quarterly, yearly)
+    getJobPostingTrend: async (period = 'monthly') => {
+        try {
+            let query = '';
+            let labels = [];
+            let values = [];
+
+            if (period === 'monthly') {
+                // Last 12 months
+                query = `
+                    SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                    ORDER BY month ASC
+                `;
+            } else if (period === 'quarterly') {
+                // Last 4 quarters
+                query = `
+                    SELECT 
+                        YEAR(created_at) as year,
+                        QUARTER(created_at) as quarter,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 4 QUARTER)
+                    GROUP BY YEAR(created_at), QUARTER(created_at)
+                    ORDER BY YEAR(created_at), QUARTER(created_at) ASC
+                `;
+            } else {
+                // Last 5 years
+                query = `
+                    SELECT 
+                        YEAR(created_at) as year,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 5 YEAR)
+                    GROUP BY YEAR(created_at)
+                    ORDER BY year ASC
+                `;
+            }
+
+            const [results] = await db.query(query);
+            
+            results.forEach(row => {
+                if (period === 'monthly') {
+                    const date = new Date(row.month + '-01');
+                    labels.push(date.toLocaleString(undefined, { month: 'short', year: 'numeric' }));
+                } else if (period === 'quarterly') {
+                    labels.push(`Q${row.quarter} ${row.year}`);
+                } else {
+                    labels.push(row.year.toString());
+                }
+                values.push(parseInt(row.count) || 0);
+            });
+
+            return { labels, values };
+        } catch (error) {
+            console.error('Error getting job posting trend:', error);
+            throw error;
+        }
+    },
+
+    // Payroll Dashboard Methods
+    // Get payroll approved count
+    getPayrollApprovedCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM payroll_periods
+                WHERE status = 'approved'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting payroll approved count:', error);
+            throw error;
+        }
+    },
+
+    // Get total payroll amount (sum of net_salary from released payrolls)
+    getTotalDeductions: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COALESCE(SUM(net_salary), 0) as total
+                FROM payroll
+                WHERE status = 'released'
+            `);
+            return result[0].total || 0;
+        } catch (error) {
+            console.error('Error getting total payroll amount:', error);
+            throw error;
+        }
+    },
+
+    // Get department payroll distribution (excluding executives)
+    getDepartmentPayrollDistribution: async () => {
+        try {
+            const [results] = await db.query(`
+                SELECT 
+                    d.id as department_id,
+                    d.name as department_name,
+                    COUNT(DISTINCT e.employee_id) as employee_count
+                FROM departments d
+                LEFT JOIN roles r ON r.department_id = d.id
+                LEFT JOIN employees e ON e.role_id = r.id 
+                    AND e.is_deleted = 0
+                LEFT JOIN users u ON e.user_id = u.id
+                    AND u.is_active = 1
+                    AND r.name NOT LIKE '%executive%'
+                    AND r.name NOT LIKE '%Executive%'
+                WHERE d.is_deleted = 0
+                GROUP BY d.id, d.name
+                HAVING employee_count > 0
+                ORDER BY employee_count DESC
+            `);
+            return results;
+        } catch (error) {
+            console.error('Error getting department payroll distribution:', error);
+            throw error;
+        }
+    },
+
     // Initialize pre-onboarding documents for a new employee
     initializePreOnboardingDocuments: async (employeeId, userId, roleId) => {
         try {

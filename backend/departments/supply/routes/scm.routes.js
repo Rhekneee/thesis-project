@@ -277,4 +277,27 @@ router.get('/driver/material-releases', SCMController.getDriverMaterialReleases)
 // This route allows drivers to confirm that materials have been delivered
 router.put('/driver/material-releases/:releaseId/received', SCMController.updateDriverMaterialReleaseStatus);
 
+// ===== PROCUREMENT DASHBOARD ROUTES =====
+// Get materials count by category (for procurement dashboard)
+router.get('/dashboard/materials-by-category', SCMController.getMaterialsCountByCategory);
+
+// Get pending purchase orders with status "Out for Delivery" (for procurement dashboard)
+router.get('/dashboard/pending-orders-out-for-delivery', SCMController.getPendingPurchaseOrdersOutForDelivery);
+
+// Get total purchase amount (sum invoice_amount where status='Received') (for procurement dashboard)
+router.get('/dashboard/total-purchase-amount', SCMController.getTotalPurchaseAmount);
+
+// ===== SUPPLY CHAIN DASHBOARD ROUTES =====
+// Get total number of suppliers (for supply chain dashboard)
+router.get('/dashboard/total-suppliers-count', SCMController.getTotalSuppliersCount);
+
+// Get total purchases with "Received" status (for supply chain dashboard)
+router.get('/dashboard/total-received-purchases-count', SCMController.getTotalReceivedPurchasesCount);
+
+// Get top suppliers with most purchase orders received (for supply chain dashboard)
+router.get('/dashboard/top-suppliers-by-received-orders', SCMController.getTopSuppliersByReceivedOrders);
+
+// Get product purchases per category trend (for supply chain dashboard)
+router.get('/dashboard/purchases-per-category-trend', SCMController.getPurchasesPerCategoryTrend);
+
 module.exports = router;

@@ -291,6 +291,16 @@
     // Dashboard KPI route
     router.get('/dashboard-kpis', HRController.getDashboardKPIs);
 
+    // Recruitment Dashboard Routes
+    router.get('/recruitment/new-hires', authMiddleware.verifySession, HRController.getRecruitmentNewHires);
+    router.get('/recruitment/pending-applications', authMiddleware.verifySession, HRController.getRecruitmentPendingApplications);
+    router.get('/recruitment/job-posting-trend', authMiddleware.verifySession, HRController.getRecruitmentJobPostingTrend);
+
+    // Payroll Dashboard Routes
+    router.get('/payroll/approved-count', authMiddleware.verifySession, HRController.getPayrollApprovedCount);
+    router.get('/payroll/total-deductions', authMiddleware.verifySession, HRController.getPayrollTotalDeductions);
+    router.get('/payroll/department-distribution', authMiddleware.verifySession, HRController.getPayrollDepartmentDistribution);
+
     // Developer Management Routes
 
     // Submit all onboarding documents at once
