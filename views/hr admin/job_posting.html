@@ -178,37 +178,37 @@
                 <span class="company-title">MDB Construction</span>
             </div>
             <ul class="list-unstyled">
-                <li class="nav-item">
+                <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                     <a class="nav-item active" href="/hr/hr_admin">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
                         <i class="fas fa-calendar-check"></i>
                         <span>Attendance</span>
                     </a>
                     <ul class="collapse" id="Attendance">
-                        <li class="nav-item">
+                        <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                             <a href="/hr/hr_daily_attendance">
                                 <i class="fas fa-calendar-check"></i>
                                 <span>Daily Attendance</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                             <a href="/hr/hr_history_attendance">
                                 <i class="fas fa-file-invoice"></i>
                                 <span>Attendance Logs</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                             <a href="/hr/hr_leave_request">
                                 <i class="fas fa-file-invoice"></i>
                                 <span>Request Leave</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item recruitment-only payroll-restricted" style="display: none;">
                             <a href="/hr/hr_work_adjustment">
                                 <i class="fas fa-file-invoice"></i>
                                 <span>Work Adjustment</span>
@@ -216,7 +216,7 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item payroll-restricted" style="display: none;">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
                         <i class="fas fa-money-bill-wave"></i>
                         <span>Payroll Management</span>
@@ -228,22 +228,22 @@
                         <li class="nav-item"><a href="/hr/payslip"><i class="fas fa-users"></i> Payslip</a></li>
                     </ul>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item recruitment-only" style="display: none;">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#Employee" aria-expanded="false">
                         <i class="fas fa-users"></i>
                         <span>Employee Management</span>
                     </a>
                     <ul class="collapse" id="Employee">
-                        <li class="nav-item"><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
-                        <li class="nav-item"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
-                        <li class="nav-item"><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
-                        <li class="nav-item"><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
-                        <li class="nav-item"><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
-                        <li class="nav-item"><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
+                        <li class="nav-item "><a href="/hr/hr_employee_list"><i class="fas fa-list"></i> Employee List</a></li>
+                        <li class="nav-item recruitment-only" style="display: none;"><a href="/hr/hr_employee_documents"><i class="fas fa-file-invoice"></i> Employee Documents</a></li>
+                        <li class="nav-item "><a href="/hr/hr_employee_roles"><i class="fas fa-user-friends"></i> Employee Roles</a></li>
+                        <li class="nav-item "><a href="/hr/hr_employee_attendance"><i class="fas fa-calendar-check"></i> Employee Attendance</a></li>
+                        <li class="nav-item "><a href="/hr/hr_employee_leave_request"><i class="fas fa-file-invoice"></i> Employee Leave Request</a></li>
+                        <li class="nav-item "><a href="/hr/hr_work_adjustment_request"><i class="fas fa-file-invoice"></i> Work Adjustment Request</a></li>
                        
                     </ul>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item recruitment-only" style="display: none;">
                     <a href="#" data-bs-toggle="collapse" data-bs-target="#Recruitment" aria-expanded="false">
                         <i class="fas fa-users"></i>
                         <span>Recruitment</span>
@@ -428,9 +428,9 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Replace the entire <script> block in your original file with this -->
     <script src="/public/js/side_top.js"></script>
-<script>
+    <script src="/public/js/hr_role_visibility.js"></script>
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Fetch positions and their salaries
         fetch('/hr/job-postings/positions')
@@ -751,51 +751,6 @@
 
         // Initial load
         loadJobPostings();
-
-        // Handle coordinator-only sections visibility
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔍 DEBUG: Starting coordinator visibility script...');
-            
-            // Function to show coordinator items (for non-coordinators)
-            function showCoordinatorItems() {
-                console.log('🔍 DEBUG: Showing coordinator items for non-coordinator user');
-                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
-                coordinatorOnlyItems.forEach(item => {
-                    item.style.display = 'block';
-                });
-            }
-            
-            // Function to hide coordinator items (for coordinators)
-            function hideCoordinatorItems() {
-                console.log('🔍 DEBUG: Keeping coordinator items hidden for coordinator user');
-                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
-                coordinatorOnlyItems.forEach(item => {
-                    item.style.display = 'none';
-                });
-            }
-            
-            fetch('/api/profile')
-                .then(response => {
-                    console.log('🔍 DEBUG: Profile API response received:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('🔍 DEBUG: Profile API data:', data);
-                    console.log('🔍 DEBUG: User role is:', data?.role_name);
-                    if (data && data.role_name === 'sales_marketing_coordinator') {
-                        console.log('🔍 DEBUG: User is sales_marketing_coordinator, keeping items hidden');
-                        hideCoordinatorItems();
-                    } else {
-                        console.log('🔍 DEBUG: User role is not sales_marketing_coordinator, showing items');
-                        showCoordinatorItems();
-                    }
-                })
-                .catch(error => {
-                    console.log('🔍 DEBUG: Could not fetch user profile:', error);
-                    // Fallback: keep items hidden if API fails (safer default)
-                    hideCoordinatorItems();
-                });
-        });
     });
 </script>
     

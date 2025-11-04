@@ -1,6 +1,4 @@
 const db = require("../db");
-<<<<<<< HEAD
-<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 
 // Helper function to authenticate employee
@@ -64,37 +62,11 @@ const getPermissionsForRole = async (role_id) => {
     
     const [permissions] = await db.query(SQL_COMMAND, [role_id]);
     return permissions.map(permission => permission.permission_name);
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-
-// Helper function to authenticate user
-const authenticateUser = async (email, password) => {
-    const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.role_id, permission.role_name 
-        FROM users 
-        JOIN permission ON users.role_id = permission.id
-        WHERE users.email = ? AND users.password = ?;
-    `;
-
-    const [users] = await db.query(SQL_COMMAND, [email, password]);
-
-    if (users.length === 0) {
-        throw new Error("Invalid email or password");
-    }
-
-    return users[0];
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 };
 
 // Login function
 exports.login = async (req, res) => {
     try {
-<<<<<<< HEAD
-<<<<<<< HEAD
         const { employee_id, password } = req.body;
 
         // First check if it's a superadmin trying to log in using username
@@ -208,11 +180,7 @@ exports.login = async (req, res) => {
                 
             }
         } else {
-<<<<<<< HEAD
             
-=======
-            console.log("🔍 DEBUG: Not a developer account, checking supplier login");
->>>>>>> 820ec38 (done supply payment pending)
         }
 
         // Check if it's a supplier trying to log in using username
@@ -221,70 +189,6 @@ exports.login = async (req, res) => {
             FROM users u
             JOIN supplier_account s ON u.username = s.supplier_name
             WHERE u.username = ? AND s.status = 'active' AND u.role_id = 27
-<<<<<<< HEAD
-=======
-        `;
-        
-        console.log("🔍 DEBUG: Checking supplier account for username:", employee_id);
-        const [suppliers] = await db.query(checkSupplierSQL, [employee_id]);
-        console.log("🔍 DEBUG: Supplier query result:", suppliers.length > 0 ? "Found" : "Not found");
-        
-        if (suppliers.length > 0) {
-            console.log("🔍 DEBUG: Supplier account found, attempting password verification");
-            const supplier = suppliers[0];
-            const isPasswordValid = await bcrypt.compare(password, supplier.password);
-            console.log("🔍 DEBUG: Supplier password verification result:", isPasswordValid ? "Valid" : "Invalid");
-            
-            if (!isPasswordValid) {
-                console.log("❌ DEBUG: Supplier password verification failed");
-                return res.status(401).json({ message: "Invalid credentials." });
-            }
-            
-            console.log("🔍 DEBUG: Fetching complete user details for supplier");
-            // Get user details for session using the user id
-            const [userDetails] = await db.query(`
-                SELECT u.id, u.email, u.username, u.role_id, r.name AS role_name, s.supplier_id
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                JOIN supplier_account s ON u.username = s.supplier_name
-                WHERE u.id = ?
-            `, [supplier.id]);
-
-            console.log("🔍 DEBUG: User details query result:", userDetails.length > 0 ? "Found" : "Not found");
-
-            if (userDetails.length > 0) {
-                const user = userDetails[0];
-                console.log("🔍 DEBUG: Setting session for supplier - ID:", user.id, "Role:", user.role_name, "Supplier ID:", user.supplier_id);
-                req.session.user = {
-                    id: user.id,
-                    email: user.email,
-                    username: user.username,
-                    role_name: user.role_name,
-                    role_id: user.role_id,
-                    supplier_id: user.supplier_id,
-                    is_supplier: true
-                };
-                console.log("✅ DEBUG: Supplier login successful");
-                return res.status(200).json({ 
-                    message: "Login successful",
-                    redirect: "/supplier/supplier_dashboard.html"
-                });
-            } else {
-                console.log("❌ DEBUG: Supplier found but user details not found");
-            }
-        } else {
-            console.log("🔍 DEBUG: Not a supplier account, checking employee login");
-        }
-
-        // If not a developer or supplier, try normal employee login - ONLY through employee_id
-        const checkUserSQL = `
-            SELECT users.id, users.email, users.username, users.password, users.created_at, 
-                   users.role_id, roles.name AS role_name, employees.employee_id
-            FROM users
-            JOIN roles ON users.role_id = roles.id
-            JOIN employees ON users.id = employees.user_id
-            WHERE employees.employee_id = ?;
->>>>>>> 820ec38 (done supply payment pending)
         `;
         
         
@@ -432,59 +336,6 @@ exports.login = async (req, res) => {
     }
 };
 
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-        const { email, password } = req.body;
-
-        // Fetch user details along with the role_name from the permission table
-        const SQL_COMMAND = `
-        SELECT users.id, users.email, users.password, users.created_at, users.permission_id, permission.role_name 
-        FROM users 
-        JOIN permission ON users.permission_id = permission.id
-        WHERE users.email = ? AND users.password = ?;
-    `;
-    
-        const [users] = await db.query(SQL_COMMAND, [email, password]);
-    
-        if (users.length === 0) {
-            console.log("❌ Invalid email or password");
-            return res.status(401).json({ message: "Invalid email or password." });
-        }
-    
-        const user = users[0];
-        console.log(`✅ Login successful for ${user.role_name} (Permission ID: ${user.permission_id}): ${user.email}`);
-    
-        // Store user data in session
-        req.session.user = {
-            id: user.id,
-            email: user.email,
-            permission_id: user.permission_id,  // Use permission_id from users table
-            role_name: user.role_name,  // Use role_name from permission table
-            created_at: user.created_at,
-        };
-
-        req.session.save((err) => {
-            if (err) {
-                console.error("❌ Error saving session:", err);
-                return res.status(500).json({ message: "Session error." });
-            }
-
-            // Redirect to the dashboard
-            res.redirect('/dashboard');
-        });
-
-    } catch (error) {
-        console.error("❌ Login Error:", error.message);
-        res.status(500).json({ message: "Internal Server Error." });
-    }
-};
-
-
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 // Logout function
 exports.logout = (req, res) => {
     req.session.destroy((err) => {
@@ -492,8 +343,6 @@ exports.logout = (req, res) => {
             console.error("❌ Logout error:", err);
             return res.status(500).json({ message: "Logout failed." });
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
         res.redirect("/");  // Redirect to login page after logout
     });
 };
@@ -573,13 +422,3 @@ exports.getCurrentUser = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
-=======
-        res.redirect("/");
-    });
-};
->>>>>>> 85f9240 (Initial commit)
-=======
-        res.redirect("/");
-    });
-};
->>>>>>> aa1bb20 (Initial commit)

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
     const express = require('express');
     const router = express.Router();
     const { HRController, constructionWorkerUpload } = require('../controller/hr.controller.js');
@@ -293,6 +291,16 @@
     // Dashboard KPI route
     router.get('/dashboard-kpis', HRController.getDashboardKPIs);
 
+    // Recruitment Dashboard Routes
+    router.get('/recruitment/new-hires', authMiddleware.verifySession, HRController.getRecruitmentNewHires);
+    router.get('/recruitment/pending-applications', authMiddleware.verifySession, HRController.getRecruitmentPendingApplications);
+    router.get('/recruitment/job-posting-trend', authMiddleware.verifySession, HRController.getRecruitmentJobPostingTrend);
+
+    // Payroll Dashboard Routes
+    router.get('/payroll/approved-count', authMiddleware.verifySession, HRController.getPayrollApprovedCount);
+    router.get('/payroll/total-deductions', authMiddleware.verifySession, HRController.getPayrollTotalDeductions);
+    router.get('/payroll/department-distribution', authMiddleware.verifySession, HRController.getPayrollDepartmentDistribution);
+
     // Developer Management Routes
 
     // Submit all onboarding documents at once
@@ -486,30 +494,3 @@
     router.delete('/construction-payroll', authMiddleware.verifySession, HRController.deleteConstructionPayroll);
 
     module.exports = router;
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-const express = require('express');
-const router = express.Router();
-const HRController = require('../controller/hr.controller.js');  // Ensure this path is correct
-const authMiddleware = require('../middleware/hrAuthMiddleware.js');
-
-router.get('/employees', authMiddleware.verifySession, HRController.getAllEmployees);
-router.post('/employees', authMiddleware.verifySession, HRController.addEmployee);
-router.get('/permissions', authMiddleware.verifySession, HRController.getPermissions);
-router.get("/employees/:id", authMiddleware.verifySession, HRController.getEmployeeDetails);
-router.put('/employees/:id', authMiddleware.verifySession, HRController.updateEmployee);
-
-// 🔹 Attendance Routes
-router.post("/check-in", authMiddleware.verifySession, (req, res, next) => {
-    console.log("✅ Check-in API hit!");
-    next();
-}, HRController.checkInAttendance);
-
-router.get("/today/:employeeId", authMiddleware.verifySession, HRController.getTodayAttendance);
-
-module.exports = router;
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)

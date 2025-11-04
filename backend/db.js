@@ -19,26 +19,12 @@ const db = mysql.createPool({
 (async () => {
     try {
         const connection = await db.getConnection();
-<<<<<<< HEAD
-<<<<<<< HEAD
         console.log(`✅ Connected to MySQL at host: ${process.env.DB_HOST}`);
-=======
-        console.log('✅ Connected to Laragon MySQL!');
->>>>>>> 85f9240 (Initial commit)
-=======
-        console.log('✅ Connected to Laragon MySQL!');
->>>>>>> aa1bb20 (Initial commit)
         connection.release();
     } catch (err) {
         console.error('❌ MySQL Connection Error:', err.message);
     }
 })();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 module.exports = db;

@@ -129,6 +129,15 @@ router.get('/drivers', logisticsAuth, SCMController.getDrivers); // Get drivers 
 router.post('/material-release', logisticsAuth, SCMController.handleMaterialRelease);
 router.put('/manufacturing-requests/status', logisticsAuth, SCMController.updateManufacturingRequestStatus);
 
+// Check session endpoint (before middleware to allow access)
+router.get('/check-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ user: req.session.user });
+    } else {
+        res.status(401).json({ error: "Unauthorized" });
+    }
+});
+
 // Supplier-specific routes for profile management
 router.get('/supplier/check-session', (req, res) => {
     console.log('🔍 Supplier check-session called');
@@ -267,5 +276,28 @@ router.get('/driver/material-releases', SCMController.getDriverMaterialReleases)
 // Mark material release as received after delivery to the site
 // This route allows drivers to confirm that materials have been delivered
 router.put('/driver/material-releases/:releaseId/received', SCMController.updateDriverMaterialReleaseStatus);
+
+// ===== PROCUREMENT DASHBOARD ROUTES =====
+// Get materials count by category (for procurement dashboard)
+router.get('/dashboard/materials-by-category', SCMController.getMaterialsCountByCategory);
+
+// Get pending purchase orders with status "Out for Delivery" (for procurement dashboard)
+router.get('/dashboard/pending-orders-out-for-delivery', SCMController.getPendingPurchaseOrdersOutForDelivery);
+
+// Get total purchase amount (sum invoice_amount where status='Received') (for procurement dashboard)
+router.get('/dashboard/total-purchase-amount', SCMController.getTotalPurchaseAmount);
+
+// ===== SUPPLY CHAIN DASHBOARD ROUTES =====
+// Get total number of suppliers (for supply chain dashboard)
+router.get('/dashboard/total-suppliers-count', SCMController.getTotalSuppliersCount);
+
+// Get total purchases with "Received" status (for supply chain dashboard)
+router.get('/dashboard/total-received-purchases-count', SCMController.getTotalReceivedPurchasesCount);
+
+// Get top suppliers with most purchase orders received (for supply chain dashboard)
+router.get('/dashboard/top-suppliers-by-received-orders', SCMController.getTopSuppliersByReceivedOrders);
+
+// Get product purchases per category trend (for supply chain dashboard)
+router.get('/dashboard/purchases-per-category-trend', SCMController.getPurchasesPerCategoryTrend);
 
 module.exports = router;

@@ -9,6 +9,7 @@
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/side_top.css">
+    <script src="/public/js/finance_role_visibility.js"></script>
     <script src="/js/side_top.js"></script>
     <style>
         #content { margin-left: 0; transition: margin-left 0.3s; padding: 20px; }
@@ -380,7 +381,7 @@
             </div>
         </div>
     </div>
-    <!-- Sidebar -->
+     <!-- Sidebar -->
     <div id="sidebar">
         <div class="sidebar-header">
             <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
@@ -388,7 +389,7 @@
         </div>
         <ul class="list-unstyled">
             <li class="nav-item">
-                <a class="nav-item" href="/finance/finance_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                <a class="nav-item active" href="/finance/finance_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
             </li>
             <li class="nav-item">
                 <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
@@ -402,20 +403,34 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a href="/finance/finance_payroll"><i class="fas fa-money-bill-wave"></i> Payroll</a>
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                    <i class="fas fa-money-bill-wave"></i> Payroll
+                </a>
+                <ul class="collapse" id="Payroll">
+                    <li class="nav-item"><a href="/finance/finance_payroll"><i class="fas fa-money-bill-wave"></i> <span>Payroll</span></a></li>
+                </ul>
+            </li>
+            <li class="nav-item accountant-restricted" style="display: none;">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Cash" aria-expanded="false">
+                    <i class="fas fa-cash-register"></i> Cash Management
+                </a>
+                <ul class="collapse" id="Cash">
+                    <li class="nav-item accountant-restricted" style="display: none;"><a href="/finance/cash_monitoring"><i class="fas fa-chart-line"></i> <span>Cash Monitoring</span></a></li>
+                </ul>
             </li>
             <li class="nav-item">
                 <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
                     <i class="fas fa-shopping-cart"></i> Purchase
                 </a>
                 <ul class="collapse" id="Purchase">
-                    <li class="nav-item"><a href="/finance/finance_purchase_request"><i class="fas fa-file-invoice"></i> <span >Purchase Request</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_purchase_request"><i class="fas fa-file-invoice"></i> <span>Purchase Request</span></a></li>
                     <li class="nav-item"><a href="/finance/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i> <span>Purchase Order</span></a></li>
                 </ul>
             </li>
             <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
         </ul>
     </div>
+
     <div id="content">
         <h2>Purchase Order Management</h2>
         
@@ -434,6 +449,11 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
                     <i class="fas fa-shopping-cart"></i> All Orders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="refunds-tab" data-bs-toggle="tab" data-bs-target="#refunds" type="button" role="tab">
+                    <i class="fas fa-undo"></i> Refund Requests
                 </button>
             </li>
         </ul>
@@ -458,19 +478,44 @@
                     <table class="table table-striped" id="estimationTable">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>Purchase ID</th>
                                 <th>Supplier</th>
                                 <th>Material</th>
-                                <th>Quantity</th>
-                                <th>Estimation Cost</th>
-                                <th>Requested By</th>
-                                <th>Department</th>
-                                <th>Date Submitted</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Delivery Cost</th>
+                                <th>Discount (%)</th>
+                                <th>Final Total</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="estimationList"></tbody>
                     </table>
+                </div>
+                
+                <!-- Reject Estimation Modal -->
+                <div class="modal fade" id="rejectEstimationModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-times-circle me-2 text-danger"></i>Reject Estimation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Remarks (required)</label>
+                                    <textarea id="rejectRemarks" class="form-control" rows="4" placeholder="Explain the reason for rejection..."></textarea>
+                                </div>
+                                <div class="text-muted small">These remarks will be recorded and sent to the supplier via email notification.</div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" id="confirmRejectBtn" class="btn btn-danger">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit Rejection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="estimationPagination" class="d-flex justify-content-between align-items-center mt-3">
                     <span id="estimationEntriesInfo"></span>
@@ -545,7 +590,12 @@
                             <tr>
                                 <th onclick="sortPO('orderId')">Order ID <i class="fas fa-sort sort-icon"></i></th>
                                 <th onclick="sortPO('supplier')">Supplier <i class="fas fa-sort sort-icon"></i></th>
-                                <th onclick="sortPO('receivedDate')">Received Date <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('material_name')">Item Name <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('quantity')">Quantity <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('delivery_cost')">Delivery Cost <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('discount')">Discount <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('invoice_amount')">Invoice Amount <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortPO('receivedDate')">Order Date <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Invoice</th>
                                 <th onclick="sortPO('status')">Status <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Actions</th>
@@ -557,6 +607,43 @@
                 <div id="entriesMessage" class="d-flex justify-content-between align-items-center mt-2">
                     <span id="showingEntries"></span>
                     <nav><ul class="pagination mb-0" id="paginationControls"></ul></nav>
+                </div>
+            </div>
+
+            <!-- Refund Requests Tab -->
+            <div class="tab-pane fade" id="refunds" role="tabpanel">
+                <div class="search-container mb-3">
+                    <input type="text" id="refundSearchBar" class="form-control" placeholder="Search by purchase ID or supplier...">
+                    <div class="entries-per-page ms-auto">
+                        <label for="refundEntriesPerPage" class="me-2">Entries per page:</label>
+                        <select id="refundEntriesPerPage" class="form-select">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped" id="refundTable">
+                        <thead>
+                            <tr>
+                                <th>Purchase ID</th>
+                                <th>Supplier</th>
+                                <th>Material</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                                <th>Return Reason</th>
+                                <th>Request Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="refundList"></tbody>
+                    </table>
+                </div>
+                <div id="refundPagination" class="d-flex justify-content-between align-items-center mt-3">
+                    <span id="refundEntriesInfo"></span>
+                    <nav><ul class="pagination mb-0" id="refundPaginationControls"></ul></nav>
                 </div>
             </div>
         </div>
@@ -771,6 +858,16 @@
                             <label for="estimationRemarks" class="form-label">Remarks (required for rejection)</label>
                             <textarea id="estimationRemarks" class="form-control" rows="3"></textarea>
                         </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Delivery Cost</label>
+                                <input type="number" min="0" step="0.01" id="estimationDeliveryCost" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Discount (%)</label>
+                                <input type="number" min="0" max="100" step="0.01" id="estimationDiscount" class="form-control" placeholder="0.00">
+                            </div>
+                        </div>
                         <!-- Add payment type selection (only shown when approving) -->
                         <div id="paymentTypeSection" class="mb-3" style="display: none;">
                             <label class="form-label">Payment Type</label>
@@ -938,6 +1035,173 @@
                     <p id="errorMessage" class="mb-4 text-muted"></p>
                     <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refund Action Modal -->
+    <div class="modal fade" id="refundActionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 800px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-undo"></i> 
+                        <span id="refundActionTitle">Review Refund Request</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="refund-details mb-4">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Purchase ID</label>
+                                <div id="modalRefundPurchaseId" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Supplier</label>
+                                <div id="modalRefundSupplier" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Material</label>
+                                <div id="modalRefundMaterial" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity</label>
+                                <div id="modalRefundQuantity" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Amount</label>
+                                <div id="modalRefundAmount" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Request Date</label>
+                                <div id="modalRefundDate" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Return Reason</label>
+                                <div id="modalRefundReason" class="form-control-plaintext"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label">Proof of Issue</label>
+                                <div id="modalRefundProof" class="form-control-plaintext">
+                                    <span class="text-muted">No proof provided</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <div class="mb-3">
+                            <label for="refundRemarks" class="form-label">Finance Remarks (required for rejection)</label>
+                            <textarea id="refundRemarks" class="form-control" rows="3" placeholder="Enter your remarks..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" id="rejectRefundBtn" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Reject Request
+                            </button>
+                            <button type="button" id="approveReturnBtn" class="btn btn-warning">
+                                <i class="fas fa-undo"></i> Approve Return
+                            </button>
+                            <button type="button" id="approveRefundBtn" class="btn btn-success">
+                                <i class="fas fa-check"></i> Approve Refund
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Returned Order View Modal -->
+    <div class="modal fade" id="returnedOrderModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 800px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-undo"></i> 
+                        <span id="returnedOrderTitle">Returned Order Details</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info-circle"></i> Order Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Purchase ID:</strong></td>
+                                    <td id="returnedPurchaseId">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Supplier:</strong></td>
+                                    <td id="returnedSupplier">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Material:</strong></td>
+                                    <td id="returnedMaterial">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Quantity:</strong></td>
+                                    <td id="returnedQuantity">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Amount:</strong></td>
+                                    <td id="returnedAmount">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Order Date:</strong></td>
+                                    <td id="returnedDate">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-file-invoice"></i> Invoice Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Invoice Number:</strong></td>
+                                    <td id="returnedInvoiceNumber">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Invoice Date:</strong></td>
+                                    <td id="returnedInvoiceDate">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Invoice File:</strong></td>
+                                    <td id="returnedInvoiceFile">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Return Information</h6>
+                            <div class="alert alert-warning">
+                                <strong>Return Reason:</strong>
+                                <p id="returnedReason" class="mb-2">-</p>
+                                
+                                <strong>Proof of Issue:</strong>
+                                <div id="returnedProof" class="mt-2">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="redeliverBtn" class="btn btn-success" style="margin-left: 10px;">
+                        <i class="fas fa-truck"></i> Redeliver
                     </button>
                 </div>
             </div>
@@ -1267,8 +1531,6 @@
 
     
         
-    
-        
 
         // Add these new functions after the existing JavaScript code
         let currentInvoiceFile = null;
@@ -1304,48 +1566,138 @@
         let estimationItemsPerPage = 5;
         let currentEstimationId = null;
 
-        // Fetch purchase order estimations
-        async function fetchPurchaseOrderEstimations() {
+        // Basic debug check - this should always show
+        console.log('🔍 DEBUG: JavaScript is working!');
+        console.log('🔍 DEBUG: Page title:', document.title);
+        console.log('🔍 DEBUG: Estimations variables initialized');
+        
+        // Alert to make sure we're on the right page
+        console.log('🔍 DEBUG: Current page URL:', window.location.href);
+        if (window.location.href.includes('finance_purchase_order')) {
+            console.log('🔍 DEBUG: Confirmed - we are on the finance purchase order page');
+        } else {
+            console.log('🔍 DEBUG: WARNING - we might not be on the right page');
+        }
+
+        // Add global error handler to catch any JavaScript errors
+        window.addEventListener('error', function(e) {
+            console.error('🔍 DEBUG: JavaScript Error:', e.error);
+            console.error('🔍 DEBUG: Error message:', e.message);
+            console.error('🔍 DEBUG: Error file:', e.filename);
+            console.error('🔍 DEBUG: Error line:', e.lineno);
+        });
+
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('🔍 DEBUG: Unhandled Promise Rejection:', e.reason);
+        });
+
+        // Test if console is working with a simple alert (remove this after testing)
+        console.log('🔍 DEBUG: Testing console - if you see this, console is working');
+        // Uncomment the line below if you want to see an alert popup
+        // alert('Finance Purchase Order page loaded - check console for debug logs');
+
+        // Approve purchase estimation function - declare early and make globally accessible
+        window.approvePurchaseEstimation = async function(purchaseId) {
             try {
-                const response = await fetch('/finance/purchase-orders/estimations');
+                console.log('🔍 DEBUG: Approving purchase estimation with ID:', purchaseId);
+                const res = await fetch(`/finance/purchases/${purchaseId}/approve-estimation`, { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                console.log('🔍 DEBUG: Approval response:', data);
+                
+                if (!data.success) throw new Error(data.error || data.message || 'Failed to approve');
+                showAlert('success', 'Purchase estimation approved successfully and status changed to Processed.');
+                await fetchPurchaseOrderEstimations();
+            } catch (err) {
+                console.error('🔍 DEBUG: Approval error:', err);
+                showAlert('error', err.message || 'Failed to approve estimation');
+            }
+        };
+
+        // Fetch purchase order estimations - make globally accessible
+        window.fetchPurchaseOrderEstimations = async function() {
+            try {
+                console.log('🔍 DEBUG: Fetching pending estimations from /finance/purchases/pending-estimations');
+                const response = await fetch('/finance/purchases/pending-estimations');
+                console.log('🔍 DEBUG: Response status:', response.status);
+                
                 const data = await response.json();
+                console.log('🔍 DEBUG: Response data:', data);
                 
                 if (data.success) {
-                    estimations = data.orders;
+                    estimations = data.items; // Changed back to data.items for pending estimations
+                    console.log('🔍 DEBUG: Estimations loaded:', estimations.length, 'items');
+                    console.log('🔍 DEBUG: First estimation:', estimations[0]);
                     renderEstimations();
                 } else {
+                    console.error('🔍 DEBUG: Failed to fetch estimations:', data);
                     showAlert('error', 'Failed to fetch purchase order estimations');
                 }
             } catch (error) {
-                console.error('Error fetching estimations:', error);
+                console.error('🔍 DEBUG: Error fetching estimations:', error);
                 showAlert('error', 'Failed to fetch purchase order estimations');
             }
-        }
+        };
 
         // Render estimations table
         function renderEstimations() {
+            console.log('🔍 DEBUG: renderEstimations called with', estimations.length, 'estimations');
             const estimationList = document.getElementById('estimationList');
             estimationList.innerHTML = '';
             
             const startIndex = (currentEstimationPage - 1) * estimationItemsPerPage;
             const endIndex = Math.min(startIndex + estimationItemsPerPage, estimations.length);
             const paginatedEstimations = estimations.slice(startIndex, endIndex);
+            
+            console.log('🔍 DEBUG: Pagination - startIndex:', startIndex, 'endIndex:', endIndex, 'paginatedEstimations:', paginatedEstimations.length);
+
+            if (estimations.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="9" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        No pending estimations found
+                    </td>
+                `;
+                estimationList.appendChild(row);
+                updateEstimationPagination();
+                return;
+            }
 
             paginatedEstimations.forEach(estimation => {
                 const row = document.createElement('tr');
+                // Use the data structure from pending estimations
+                const unitPrice = Number(estimation.unit_price) || 0;
+                const quantity = Number(estimation.quantity) || 0;
+                const delCost = Number(estimation.delivery_cost) || 0;
+                const discountPct = Number(estimation.discount_percent) || 0;
+                const subtotal = unitPrice * quantity;
+                const discountAmount = subtotal * (discountPct / 100);
+                const finalTotal = subtotal + delCost - discountAmount;
+                
                 row.innerHTML = `
-                    <td>${estimation.po_id}</td>
-                    <td>${estimation.supplier_name}</td>
-                    <td>${estimation.material_type}</td>
-                    <td>${estimation.quantity} ${estimation.unit}</td>
-                    <td>₱${parseFloat(estimation.estimation_cost).toLocaleString()}</td>
-                    <td>${estimation.requested_by}</td>
-                    <td>${estimation.department}</td>
-                    <td>${new Date(estimation.created_date).toLocaleDateString()}</td>
+                    <td>${estimation.purchase_id}</td>
+                    <td>${estimation.supplier_name || '-'}</td>
+                    <td>${estimation.material_name || '-'}</td>
+                    <td>${quantity.toFixed(2)} ${estimation.unit || ''}</td>
+                    <td>₱${unitPrice.toLocaleString()}</td>
+                    <td>₱${delCost.toLocaleString()}</td>
+                    <td>${discountPct ? discountPct.toFixed(2) : '0.00'}%</td>
+                    <td>₱${finalTotal.toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="reviewEstimation(${estimation.po_id})">
-                            <i class="fas fa-eye"></i> Review
-                        </button>
+                        <div class="btn-group">
+                          <button class="btn btn-success btn-sm" onclick="approvePurchaseEstimation(${estimation.purchase_id})">
+                              <i class="fas fa-check"></i> Approve
+                          </button>
+                          <button class="btn btn-danger btn-sm" onclick="openRejectEstimationModal(${estimation.purchase_id}, '${(estimation.supplier_name||'').replace(/'/g, "\'")}')">
+                              <i class="fas fa-times"></i> Reject
+                          </button>
+                        </div>
                     </td>
                 `;
                 estimationList.appendChild(row);
@@ -1354,6 +1706,46 @@
             updateEstimationPagination();
             updateEstimationEntriesInfo();
         }
+
+        // Open Reject modal (global)
+        window.openRejectEstimationModal = function(purchaseId, supplierName) {
+            try {
+                window.currentEstimationId = purchaseId;
+                const txt = document.getElementById('rejectRemarks');
+                if (txt) txt.value = '';
+                const modalEl = document.getElementById('rejectEstimationModal');
+                if (!modalEl) return;
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            } catch (_) {}
+        };
+
+        // Confirm Reject handler
+        (function wireRejectHandler(){
+            const btn = document.getElementById('confirmRejectBtn');
+            if (!btn) return;
+            btn.addEventListener('click', async () => {
+                const remarks = (document.getElementById('rejectRemarks')?.value || '').trim();
+                if (!remarks) { showAlert('error', 'Remarks are required to reject an estimation.'); return; }
+                const id = window.currentEstimationId;
+                if (!id) { showAlert('error', 'Missing estimation id'); return; }
+                try {
+                    const res = await fetch(`/finance/purchases/${id}/estimation`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Cancelled', remarks })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Failed to reject estimation');
+                    // Hide modal
+                    try { bootstrap.Modal.getInstance(document.getElementById('rejectEstimationModal'))?.hide(); } catch(_) {}
+                    showAlert('success', 'Estimation rejected and supplier will be notified via email.');
+                    await fetchPurchaseOrderEstimations();
+                } catch (e) {
+                    showAlert('error', e.message || 'Failed to reject estimation');
+                }
+            });
+        })();
 
         // Update estimation pagination
         function updateEstimationPagination() {
@@ -1429,31 +1821,69 @@
             modal.show();
         }
 
+        // View estimation details and open modal
+        function viewEstimationDetails(purchaseId) {
+            // Find the estimation data
+            const estimation = estimations.find(e => e.purchase_id == purchaseId);
+            if (!estimation) {
+                showAlert('error', 'Estimation not found');
+                return;
+            }
+
+            currentEstimationId = purchaseId;
+
+            // Populate modal fields
+            document.getElementById('estimationOrderId').textContent = estimation.purchase_id;
+            document.getElementById('estimationSupplier').textContent = estimation.supplier_name || 'N/A';
+            document.getElementById('estimationMaterial').textContent = estimation.material_name || 'N/A';
+            document.getElementById('estimationQuantity').textContent = `${estimation.quantity} ${estimation.unit || ''}`;
+            document.getElementById('estimationUnitPrice').textContent = `₱${Number(estimation.unit_price || 0).toLocaleString()}`;
+            
+            // Calculate totals
+            const subtotal = Number(estimation.quantity) * Number(estimation.unit_price || 0);
+            const discountAmount = subtotal * (Number(estimation.discount_percent || 0) / 100);
+            const finalTotal = subtotal + Number(estimation.delivery_cost || 0) - discountAmount;
+            
+            document.getElementById('estimationSubtotal').textContent = `₱${subtotal.toLocaleString()}`;
+            document.getElementById('estimationDeliveryCost').value = estimation.delivery_cost || 0;
+            document.getElementById('estimationDiscount').value = estimation.discount_percent || 0;
+            document.getElementById('estimationFinalTotal').textContent = `₱${finalTotal.toLocaleString()}`;
+            
+            // Clear previous remarks
+            document.getElementById('estimationRemarks').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('estimationActionModal'));
+            modal.show();
+        }
+
         // Handle estimation approval
         async function handleEstimationAction(status) {
             const remarks = document.getElementById('estimationRemarks').value.trim();
             
-            if (status === 'Rejected' && !remarks) {
-                showAlert('error', 'Remarks are required when rejecting an estimation');
+            if (status === 'Cancelled' && !remarks) {
+                showAlert('error', 'Remarks are required when cancelling an estimation');
                 return;
             }
 
             try {
-                const response = await fetch(`/finance/purchase-orders/${currentEstimationId}/estimation`, {
+                const response = await fetch(`/finance/purchases/${currentEstimationId}/estimation`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         status,
-                        remarks: status === 'Rejected' ? remarks : null
+                        remarks: status === 'Cancelled' ? remarks : null,
+                        delivery_cost: status === 'Processed' ? Number(document.getElementById('estimationDeliveryCost').value || 0) : null,
+                        discount: status === 'Processed' ? Number(document.getElementById('estimationDiscount').value || 0) : null
                     })
                 });
 
                 const data = await response.json();
                 
                 if (data.success) {
-                    if (status === 'Approved') {
+                    if (status === 'Processed') {
                         // Get the current estimation details
                         const estimation = estimations.find(e => e.po_id === currentEstimationId);
                         if (!estimation) {
@@ -1542,17 +1972,24 @@
         });
 
         // Event Listeners
-        document.getElementById('approveEstimationBtn').addEventListener('click', () => handleEstimationAction('Approved'));
-        document.getElementById('rejectEstimationBtn').addEventListener('click', () => handleEstimationAction('Rejected'));
+        document.getElementById('approveEstimationBtn').addEventListener('click', () => handleEstimationAction('Processed'));
+        document.getElementById('rejectEstimationBtn').addEventListener('click', () => handleEstimationAction('Cancelled'));
 
         document.getElementById('estimationSearchBar').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            estimations = estimations.filter(estimation => 
-                estimation.po_id.toString().includes(searchTerm) ||
-                estimation.supplier_name.toLowerCase().includes(searchTerm)
+            // Filter estimations based on search term
+            const filteredEstimations = estimations.filter(estimation => 
+                estimation.purchase_id.toString().includes(searchTerm) ||
+                (estimation.supplier_name && estimation.supplier_name.toLowerCase().includes(searchTerm)) ||
+                (estimation.material_name && estimation.material_name.toLowerCase().includes(searchTerm))
             );
+            
+            // Temporarily replace estimations array for rendering
+            const originalEstimations = estimations;
+            estimations = filteredEstimations;
             currentEstimationPage = 1;
             renderEstimations();
+            estimations = originalEstimations; // Restore original array
         });
 
         document.getElementById('estimationEntriesPerPage').addEventListener('change', function(e) {
@@ -1561,13 +1998,35 @@
             renderEstimations();
         });
 
+        // Add immediate debug log to check if script is running
+        console.log('🔍 DEBUG: Finance purchase order script loaded');
+        console.log('🔍 DEBUG: Current timestamp:', new Date().toISOString());
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            fetchPurchaseOrderEstimations();
+            console.log('🔍 DEBUG: DOM loaded, initializing finance purchase order page');
+            console.log('🔍 DEBUG: Current URL:', window.location.href);
+            console.log('🔍 DEBUG: About to fetch purchase order estimations');
+            
+            // Check if the function exists
+            if (typeof fetchPurchaseOrderEstimations === 'function') {
+                console.log('🔍 DEBUG: fetchPurchaseOrderEstimations function exists, calling it');
+                fetchPurchaseOrderEstimations();
+            } else {
+                console.error('🔍 DEBUG: fetchPurchaseOrderEstimations function does not exist!');
+            }
         });
 
-        // Update the showAlert function to use modals
-        function showAlert(type, message) {
+        // Also try immediate execution as backup
+        setTimeout(function() {
+            console.log('🔍 DEBUG: Timeout backup execution');
+            if (typeof fetchPurchaseOrderEstimations === 'function') {
+                fetchPurchaseOrderEstimations();
+            }
+        }, 1000);
+
+        // Update the showAlert function to use modals - make globally accessible
+        window.showAlert = function(type, message) {
             if (type === 'success') {
                 document.getElementById('successMessage').textContent = message;
                 const successModal = new bootstrap.Modal(document.getElementById('successModal'));
@@ -1577,7 +2036,7 @@
                 const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
                 errorModal.show();
             }
-        }
+        };
 
         // Payment Audit List Variables
         let paymentAuditList = [];
@@ -1741,6 +2200,381 @@
         document.getElementById('payments-tab').addEventListener('shown.bs.tab', function() {
             fetchPaymentAuditList();
         });
+
+        // =============================================
+        // REFUND REQUESTS FUNCTIONALITY
+        // =============================================
+
+        // Refund requests variables - make globally accessible
+        window.refundRequests = [];
+        let currentRefundPage = 1;
+        let refundItemsPerPage = 5;
+        window.currentRefundId = null;
+
+        // Fetch pending refund requests
+        async function fetchPendingRefunds() {
+            try {
+                const response = await fetch('/finance/refunds/pending');
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.refundRequests = data.refunds || [];
+                    renderRefunds();
+                    
+                    // Show info message if no pending refunds
+                    if (window.refundRequests.length === 0) {
+                        console.log('No pending refund requests found');
+                    }
+                } else {
+                    console.error('Failed to fetch refund requests:', data.message);
+                    showAlert('error', 'Failed to fetch refund requests');
+                }
+            } catch (error) {
+                console.error('Error fetching refund requests:', error);
+                showAlert('error', 'Failed to fetch refund requests');
+            }
+        }
+
+        // Render refunds table
+        function renderRefunds() {
+            const refundList = document.getElementById('refundList');
+            refundList.innerHTML = '';
+            
+            if (window.refundRequests.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        No pending refund requests found
+                    </td>
+                `;
+                refundList.appendChild(row);
+                updateRefundPagination();
+                updateRefundEntriesInfo();
+                return;
+            }
+            
+            const startIndex = (currentRefundPage - 1) * refundItemsPerPage;
+            const endIndex = Math.min(startIndex + refundItemsPerPage, window.refundRequests.length);
+            const paginatedRefunds = window.refundRequests.slice(startIndex, endIndex);
+
+            paginatedRefunds.forEach(refund => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${refund.purchase_id}</td>
+                    <td>${refund.supplier_name || '-'}</td>
+                    <td>${refund.material_name || '-'}</td>
+                    <td>${Number(refund.quantity).toFixed(2)} ${refund.unit || ''}</td>
+                    <td>₱${Number(refund.total_price || refund.invoice_amount).toLocaleString()}</td>
+                    <td>
+                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="${refund.return_reason || 'No reason provided'}">
+                            ${refund.return_reason || 'No reason provided'}
+                        </span>
+                    </td>
+                    <td>${formatDate(refund.created_date)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="reviewRefund(${refund.purchase_id})">
+                            <i class="fas fa-eye"></i> Review
+                        </button>
+                    </td>
+                `;
+                refundList.appendChild(row);
+            });
+
+            updateRefundPagination();
+            updateRefundEntriesInfo();
+        }
+
+        // Update refund pagination
+        function updateRefundPagination() {
+            const totalPages = Math.ceil(window.refundRequests.length / refundItemsPerPage);
+            const paginationControls = document.getElementById('refundPaginationControls');
+            paginationControls.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentRefundPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${currentRefundPage - 1})">Previous</a>`;
+            paginationControls.appendChild(prevLi);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${currentRefundPage === i ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${i})">${i}</a>`;
+                paginationControls.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentRefundPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeRefundPage(${currentRefundPage + 1})">Next</a>`;
+            paginationControls.appendChild(nextLi);
+        }
+
+        // Change refund page
+        function changeRefundPage(newPage) {
+            const totalPages = Math.ceil(window.refundRequests.length / refundItemsPerPage);
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentRefundPage = newPage;
+                renderRefunds();
+            }
+            return false;
+        }
+
+        // Update refund entries info
+        function updateRefundEntriesInfo() {
+            const startIndex = (currentRefundPage - 1) * refundItemsPerPage + 1;
+            const endIndex = Math.min(startIndex + refundItemsPerPage - 1, window.refundRequests.length);
+            const info = document.getElementById('refundEntriesInfo');
+            
+            if (window.refundRequests.length === 0) {
+                info.textContent = 'No refund requests to display';
+            } else {
+                info.textContent = `Showing ${startIndex} to ${endIndex} of ${window.refundRequests.length} refund requests`;
+            }
+        }
+
+        // Make reviewRefund function globally accessible
+        window.reviewRefund = function(purchaseId) {
+            const refund = window.refundRequests.find(r => r.purchase_id === purchaseId);
+            if (!refund) return;
+
+            window.currentRefundId = purchaseId;
+            
+            // Update modal content
+            document.getElementById('modalRefundPurchaseId').textContent = refund.purchase_id;
+            document.getElementById('modalRefundSupplier').textContent = refund.supplier_name || 'Unknown';
+            document.getElementById('modalRefundMaterial').textContent = refund.material_name || 'Unknown';
+            document.getElementById('modalRefundQuantity').textContent = `${Number(refund.quantity).toFixed(2)} ${refund.unit || ''}`;
+            document.getElementById('modalRefundAmount').textContent = `₱${Number(refund.total_price || refund.invoice_amount).toLocaleString()}`;
+            document.getElementById('modalRefundDate').textContent = formatDate(refund.created_date);
+            document.getElementById('modalRefundReason').textContent = refund.return_reason || 'No reason provided';
+            
+            // Handle proof display
+            const proofElement = document.getElementById('modalRefundProof');
+            if (refund.return_proof) {
+                // If it's a base64 image, display it
+                if (refund.return_proof.startsWith('data:image/')) {
+                    proofElement.innerHTML = `<img src="${refund.return_proof}" class="img-fluid" style="max-height: 200px;" alt="Proof of issue">`;
+                } else {
+                    proofElement.innerHTML = `<a href="${refund.return_proof}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Proof
+                    </a>`;
+                }
+            } else {
+                proofElement.innerHTML = '<span class="text-muted">No proof provided</span>';
+            }
+            
+            // Clear previous remarks
+            document.getElementById('refundRemarks').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('refundActionModal'));
+            modal.show();
+        };
+
+        // Make viewReturnedOrder function globally accessible
+        window.viewReturnedOrder = function(purchaseId) {
+            const order = window.purchaseOrders.find(o => o.purchase_id === purchaseId);
+            if (!order) return;
+
+            window.currentReturnedOrderId = purchaseId;
+            
+            // Update modal content
+            document.getElementById('returnedPurchaseId').textContent = order.purchase_id;
+            document.getElementById('returnedSupplier').textContent = order.supplier || 'Unknown';
+            document.getElementById('returnedMaterial').textContent = order.material_name || 'Unknown';
+            document.getElementById('returnedQuantity').textContent = `${Number(order.quantity).toFixed(2)} ${order.unit || ''}`;
+            document.getElementById('returnedAmount').textContent = `₱${Number(order.total_price || order.invoice_amount).toLocaleString()}`;
+            document.getElementById('returnedDate').textContent = formatDate(order.created_date);
+            
+            // Invoice information
+            document.getElementById('returnedInvoiceNumber').textContent = order.invoice_number || 'N/A';
+            document.getElementById('returnedInvoiceDate').textContent = order.invoice_date ? formatDate(order.invoice_date) : 'N/A';
+            
+            // Handle invoice file display
+            const invoiceFileElement = document.getElementById('returnedInvoiceFile');
+            if (order.supplier_invoice) {
+                if (order.supplier_invoice.startsWith('data:image/')) {
+                    invoiceFileElement.innerHTML = `<img src="${order.supplier_invoice}" class="img-fluid" style="max-height: 150px;" alt="Invoice">`;
+                } else {
+                    invoiceFileElement.innerHTML = `<a href="${order.supplier_invoice}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Invoice
+                    </a>`;
+                }
+            } else {
+                invoiceFileElement.innerHTML = '<span class="text-muted">No invoice file</span>';
+            }
+            
+            // Return information
+            document.getElementById('returnedReason').textContent = order.return_reason || 'No reason provided';
+            
+            // Handle proof display
+            const proofElement = document.getElementById('returnedProof');
+            if (order.return_proof) {
+                if (order.return_proof.startsWith('data:image/')) {
+                    proofElement.innerHTML = `<img src="${order.return_proof}" class="img-fluid" style="max-height: 200px;" alt="Proof of issue">`;
+                } else {
+                    proofElement.innerHTML = `<a href="${order.return_proof}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Download Proof
+                    </a>`;
+                }
+            } else {
+                proofElement.innerHTML = '<span class="text-muted">No proof provided</span>';
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('returnedOrderModal'));
+            modal.show();
+        };
+
+        // Handle redeliver action
+        async function handleRedeliver() {
+            if (!window.currentReturnedOrderId) return;
+
+            try {
+                const response = await fetch(`/finance/purchases/${window.currentReturnedOrderId}/redeliver`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('returnedOrderModal')).hide();
+                    showAlert('success', 'Order marked for redelivery successfully');
+                    loadPurchaseOrders();
+                } else {
+                    showAlert('error', data.message || 'Failed to redeliver order');
+                }
+            } catch (error) {
+                console.error('Error redelivering order:', error);
+                showAlert('error', 'Failed to redeliver order');
+            }
+        }
+
+        // Handle refund approval/rejection
+        async function handleRefundAction(status) {
+            const remarks = document.getElementById('refundRemarks').value.trim();
+            
+            if (status === 'Refund Rejected' && !remarks) {
+                showAlert('error', 'Remarks are required when rejecting a refund request');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/finance/refunds/${window.currentRefundId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status,
+                        remarks: status === 'Refund Rejected' ? remarks : null
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('refundActionModal')).hide();
+                    
+                    // Show success message
+                    const successMessage = status === 'Refunded' 
+                        ? 'Refund request approved successfully - Order cancelled'
+                        : status === 'Returned'
+                        ? 'Return request approved successfully'
+                        : 'Refund request rejected successfully';
+                    showAlert('success', successMessage);
+                    
+                    // Refresh refund requests after a short delay to ensure the success message is visible
+                    setTimeout(async () => {
+                        try {
+                            await fetchPendingRefunds();
+                        } catch (error) {
+                            console.error('Error refreshing refund requests:', error);
+                        }
+                    }, 1500);
+                } else {
+                    showAlert('error', data.message || 'Failed to process refund request');
+                }
+            } catch (error) {
+                console.error('Error processing refund request:', error);
+                showAlert('error', 'Failed to process refund request');
+            }
+        }
+
+        // Event listeners for refund requests
+        const approveRefundBtn = document.getElementById('approveRefundBtn');
+        const approveReturnBtn = document.getElementById('approveReturnBtn');
+        const rejectRefundBtn = document.getElementById('rejectRefundBtn');
+        
+        if (approveRefundBtn) {
+            approveRefundBtn.addEventListener('click', () => handleRefundAction('Refunded'));
+        }
+        if (approveReturnBtn) {
+            approveReturnBtn.addEventListener('click', () => handleRefundAction('Returned'));
+        }
+        if (rejectRefundBtn) {
+            rejectRefundBtn.addEventListener('click', () => handleRefundAction('Refund Rejected'));
+        }
+
+        // Add event listener for redeliver button
+        const redeliverBtn = document.getElementById('redeliverBtn');
+        if (redeliverBtn) {
+            redeliverBtn.addEventListener('click', handleRedeliver);
+        }
+
+        const refundSearchBar = document.getElementById('refundSearchBar');
+        if (refundSearchBar) {
+            refundSearchBar.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                // Note: This is a simple client-side filter. In a real app, you'd want server-side filtering
+                const filtered = window.refundRequests.filter(refund => 
+                    refund.purchase_id.toString().includes(searchTerm) ||
+                    (refund.supplier_name && refund.supplier_name.toLowerCase().includes(searchTerm))
+                );
+                
+                // Temporarily replace the array for filtering
+                const originalRefunds = window.refundRequests;
+                window.refundRequests = filtered;
+                currentRefundPage = 1;
+                renderRefunds();
+                
+                // Restore original array
+                window.refundRequests = originalRefunds;
+            });
+        }
+
+        const refundEntriesPerPage = document.getElementById('refundEntriesPerPage');
+        if (refundEntriesPerPage) {
+            refundEntriesPerPage.addEventListener('change', function(e) {
+                refundItemsPerPage = parseInt(e.target.value);
+                currentRefundPage = 1;
+                renderRefunds();
+            });
+        }
+
+        // Initialize refund requests when tab is shown
+        const refundsTab = document.getElementById('refunds-tab');
+        if (refundsTab) {
+            refundsTab.addEventListener('shown.bs.tab', function() {
+                fetchPendingRefunds();
+            });
+        }
+
+        // Helper function to format dates
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        }); // End of DOMContentLoaded
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

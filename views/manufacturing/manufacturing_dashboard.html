@@ -9,7 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/side_top.css">
+    <!-- Add side_top.css early to prevent flickering -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
     
     <style>
 
@@ -163,9 +164,6 @@
                 </div>
             </div>
             <div class="topbar-right">
-                <div class="virtual-tour-icon" onclick="window.location.href='/manufacturing/virtual_tour_dashboard'" title="Virtual Tour Portal">
-                    <i class="fas fa-vr-cardboard"></i>
-                </div>
                 <div class="notification-icon" onclick="toggleNotifications()">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge"></span>
@@ -219,8 +217,8 @@
                         <i class="fas fa-project-diagram"></i> <span>Projects</span>
                     </a>
                     <ul class="collapse" id="Projects">
-                        <li class="nav-item"><a href="/manufacturing/manufacturing_projects"><i class="fas fa-code-branch"></i> <span>Developer Projects</span></a></li>
-                        <li class="nav-item"><a href="/manufacturing/manufacturing_approved_project"><i class="fas fa-check-circle"></i> <span>Approved Projects</span></a></li>
+                        <li class="nav-item foreman-restricted" style="display: none;"><a href="/manufacturing/manufacturing_projects"><i class="fas fa-code-branch"></i> <span>Developer Projects</span></a></li>
+                        <li class="nav-item foreman-restricted" style="display: none;"><a href="/manufacturing/manufacturing_approved_project"><i class="fas fa-check-circle"></i> <span>Approved Projects</span></a></li>
                         <li class="nav-item"><a href="/manufacturing/manufacturing_progress"><i class="fas fa-tasks"></i> <span>Project Progress</span></a></li>
                     </ul>
                 </li>
@@ -236,10 +234,10 @@
                 <li class="nav-item">
                     <a href="/manufacturing/manufacturing_request_materials"><i class="fas fa-box"></i> <span>Request Materials</span></a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item foreman-restricted" style="display: none;">
                     <a href="/manufacturing/manufacturing_ratings"><i class="fas fa-star"></i> <span>Ratings & Feedback</span></a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item foreman-restricted" style="display: none;">
                     <a href="/manufacturing/manufacturing_foremen"><i class="fas fa-hard-hat"></i> <span>Foremen List</span></a>
                 </li>
                 <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
@@ -248,62 +246,63 @@
 
         <!-- Main content area -->
         <div id="content">
-        
-            <h2 class="mb-4">Manufacturing Overview</h2>
 
-            <!-- KPI Cards -->
+            <h2 id="generalForemanTitle" class="mb-4">General Foreman Dashboard</h2>
+            <h2 id="foremanTitle" class="mb-4">Foreman Dashboard</h2>
+
+            <!-- General Foreman Content (hidden by request) -->
+            <div id="generalForemanContent">
+                <!-- Intentionally left for future expansion; kept hidden per requirement -->
+            </div>
+
+            <!-- Foreman Content -->
+            <div id="foremanContent">
+                <!-- KPI Cards -->
             <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="kpi-card">
+                    <div class="col-md-6">
+                        <div class="kpi-card text-center">
                         <div class="kpi-icon text-primary">
-                            <i class="fas fa-hard-hat"></i>
+                                <i class="fas fa-project-diagram"></i>
                         </div>
-                        <div class="kpi-value">15</div>
-                        <div class="kpi-label">Active Foremen</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 3 new this month
+                            <div class="kpi-value" id="foremanTotalProjects">0</div>
+                            <div class="kpi-label">Total Projects</div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
+                    <div class="col-md-6">
+                        <div class="kpi-card text-center">
                         <div class="kpi-icon text-success">
-                            <i class="fas fa-check-circle"></i>
+                                <i class="fas fa-users"></i>
                         </div>
-                        <div class="kpi-value">85%</div>
-                        <div class="kpi-label">Project Completion Rate</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 5% from last month
+                            <div class="kpi-value" id="foremanTotalWorkers">0</div>
+                            <div class="kpi-label">Total Construction Workers</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-icon text-warning">
-                            <i class="fas fa-folder-plus"></i>
+
+                <!-- Two Column Layout: Left (Trend) and Right (Planning Projects) -->
+                <div class="row mb-4">
+                    <!-- Left Column - Trend of Material Usage -->
+                    <div class="col-md-8">
+                        <div class="chart-container">
+                            <div class="chart-title">Material Usage Trend (Owner vs Company)</div>
+                            <canvas id="foremanMaterialUsageChart"></canvas>
                         </div>
-                        <div class="kpi-value">12</div>
-                        <div class="kpi-label">New Projects</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 3 from last month
                         </div>
+                    
+                    <!-- Right Column - Planning Projects (Top 5) -->
+                    <div class="col-md-4">
+                        <div class="chart-container" style="height: 400px;">
+                            <div class="chart-title">Planning Projects</div>
+                            <div id="foremanPlanningProjectsList" style="margin-top: 40px;"></div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-icon text-info">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div class="kpi-value">4.8</div>
-                        <div class="kpi-label">Average Rating</div>
-                        <div class="trend-indicator trend-up">
-                            <i class="fas fa-arrow-up"></i> 0.2 from last month
-                        </div>
-                    </div>
                 </div>
             </div>
 
+            <!-- Keep existing Manufacturing Overview content below if needed -->
+
             <!-- Charts Row -->
+            <div id="overviewContent">
             <div class="row mb-4">
                 <div class="col-md-8">
                     <div class="chart-container">
@@ -337,6 +336,7 @@
                     <!-- Project items will be dynamically added here -->
                 </div>
             </div>
+                            </div>
         </div>
     </div>
 
@@ -344,10 +344,179 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/side_top.js"></script>
-
-    <script src="/js/side_top.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script src="/public/js/manufacturing_role_visibility.js"></script>
     <script>
+        // Role-based visibility for Foreman dashboards (smooth transitions)
+        async function initForemanRoleDashboard() {
+            try {
+                // Reuse HR session endpoint for role_name if available; fallback to manufacturing dashboards if you have one
+                const res = await fetch('/hr/check-session', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to fetch session');
+                const data = await res.json();
+                const roleName = (data?.user?.role_name || '').toLowerCase();
+                const employeeId = data?.user?.employee_id || '';
+
+                // Determine role categories
+                const isGeneralForeman = roleName === 'general_foreman' || roleName === 'general foreman';
+                const isForeman = roleName === 'foreman_1' || roleName === 'foreman_2' || roleName === 'foreman_3' || roleName === 'foreman_4';
+
+                const foremanTitle = document.getElementById('foremanTitle');
+                const generalTitle = document.getElementById('generalForemanTitle');
+                const foremanContent = document.getElementById('foremanContent');
+                const generalContent = document.getElementById('generalForemanContent');
+                const overviewContent = document.getElementById('overviewContent');
+
+                function showElement(el) {
+                    if (!el) return;
+                    el.style.display = 'block';
+                    void el.offsetHeight;
+                    requestAnimationFrame(() => { el.style.opacity = '1'; });
+                }
+                function hideElement(el) {
+                    if (!el || el.style.display === 'none') return;
+                    el.style.opacity = '0';
+                    setTimeout(() => { el.style.display = 'none'; }, 300);
+                }
+
+                // Per requirement: hide the dashboard intended for general_foreman
+                hideElement(generalTitle);
+                hideElement(generalContent);
+
+                if (isForeman) {
+                    // Hide manufacturing overview for foreman
+                    if (overviewContent) hideElement(overviewContent);
+                    showElement(foremanTitle);
+                    showElement(foremanContent);
+                    setTimeout(() => {
+                        loadForemanDashboard(employeeId);
+                    }, 350);
+                } else {
+                    // Non-foreman roles can continue with existing overview if needed
+                    hideElement(foremanTitle);
+                    hideElement(foremanContent);
+                    // Ensure overview visible for non-foreman
+                    if (overviewContent) {
+                        overviewContent.style.display = 'block';
+                        overviewContent.style.opacity = '1';
+                    }
+                }
+            } catch (e) {
+                // Default: hide foreman content on error
+                const foremanTitle = document.getElementById('foremanTitle');
+                const foremanContent = document.getElementById('foremanContent');
+                if (foremanTitle) foremanTitle.style.display = 'none';
+                if (foremanContent) foremanContent.style.display = 'none';
+            }
+        }
+
+        async function loadForemanDashboard(foremanCode) {
+            try {
+                // KPIs
+                const projRes = await fetch(`/manufacturing/dashboard/foreman/project-count?foremanCode=${encodeURIComponent(foremanCode)}`, { credentials: 'include' });
+                if (projRes.ok) {
+                    const pj = await projRes.json();
+                    document.getElementById('foremanTotalProjects').textContent = (pj.total || 0).toString();
+                }
+
+                const workersRes = await fetch(`/manufacturing/dashboard/foreman/workers-count?foremanCode=${encodeURIComponent(foremanCode)}`, { credentials: 'include' });
+                if (workersRes.ok) {
+                    const wk = await workersRes.json();
+                    document.getElementById('foremanTotalWorkers').textContent = (wk.total || 0).toString();
+                }
+
+                // Planning projects list (Top 5)
+                const planRes = await fetch(`/manufacturing/dashboard/foreman/planning-projects?limit=5&foremanCode=${encodeURIComponent(foremanCode)}`, { credentials: 'include' });
+                if (planRes.ok) {
+                    const pr = await planRes.json();
+                    renderForemanPlanningProjects(Array.isArray(pr.data) ? pr.data : []);
+                }
+
+                // Material usage trend (owner vs company)
+                const trendRes = await fetch(`/manufacturing/dashboard/foreman/material-usage-trend?foremanCode=${encodeURIComponent(foremanCode)}`, { credentials: 'include' });
+                if (trendRes.ok) {
+                    const td = await trendRes.json();
+                    initializeForemanMaterialUsageChart(td?.data || { owner_supply: 0, company_supply: 0 });
+                }
+            } catch (e) {
+                console.error('Foreman dashboard load error:', e);
+            }
+        }
+
+        function renderForemanPlanningProjects(rows) {
+            const container = document.getElementById('foremanPlanningProjectsList');
+            if (!container) return;
+            if (!rows.length) {
+                container.innerHTML = '<p class="text-muted">No planning projects found</p>';
+                return;
+            }
+            container.innerHTML = rows.map((r, idx) => {
+                const name = (r.project_name || 'Untitled');
+                const loc = (r.location || '');
+                const date = (r.created_at || r.start_date || '');
+                return `
+                    <div class="project-item" style="padding:10px 0;border-bottom:1px solid #eee;">
+                    <div>
+                            <strong>#${idx + 1}. ${name}</strong>
+                            <div class="text-muted" style="font-size:12px;">${loc}</div>
+                            <div class="text-muted" style="font-size:12px;">${date}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function initializeForemanMaterialUsageChart(data) {
+            if (typeof Chart === 'undefined') { setTimeout(() => initializeForemanMaterialUsageChart(data), 300); return; }
+            const ctx = document.getElementById('foremanMaterialUsageChart');
+            if (!ctx) return;
+            const owner = Number(data.owner_supply || 0);
+            const company = Number(data.company_supply || 0);
+
+            if (window.foremanMaterialUsageChartInstance) {
+                window.foremanMaterialUsageChartInstance.destroy();
+            }
+            window.foremanMaterialUsageChartInstance = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Owner Supply', 'Company Supply'],
+                    datasets: [{
+                        label: 'Usage (projects/items)',
+                        data: [owner, company],
+                        backgroundColor: ['#17a2b8', '#007bff'],
+                        borderColor: ['#138496', '#0056b3'],
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 48, // leave room for the title block to avoid overlap
+                            right: 16,
+                            bottom: 16,
+                            left: 16
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, title: { display: true, text: 'Count' } },
+                        x: { title: { display: true, text: 'Source Type' } }
+                    }
+                }
+            });
+        }
         // Sample data
         const projectData = {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -385,10 +554,52 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            initializeSidebar();
+            if (typeof initializeSidebar === 'function') {
+                initializeSidebar();
+            }
+            // Role-based init for foreman dashboards
+            initForemanRoleDashboard();
+
+            // Existing overview initializers (kept)
             initializeCharts();
             renderRecentProjects();
+            loadManufacturingKpis();
         });
+
+        async function loadManufacturingKpis() {
+            try {
+                const res = await fetch('/manufacturing/dashboard/kpis', { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load KPIs');
+                const data = await res.json();
+                if (!data.success || !data.data) throw new Error('Invalid KPI response');
+
+                const k = data.data;
+                // Active foremen
+                const elForemen = document.getElementById('kpiActiveForemen');
+                const elForemenDelta = document.getElementById('kpiNewForemenDelta');
+                if (elForemen) elForemen.textContent = (k.active_foremen || 0).toString();
+                if (elForemenDelta) elForemenDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.new_foremen_this_month || 0)} new this month`;
+
+                // Completion rate
+                const elComp = document.getElementById('kpiCompletionRate');
+                if (elComp) elComp.textContent = `${Number(k.completion_rate_percent || 0)}%`;
+
+                // Active contracts percent + delta
+                const elActPct = document.getElementById('kpiActiveContractsPercent');
+                const elActDelta = document.getElementById('kpiActiveContractsDelta');
+                if (elActPct) elActPct.textContent = `${Number(k.contracts_active_percent || 0)}%`;
+                if (elActDelta) elActDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.contracts_active_delta_this_month >= 0 ? '+' : '')}${k.contracts_active_delta_this_month || 0} this month`;
+
+                // Average rating + delta
+                const elAvg = document.getElementById('kpiAverageRating');
+                const elAvgDelta = document.getElementById('kpiAverageRatingDelta');
+                if (elAvg) elAvg.textContent = (Number(k.average_rating || 0)).toFixed(1);
+                if (elAvgDelta) elAvgDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.average_rating_delta >= 0 ? '+' : '')}${Number(k.average_rating_delta || 0).toFixed(1)} from last month`;
+
+            } catch (e) {
+                console.error('Manufacturing KPI load error:', e);
+            }
+        }
 
         // Initialize charts
         function initializeCharts() {

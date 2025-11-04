@@ -1,6 +1,4 @@
 const db = require("../../../db");
-<<<<<<< HEAD
-<<<<<<< HEAD
 const bcrypt = require('bcrypt');
 const QRCode = require('qrcode');
 const fs = require('fs');
@@ -183,25 +181,10 @@ const HRModel = {
     getRoleById: async (roleId) => {
         const query = "SELECT * FROM roles WHERE id = ?";
         const [result] = await db.query(query, [roleId]);
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-
-const HRModel = {
-    // 🔹 Get permission by ID
-    getPermissionById: async (permissionId) => {
-        const query = "SELECT * FROM permission WHERE id = ?";
-        const [result] = await db.query(query, [permissionId]);
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
         return result.length > 0 ? result[0] : null;
     },
 
     // 🔹 Create a new user with username included
-<<<<<<< HEAD
-<<<<<<< HEAD
     createUser: async (email, role_id, username) => {
         console.log("🔹 Creating user with:", { email, role_id, username });
 
@@ -388,32 +371,6 @@ const HRModel = {
             console.error("❌ Error completing onboarding:", error);
             throw new Error("Failed to complete onboarding: " + (error.sqlMessage || error.message));
         }
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-    createUser: async (email, permission_id, full_name) => {
-        console.log("🔹 Permission being passed to createUser:", permission_id, "Type:", typeof permission_id);
-
-        if (!permission_id) {
-            throw new Error("❌ Permission ID is required and cannot be null");
-        }
-
-        const defaultPassword = "default123"; 
-
-        // Include username in the insert query
-        const query = `
-            INSERT INTO users (email, username, permission_id, password) 
-            VALUES (?, ?, ?, ?)
-        `;
-
-        const [result] = await db.query(query, [email, full_name, permission_id, defaultPassword]);
-        console.log("✅ New user created with ID:", result.insertId);
-        
-        return result.insertId;
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
     },
 
     // 🔹 Get user ID by email
@@ -441,8 +398,6 @@ const HRModel = {
     
             const employeeQuery = `
                 INSERT INTO employees 
-<<<<<<< HEAD
-<<<<<<< HEAD
                 (employee_id, user_id, email, role_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `;
@@ -452,21 +407,6 @@ const HRModel = {
                 employeeData.user_id,
                 employeeData.email,
                 employeeData.role_id,
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-                (user_id, email, permission_id, full_name, contact, address, birthday, employment_status, educational_background, emergency_contact_name, emergency_contact_relationship, emergency_contact_phone) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            `;
-    
-            const employeeValues = [
-                employeeData.user_id,
-                employeeData.email,
-                employeeData.permission_id,
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
                 employeeData.full_name,
                 employeeData.contact,
                 employeeData.address,
@@ -475,15 +415,7 @@ const HRModel = {
                 employeeData.educational_background,
                 employeeData.emergency_contact_name,
                 employeeData.emergency_contact_relationship,
-<<<<<<< HEAD
-<<<<<<< HEAD
                 employeeData.emergency_contact_phone
-=======
-                employeeData.emergency_contact_phone,
->>>>>>> 85f9240 (Initial commit)
-=======
-                employeeData.emergency_contact_phone,
->>>>>>> aa1bb20 (Initial commit)
             ];
     
             const [employeeResult] = await connection.query(employeeQuery, employeeValues);
@@ -502,8 +434,6 @@ const HRModel = {
         }
     },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     // 🔹 Get last inserted employee to determine the next ID (e.g., 2025-1007)
     getLastEmployeeId: async () => {
         const query = "SELECT employee_id FROM employees ORDER BY employee_id DESC LIMIT 1";
@@ -542,50 +472,12 @@ const HRModel = {
         } catch (err) {
             console.error("❌ Failed to fetch employees:", err);
             throw err;
-=======
-    // 🔹 Fetch all employees
-    getAllEmployees: async () => {
-        try {
-            const query = "SELECT * FROM employees";
-            const [employees] = await db.query(query);
-            return employees.map(employee => ({
-                ...employee,
-                birthday: employee.birthday ? new Date(employee.birthday).toISOString().split('T')[0] : null
-            }));
-        } catch (error) {
-            console.error("❌ Error fetching employees:", error);
-            throw error;
->>>>>>> 85f9240 (Initial commit)
         }
     },
-=======
-    // 🔹 Fetch all employees
-    getAllEmployees: async () => {
-        const query = `
-            SELECT 
-                e.*, 
-                p.role_name 
-            FROM 
-                employees e
-            LEFT JOIN 
-                permission p ON e.permission_id = p.id
-        `;
-        const [employees] = await db.query(query);
-        return employees.map(employee => ({
-            ...employee,
-            birthday: employee.birthday
-                ? new Date(employee.birthday).toISOString().split('T')[0]
-                : null
-        }));
-    },
-            
->>>>>>> aa1bb20 (Initial commit)
 
     // 🔹 Get employee by ID (Added this function for updates)
     getEmployeeById: async (employeeId) => {
         try {
-<<<<<<< HEAD
-<<<<<<< HEAD
             const query = `
                 SELECT 
                     e.employee_id,
@@ -611,12 +503,6 @@ const HRModel = {
                 LEFT JOIN users u ON e.user_id = u.id
                 WHERE e.employee_id = ?
             `;
-=======
-            const query = "SELECT * FROM employees WHERE id = ?";
->>>>>>> 85f9240 (Initial commit)
-=======
-            const query = "SELECT * FROM employees WHERE id = ?";
->>>>>>> aa1bb20 (Initial commit)
             const [rows] = await db.query(query, [employeeId]);
             if (rows.length > 0) {
                 let employee = rows[0];
@@ -632,8 +518,6 @@ const HRModel = {
         }
     },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     // 🔹 Get all permissions with salary and position information (excluding supplier and developer)
     getAllRoles: async () => {
         try {
@@ -762,24 +646,6 @@ const HRModel = {
     },
     
     
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-    // 🔹 Get all permissions
-    getAllPermissions: async () => {
-        try {
-            const query = "SELECT id, role_name FROM permission";
-            const [permissions] = await db.query(query);
-            return permissions;
-        } catch (error) {
-            console.error("❌ Error fetching permissions:", error);
-            throw error;
-        }
-    },
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
     
     // 🔹 Check if employee email already exists
     checkEmployeeEmailExists: async (email) => {
@@ -792,8 +658,6 @@ const HRModel = {
     updateEmployee: async (employeeId, employeeData) => {
         try {
             console.log(`🔹 Attempting to update Employee ID: ${employeeId}`);
-<<<<<<< HEAD
-<<<<<<< HEAD
         
             const {
                 email, full_name, contact, address, birthday,
@@ -801,29 +665,12 @@ const HRModel = {
                 emergency_contact_relationship, emergency_contact_phone, role_id
             } = employeeData;            
         
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-            console.log("🔹 Received Employee Data:", employeeData);
-    
-            const {
-                email, full_name, contact, address, birthday,
-                employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, permission_id
-            } = employeeData;
-    
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
             // 🔥 Validate if employee exists before updating
             const existingEmployee = await HRModel.getEmployeeById(employeeId);
             if (!existingEmployee) {
                 console.log("❌ Employee not found in the database.");
                 throw new Error("Employee not found.");
             }
-<<<<<<< HEAD
-<<<<<<< HEAD
         
             // Update the employee details
             const employeeQuery = `
@@ -969,46 +816,10 @@ const HRModel = {
             return result.length > 0 ? result[0] : null;
         } catch (error) {
             console.error('❌ Error in checkRequestApproval:', error);
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-    
-            const query = `
-                UPDATE employees 
-                SET email = ?, full_name = ?, contact = ?, address = ?, birthday = ?, 
-                    employment_status = ?, educational_background = ?, emergency_contact_name = ?, 
-                    emergency_contact_relationship = ?, emergency_contact_phone = ?, permission_id = ? 
-                WHERE employee_id  = ?
-            `;
-    
-            const [result] = await db.query(query, [
-                email, full_name, contact, address, birthday,
-                employment_status, educational_background, emergency_contact_name,
-                emergency_contact_relationship, emergency_contact_phone, permission_id, employeeId
-            ]);
-    
-            console.log("✅ Update Query Result:", result);
-    
-            if (result.affectedRows === 0) {
-                console.log("❌ No rows were updated. Possible incorrect employee ID.");
-                throw new Error("Update failed. No changes were made.");
-            }
-    
-            console.log("✅ Employee updated successfully.");
-            return HRModel.getEmployeeById(employeeId);
-    
-        } catch (error) {
-            console.error("❌ Error updating employee:", error.message);
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
             throw error;
         }
     },
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     // Check if already checked in
     alreadyCheckedIn: async (userId, date) => {
         try {
@@ -1501,6 +1312,7 @@ const HRModel = {
                 LEFT JOIN attendance a ON e.user_id = a.user_id
                 LEFT JOIN employee_dates ed ON e.employee_id = ed.employee_id
                 WHERE e.is_deleted = 0
+                AND (r.name IS NULL OR LOWER(r.name) <> 'owner')
                 GROUP BY e.employee_id, e.full_name, e.role_id, r.name, p.salary`;
 
             const params = [
@@ -1818,14 +1630,16 @@ const HRModel = {
         return Math.round(tax * 100) / 100; // Round to 2 decimal places
     },
 
-    // Calculate deductions for an employee based on their salary and payroll period
-    calculateDeductions: async (employeeSalary, payrollPeriod = 'second') => {
+    // ===== PAYROLL ONLY: Calculate deductions with support for deduction mode (split vs monthly)
+    // Calculate deductions for an employee based on salary, payroll period, and deduction mode
+    calculateDeductions: async (employeeSalary, payrollPeriod = 'second', deductionMode = 'split') => {
         try {
             const [deductions] = await db.query(`
-                SELECT id, deduction_type, fixed_amount, description, category, is_active, effective_date, created_at, updated_at
-                FROM payroll_deductions 
+                SELECT id, deduction_type, salary_min, salary_max, total_rate,
+                       employee_percentage, employer_percentage, is_active
+                FROM deductions 
                 WHERE is_active = 1 
-                ORDER BY category, deduction_type
+                ORDER BY deduction_type
             `);
 
             let totalDeductions = 0;
@@ -1834,15 +1648,29 @@ const HRModel = {
             const deductionDetails = [];
             const nextPeriodDeductions = []; // Deductions that will apply to next period
 
+            
+
             for (const deduction of deductions) {
                 let deductionAmount = 0;
                 
-                // Calculate amount based on fixed amount or percentage
-                if (deduction.fixed_amount > 0) {
-                    deductionAmount = deduction.fixed_amount;
-                } else if (deduction.percentage > 0) {
-                    deductionAmount = (employeeSalary * deduction.percentage) / 100;
+                // Calculate employee share only, using salary range brackets when provided
+                const inRange = (val, min, max) => {
+                    if (min == null && max == null) return true;
+                    if (min == null) return val <= Number(max);
+                    if (max == null) return val >= Number(min);
+                    return val >= Number(min) && val <= Number(max);
+                };
+
+                if (Number(deduction.fixed_amount) > 0) {
+                    deductionAmount = Number(deduction.fixed_amount);
+                } else if (inRange(Number(employeeSalary), deduction.salary_min, deduction.salary_max) && Number(deduction.employee_percentage) > 0) {
+                    deductionAmount = (Number(employeeSalary) * Number(deduction.employee_percentage)) / 100;
+                } else if (Number(deduction.percentage) > 0) {
+                    // Fallback if legacy percentage column exists
+                    deductionAmount = (Number(employeeSalary) * Number(deduction.percentage)) / 100;
                 }
+
+                
 
                 // Special handling for Income Tax (progressive tax brackets)
                 if (deduction.deduction_type === 'Income Tax') {
@@ -1850,40 +1678,82 @@ const HRModel = {
                 }
 
                 if (deductionAmount > 0) {
-                    // Apply deduction logic based on period
-                    const shouldApplyDeduction = payrollPeriod === 'second' || deduction.deduction_type === 'Income Tax';
-                    
-                    if (shouldApplyDeduction) {
-                        // Apply deduction in current period
-                        totalDeductions += deductionAmount;
+                    // Apply deduction logic based on selected mode
+                    if (deductionMode === 'split') {
+                        // Split equally across first and second halves
+                        const splitAmount = Math.round((deductionAmount / 2) * 100) / 100;
                         
-                        if (deduction.tax_status === 'taxable') {
-                            taxableDeductions += deductionAmount;
+                        // Always apply half in the current period
+                        totalDeductions += splitAmount;
+                        const taxStatus = deduction.tax_status || 'non_taxable';
+                        if (taxStatus === 'taxable') {
+                            taxableDeductions += splitAmount;
                         } else {
-                            nonTaxableDeductions += deductionAmount;
+                            nonTaxableDeductions += splitAmount;
                         }
-
                         deductionDetails.push({
+                            id: deduction.id,
                             deduction_type: deduction.deduction_type,
-                            amount: deductionAmount,
-                            tax_status: deduction.tax_status,
+                            amount: splitAmount,
+                            tax_status: taxStatus,
                             category: deduction.category,
                             description: deduction.description,
-                            applied_in_current_period: true
+                            applied_in_current_period: true,
+                            mode: 'split'
                         });
+                        // In first half, show the other half as next period info
+                        if (payrollPeriod === 'first') {
+                            nextPeriodDeductions.push({
+                                id: deduction.id,
+                                deduction_type: deduction.deduction_type,
+                                amount: splitAmount,
+                                tax_status: taxStatus,
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: false,
+                                mode: 'split'
+                            });
+                        }
                     } else {
-                        // Show deduction for next period (first half only)
-                        nextPeriodDeductions.push({
+                        // 'monthly' mode: apply full amount only in second half (or always for income tax)
+                        const shouldApplyDeduction = payrollPeriod === 'second' || deduction.deduction_type === 'Income Tax';
+                        
+                        if (shouldApplyDeduction) {
+                            totalDeductions += deductionAmount;
+                            const taxStatus2 = deduction.tax_status || 'non_taxable';
+                            if (taxStatus2 === 'taxable') {
+                                taxableDeductions += deductionAmount;
+                            } else {
+                                nonTaxableDeductions += deductionAmount;
+                            }
+                        deductionDetails.push({
+                            id: deduction.id,
                             deduction_type: deduction.deduction_type,
-                            amount: deductionAmount,
-                            tax_status: deduction.tax_status,
-                            category: deduction.category,
-                            description: deduction.description,
-                            applied_in_current_period: false
-                        });
+                                amount: deductionAmount,
+                                tax_status: taxStatus2,
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: true,
+                                mode: 'monthly'
+                            });
+                        } else {
+                            // First half preview of what will apply in second
+                            nextPeriodDeductions.push({
+                                id: deduction.id,
+                                deduction_type: deduction.deduction_type,
+                                amount: deductionAmount,
+                                tax_status: deduction.tax_status || 'non_taxable',
+                                category: deduction.category,
+                                description: deduction.description,
+                                applied_in_current_period: false,
+                                mode: 'monthly'
+                            });
+                        }
                     }
                 }
             }
+
+            
 
             return {
                 totalDeductions,
@@ -3081,6 +2951,145 @@ const HRModel = {
             return result[0].total;
         } catch (error) {
             console.error('Error getting total pending approvals count:', error);
+            throw error;
+        }
+    },
+
+    // Recruitment Dashboard Methods
+    // Get pending applications count
+    getPendingApplicationsCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM applications
+                WHERE status = 'Pending'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting pending applications count:', error);
+            throw error;
+        }
+    },
+
+    // Get job posting trend data (monthly, quarterly, yearly)
+    getJobPostingTrend: async (period = 'monthly') => {
+        try {
+            let query = '';
+            let labels = [];
+            let values = [];
+
+            if (period === 'monthly') {
+                // Last 12 months
+                query = `
+                    SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                    ORDER BY month ASC
+                `;
+            } else if (period === 'quarterly') {
+                // Last 4 quarters
+                query = `
+                    SELECT 
+                        YEAR(created_at) as year,
+                        QUARTER(created_at) as quarter,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 4 QUARTER)
+                    GROUP BY YEAR(created_at), QUARTER(created_at)
+                    ORDER BY YEAR(created_at), QUARTER(created_at) ASC
+                `;
+            } else {
+                // Last 5 years
+                query = `
+                    SELECT 
+                        YEAR(created_at) as year,
+                        COUNT(*) as count
+                    FROM applications
+                    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 5 YEAR)
+                    GROUP BY YEAR(created_at)
+                    ORDER BY year ASC
+                `;
+            }
+
+            const [results] = await db.query(query);
+            
+            results.forEach(row => {
+                if (period === 'monthly') {
+                    const date = new Date(row.month + '-01');
+                    labels.push(date.toLocaleString(undefined, { month: 'short', year: 'numeric' }));
+                } else if (period === 'quarterly') {
+                    labels.push(`Q${row.quarter} ${row.year}`);
+                } else {
+                    labels.push(row.year.toString());
+                }
+                values.push(parseInt(row.count) || 0);
+            });
+
+            return { labels, values };
+        } catch (error) {
+            console.error('Error getting job posting trend:', error);
+            throw error;
+        }
+    },
+
+    // Payroll Dashboard Methods
+    // Get payroll approved count
+    getPayrollApprovedCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM payroll_periods
+                WHERE status = 'approved'
+            `);
+            return result[0].total;
+        } catch (error) {
+            console.error('Error getting payroll approved count:', error);
+            throw error;
+        }
+    },
+
+    // Get total payroll amount (sum of net_salary from released payrolls)
+    getTotalDeductions: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COALESCE(SUM(net_salary), 0) as total
+                FROM payroll
+                WHERE status = 'released'
+            `);
+            return result[0].total || 0;
+        } catch (error) {
+            console.error('Error getting total payroll amount:', error);
+            throw error;
+        }
+    },
+
+    // Get department payroll distribution (excluding executives)
+    getDepartmentPayrollDistribution: async () => {
+        try {
+            const [results] = await db.query(`
+                SELECT 
+                    d.id as department_id,
+                    d.name as department_name,
+                    COUNT(DISTINCT e.employee_id) as employee_count
+                FROM departments d
+                LEFT JOIN roles r ON r.department_id = d.id
+                LEFT JOIN employees e ON e.role_id = r.id 
+                    AND e.is_deleted = 0
+                LEFT JOIN users u ON e.user_id = u.id
+                    AND u.is_active = 1
+                    AND r.name NOT LIKE '%executive%'
+                    AND r.name NOT LIKE '%Executive%'
+                WHERE d.is_deleted = 0
+                GROUP BY d.id, d.name
+                HAVING employee_count > 0
+                ORDER BY employee_count DESC
+            `);
+            return results;
+        } catch (error) {
+            console.error('Error getting department payroll distribution:', error);
             throw error;
         }
     },
@@ -4431,13 +4440,13 @@ const HRModel = {
     // Payroll Periods Management
     // =========================
 
-    // Create a new payroll period
-    createPayrollPeriod: async (periodName, startDate, endDate) => {
+    // ===== PAYROLL ONLY: Create a new payroll period with deduction_mode
+    createPayrollPeriod: async (periodName, startDate, endDate, deductionMode = 'split') => {
         try {
             const [result] = await db.query(`
-                INSERT INTO payroll_periods (period_name, start_date, end_date, status, created_at)
-                VALUES (?, ?, ?, 'pending', NOW())
-            `, [periodName, startDate, endDate]);
+                INSERT INTO payroll_periods (period_name, start_date, end_date, deduction_mode, status, created_at)
+                VALUES (?, ?, ?, ?, 'pending', NOW())
+            `, [periodName, startDate, endDate, deductionMode]);
             
             return result.insertId;
         } catch (error) {
@@ -4482,6 +4491,20 @@ const HRModel = {
         }
     },
 
+    // ===== PAYROLL ONLY: Update deduction_mode for a payroll period
+    updatePayrollPeriodDeductionMode: async (periodId, deductionMode) => {
+        try {
+            await db.query(`
+                UPDATE payroll_periods
+                SET deduction_mode = ?
+                WHERE id = ?
+            `, [deductionMode, periodId]);
+        } catch (error) {
+            console.error("❌ Error updating payroll period deduction_mode:", error);
+            throw error;
+        }
+    },
+
     // Get all payroll entries for a specific period
     getPayrollEntriesByPeriod: async (periodId) => {
         try {
@@ -4506,6 +4529,21 @@ const HRModel = {
         }
     },
 
+    // Count payroll rows linked to a period (any status)
+    countPayrollByPeriod: async (periodId) => {
+        try {
+            const [rows] = await db.query(`
+                SELECT COUNT(*) AS cnt
+                FROM payroll
+                WHERE payroll_period_id = ?
+            `, [periodId]);
+            return rows[0]?.cnt || 0;
+        } catch (error) {
+            console.error("❌ Error counting payroll by period:", error);
+            throw error;
+        }
+    },
+
     // Update payroll period status
     updatePayrollPeriodStatus: async (periodId, status) => {
         try {
@@ -4521,8 +4559,8 @@ const HRModel = {
         }
     },
 
-    // Find or create payroll period for given dates
-    findOrCreatePayrollPeriod: async (startDate, endDate, periodName = null) => {
+    // ===== PAYROLL ONLY: Find or create payroll period for given dates (respects deduction_mode when creating)
+    findOrCreatePayrollPeriod: async (startDate, endDate, periodName = null, deductionMode = 'split') => {
         try {
             // First, try to find existing period by dates
             const [existing] = await db.query(`
@@ -4547,7 +4585,7 @@ const HRModel = {
             }
             
             console.log('Creating new payroll period:', periodName);
-            const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
+            const periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate, deductionMode);
             return periodId;
         } catch (error) {
             console.error("❌ Error finding or creating payroll period:", error);
@@ -4749,7 +4787,10 @@ const HRModel = {
                     r.payroll_period || '',
                     r.status || 'pending',
                     r.monthly_salary || 0,
-                    periodId // payroll_period_id
+                    periodId, // payroll_period_id
+                    r.sss_deduction_id || null,
+                    r.philhealth_deduction_id || null,
+                    r.pagibig_deduction_id || null
                 ];
             });
 
@@ -4759,7 +4800,8 @@ const HRModel = {
                 `INSERT INTO payroll 
                  (employee_id, position_id, basic_salary_snapshot, payroll_date, days_present, 
                   days_absent, total_hours, overtime_hours, fixed_salary, total_deductions, 
-                  absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id)
+                  absence_deduction, net_salary, payroll_period, status, salary_before_tax, payroll_period_id,
+                  sss_deduction_id, philhealth_deduction_id, pagibig_deduction_id)
                  VALUES ?`, [values]
             );
 
@@ -6114,46 +6156,6 @@ const HRModel = {
       throw error;
     }
   }
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-    recordAttendance: async (employeeId, latitude, longitude) => {
-        return db.query(
-            "INSERT INTO attendance (employee_id, latitude, longitude, status) VALUES (?, ?, ?, 'Present')",
-            [employeeId, latitude, longitude]
-        );
-    },
-
-    // 🔹 Get today's attendance
-    getTodayAttendance: async (employeeId) => {
-        return db.query(
-            "SELECT * FROM attendance WHERE employee_id = ? AND DATE(check_in_time) = CURDATE()",
-            [employeeId]
-        ).then(results => results[0] || null);
-    },
-    
-
-
-
-    saveResume: async (employee_id, resume_path) => {
-        try {
-            const sql = `
-                INSERT INTO resumes (employee_id, resume_path, uploaded_at)
-                VALUES (?, ?, NOW())
-            `;
-            await pool.query(sql, [employee_id, resume_path]);
-            return true;
-        } catch (error) {
-            console.error("❌ Error saving resume to database:", error);
-            return false;
-        }
-    },
-
-
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 };
 // ==================== JOB POSTINGS (moved from CRM) ====================
 // Data-access moved from CRM to HR for job posting management

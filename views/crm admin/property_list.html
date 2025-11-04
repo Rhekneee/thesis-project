@@ -708,6 +708,51 @@
             currentPage = 1;
             renderProperties();
         }
+
+        // Handle coordinator-only sections visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: Starting coordinator visibility script...');
+            
+            // Function to show coordinator items (for non-coordinators)
+            function showCoordinatorItems() {
+                console.log('🔍 DEBUG: Showing coordinator items for non-coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+            
+            // Function to hide coordinator items (for coordinators)
+            function hideCoordinatorItems() {
+                console.log('🔍 DEBUG: Keeping coordinator items hidden for coordinator user');
+                const coordinatorOnlyItems = document.querySelectorAll('.coordinator-only');
+                coordinatorOnlyItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+            }
+            
+            fetch('/api/profile')
+                .then(response => {
+                    console.log('🔍 DEBUG: Profile API response received:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('🔍 DEBUG: Profile API data:', data);
+                    console.log('🔍 DEBUG: User role is:', data?.role_name);
+                    if (data && data.role_name === 'sales_marketing_coordinator') {
+                        console.log('🔍 DEBUG: User is sales_marketing_coordinator, keeping items hidden');
+                        hideCoordinatorItems();
+                    } else {
+                        console.log('🔍 DEBUG: User role is not sales_marketing_coordinator, showing items');
+                        showCoordinatorItems();
+                    }
+                })
+                .catch(error => {
+                    console.log('🔍 DEBUG: Could not fetch user profile:', error);
+                    // Fallback: keep items hidden if API fails (safer default)
+                    hideCoordinatorItems();
+                });
+        });
     </script>
 </body>
 </html>

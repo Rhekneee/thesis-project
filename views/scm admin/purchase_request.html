@@ -10,6 +10,7 @@
   <!-- Font Awesome for icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/side_top.css">
+  <script src="/public/js/scm_role_visibility.js"></script>
   <script src="/js/side_top.js"></script>
   <style>
     #content {
@@ -790,63 +791,51 @@ table thead th {
                 </div>
             </div>
         </div>
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
-        <span class="company-title">MDB Construction</span>
-    </div>
-      <ul class="list-unstyled">
-        <li class="nav-item">
-          <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
-        </li>
-        <li class="nav-item">
-          <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
-        </li>
-        <li class="nav-item">
-          <a href="#" data-bs-toggle="collapse" data-bs-target="#supplyrequest" aria-expanded="false">
-            <i class="fas fa-users"></i> Supplier
-          </a>
-          <ul class="collapse" id="supplyrequest">
-              <li class="nav-item"><a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a></li>
-              <li class="nav-item"><a href="/scm/product_request"><i class="fas fa-user-tie"></i> <span> Product Request</span></a></li>
+        <div class="sidebar" id="sidebar">
+          <div class="sidebar-header">
+            <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+            <span class="company-title">MDB Construction</span>
+        </div>
+        <ul class="list-unstyled">
+          <li class="nav-item">
+            <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+          </li>
+          <li class="nav-item">
+            <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+          </li>
+          <li class="nav-item procurement-restricted" style="display: none;">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#supplyrequest" aria-expanded="false">
+              <i class="fas fa-users"></i> Supplier
+            </a>
+            <ul class="collapse" id="supplyrequest">
+                <li class="nav-item procurement-restricted" style="display: none;"><a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a></li>
+                <li class="nav-item procurement-restricted" style="display: none;"><a href="/scm/product_request"><i class="fas fa-user-tie"></i> <span> Product Request</span></a></li>
+              </ul>
+          </li>
+          
+          <li class="nav-item supply-chain-restricted" style="display: none;">
+            <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
+              <i class="fas fa-file-invoice"></i> Purchase Request
+            </a>
+            <ul class="collapse" id="PurchaseRequest">
+              <li class="nav-item supply-chain-restricted" style="display: none;"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
+              <li class="nav-item supply-chain-restricted" style="display: none;"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
             </ul>
-        </li>
-        
-        <li class="nav-item">
-<<<<<<< HEAD
-          <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
-            <i class="fas fa-file-invoice"></i> Purchase Request
-          </a>
-          <ul class="collapse" id="PurchaseRequest">
-            <li class="nav-item"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
-            <li class="nav-item"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
-          </ul>
-=======
-          <a href="/scm/request_material"><i class="fas fa-plus-circle"></i> <span> Purchase Request</span></a>
-        </li>
-        <li class="nav-item">
-          <a href="/scm/outside_purchases"><i class="fas fa-receipt"></i> <span> Outside Purchases</span></a>
->>>>>>> 820ec38 (done supply payment pending)
-        </li>
+          </li>
+         
+          <li class="nav-item supply-chain-restricted" style="display: none;">
+            <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
+          </li>
        
-        <li class="nav-item">
-          <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
-        </li>
-    
-       
-        <li class="nav-item">
-<<<<<<< HEAD
-          <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
-=======
-          <a href="/scm/purchase_request"><i class="fas fa-file-invoice"></i> <span> Request Material</span></a>
->>>>>>> 820ec38 (done supply payment pending)
-        </li>
-        <li class="nav-item">
-          <a href="/scm/owners_supply"><i class="fas fa-user-tie"></i> <span> Owners Supply</span></a>
-        </li>
-        <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
-      </ul>
-    </div>
+          <li class="nav-item">
+            <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+          </li>
+          <li class="nav-item supply-chain-restricted" style="display: none;">
+              <a href="/scm/owners_supply"><i class="fas fa-user-tie"></i> <span> Owners Supply</span></a>
+          </li>
+          <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+        </ul>
+      </div>
   
     <div id="content">
     <h2>Purchase Request</h2>
@@ -856,26 +845,9 @@ table thead th {
       <form id="purchaseRequestForm">
         <!-- Single Row Layout -->
         <div class="row mb-3">
-<<<<<<< HEAD
           <div class="col-md-2">
             <label for="requestDate" class="form-label">Request Date</label>
             <input type="date" class="form-control" id="requestDate" min="1900-01-01" max="2100-12-31" required>
-=======
-          <div class="col-md-4">
-            <label for="materialType" class="form-label">Material Type</label>
-            <select class="form-select" id="materialType" required>
-              <option value="">Select Material Type...</option>
-              <option value="cement">Cement</option>
-              <option value="steel">Steel</option>
-              <option value="wood">Wood</option>
-              <option value="bricks">Bricks</option>
-              <option value="sand">Sand</option>
-          </select>
-        </div>
-          <div class="col-md-3">
-            <label for="quantity" class="form-label">Quantity</label>
-            <input type="number" class="form-control" id="quantity" min="1" required>
->>>>>>> 820ec38 (done supply payment pending)
           </div>
           <div class="col-md-3">
             <label for="materialType" class="form-label">Item Name <small class="text-muted">(from inventory)</small></label>
@@ -3292,7 +3264,6 @@ table thead th {
 
     // Show submit confirmation
     function showSubmitConfirmation() {
-<<<<<<< HEAD
       // Simple confirmation dialog
       if (confirm('Are you sure you want to submit this purchase request?')) {
         submitRequest();
@@ -3302,51 +3273,14 @@ table thead th {
     // Submit request
     async function submitRequest() {
       const requestDate = document.getElementById('requestDate').value;
-=======
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date().toISOString().split('T')[0];
-
-      // Update confirmation modal content
-      document.getElementById('confirmRequestDate').textContent = currentDate;
-
-      // Update materials list
-      const materialsList = document.getElementById('confirmMaterialsList');
-      materialsList.innerHTML = '';
-      materials.forEach(material => {
-        const li = document.createElement('li');
-        li.textContent = `${material.type} - ${material.quantity} ${material.unit}`;
-        materialsList.appendChild(li);
-      });
-
-      // Show modal
-      const modal = new bootstrap.Modal(document.getElementById('submitConfirmationModal'));
-      modal.show();
-    }
-
-    // Submit request
-    function submitRequest() {
-      // Get current date in YYYY-MM-DD format
-      const currentDate = new Date().toISOString().split('T')[0];
->>>>>>> 820ec38 (done supply payment pending)
 
       // Validate required fields
-<<<<<<< HEAD
       if (!requestDate || materials.length === 0) {
         alert('Please fill in all required fields and add at least one material!');
-=======
-      if (materials.length === 0) {
-        document.getElementById('errorMessage').innerHTML = 'Please add at least one material!';
-        document.getElementById('errorMessage').style.display = 'block';
-        
-        setTimeout(() => {
-          document.getElementById('errorMessage').style.display = 'none';
-        }, 2000);
->>>>>>> 820ec38 (done supply payment pending)
         return;
       }
 
       try {
-<<<<<<< HEAD
         // Submit all materials as a bulk purchase request
         const response = await fetch('/scm/purchase-requests/bulk', {
           method: 'POST',
@@ -3370,38 +3304,6 @@ table thead th {
         }
         
         const result = await response.json();
-=======
-        // Generate a new request ID
-        const requestId = 'PR' + String(Object.keys(requests).length + 1).padStart(3, '0');
-
-        // Create the new request object
-        const newRequest = {
-          id: requestId,
-          requestDate: currentDate,
-          approvalDate: null,
-          status: 'Pending',
-          materials: [...materials]
-        };
-
-        // Add to requests object
-        requests[requestId] = newRequest;
-
-        // Add to the recent requests table
-        const tbody = document.getElementById('recentRequests');
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${requestId}</td>
-          <td>${currentDate}</td>
-          <td>-</td>
-          <td><span class="badge bg-warning">Pending</span></td>
-          <td>
-            <button class="btn btn-sm btn-primary me-1" onclick="viewRequestDetails('${requestId}')" title="View Request Details">
-              <i class="fas fa-eye"></i>
-            </button>
-          </td>
-        `;
-        tbody.insertBefore(row, tbody.firstChild);
->>>>>>> 820ec38 (done supply payment pending)
 
         // Reset form fields
         resetFormFields();
@@ -3420,13 +3322,10 @@ table thead th {
 
     // Reset form fields
     function resetFormFields() {
-<<<<<<< HEAD
       document.getElementById('requestDate').valueAsDate = new Date();
       document.getElementById('supplier').value = '';
       document.getElementById('supplier_id').value = '';
       document.getElementById('supplierSearch').value = '';
-=======
->>>>>>> 820ec38 (done supply payment pending)
       materials = [];
       updateMaterialsList();
       updateSubmitButton();

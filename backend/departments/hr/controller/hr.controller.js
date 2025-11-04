@@ -1177,7 +1177,7 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         }
     },    
 
-    // Updated payroll generation to use periods
+    // ===== PAYROLL ONLY: Updated payroll generation to use periods and deduction_mode
     generatePayroll: async (req, res) => {
         try {
             if (!req.session?.user) {
@@ -1188,6 +1188,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             if (!month || !year || !period) {
                 return res.status(400).json({ error: 'month, year, and period are required' });
             }
+            // Permanently enforce split deductions per half
+            const resolvedDeductionMode = 'split';
 
             // Calculate start and end dates based on period
             const startDate = period === 'first' 
@@ -1198,16 +1200,18 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 ? `${year}-${month.padStart(2, '0')}-15`
                 : new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
 
-            // Check if payroll period already exists
-            let periodId = await HRModel.checkPayrollPeriodExists(startDate, endDate);
-            
-            if (!periodId) {
-                // Create new payroll period
-                const periodName = `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-                periodId = await HRModel.createPayrollPeriod(periodName, startDate, endDate);
-                console.log(`✅ Created new payroll period: ${periodName} (ID: ${periodId})`);
-            } else {
-                console.log(`✅ Using existing payroll period ID: ${periodId}`);
+            // Ensure payroll period exists (create if missing) and set deduction_mode
+            const periodName = `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            let periodId = await HRModel.findOrCreatePayrollPeriod(startDate, endDate, periodName, resolvedDeductionMode);
+            await HRModel.updatePayrollPeriodDeductionMode(periodId, resolvedDeductionMode);
+
+            // Prevent duplicate generation if payroll already exists for this period
+            const existingCount = await HRModel.countPayrollByPeriod(periodId);
+            if (existingCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    error: 'Payroll already exists for this period. Please load Pending/Approved instead.'
+                });
             }
 
             // Get employees with attendance data
@@ -1225,41 +1229,51 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             // Process each employee's payroll
             const payrollRecords = [];
             for (const employee of employees) {
-                // If employee has no attendance (0 days present), net pay should be 0
-                if (employee.days_present === 0) {
-                    payrollRecords.push({
-                        employee_id: employee.employee_id,
-                        employee_name: employee.full_name,
-                        position: employee.position,
-                        start_date: startDate,
-                        end_date: endDate,
-                        days_present: employee.days_present,
-                        days_absent: employee.days_absent,
-                        days_half_day: employee.days_half_day,
-                        days_early_out: employee.days_early_out,
-                        total_hours: employee.total_hours,
-                        overtime_hours: employee.overtime_hours,
-                        monthly_salary: employee.monthly_salary,
-                        semi_monthly_payout: employee.monthly_salary / 2,
-                        daily_rate: employee.monthly_salary / 26,
-                        total_deductions: 0,
-                        absence_deduction: 0,
-                        net_pay: 0,
-                        payroll_period: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
-                        status: 'pending'
-                    });
-                    continue;
-                }
 
                 // Calculate deductions using the enhanced system with period-specific logic
-                const deductionCalculation = await HRModel.calculateDeductions(employee.monthly_salary, period);
+                // Resolve monthly salary from available fields
+                const monthlySalary = Number(
+                    employee.monthly_salary ?? employee.fixed_salary ?? employee.basic_salary ?? employee.salary ?? 0
+                );
+
+                const deductionCalculation = await HRModel.calculateDeductions(monthlySalary, period, resolvedDeductionMode);
+                
                 const totalDeductions = deductionCalculation.totalDeductions;
                 
                 // Calculate absence deduction
-                const absenceDeduction = employee.days_absent * (employee.monthly_salary / 26);
+                const absenceDeduction = Number(employee.days_absent || 0) * (monthlySalary / 26);
                 
                 // Calculate net pay
-                const netPay = employee.monthly_salary - totalDeductions - absenceDeduction;
+                // Extract government deduction amounts (robust matching)
+                const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const details = deductionCalculation.deductionDetails || [];
+                const sumBy = (pred) => details.filter(pred).reduce((a, d) => a + Number(d.amount || 0), 0);
+                const idOf = (pred) => (details.find(pred)?.id) || null;
+
+                const isSSS = (d) => {
+                    const n = norm(d.deduction_type);
+                    return n.includes('sss');
+                };
+                const isPhil = (d) => {
+                    const n = norm(d.deduction_type);
+                    return n.includes('philhealth');
+                };
+                const isPagibig = (d) => {
+                    const n = norm(d.deduction_type);
+                    return n.includes('pagibig');
+                };
+
+                const sssAmount = sumBy(isSSS);
+                const philAmount = sumBy(isPhil);
+                const pagibigAmount = sumBy(isPagibig);
+                
+
+                const sssDetId = idOf(isSSS);
+                const philDetId = idOf(isPhil);
+                const pagibigDetId = idOf(isPagibig);
+                const govDeductionsSum = sssAmount + philAmount + pagibigAmount;
+                const semiMonthlyPayout = monthlySalary / 2;
+                const netPay = semiMonthlyPayout - govDeductionsSum - absenceDeduction;
 
                 payrollRecords.push({
                     employee_id: employee.employee_id,
@@ -1273,10 +1287,17 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                     days_early_out: employee.days_early_out,
                     total_hours: employee.total_hours,
                     overtime_hours: employee.overtime_hours,
-                    monthly_salary: employee.monthly_salary,
-                    semi_monthly_payout: employee.monthly_salary / 2,
-                    daily_rate: employee.monthly_salary / 26,
-                    total_deductions: totalDeductions,
+                    monthly_salary: monthlySalary,
+                    semi_monthly_payout: semiMonthlyPayout,
+                    daily_rate: monthlySalary / 26,
+                    // ===== PAYROLL ONLY: expose government deduction breakdown
+                    sss_amount: sssAmount,
+                    philhealth_amount: philAmount,
+                    pagibig_amount: pagibigAmount,
+                    sss_deduction_id: sssDetId,
+                    philhealth_deduction_id: philDetId,
+                    pagibig_deduction_id: pagibigDetId,
+                    total_deductions: govDeductionsSum,
                     taxable_deductions: deductionCalculation.taxableDeductions,
                     non_taxable_deductions: deductionCalculation.nonTaxableDeductions,
                     deduction_details: deductionCalculation.deductionDetails,
@@ -1298,7 +1319,8 @@ softDeleteOrRestoreEmployee: async (req, res) => {
                 periodId: periodId,
                 periodName: `${period === 'first' ? 'First' : 'Second'} Half ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
                 startDate: startDate,
-                endDate: endDate
+                endDate: endDate,
+                deductionMode: resolvedDeductionMode
             });
 
         } catch (error) {
@@ -1908,6 +1930,11 @@ softDeleteOrRestoreEmployee: async (req, res) => {
             
             // Use findOrCreatePayrollPeriod to avoid duplicates
             const periodId = await HRModel.findOrCreatePayrollPeriod(startDate, endDate, periodName);
+            // Block duplicate submissions for same period
+            const existingCount = await HRModel.countPayrollByPeriod(periodId);
+            if (existingCount > 0) {
+                return res.status(409).json({ message: 'Payroll already submitted for this period.' });
+            }
             console.log('Created/found payroll period with ID:', periodId);
             
             // Insert payroll records into database with period ID
@@ -2705,6 +2732,75 @@ softDeleteOrRestoreEmployee: async (req, res) => {
         } catch (error) {
             console.error('Error getting dashboard KPIs:', error);
             res.status(500).json({ error: 'Failed to fetch dashboard KPIs' });
+        }
+    },
+
+    // Recruitment Dashboard Controllers
+    // Get new hires count
+    getRecruitmentNewHires: async (req, res) => {
+        try {
+            const count = await HRModel.getNewHiresCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting recruitment new hires:', error);
+            res.status(500).json({ error: 'Failed to fetch new hires count' });
+        }
+    },
+
+    // Get pending applications count
+    getRecruitmentPendingApplications: async (req, res) => {
+        try {
+            const count = await HRModel.getPendingApplicationsCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting pending applications:', error);
+            res.status(500).json({ error: 'Failed to fetch pending applications count' });
+        }
+    },
+
+    // Get job posting trend
+    getRecruitmentJobPostingTrend: async (req, res) => {
+        try {
+            const period = req.query.period || 'monthly';
+            const trendData = await HRModel.getJobPostingTrend(period);
+            res.json(trendData);
+        } catch (error) {
+            console.error('Error getting job posting trend:', error);
+            res.status(500).json({ error: 'Failed to fetch job posting trend' });
+        }
+    },
+
+    // Payroll Dashboard Controllers
+    // Get payroll approved count
+    getPayrollApprovedCount: async (req, res) => {
+        try {
+            const count = await HRModel.getPayrollApprovedCount();
+            res.json({ count });
+        } catch (error) {
+            console.error('Error getting payroll approved count:', error);
+            res.status(500).json({ error: 'Failed to fetch payroll approved count' });
+        }
+    },
+
+    // Get total payroll amount (sum of net_salary from released payrolls)
+    getPayrollTotalDeductions: async (req, res) => {
+        try {
+            const total = await HRModel.getTotalDeductions();
+            res.json({ total });
+        } catch (error) {
+            console.error('Error getting total payroll amount:', error);
+            res.status(500).json({ error: 'Failed to fetch total payroll amount' });
+        }
+    },
+
+    // Get department payroll distribution
+    getPayrollDepartmentDistribution: async (req, res) => {
+        try {
+            const data = await HRModel.getDepartmentPayrollDistribution();
+            res.json({ data });
+        } catch (error) {
+            console.error('Error getting department payroll distribution:', error);
+            res.status(500).json({ error: 'Failed to fetch department payroll distribution' });
         }
     },
 

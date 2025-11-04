@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-<<<<<<< HEAD
-<<<<<<< HEAD
 const path = require('path');
 const fs = require('fs');
 // Import the correct controller and multer upload handler
@@ -144,17 +142,6 @@ router.get('/api/coordinators/:coordinatorId/performance', CRMController.getCoor
 
 // Developers (Clients page)
 router.get('/api/developers', CRMController.getAllDevelopers);
-=======
-=======
->>>>>>> aa1bb20 (Initial commit)
-const { CRMController, upload } = require("../controller/crm.controller");
-
-// 🔹 Resume Upload Route
-router.post("/upload", upload.single("resume"), CRMController.uploadResume);
-<<<<<<< HEAD
->>>>>>> 85f9240 (Initial commit)
-=======
->>>>>>> aa1bb20 (Initial commit)
 
 // ========== DEVELOPER APPROVAL ROUTES ==========
 router.get('/developers/pending', CRMController.getPendingDevelopers);
@@ -164,5 +151,10 @@ router.post('/developers/:id/reject', CRMController.rejectDeveloper);
 
 // (Removed) Non-API Inquiry Routes to avoid shadowing HTML route at /crm/inquiries
 // Use the /api prefixed routes above instead
+
+// ===== INTENDED: COORDINATOR DASHBOARD ROUTES =====
+router.get('/dashboard/coordinator/kpis', CRMController.getCoordinatorKpis_INTENDED);
+router.get('/dashboard/coordinator/assigned-list', CRMController.getCoordinatorAssignedList_INTENDED);
+router.get('/dashboard/coordinator/completed-trend', CRMController.getCoordinatorCompletedTrend_INTENDED);
 
 module.exports = router;

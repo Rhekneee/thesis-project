@@ -2647,6 +2647,146 @@ const SCMModel = {
         } finally {
             connection.release();
         }
+    },
+
+    // ===== PROCUREMENT DASHBOARD METHODS =====
+    // Get materials count by category (Office Supplies, Equipment, Construction)
+    getMaterialsCountByCategory: async () => {
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    category,
+                    COUNT(*) as count
+                FROM materials
+                WHERE status = 'Active'
+                    AND category IN ('Office Supplies', 'Equipment', 'Construction')
+                GROUP BY category
+                ORDER BY category
+            `);
+            return rows;
+        } catch (error) {
+            console.error('Error getting materials count by category:', error);
+            throw error;
+        }
+    },
+
+    // Get pending purchase orders with status "Out for Delivery" (limit 5)
+    getPendingPurchaseOrdersOutForDelivery: async () => {
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    p.purchase_id,
+                    p.pr_id,
+                    sa.supplier_name,
+                    m.name AS material_name,
+                    p.variant,
+                    p.quantity,
+                    p.unit,
+                    p.total_price,
+                    DATE_FORMAT(p.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                    p.status
+                FROM purchases p
+                LEFT JOIN supplier_account sa ON sa.supplier_id = p.supplier_id
+                LEFT JOIN materials m ON m.material_id = p.material_id
+                WHERE p.status = 'Out for Delivery'
+                ORDER BY p.created_date DESC
+                LIMIT 5
+            `);
+            return rows;
+        } catch (error) {
+            console.error('Error getting pending purchase orders out for delivery:', error);
+            throw error;
+        }
+    },
+
+    // Get total purchase amount (sum of invoice_amount where status = 'Received')
+    getTotalPurchaseAmount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COALESCE(SUM(invoice_amount), 0) as total
+                FROM purchases
+                WHERE status = 'Received'
+            `);
+            return result[0].total || 0;
+        } catch (error) {
+            console.error('Error getting total purchase amount:', error);
+            throw error;
+        }
+    },
+
+    // ===== SUPPLY CHAIN DASHBOARD METHODS =====
+    // Get total number of suppliers
+    getTotalSuppliersCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM supplier_account
+                WHERE status = 'Active'
+            `);
+            return result[0].total || 0;
+        } catch (error) {
+            console.error('Error getting total suppliers count:', error);
+            throw error;
+        }
+    },
+
+    // Get total purchases with "Received" status
+    getTotalReceivedPurchasesCount: async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT COUNT(*) as total
+                FROM purchases
+                WHERE status = 'Received'
+            `);
+            return result[0].total || 0;
+        } catch (error) {
+            console.error('Error getting total received purchases count:', error);
+            throw error;
+        }
+    },
+
+    // Get top suppliers with most purchase orders received
+    getTopSuppliersByReceivedOrders: async (limit = 5) => {
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    sa.supplier_id,
+                    sa.supplier_name,
+                    COUNT(p.purchase_id) as total_received_orders
+                FROM supplier_account sa
+                LEFT JOIN purchases p ON sa.supplier_id = p.supplier_id AND p.status = 'Received'
+                WHERE sa.status = 'Active'
+                GROUP BY sa.supplier_id, sa.supplier_name
+                HAVING total_received_orders > 0
+                ORDER BY total_received_orders DESC
+                LIMIT ?
+            `, [limit]);
+            return rows;
+        } catch (error) {
+            console.error('Error getting top suppliers by received orders:', error);
+            throw error;
+        }
+    },
+
+    // Get product purchases per category trend (for received purchases)
+    getPurchasesPerCategoryTrend: async () => {
+        try {
+            const [rows] = await db.query(`
+                SELECT 
+                    m.category,
+                    COUNT(p.purchase_id) as purchase_count,
+                    SUM(p.quantity) as total_quantity
+                FROM purchases p
+                LEFT JOIN materials m ON p.material_id = m.material_id
+                WHERE p.status = 'Received' AND m.category IS NOT NULL
+                GROUP BY m.category
+                ORDER BY purchase_count DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('Error getting purchases per category trend:', error);
+            throw error;
+        }
     }
 };
 

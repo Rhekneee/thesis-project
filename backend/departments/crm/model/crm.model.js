@@ -669,6 +669,98 @@ const CRMModel = {
         await db.execute(query, [id]);
     },
 
+    // ===== INTENDED: COORDINATOR DASHBOARD METHODS =====
+    // Total inquiries assigned to a coordinator (by employee_id)
+    getCoordinatorAssignedCount_INTENDED: async (employeeId) => {
+        const [rows] = await db.execute(
+            `SELECT COUNT(*) AS total
+             FROM inquiries
+             WHERE assigned_to = ?`,
+            [employeeId]
+        );
+        return rows[0]?.total || 0;
+    },
+
+    // New inquiries assigned to a coordinator today (uses date_submitted if available, falls back to created_at)
+    getCoordinatorNewAssignedTodayCount_INTENDED: async (employeeId) => {
+        // Prefer date_submitted if the column exists; otherwise use created_at
+        const [rows] = await db.execute(
+            `SELECT COUNT(*) AS total
+             FROM inquiries
+             WHERE assigned_to = ?
+               AND DATE(COALESCE(date_submitted, created_at)) = CURDATE()`,
+            [employeeId]
+        );
+        return rows[0]?.total || 0;
+    },
+
+    // List inquiries with status 'Assigned' for a coordinator (recent first, limit optional)
+    getCoordinatorAssignedList_INTENDED: async (employeeId, limit = 10) => {
+        const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Math.min(50, parseInt(limit))) : 10;
+        const sql = `SELECT 
+                i.id,
+                CONCAT(i.name, ' ', i.surname) AS full_name,
+                i.email,
+                i.contact,
+                i.status,
+                DATE_FORMAT(COALESCE(i.date_submitted, i.created_at), '%Y-%m-%d %H:%i') AS submitted_at
+             FROM inquiries i
+             WHERE i.assigned_to = ? AND i.status = 'Assigned'
+             ORDER BY COALESCE(i.date_submitted, i.created_at) DESC
+             LIMIT ${safeLimit}`;
+        const [rows] = await db.execute(sql, [employeeId]);
+        return rows;
+    },
+
+    // Completed inquiries trend for a coordinator - monthly/quarterly/yearly (default: monthly)
+    getCoordinatorCompletedTrend_INTENDED: async (employeeId, periodOrDays = 'monthly') => {
+        const p = (typeof periodOrDays === 'string' ? periodOrDays : 'monthly').toLowerCase();
+        if (p === 'yearly') {
+            const [rows] = await db.execute(
+                `SELECT 
+                    YEAR(COALESCE(i.date_submitted, i.created_at)) AS yr,
+                    COUNT(*) AS total,
+                    CAST(YEAR(COALESCE(i.date_submitted, i.created_at)) AS CHAR) AS label
+                 FROM inquiries i
+                 WHERE i.assigned_to = ? AND i.status = 'Completed'
+                   AND COALESCE(i.date_submitted, i.created_at) >= DATE_SUB(CURDATE(), INTERVAL 5 YEAR)
+                 GROUP BY YEAR(COALESCE(i.date_submitted, i.created_at))
+                 ORDER BY yr ASC`,
+                [employeeId]
+            );
+            return rows;
+        } else if (p === 'quarterly') {
+            const [rows] = await db.execute(
+                `SELECT 
+                    YEAR(COALESCE(i.date_submitted, i.created_at)) AS yr,
+                    QUARTER(COALESCE(i.date_submitted, i.created_at)) AS qtr,
+                    COUNT(*) AS total,
+                    CONCAT(YEAR(COALESCE(i.date_submitted, i.created_at)), ' Q', QUARTER(COALESCE(i.date_submitted, i.created_at))) AS label
+                 FROM inquiries i
+                 WHERE i.assigned_to = ? AND i.status = 'Completed'
+                   AND COALESCE(i.date_submitted, i.created_at) >= DATE_SUB(CURDATE(), INTERVAL 2 YEAR)
+                 GROUP BY YEAR(COALESCE(i.date_submitted, i.created_at)), QUARTER(COALESCE(i.date_submitted, i.created_at))
+                 ORDER BY yr ASC, qtr ASC`,
+                [employeeId]
+            );
+            return rows;
+        } else { // monthly
+            const [rows] = await db.execute(
+                `SELECT 
+                    DATE_FORMAT(COALESCE(i.date_submitted, i.created_at), '%Y-%m') AS ym,
+                    COUNT(*) AS total,
+                    DATE_FORMAT(COALESCE(i.date_submitted, i.created_at), '%Y-%m') AS label
+                 FROM inquiries i
+                 WHERE i.assigned_to = ? AND i.status = 'Completed'
+                   AND COALESCE(i.date_submitted, i.created_at) >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                 GROUP BY DATE_FORMAT(COALESCE(i.date_submitted, i.created_at), '%Y-%m')
+                 ORDER BY ym ASC`,
+                [employeeId]
+            );
+            return rows;
+        }
+    },
+
     // Get sales marketing coordinators
     getSalesMarketingCoordinators: async () => {
         const query = `

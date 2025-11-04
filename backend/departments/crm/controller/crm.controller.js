@@ -1265,6 +1265,71 @@ const CRMController = {
         }
     },
 
+    // ===== INTENDED: COORDINATOR DASHBOARD CONTROLLERS =====
+    // KPIs: total assigned and new assigned today
+    getCoordinatorKpis_INTENDED: async (req, res) => {
+        try {
+            const employeeId = req.session?.user?.employee_id;
+            const roleName = (req.session?.user?.role_name || '').toLowerCase();
+            if (!employeeId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+            // Allow sales_marketing_coordinator and sales_marketing_head to hit this endpoint
+            const allowed = roleName === 'sales_marketing_coordinator' || roleName === 'sales_marketing_head';
+            if (!allowed) {
+                return res.status(403).json({ success: false, error: 'Forbidden' });
+            }
+            const totalAssigned = await CRMModel.getCoordinatorAssignedCount_INTENDED(employeeId);
+            const newAssignedToday = await CRMModel.getCoordinatorNewAssignedTodayCount_INTENDED(employeeId);
+            res.json({ success: true, totalAssigned, newAssignedToday });
+        } catch (error) {
+            console.error('INTENDED: Error in getCoordinatorKpis_INTENDED:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch coordinator KPIs' });
+        }
+    },
+
+    // List of currently Assigned inquiries for the coordinator
+    getCoordinatorAssignedList_INTENDED: async (req, res) => {
+        try {
+            const employeeId = req.session?.user?.employee_id;
+            const roleName = (req.session?.user?.role_name || '').toLowerCase();
+            if (!employeeId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+            const allowed = roleName === 'sales_marketing_coordinator' || roleName === 'sales_marketing_head';
+            if (!allowed) {
+                return res.status(403).json({ success: false, error: 'Forbidden' });
+            }
+            const limit = parseInt(req.query.limit) || 10;
+            const rows = await CRMModel.getCoordinatorAssignedList_INTENDED(employeeId, limit);
+            res.json({ success: true, data: rows });
+        } catch (error) {
+            console.error('INTENDED: Error in getCoordinatorAssignedList_INTENDED:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch assigned inquiries list' });
+        }
+    },
+
+    // Completed inquiries trend for the coordinator
+    getCoordinatorCompletedTrend_INTENDED: async (req, res) => {
+        try {
+            const employeeId = req.session?.user?.employee_id;
+            const roleName = (req.session?.user?.role_name || '').toLowerCase();
+            if (!employeeId) {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+            const allowed = roleName === 'sales_marketing_coordinator' || roleName === 'sales_marketing_head';
+            if (!allowed) {
+                return res.status(403).json({ success: false, error: 'Forbidden' });
+            }
+            const period = (req.query.period || 'monthly').toLowerCase();
+            const rows = await CRMModel.getCoordinatorCompletedTrend_INTENDED(employeeId, period);
+            res.json({ success: true, data: rows });
+        } catch (error) {
+            console.error('INTENDED: Error in getCoordinatorCompletedTrend_INTENDED:', error);
+            res.status(500).json({ success: false, error: 'Failed to fetch completed trend' });
+        }
+    },
+
     // Get sales marketing coordinators
     getSalesMarketingCoordinators: async (req, res) => {
         try {
