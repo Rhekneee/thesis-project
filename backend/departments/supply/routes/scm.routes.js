@@ -129,6 +129,15 @@ router.get('/drivers', logisticsAuth, SCMController.getDrivers); // Get drivers 
 router.post('/material-release', logisticsAuth, SCMController.handleMaterialRelease);
 router.put('/manufacturing-requests/status', logisticsAuth, SCMController.updateManufacturingRequestStatus);
 
+// Check session endpoint (before middleware to allow access)
+router.get('/check-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ user: req.session.user });
+    } else {
+        res.status(401).json({ error: "Unauthorized" });
+    }
+});
+
 // Supplier-specific routes for profile management
 router.get('/supplier/check-session', (req, res) => {
     console.log('🔍 Supplier check-session called');

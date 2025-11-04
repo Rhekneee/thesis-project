@@ -73,6 +73,15 @@ router.get('/default-profile-picture', (req, res) => {
     }
 });
 
+// Check session endpoint (before middleware to allow access)
+router.get('/check-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ user: req.session.user });
+    } else {
+        res.status(401).json({ error: "Unauthorized" });
+    }
+});
+
 // Apply finance admin middleware to all routes below
 router.use(isFinanceAdmin);
 

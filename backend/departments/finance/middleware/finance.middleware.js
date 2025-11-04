@@ -1,4 +1,4 @@
-// Middleware to check if user is authenticated and is a finance admin
+// Middleware to check if user is authenticated and is a finance admin or accountant
 const isFinanceAdmin = (req, res, next) => {
     // Check if user is logged in
     if (!req.session || !req.session.user) {
@@ -8,11 +8,12 @@ const isFinanceAdmin = (req, res, next) => {
         });
     }
 
-    // Check if user is a finance admin
-    if (req.session.user.role_name !== 'finance_accounting') {
+    // Check if user is a finance admin or accountant
+    const roleName = req.session.user.role_name;
+    if (roleName !== 'finance_accounting' && roleName !== 'accountant') {
         return res.status(403).json({
             success: false,
-            message: "Forbidden: Access denied. Finance admin privileges required."
+            message: "Forbidden: Access denied. Finance admin or accountant privileges required."
         });
     }
 

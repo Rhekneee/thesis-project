@@ -1184,7 +1184,12 @@ const SCMController = {
             if (!req.session?.user) return res.status(401).json({ error: 'Not authenticated' });
             const u = req.session.user;
             console.log('getAllMaterials - User role:', u.role_name, 'Role ID:', u.role_id);
-            const allowed = (u.role_name === 'logistics') || (u.role_name === 'manufacturing') || (u.role_name === 'general_foreman') || [1,26].includes(u.role_id);
+            const roleLower = (u.role_name || '').toLowerCase();
+            const allowed = (u.role_name === 'logistics') || 
+                           (roleLower === 'supply chain staff' || roleLower === 'supply_chain_staff' || roleLower === 'supply chain' || roleLower === 'supply_chain') ||
+                           (u.role_name === 'manufacturing') || 
+                           (u.role_name === 'general_foreman') || 
+                           [1,26].includes(u.role_id);
             console.log('getAllMaterials - Access allowed:', allowed);
             if (!allowed) return res.status(403).json({ error: 'Forbidden' });
             const rows = await SCMModel.getAllMaterials();
