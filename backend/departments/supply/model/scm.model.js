@@ -2147,24 +2147,7 @@ const SCMModel = {
 
             await Promise.all(releasePromises);
 
-            // Update quantity_requested in owners_supply table for owner_supply materials
-            for (let i = 0; i < requestMaterials.length; i++) {
-                const material = requestMaterials[i];
-                const quantityInfo = quantities && quantities[i] ? quantities[i] : { released: material.quantity, backordered: 0 };
-                const releasedQty = parseFloat(quantityInfo.released) || material.quantity;
-                
-                if (material.source_type === 'owner_supply' && material.owner_supply_id) {
-                    // Update quantity_requested (amount requested from owner) and recalculate remaining
-                    await connection.query(`
-                        UPDATE owners_supply 
-                        SET quantity_requested = COALESCE(quantity_requested, 0) + ?,
-                            quantity_remaining = quantity - (COALESCE(quantity_requested, 0) + ?)
-                        WHERE supply_id = ?
-                    `, [releasedQty, releasedQty, material.owner_supply_id]);
-                    
-                    console.log('Updated owners_supply quantity_requested for supply_id:', material.owner_supply_id, 'quantity:', releasedQty);
-                }
-            }
+            // Do not update owners_supply.quantity_requested here; database triggers maintain it on request_material changes
 
             // Update request approved_at timestamp (status is already updated per material with released/backordered)
             const updateResult = await connection.query(`

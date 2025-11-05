@@ -1125,8 +1125,15 @@
             // Set modal content
             document.getElementById('dynamicModalTitle').innerHTML = '<i class="fas fa-list-alt me-2"></i>Stage Billing Detail';
             document.getElementById('dynamicModalBody').innerHTML = html;
+            
+            // Only show Pay Now button if status is not "Paid"
+            const isPaid = base.billing_status === 'Paid' || base.billing_status === 'paid';
+            const payButtonHtml = isPaid 
+                ? '' 
+                : `<button type="button" class="btn btn-success" onclick="showPaymentFormInModal()"><i class="fas fa-credit-card me-2"></i>Pay Now</button>`;
+            
             document.getElementById('dynamicModalFooter').innerHTML = `
-                <button type="button" class="btn btn-success" onclick="showPaymentFormInModal()"><i class="fas fa-credit-card me-2"></i>Pay Now</button>
+                ${payButtonHtml}
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
             

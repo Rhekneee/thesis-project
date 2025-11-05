@@ -18,6 +18,8 @@
     
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Pannellum CSS for Virtual Tour -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
     
     <style>
         * {
@@ -1202,6 +1204,22 @@
             overflow: hidden;
         }
 
+        /* Hotspot styling for Pannellum preview (match admin preview) */
+        .custom-hotspot {
+            background: rgba(37, 99, 235, 0.85);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(37,99,235,0.4);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .custom-hotspot:hover {
+            background: rgba(37, 99, 235, 1);
+            transform: scale(1.1);
+        }
+
         .ripple {
             position: absolute;
             border-radius: 50%;
@@ -1217,6 +1235,19 @@
                 opacity: 0;
             }
         }
+
+        /* Ensure modals are above any page overlays */
+        .modal { z-index: 2000; }
+        #thankYouModal { z-index: 2100; }
+        .modal-backdrop { z-index: 1990; }
+        .modal-backdrop.show { opacity: .5; }
+
+        /* Prevent decorative overlays from intercepting clicks */
+        .hero-section::before,
+        .cta-section::before { pointer-events: none; }
+
+        /* Ensure any dynamically created confetti canvas never blocks clicks */
+        canvas[style*="z-index"] { pointer-events: none !important; }
     </style>
 </head>
 <body>
@@ -1305,6 +1336,31 @@
                     </div>
                 </div>
                 
+<!-- Thank You Modal -->
+<div class="modal fade" id="thankYouModal" tabindex="-1" aria-labelledby="thankYouModalLabel" aria-hidden="true" data-bs-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="thankYouModalLabel">Thank you!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div style="font-size:3rem; color:#10b981; margin-bottom:1rem;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 class="mb-3" style="font-weight:900; font-size:2.5rem; color:#10b981; letter-spacing:-0.02em;">
+                    Thank You!
+                </h2>
+                <h5 class="mb-2" style="font-weight:600; color:#333;">Thank you for submitting your rating!</h5>
+                <p class="mb-0" style="color:#555;">We appreciate your time and feedback. It helps us improve our properties and guest experience.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-tour-modal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
                 <div class="cta-description">
                     <p>Strike Gold Realty is a real estate company and was established year 2008 headed by Licensed Real Estate Broker & Engineers.</p>
                     <p>From a small time realty, Strike Gold Realty is now one of the Top Producing Realty in known Developers in Cavite, Laguna and Bulacan. Started with very few trusted sales agents, Strike Gold Realty strived hard to become known in helping not only the sellers but also its clients in finding the best home for their family.</p>
@@ -1317,6 +1373,21 @@
         </div>
     </section>
 </main>
+
+<!-- Virtual Tour Modal (Public) -->
+<div class="modal fade" id="publicVtourModal" tabindex="-1" aria-labelledby="publicVtourModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="publicVtourModalLabel"><i class="fas fa-vr-cardboard me-2"></i>Take a Tour</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="publicVtourViewer" style="width:100%; height:600px; border-radius: 12px; background:#000;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Request Tripping Modal -->
 <div class="modal fade" id="trippingModal" tabindex="-1" aria-labelledby="trippingModalLabel" aria-hidden="true">
@@ -1358,6 +1429,97 @@
         </div>
     </div>
 </div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row g-4">
+                        <div class="col-lg-7">
+                            <div class="property-image-container" style="height:480px;">
+                                <img id="detailsImage" class="property-modal-image" src="" alt="Property">
+                                <div id="detailsRating" style="position:absolute; top:16px; left:50%; transform:translateX(-50%); font-size:1.6rem; color:#ddd; display:flex; gap:6px; flex-direction:column; align-items:center;" aria-label="Rate this property">
+                                    <div style="font-size:0.8rem; color:#eee; margin-bottom:4px;">Your Rating</div>
+                                    <div style="display:flex; gap:6px;">
+                                        <i class="far fa-star rating-star" data-value="1" role="button" aria-label="1 star" tabindex="0"></i>
+                                        <i class="far fa-star rating-star" data-value="2" role="button" aria-label="2 stars" tabindex="0"></i>
+                                        <i class="far fa-star rating-star" data-value="3" role="button" aria-label="3 stars" tabindex="0"></i>
+                                        <i class="far fa-star rating-star" data-value="4" role="button" aria-label="4 stars" tabindex="0"></i>
+                                        <i class="far fa-star rating-star" data-value="5" role="button" aria-label="5 stars" tabindex="0"></i>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="detailsRatingValue" value="0">
+                                <input type="hidden" id="detailsPropertyId" value="">
+                            </div>
+                            <div class="mt-3">
+                                <label for="detailsFeedback" class="form-label"><strong>Comment:</strong> (Optional feedback for your rating)</label>
+                                <textarea id="detailsFeedback" class="form-control" rows="4" placeholder="Share your thoughts about this property..."></textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="property-address mb-3">
+                                <p class="address-text" id="detailsName"><i class="fas fa-home"></i> —</p>
+                            </div>
+                            <div class="property-details-grid" style="grid-template-columns: 1fr 1fr; grid-template-rows: auto;">
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-list"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Property Type</div>
+                                        <div class="detail-value" id="detailsType">—</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Location</div>
+                                        <div class="detail-value" id="detailsLocation">—</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-car"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Parking Space</div>
+                                        <div class="detail-value" id="detailsParking">—</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-bed"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Bedrooms</div>
+                                        <div class="detail-value" id="detailsBedrooms">—</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-bath"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Bathrooms</div>
+                                        <div class="detail-value" id="detailsBathrooms">—</div>
+                                    </div>
+                                </div>
+                                <div class="detail-card">
+                                    <div class="detail-icon"><i class="fas fa-layer-group"></i></div>
+                                    <div class="detail-content">
+                                        <div class="detail-label">Floors</div>
+                                        <div class="detail-value" id="detailsFloors">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="detailsSubmit" type="button" class="btn-tour-modal">Submit</button>
+            </div>
+        </div>
+    </div>
+  </div>
 
 <!-- Scroll to Top Button -->
 <button id="scrollToTop" class="scroll-to-top" aria-label="Scroll to top">
@@ -1490,9 +1652,11 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js">
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Pannellum JS for Virtual Tour -->
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+<!-- Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
 // Dynamically set API_URL based on current origin
 const API_URL = window.location.hostname === 'localhost' 
@@ -1502,17 +1666,13 @@ const API_URL = window.location.hostname === 'localhost'
 // Handle the "Request Tripping" button click
 document.querySelectorAll(".btn-warning.text-dark").forEach(button => {
     button.addEventListener("click", function(event) {
-        // Get the property name from the data attribute
         const property = this.getAttribute("data-property");
-
-        // Set the value of the property input in the form
-        document.getElementById("property").value = property;
-
-        // Optionally, open the modal with the form if not already open
-        const modal = bootstrap.Modal.getInstance(document.getElementById('trippingModal'));
-        modal.hide();
-            });
+        const input = document.getElementById("property");
+        if (input) input.value = property || '';
+        const modal = new bootstrap.Modal(document.getElementById('trippingModal'));
+        modal.show();
     });
+});
 
     const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
@@ -1702,9 +1862,18 @@ async function loadProperties() {
                         </div>
                         
                         <div class="project-action">
-                            <a href="/crm/vtour" class="btn-view" target="_blank">VIEW</a>
-                            <button class="btn-tour request-tripping-btn" data-property="${property.name}" data-bs-toggle="modal" data-bs-target="#trippingModal">
-                                TAKE A TOUR
+                            <button class="btn-view btn-open-vtour" data-vlocid="${property.virtual_location_id || ''}" style="${property.virtual_location_id ? '' : 'display:none;'}">TAKE A TOUR</button>
+                            <button class="btn btn-secondary btn-view-details" data-bs-toggle="modal" data-bs-target="#detailsModal"
+                                data-prop-id="${property.id}"
+                                data-prop-name="${property.name}"
+                                data-prop-image="/uploads/properties/${property.imageUrl}"
+                                data-prop-type="${property.propertyType || '—'}"
+                                data-prop-location="${property.location || '—'}"
+                                data-prop-parking="${property.parking || '—'}"
+                                data-prop-bedrooms="${property.bedrooms || '—'}"
+                                data-prop-bathrooms="${property.bathrooms || '—'}"
+                                data-prop-floors="${property.floors || '—'}">
+                                DETAILS
                             </button>
                         </div>
                     </div>
@@ -1738,20 +1907,270 @@ if (document.readyState === 'loading') {
 // Use event delegation
 const propertyList = document.getElementById('propertyList');
 propertyList.addEventListener('click', function(event) {
-    if (event.target.closest('.request-tripping-btn')) {
-        const button = event.target.closest('.request-tripping-btn');
-        const property = button.getAttribute('data-property');
-        document.getElementById('property').value = property;
+    const openBtn = event.target.closest('.btn-open-vtour');
+    if (openBtn) {
+        const raw = openBtn.getAttribute('data-vlocid');
+        const vloc = raw && raw !== 'null' && raw !== 'undefined' ? Number(raw) : null;
+        console.log('[VT] Click TAKE A TOUR - locationId (raw -> num):', raw, '->', vloc);
+        if (vloc) openVtourPreviewModal(vloc);
+        return;
+    }
+    const detailsBtn = event.target.closest('.btn-view-details');
+    if (detailsBtn) {
+        const propertyId = detailsBtn.getAttribute('data-prop-id') || '';
+        const name = detailsBtn.getAttribute('data-prop-name') || '—';
+        const image = detailsBtn.getAttribute('data-prop-image') || '';
+        const type = detailsBtn.getAttribute('data-prop-type') || '—';
+        const location = detailsBtn.getAttribute('data-prop-location') || '—';
+        const parking = detailsBtn.getAttribute('data-prop-parking') || '—';
+        const bedrooms = detailsBtn.getAttribute('data-prop-bedrooms') || '—';
+        const bathrooms = detailsBtn.getAttribute('data-prop-bathrooms') || '—';
+        const floors = detailsBtn.getAttribute('data-prop-floors') || '—';
+
+        const imgEl = document.getElementById('detailsImage');
+        const nameEl = document.getElementById('detailsName');
+        const typeEl = document.getElementById('detailsType');
+        const locationEl = document.getElementById('detailsLocation');
+        const parkingEl = document.getElementById('detailsParking');
+        const bedroomsEl = document.getElementById('detailsBedrooms');
+        const bathroomsEl = document.getElementById('detailsBathrooms');
+        const floorsEl = document.getElementById('detailsFloors');
+        const feedbackEl = document.getElementById('detailsFeedback');
+        const propertyIdEl = document.getElementById('detailsPropertyId');
+
+        if (imgEl) imgEl.src = image;
+        if (nameEl) nameEl.innerHTML = `<i class="fas fa-home"></i> ${name}`;
+        if (typeEl) typeEl.textContent = type;
+        if (locationEl) locationEl.textContent = location;
+        if (parkingEl) parkingEl.textContent = parking;
+        if (bedroomsEl) bedroomsEl.textContent = bedrooms;
+        if (bathroomsEl) bathroomsEl.textContent = bathrooms;
+        if (floorsEl) floorsEl.textContent = floors;
+        if (feedbackEl) feedbackEl.value = '';
+        if (propertyIdEl) propertyIdEl.value = propertyId;
+        const rateHidden = document.getElementById('detailsRatingValue');
+        if (rateHidden) rateHidden.value = '0';
+        if (typeof paintStars === 'function') paintStars(0);
+        return;
     }
 });
 
-// Example fix for addEventListener error
-const virtualTourInput = document.getElementById('virtual_tour_image');
-if (virtualTourInput) {
-    virtualTourInput.addEventListener('click', function(e) {
-        e.preventDefault();
-        // your code here (if needed)
+// Details submit
+document.addEventListener('click', async function(e) {
+    const submitBtn = e.target.closest('#detailsSubmit');
+    if (submitBtn) {
+        const propertyId = document.getElementById('detailsPropertyId')?.value;
+        const rating = document.getElementById('detailsRatingValue')?.value || '0';
+        const comment = document.getElementById('detailsFeedback')?.value?.trim() || null;
+
+        if (!propertyId) {
+            alert('Property ID is missing. Please reopen the details and try again.');
+            return;
+        }
+        if (rating === '0') {
+            alert('Please select a rating before submitting.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+
+        try {
+            const res = await fetch(`${API_URL}/submitPropertyRating`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    property_id: parseInt(propertyId),
+                    rating: parseInt(rating),
+                    comment
+                })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'Failed to submit rating');
+            }
+            const modalEl = document.getElementById('detailsModal');
+            const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            instance.hide();
+            setTimeout(() => {
+                // Clean up any existing backdrops before showing the Thank You modal
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                const ty = new bootstrap.Modal(document.getElementById('thankYouModal'), { backdrop: false, keyboard: true });
+                ty.show();
+                try {
+                    // Confetti bursts
+                    const duration = 1800;
+                    const end = Date.now() + duration;
+                    (function frame() {
+                        confetti({
+                            particleCount: 3,
+                            angle: 60,
+                            spread: 55,
+                            origin: { x: 0 }
+                        });
+                        confetti({
+                            particleCount: 3,
+                            angle: 120,
+                            spread: 55,
+                            origin: { x: 1 }
+                        });
+                        if (Date.now() < end) requestAnimationFrame(frame);
+                    })();
+                } catch (_) {}
+            }, 250);
+        } catch (err) {
+            console.error('Rating submit error:', err);
+            alert(err.message || 'Error submitting rating. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }
+});
+
+// Interactive star rating handlers
+const ratingContainer = document.getElementById('detailsRating');
+function paintStars(count) {
+    const stars = ratingContainer?.querySelectorAll('.rating-star');
+    if (!stars) return;
+    stars.forEach(star => {
+        const val = Number(star.getAttribute('data-value'));
+        if (val <= count) {
+            star.classList.remove('far');
+            star.classList.add('fas');
+            star.style.color = '#ffd166';
+        } else {
+            star.classList.remove('fas');
+            star.classList.add('far');
+            star.style.color = '#ddd';
+        }
     });
+}
+
+if (ratingContainer) {
+    ratingContainer.addEventListener('mousemove', function(e) {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        paintStars(Number(star.getAttribute('data-value')));
+    });
+    ratingContainer.addEventListener('mouseleave', function() {
+        const current = Number(document.getElementById('detailsRatingValue')?.value || '0');
+        paintStars(current);
+    });
+    ratingContainer.addEventListener('click', function(e) {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        const value = Number(star.getAttribute('data-value'));
+        const hidden = document.getElementById('detailsRatingValue');
+        if (hidden) hidden.value = String(value);
+        paintStars(value);
+    });
+    // Keyboard support
+    ratingContainer.addEventListener('keydown', function(e) {
+        const star = e.target.closest('.rating-star');
+        if (!star) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const value = Number(star.getAttribute('data-value'));
+            const hidden = document.getElementById('detailsRatingValue');
+            if (hidden) hidden.value = String(value);
+            paintStars(value);
+        }
+    });
+}
+
+// (Removed) separate insert button handler — submission now happens on the modal Submit button
+
+// Example fix for addEventListener error
+// Match admin vtour preview logic
+let vtViewer = null;
+let currentPreviewScenes = [];
+let currentHotspotsByScene = new Map();
+
+async function openVtourPreviewModal(locationId) {
+    try {
+        console.log('[VT] Fetching scenes for locationId:', locationId);
+        const res = await fetch(`/crm/virtual-tour/public/scenes/${locationId}`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load scenes');
+        const data = await res.json();
+        const scenes = data.scenes || [];
+        console.log('[VT] Scenes loaded:', scenes.length, scenes);
+        if (scenes.length === 0) {
+            showVtourModalContent('No scenes available for this virtual tour.');
+        } else {
+            currentPreviewScenes = scenes;
+            // Preload ALL hotspots for ALL scenes under this location
+            currentHotspotsByScene = new Map();
+            await Promise.all(
+                scenes.map(async (s) => {
+                    try {
+                        const hsRes = await fetch(`/crm/virtual-tour/public/hotspots/${s.id}`, { credentials: 'include' });
+                        const hsData = hsRes.ok ? await hsRes.json() : { hotspots: [] };
+                        currentHotspotsByScene.set(s.id, hsData.hotspots || []);
+                        console.log('[VT] Hotspots for scene', s.id, ':', (hsData.hotspots || []).length);
+                    } catch (_) {
+                        currentHotspotsByScene.set(s.id, []);
+                    }
+                })
+            );
+            await initVtourViewerWithScene(scenes[0]);
+        }
+        const modal = new bootstrap.Modal(document.getElementById('publicVtourModal'));
+        modal.show();
+    } catch (err) {
+        console.warn('[VT] Error loading vtour:', err);
+        showVtourModalContent('Failed to load virtual tour.');
+        const modal = new bootstrap.Modal(document.getElementById('publicVtourModal'));
+        modal.show();
+    }
+}
+
+function showVtourModalContent(message) {
+    const container = document.getElementById('publicVtourViewer');
+    if (container) container.innerHTML = `<div class="text-center text-muted py-5">${message}</div>`;
+}
+
+async function initVtourViewerWithScene(scene) {
+    try {
+        // Use preloaded hotspots for this scene (fallback to empty)
+        const hotspots = currentHotspotsByScene.get(scene.id) || [];
+        const pannHotspots = hotspots.map(h => ({
+            pitch: h.pitch,
+            yaw: h.yaw,
+            type: 'info',
+            text: h.tooltip,
+            cssClass: 'custom-hotspot',
+            clickHandlerFunc: () => {
+                if (h.type === 'link' && h.target_scene_id) {
+                    const target = currentPreviewScenes.find(s => s.id == h.target_scene_id);
+                    if (target) initVtourViewerWithScene(target);
+                }
+            }
+        }));
+        if (vtViewer) { vtViewer.destroy(); vtViewer = null; }
+        vtViewer = pannellum.viewer('publicVtourViewer', {
+            type: 'equirectangular',
+            panorama: scene.image_path ? `/uploads/virtual_scenes/${scene.image_path}` : '',
+            autoLoad: true,
+            showControls: true,
+            hotSpots: pannHotspots,
+            hfov: 100,
+            minHfov: 50,
+            maxHfov: 120,
+            pitch: scene.pitch || 0,
+            yaw: scene.yaw || 0,
+            doubleClickZoom: false,
+            autoRotate: 0,
+            compass: true
+        });
+    } catch (e) {
+        showVtourModalContent('Unable to render the virtual tour.');
+    }
 }
 
 // Add parallax effect for hero section

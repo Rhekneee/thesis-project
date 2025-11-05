@@ -361,8 +361,8 @@
         <h1 id="deliveredMaterials">0</h1>
       </div>
       <div class="total-card">
-        <h3>Delayed</h3>
-        <h1 id="delayedMaterials">0</h1>
+        <h3>Partial</h3>
+        <h1 id="partialMaterials">0</h1>
       </div>
     </div>
 
@@ -410,6 +410,7 @@
               <th>Project</th>
               <th>Total Materials</th>
               <th>Delivered</th>
+              <th>Partial</th>
               <th>Pending</th>
               <th>Actions</th>
             </tr>
@@ -440,7 +441,7 @@
           <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllMaterialsInSection()">Select All</button>
           <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllMaterialsInSection()">Deselect All</button>
               </div>
-        <button type="button" class="btn btn-sm btn-success" onclick="updateSelectedMaterialsInSection()">Mark as Received</button>
+        <button type="button" id="markReceivedBtn" class="btn btn-sm btn-success" onclick="handleMarkReceivedClick()" disabled>Mark as Received</button>
             </div>
             <div class="table-responsive">
               <table class="table table-sm">
@@ -450,6 +451,7 @@
                     <th>Material</th>
                     <th>Unit</th>
                     <th>Quantity</th>
+                    <th>Qty Arrived</th>
                     <th>Status</th>
                     <th>Delivered Date</th>
                   </tr>
@@ -670,6 +672,60 @@
     </div>
   </div>
 
+  <!-- Confirmation Modal -->
+  <div class="modal fade" id="confirmMarkReceivedModal" tabindex="-1" aria-labelledby="confirmMarkReceivedLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title" id="confirmMarkReceivedLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i>Final Confirmation Required
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> This action cannot be undone!
+          </div>
+          <p>You are about to mark <strong id="confirmItemsCount">selected</strong> material(s) as <strong>Received</strong>.</p>
+          <p>Once confirmed:</p>
+          <ul>
+            <li>Status will update to <span class="badge bg-success">Completed</span> or <span class="badge bg-warning text-dark">Partial</span> based on arrival qty</li>
+            <li>Arrival quantities will be saved</li>
+            <li>No further changes to these entries for this arrival action</li>
+          </ul>
+          <p class="mb-0"><strong id="confirmMarkReceivedText">Are you absolutely sure you want to proceed?</strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-danger" id="confirmMarkReceivedBtn">
+            <i class="fas fa-check-circle me-1"></i>Yes, Mark as Received
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal fade" id="successMarkReceivedModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Success</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p id="successMarkReceivedText">Arrival recorded successfully.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Update Status Modal -->
   <div class="modal fade" id="updateStatusModal" tabindex="-1">
     <div class="modal-dialog">
@@ -729,6 +785,7 @@ let filteredMaterials = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 let currentDeveloperMaterials = [];
+let pendingMarkReceivedItems = [];
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -776,7 +833,11 @@ function updateSummaryCards(statusCounts, total) {
     document.getElementById('totalMaterials').textContent = total;
     document.getElementById('pendingMaterials').textContent = statusCounts.pending;
     document.getElementById('deliveredMaterials').textContent = statusCounts.delivered;
-    document.getElementById('delayedMaterials').textContent = statusCounts.delayed;
+    const partialCount = (statusCounts.partial !== undefined && statusCounts.partial !== null)
+        ? statusCounts.partial
+        : (Array.isArray(allMaterials) ? allMaterials.filter(m => m.status === 'Partial').length : 0);
+    const partialEl = document.getElementById('partialMaterials');
+    if (partialEl) partialEl.textContent = partialCount;
 }
 
 // Populate project filter
@@ -850,7 +911,8 @@ function renderDevelopersTable() {
     currentDevelopers.forEach(developer => {
         const totalMaterials = developer.materials.length;
         const deliveredCount = developer.materials.filter(m => m.status === 'Delivered').length;
-        const pendingCount = totalMaterials - deliveredCount;
+        const partialCount = developer.materials.filter(m => m.status === 'Partial').length;
+        const pendingCount = developer.materials.filter(m => m.status === 'Pending').length;
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -858,7 +920,8 @@ function renderDevelopersTable() {
             <td>${developer.project_name}</td>
             <td>${totalMaterials}</td>
             <td><span class="badge bg-success">${deliveredCount}</span></td>
-            <td><span class="badge bg-warning">${pendingCount}</span></td>
+            <td><span class="badge bg-warning text-dark">${partialCount}</span></td>
+            <td><span class="badge bg-secondary">${pendingCount}</span></td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" onclick="toggleMaterialsView(${developer.developer_id}, ${developer.proposal_id})">
                     <i class="fas fa-eye"></i> View Materials
@@ -989,6 +1052,11 @@ function loadDeveloperMaterials(developerId, proposalId) {
             <td>${material.material_name}</td>
             <td>${material.unit || 'N/A'}</td>
             <td>${material.quantity}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm qty-arrive-input" 
+                       placeholder="0" min="0" max="${material.quantity}" step="0.01" />
+                <div class="invalid-feedback">Please enter quantity arrived.</div>
+            </td>
             <td><span class="badge ${getStatusBadgeClass(material.status)}">${material.status}</span></td>
             <td>${material.delivered_date || 'N/A'}</td>
         `;
@@ -996,6 +1064,54 @@ function loadDeveloperMaterials(developerId, proposalId) {
     });
     }
     
+    // Hook up checkbox change handlers to toggle Mark as Received button
+    const checkboxes = document.querySelectorAll('#materialsSectionBody .material-checkbox');
+    const btn = document.getElementById('markReceivedBtn');
+    const setState = () => {
+        const anyChecked = Array.from(document.querySelectorAll('#materialsSectionBody .material-checkbox')).some(cb => cb.checked);
+        if (btn) btn.disabled = !anyChecked;
+    };
+    checkboxes.forEach(cb => cb.addEventListener('change', setState));
+    setState();
+
+    // Hook up Qty Arrived input validation (numeric, non-negative, not exceeding Quantity)
+    const qtyInputs = tbody.querySelectorAll('.qty-arrive-input');
+    qtyInputs.forEach(input => {
+        const invalidEl = input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')
+            ? input.nextElementSibling
+            : null;
+        const maxVal = Number(input.getAttribute('max') || Infinity);
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('input', () => {
+            const raw = input.value;
+            if (raw === '') {
+                input.classList.add('is-invalid');
+                if (invalidEl) invalidEl.textContent = 'Quantity arrived is required.';
+                return;
+            }
+            let num = Number(raw);
+            if (isNaN(num)) {
+                input.classList.add('is-invalid');
+                if (invalidEl) invalidEl.textContent = 'Please enter a valid number.';
+                return;
+            }
+            if (num < 0) num = 0;
+            if (num > maxVal) {
+                input.classList.add('is-invalid');
+                if (invalidEl) invalidEl.textContent = `Quantity cannot exceed ${maxVal}.`;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+            input.value = String(num);
+        });
+    });
+
     // Show received materials inline
     showReceivedMaterialsInline(receivedMaterials);
 }
@@ -1029,77 +1145,109 @@ function deselectAllMaterialsInSection() {
     checkboxes.forEach(checkbox => checkbox.checked = false);
 }
 
-// Update selected materials in section
-async function updateSelectedMaterialsInSection() {
+// Entry point from button: validate, then show confirmation modal
+function handleMarkReceivedClick() {
     const checkboxes = document.querySelectorAll('#materialsSectionBody .material-checkbox:checked');
     
     if (checkboxes.length === 0) {
         showAlert('Please select at least one material to mark as received', 'warning');
         return;
     }
-    
-    const today = new Date().toISOString().split('T')[0];
-    let successCount = 0;
-    let errorCount = 0;
-    let receivedMaterials = [];
-    
-    for (const checkbox of checkboxes) {
-        const supplyId = checkbox.value;
-        const material = allMaterials.find(m => m.supply_id == supplyId);
-        
-        if (!material) continue;
-        
-        try {
-            const response = await fetch(`/scm/owners-supply/${supplyId}/delivery`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: 'Delivered',
-                    delivered_date: today,
-                    quantity_used: 0,  // Start with 0, will be tracked as materials are used in daily logs
-                    quantity_remaining: material.quantity,  // Full quantity is available for use
-                    is_delivered: true
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                successCount++;
-                receivedMaterials.push(material);
-            } else {
-                errorCount++;
+
+    // Collect items with quantity_arrive and validate inputs
+    const items = [];
+    let hasMissing = false;
+    checkboxes.forEach(cb => {
+        const tr = cb.closest('tr');
+        const input = tr ? tr.querySelector('.qty-arrive-input') : null;
+        const val = input ? input.value : '';
+        // reset styles
+        if (input) input.classList.remove('is-invalid');
+        if (!val || String(val).trim() === '') {
+            hasMissing = true;
+            if (input) input.classList.add('is-invalid');
+            if (input && input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
+                input.nextElementSibling.textContent = 'Quantity arrived is required.';
             }
-        } catch (error) {
-            console.error('Error updating material:', error);
-            errorCount++;
+            return;
         }
-    }
-    
-    if (successCount > 0) {
-        showAlert(`Successfully marked ${successCount} material(s) as received`, 'success');
-        
-        // Update the materials section to remove received materials
-        updateMaterialsSectionAfterReceipt(receivedMaterials);
-        
-        // Check if all materials are received
-        const remainingCheckboxes = document.querySelectorAll('#materialsSectionBody .material-checkbox');
-        const allReceived = remainingCheckboxes.length === 0;
-        
-        if (allReceived) {
-            // Show received materials section (but not the driver form automatically)
-            showReceivedMaterialsSection(receivedMaterials);
-            // Don't auto-show driver form anymore - user will click the button
+        // Validate range if user inputs beyond allowed
+        const num = Number(val);
+        const max = Number(input.getAttribute('max') || Infinity);
+        const min = Number(input.getAttribute('min') || 0);
+        if (isNaN(num) || num < min || num > max) {
+            hasMissing = true;
+            if (input) input.classList.add('is-invalid');
+            if (input && input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
+                input.nextElementSibling.textContent = `Quantity must be between ${min} and ${max}.`;
+            }
+            return;
         }
-        
-        // Refresh data
-        loadMaterials();
+        items.push({
+            supply_id: Number(cb.value),
+            quantity_arrive: Number(val)
+        });
+    });
+
+    if (hasMissing) {
+        showAlert('Please input quantity arrived for all selected materials.', 'danger');
+        return;
     }
-    
-    if (errorCount > 0) {
-        showAlert(`Failed to mark ${errorCount} material(s) as received`, 'error');
+
+    // Store for confirmation proceed
+    pendingMarkReceivedItems = items;
+    const confirmText = document.getElementById('confirmMarkReceivedText');
+    if (confirmText) confirmText.textContent = `Are you absolutely sure you want to proceed?`;
+    const confirmCount = document.getElementById('confirmItemsCount');
+    if (confirmCount) confirmCount.textContent = String(items.length);
+    const confirmModalEl = document.getElementById('confirmMarkReceivedModal');
+    if (confirmModalEl) {
+        const modal = new bootstrap.Modal(confirmModalEl);
+        // Rebind confirm button
+        const btn = document.getElementById('confirmMarkReceivedBtn');
+        if (btn) {
+            btn.onclick = () => {
+                modal.hide();
+                updateSelectedMaterialsInSection();
+            };
+        }
+        modal.show();
+    } else {
+        // Fallback
+        updateSelectedMaterialsInSection();
+    }
+}
+
+// Perform the API call after confirmation
+async function updateSelectedMaterialsInSection() {
+    const items = pendingMarkReceivedItems && pendingMarkReceivedItems.length ? pendingMarkReceivedItems : [];
+    if (!items.length) return;
+
+    try {
+        const response = await fetch('/manufacturing/owners-supply/mark-received', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            const successText = document.getElementById('successMarkReceivedText');
+            if (successText) successText.textContent = 'Arrival recorded successfully.';
+            const successModalEl = document.getElementById('successMarkReceivedModal');
+            if (successModalEl) {
+                new bootstrap.Modal(successModalEl).show();
+            } else {
+                showAlert('Arrival recorded successfully.', 'success');
+            }
+            // Refresh data
+            loadMaterials();
+        } else {
+            showAlert(data.error || 'Failed to record arrival', 'error');
+        }
+    } catch (err) {
+        console.error('Error marking received:', err);
+        showAlert('Error marking received', 'error');
     }
 }
 

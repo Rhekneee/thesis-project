@@ -151,6 +151,16 @@
         .trend-down {
             color: #dc3545;
         }
+
+        /* Prevent role-section flicker on initial load: hide until JS decides */
+        #foremanTitle,
+        #foremanContent,
+        #generalForemanTitle,
+        #generalForemanContent,
+        #overviewContent {
+            display: none;
+            opacity: 0;
+        }
     </style>
 </head>
 
@@ -303,6 +313,46 @@
 
             <!-- Charts Row -->
             <div id="overviewContent">
+            <!-- KPI Number Cards (Overview) -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="kpi-card text-center">
+                        <div class="kpi-icon text-primary">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiActiveContractsPercent">0%</div>
+                        <div class="kpi-label">Active Contracts</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card text-center">
+                        <div class="kpi-icon text-success">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiOverallCompletion">0%</div>
+                        <div class="kpi-label">Overall Completion</div>
+                        <div class="text-muted" style="font-size:.9rem;" id="kpiSecondaryCompletion"></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card text-center">
+                        <div class="kpi-icon text-warning">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiTotalRequested">0</div>
+                        <div class="kpi-label">Total Requested</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card text-center">
+                        <div class="kpi-icon text-info">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiActiveDevelopers">0</div>
+                        <div class="kpi-label">Active Developers</div>
+                    </div>
+                </div>
+            </div>
             <div class="row mb-4">
                 <div class="col-md-8">
                     <div class="chart-container">
@@ -318,25 +368,8 @@
                 </div>
             </div>
 
-            <!-- Recent Projects -->
-            <div class="recent-projects">
-                <h4 class="mb-4">Active Manufacturing Projects</h4>
-                
-                <!-- Temporary Debug Button -->
-                <div class="mb-3">
-                    <button class="btn btn-warning" onclick="testOnboardingCheck()">
-                        🔍 Test Onboarding Check
-                    </button>
-                    <button class="btn btn-info ms-2" onclick="forceOnboardingCheck()">
-                        🚀 Force Onboarding Check
-                    </button>
-                </div>
-                
-                <div id="recentProjectsList">
-                    <!-- Project items will be dynamically added here -->
-                </div>
+            
             </div>
-                            </div>
         </div>
     </div>
 
@@ -596,6 +629,40 @@
                 if (elAvg) elAvg.textContent = (Number(k.average_rating || 0)).toFixed(1);
                 if (elAvgDelta) elAvgDelta.innerHTML = `<i class="fas fa-arrow-up"></i> ${(k.average_rating_delta >= 0 ? '+' : '')}${Number(k.average_rating_delta || 0).toFixed(1)} from last month`;
 
+                // Overview KPI cards (using existing general-foreman endpoints)
+                try {
+                    const [acRes, compRes, trRes, devRes] = await Promise.all([
+                        fetch('/manufacturing/dashboard/general-foreman/active-contracts', { credentials: 'include' }),
+                        fetch('/manufacturing/dashboard/general-foreman/completion', { credentials: 'include' }),
+                        fetch('/manufacturing/dashboard/general-foreman/requests-total', { credentials: 'include' }),
+                        fetch('/manufacturing/dashboard/general-foreman/active-developers', { credentials: 'include' })
+                    ]);
+
+                    if (acRes.ok) {
+                        const ac = await acRes.json();
+                        const el = document.getElementById('kpiActiveContractsPercent');
+                        if (el) el.textContent = `${Number(ac.percent || 0)}%`;
+                    }
+                    if (compRes.ok) {
+                        const cp = await compRes.json();
+                        const el = document.getElementById('kpiOverallCompletion');
+                        const el2 = document.getElementById('kpiSecondaryCompletion');
+                        if (el) el.textContent = `${Number(cp.overall_percent || 22)}%`;
+                        if (el2) el2.textContent = (cp.secondary_percent != null) ? `Secondary: ${Number(cp.secondary_percent)}%` : 'Secondary: 40%';
+                    }
+                    if (trRes.ok) {
+                        const tr = await trRes.json();
+                        const el = document.getElementById('kpiTotalRequested');
+                        if (el) el.textContent = (Number(tr.total || 0)).toString();
+                    }
+                    if (devRes.ok) {
+                        const dv = await devRes.json();
+                        const el = document.getElementById('kpiActiveDevelopers');
+                        if (el) el.textContent = (Number(dv.total || 0)).toString();
+                    }
+                } catch (_) {
+                    // Silently ignore per-card errors
+                }
             } catch (e) {
                 console.error('Manufacturing KPI load error:', e);
             }

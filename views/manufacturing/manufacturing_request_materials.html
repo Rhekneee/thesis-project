@@ -839,7 +839,7 @@
                     return;
                 }
                 
-                const response = await fetch(`/scm/owners-supply/project/${proposalId}`);
+                const response = await fetch(`/manufacturing/owners-supply/project/${proposalId}`);
                 const data = await response.json();
                 if (data && data.success) {
                     console.log('All owner supply materials from API:', data.materials);
@@ -984,6 +984,8 @@
             
             console.log('Source type changed to:', sourceType);
             console.log('Selected project ID:', selectedProjectId);
+            // Clear any previous inputs/materials when switching source type
+            clearRequestInputsPreserveContext();
             
             if (sourceType === 'company_supply') {
                 companySupplySection.style.display = 'block';
@@ -1009,6 +1011,8 @@
             selectedProjectId = projectSelect.value;
             
             console.log('Project changed to:', selectedProjectId);
+            // Clear inputs/materials when project changes
+            clearRequestInputsPreserveContext();
             
             // If owner supply is selected, load materials for this project
             const sourceType = document.getElementById('sourceType').value;
@@ -1237,6 +1241,26 @@
             materials = [];
             updateMaterialsList();
             updateSubmitButton();
+        }
+
+        // Clear transient inputs while keeping selected project/source type
+        function clearRequestInputsPreserveContext() {
+            // Clear current materials list and disable submit
+            materials = [];
+            updateMaterialsList();
+            updateSubmitButton();
+
+            // Clear company supply inline inputs
+            const quantityEl = document.getElementById('quantity');
+            const unitEl = document.getElementById('unit');
+            const materialSelectEl = document.getElementById('materialSelect');
+            if (quantityEl) quantityEl.value = '';
+            if (unitEl) unitEl.value = '';
+            if (materialSelectEl) materialSelectEl.value = '';
+
+            // Clear purpose text
+            const purposeEl = document.getElementById('purpose');
+            if (purposeEl) purposeEl.value = '';
         }
 
         // Show submit confirmation modal

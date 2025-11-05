@@ -111,6 +111,70 @@ const ManufacturingModel = {
     }
   },
   
+  // INTENDED: List projects with approved vtour permissions (for CRM Virtual Tour portal dropdown)
+  // This does not alter any existing backend behavior; standalone utility.
+  getApprovedVtourProjects: async () => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          p.id,
+          p.project_name,
+          p.project_code,
+          p.location
+        FROM vtour_permissions vp
+        JOIN projects p ON vp.project_id = p.id
+        WHERE vp.approval_status = 'approved'
+        ORDER BY p.project_name ASC
+      `);
+      return rows;
+    } catch (error) {
+      console.error('INTENDED: Error fetching approved vtour projects:', error);
+      throw error;
+    }
+  },
+  
+  // Get owner supply materials for a proposal to be used in request form
+  getOwnerSupplyMaterialsByProposal: async (proposalId) => {
+    try {
+      const sql = `
+        SELECT 
+          os.supply_id,
+          os.proposal_id,
+          os.material_name,
+          os.unit,
+          COALESCE(os.quantity_arrive, 0) AS quantity,
+          -- Sum of all requested quantities for this owner supply, regardless of approval state (reservations)
+          (
+            SELECT COALESCE(SUM(rm.quantity), 0)
+            FROM request_material rm
+            WHERE rm.owner_supply_id = os.supply_id
+              AND rm.source_type = 'owner_supply'
+              AND LOWER(COALESCE(rm.status, 'pending')) IN ('pending','approved','released','received')
+          ) AS quantity_requested,
+          GREATEST(COALESCE(os.quantity_arrive, 0) - (
+            SELECT COALESCE(SUM(rm2.quantity), 0)
+            FROM request_material rm2
+            WHERE rm2.owner_supply_id = os.supply_id
+              AND rm2.source_type = 'owner_supply'
+              AND LOWER(COALESCE(rm2.status, 'pending')) IN ('pending','approved','released','received')
+          ), 0) AS quantity_remaining,
+          os.status,
+          1 AS material_status
+        FROM owners_supply os
+        WHERE os.proposal_id = ?
+          AND LOWER(COALESCE(os.status, '')) IN ('delivered','partial')
+          AND COALESCE(os.is_delivered, 1) = 1
+          AND COALESCE(os.quantity_arrive, 0) > 0
+        ORDER BY os.supply_id ASC
+      `;
+      const [rows] = await db.query(sql, [proposalId]);
+      return rows;
+    } catch (error) {
+      console.error('❌ Error in getOwnerSupplyMaterialsByProposal:', error);
+      throw error;
+    }
+  },
+  
   // ===== FOREMAN DASHBOARD METHODS (INTENDED) =====
   // INTENDED: Get total projects for a foreman by foreman_code (employee_id)
   getForemanProjectCount: async (foremanCode) => {
@@ -522,6 +586,61 @@ const ManufacturingModel = {
       data.quantity,
       supplyId
     ]);
+  },
+
+  /**
+   * Update owners_supply arrival quantity and set status accordingly.
+   * Status rules:
+   *  - if quantity_arrive == quantity -> 'Completed'
+   *  - if 0 < quantity_arrive < quantity -> 'Partial'
+   *  - if quantity_arrive <= 0 -> unchanged (validation should block before calling)
+   */
+  markOwnerSupplyArrival: async ({ supplyId, quantityArrive }) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [rows] = await connection.query(
+        `SELECT quantity, COALESCE(quantity_arrive, 0) AS quantity_arrive FROM owners_supply WHERE supply_id = ? FOR UPDATE`,
+        [supplyId]
+      );
+      if (!rows || rows.length === 0) {
+        await connection.rollback();
+        return { success: false, error: 'owners_supply item not found' };
+      }
+
+      const totalQty = Number(rows[0].quantity || 0);
+      const newArrive = Number(quantityArrive || 0);
+
+      if (newArrive < 0) {
+        await connection.rollback();
+        return { success: false, error: 'quantity_arrive must be >= 0' };
+      }
+      if (newArrive > totalQty) {
+        await connection.rollback();
+        return { success: false, error: 'quantity_arrive cannot exceed ordered quantity' };
+      }
+
+      const newStatus = newArrive === totalQty
+        ? 'Completed'
+        : (newArrive > 0 ? 'Partial' : 'Pending');
+
+      await connection.query(
+        `UPDATE owners_supply 
+         SET quantity_arrive = ?, status = ?
+         WHERE supply_id = ?`,
+        [newArrive, newStatus, supplyId]
+      );
+
+      await connection.commit();
+      return { success: true, status: newStatus };
+    } catch (error) {
+      await connection.rollback();
+      console.error('❌ Error in markOwnerSupplyArrival:', error);
+      throw error;
+    } finally {
+      connection.release();
+    }
   },
 
   getProjectsByDeveloper: async (developerId) => {
@@ -1704,7 +1823,7 @@ const ManufacturingModel = {
   },
 
   // Save division progress entry (for manufacturing progress tracking)
-  saveDivisionProgressEntry: async (projectId, divisionId, progressValue) => {
+  saveDivisionProgressEntry: async (projectId, divisionId, progressValue, picture = null) => {
     try {
       // Validate division_id is provided
       if (!divisionId) {
@@ -1716,9 +1835,9 @@ const ManufacturingModel = {
       // Insert into division_progress table
       const [result] = await db.execute(`
         INSERT INTO division_progress (
-          project_id, division_id, progress_percentage, created_at
-        ) VALUES (?, ?, ?, NOW())
-      `, [projectId, divisionId, progress]);
+          project_id, division_id, progress_percentage, picture, created_at
+        ) VALUES (?, ?, ?, ?, NOW())
+      `, [projectId, divisionId, progress, picture || null]);
       
       console.log(`✅ Division progress saved: ${progress}% for division_id ${divisionId} (ID: ${result.insertId})`);
       
@@ -1773,10 +1892,15 @@ const ManufacturingModel = {
         : 0;
       
       console.log(`📊 Overall progress for project ${projectId}: ${overallProgress}%`);
+      console.log(`📊 Division progress breakdown:`, divisionsMap);
       
-      // If overall progress is 100%, update project status to 'completed'
-      if (overallProgress >= 100) {
-        console.log(`✅ Project ${projectId} has reached 100% progress. Updating status to 'completed'`);
+      // Only mark as completed if ALL divisions have reached 100%
+      // Check that every division has 100% progress
+      const allDivisionsComplete = divisionProgressValues.length > 0 && 
+        divisionProgressValues.every(progress => progress >= 100);
+      
+      if (allDivisionsComplete) {
+        console.log(`✅ Project ${projectId} has reached 100% progress in ALL divisions. Updating status to 'completed'`);
         
         await db.query(`
           UPDATE projects 
@@ -1785,6 +1909,8 @@ const ManufacturingModel = {
         `, [projectId]);
         
         console.log(`✅ Project ${projectId} status updated to 'completed'`);
+      } else {
+        console.log(`⏳ Project ${projectId} not yet completed. Some divisions are not at 100% yet.`);
       }
       
       return overallProgress;
@@ -1847,6 +1973,76 @@ const ManufacturingModel = {
           `, [logId, worker.workerId, worker.attendanceId, regularHours, otHours, laborCost]);
           
           console.log(`✅ Worker ${worker.workerId} added to daily log with labor cost: ₱${laborCost.toFixed(2)}`);
+        }
+      }
+
+      // Reflect material usage into inventory tables (owner_supply and project_company_supplies)
+      if (materialsArray && Array.isArray(materialsArray) && materialsArray.length > 0) {
+        for (const mat of materialsArray) {
+          try {
+            const usedQty = Number(mat.quantity || mat.qty || 0);
+            const matId = String(mat.materialId || mat.material_id || '');
+            if (!(usedQty > 0) || !matId) continue;
+
+            // Owner-supply: id format 'owner_<supply_id>'
+            if (matId.startsWith('owner_')) {
+              const supplyId = Number(matId.split('_')[1] || 0);
+              if (supplyId > 0) {
+                // Increment quantity_used; optional: cap not beyond quantity_arrive
+                await db.execute(`
+                  UPDATE owners_supply
+                  SET quantity_used = COALESCE(quantity_used, 0) + ?
+                WHERE supply_id = ?
+                `, [usedQty, supplyId]);
+              }
+              continue;
+            }
+
+            // Company-supply: id format 'release_<material_release_id>'
+            if (matId.startsWith('release_')) {
+              const releaseId = Number(matId.split('_')[1] || 0);
+              if (releaseId > 0) {
+                // Get the corresponding request_material id and material_id
+                const [relRows] = await db.query(`
+                  SELECT mr.request_id, mr.material_id, mr.project_id
+                  FROM material_releases mr
+                  WHERE mr.id = ?
+                `, [releaseId]);
+                if (relRows && relRows.length) {
+                  const reqId = relRows[0].request_id;
+                  const materialId = relRows[0].material_id;
+                  const projId = relRows[0].project_id;
+
+                  // Update project_company_supplies usage; cap at quantity_supplied
+                  const [updRes] = await db.execute(`
+                    UPDATE project_company_supplies
+                    SET quantity_used = LEAST(COALESCE(quantity_used,0) + ?, COALESCE(quantity_supplied,0))
+                    WHERE request_material_id = ? AND material_id = ? AND project_id = ?
+                  `, [usedQty, reqId, materialId, projId]);
+
+                  // If no row exists (defensive), insert a minimal row with quantity_used
+                  if (!updRes || updRes.affectedRows === 0) {
+                    // Get quantities from request_material for a sane default
+                    const [rmRows] = await db.query(`
+                      SELECT COALESCE(quantity_supplied, quantity, 0) AS qty_supplied, COALESCE(quantity, 0) AS qty_requested, unit
+                      FROM request_material WHERE id = ?
+                    `, [reqId]);
+                    const qtySupplied = (rmRows && rmRows[0]) ? Number(rmRows[0].qty_supplied || 0) : 0;
+                    const qtyRequested = (rmRows && rmRows[0]) ? Number(rmRows[0].qty_requested || 0) : 0;
+                    const unit = (rmRows && rmRows[0]) ? rmRows[0].unit : null;
+                    await db.execute(`
+                      INSERT INTO project_company_supplies (
+                        request_material_id, project_id, material_id,
+                        quantity_requested, quantity_supplied, quantity_used, unit, status, requested_at
+                      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'released', NOW())
+                    `, [reqId, projId, materialId, qtyRequested, qtySupplied, Math.min(usedQty, qtySupplied), unit]);
+                  }
+                }
+              }
+            }
+          } catch (usageErr) {
+            console.warn('⚠️ Failed to reflect material usage:', usageErr?.message || usageErr);
+          }
         }
       }
       
@@ -1942,28 +2138,31 @@ const ManufacturingModel = {
         }
       }
       
-      // Step 2: Get materials from material_releases that have been received
-      // This ensures we only get materials from the current project's proposal
-      // Skip material_releases query for owner supply - we already got them from owners_supply table
-      // Only get company supply materials from material_releases
+      // Step 2: Get company supply materials; quantity figures sourced from project_company_supplies when available
       let query = `
-        SELECT DISTINCT
+        SELECT 
           CONCAT('release_', mr.id) as id,
           m.name,
           rm.unit,
-          COALESCE(rm.quantity_supplied, rm.quantity) as requested_qty,
-          COALESCE(rm.quantity - rm.quantity_supplied, 0) as remaining_qty,
-          COALESCE(m.price, 0.00) as unit_price,
+          MAX(COALESCE(pcs.quantity_supplied, rm.quantity_supplied, rm.quantity, 0)) as requested_qty,
+          MAX(COALESCE(pcs.quantity_remaining, COALESCE(rm.quantity - COALESCE(rm.quantity_supplied, 0), rm.quantity, 0))) as remaining_qty,
+          MAX(COALESCE(m.price, 0.00)) as unit_price,
           mr.source_type,
           mr.id as release_id,
           NULL as proposal_id
         FROM material_releases mr
         INNER JOIN request_material rm ON mr.request_id = rm.id
         LEFT JOIN materials m ON mr.material_id = m.material_id
+        LEFT JOIN project_company_supplies pcs 
+          ON pcs.request_material_id = rm.id
+         AND pcs.material_id = mr.material_id
+         AND pcs.project_id = mr.project_id
         WHERE mr.project_id = ?
           AND mr.status IN ('released','received')
           AND mr.source_type = 'company_supply'
-        GROUP BY mr.id
+          AND m.name IS NOT NULL
+          AND COALESCE(pcs.quantity_supplied, rm.quantity_supplied, rm.quantity, 0) > 0
+        GROUP BY mr.id, m.name, rm.unit, mr.source_type
       `;
       
       const [requestedMaterials] = await db.query(query, [projectId]);
@@ -2094,6 +2293,7 @@ const ManufacturingModel = {
           dp.progress_percentage,
           dp.status,
           dp.remarks,
+          dp.picture,
           dp.start_date,
           dp.target_date,
           dp.created_at,
@@ -2107,6 +2307,31 @@ const ManufacturingModel = {
       return rows;
     } catch (error) {
       console.error('❌ Error getting division progress by project:', error);
+      throw error;
+    }
+  }
+  ,
+  // Update an existing division_progress entry (division, progress, picture)
+  updateDivisionProgressEntry: async (entryId, { divisionId, progressValue, picture = null }) => {
+    try {
+      const entry = Number(entryId);
+      const divId = Number(divisionId);
+      const progress = Math.min(100, Math.max(0, Number(progressValue) || 0));
+      if (!entry || !divId) {
+        throw new Error('entryId and divisionId are required');
+      }
+
+      const [res] = await db.query(`
+        UPDATE division_progress
+        SET division_id = ?,
+            progress_percentage = ?,
+            picture = ?,
+            updated_at = NOW()
+        WHERE id = ?
+      `, [divId, progress, picture || null, entry]);
+      return { success: res.affectedRows > 0 };
+    } catch (error) {
+      console.error('❌ Error updating division progress entry:', error);
       throw error;
     }
   }

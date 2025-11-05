@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { ManufacturingController, projectUpload, signatureUpload, constructionWorkerUpload } = require("../controller/manu.controller");
+const { divisionProgressUpload } = require("../controller/manu.controller");
 
 // Project Routes
 router.post('/projects', projectUpload.fields([
@@ -17,6 +18,8 @@ router.post('/projects/:id/supply-materials', ManufacturingController.addSupplyM
 router.get('/projects/:id/supply-materials', ManufacturingController.getSupplyMaterials);
 router.put('/supply-materials/:supplyId', ManufacturingController.updateSupplyMaterial);
 router.delete('/supply-materials/:supplyId', ManufacturingController.deleteSupplyMaterial);
+// Owners supply arrival (quantity_arrive + status update)
+router.post('/owners-supply/mark-received', ManufacturingController.markOwnerSupplyArrival);
 
 // Labor routes
 router.post('/projects/:id/labor', ManufacturingController.addLabor);
@@ -87,12 +90,15 @@ router.get('/projects-with-billing-status', ManufacturingController.getProjectsW
 router.get('/completed-projects', ManufacturingController.getCompletedProjectsByDeveloper);
 router.get('/developers/:developerId/completed-projects', ManufacturingController.getCompletedProjectsForDeveloperId);
 
-router.post('/save-division-progress', ManufacturingController.saveDivisionProgress);
+router.post('/save-division-progress', divisionProgressUpload.single('picture'), ManufacturingController.saveDivisionProgress);
 router.post('/save-daily-log-progress', ManufacturingController.saveDailyLogProgress);
 router.get('/daily-logs/:projectId', ManufacturingController.getDailyLogsProgress);
 router.get('/project-materials/:projectId', ManufacturingController.getProjectMaterialsProgress);
 router.get('/project-material-releases/:projectId', ManufacturingController.getProjectMaterialReleases);
 router.get('/division-progress/:projectId', ManufacturingController.getDivisionProgressByProject);
+router.put('/division-progress/:entryId', divisionProgressUpload.single('picture'), ManufacturingController.updateDivisionProgress);
+// Owner supply materials for request form (by proposal)
+router.get('/owners-supply/project/:proposalId', ManufacturingController.getOwnerSupplyMaterialsByProposal);
 // Aggregated project tracking (developer view)
 router.get('/project-tracking/:projectId', ManufacturingController.getProjectTrackingDetail);
 // Stage billing summary
@@ -143,6 +149,10 @@ router.post('/paymongo-webhook', express.raw({type: 'application/json'}), Manufa
 // Payment callback routes
 router.get('/payments/success', ManufacturingController.paymentSuccess);
 router.get('/payments/cancel', ManufacturingController.paymentCancel);
+
+// ===== VTOUR SUPPORT (INTENDED) =====
+// Approved projects for Virtual Tour Portal typing dropdown
+router.get('/vtour/approved-projects', ManufacturingController.getApprovedVtourProjects);
 
 // ========== ATTENDANCE ROUTES ==========
 router.post('/attendance/scan-qr', ManufacturingController.scanQRCode);

@@ -859,49 +859,63 @@
                 </table>
             </div>
 
-            <!-- Daily Logs Section -->
-            <div class="division-table" id="dailyLogsSection">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Daily Logs</h5>
-                </div>
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="sortable" data-key="date">Date <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable" data-key="description">Description <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable" data-key="materials">Materials Used <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable text-end" data-key="materialsCount">Count <i class="fas fa-sort-numeric-up sort-icon"></i></th>
-                            <th class="sortable text-end" data-key="totalMaterialCost">Total Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dailyLogsBody"></tbody>
-                </table>
-            </div>
-
-            <!-- Weekly Summary Section -->
-            <div class="division-table" id="weeklySummarySection">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Weekly Summary</h5>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="openStageBillingBtn">
-                            <i class="fas fa-layer-group me-2"></i>Generate Stage Billing
+            <!-- Logs Tabs: Daily / Weekly -->
+            <div class="division-table">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tabDailyLogsBtn" data-bs-toggle="tab" data-bs-target="#tabDailyLogs" type="button" role="tab" aria-controls="tabDailyLogs" aria-selected="true">
+                            <i class="fas fa-calendar-day me-2"></i>Daily
                         </button>
-                        <button type="button" class="btn btn-primary btn-sm" id="generateBillingBtn">
-                            <i class="fas fa-file-invoice-dollar me-2"></i>Generate Billing Summary
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tabWeeklySummaryBtn" data-bs-toggle="tab" data-bs-target="#tabWeeklySummary" type="button" role="tab" aria-controls="tabWeeklySummary" aria-selected="false">
+                            <i class="fas fa-calendar-week me-2"></i>Weekly
                         </button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3 border border-top-0 rounded-bottom">
+                    <div class="tab-pane fade show active" id="tabDailyLogs" role="tabpanel" aria-labelledby="tabDailyLogsBtn">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Daily Logs (Today)</h5>
+                        </div>
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-key="date">Date <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="description">Description <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="materials">Materials Used <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable text-end" data-key="materialsCount">Count <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                    <th class="sortable text-end" data-key="totalMaterialCost">Total Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyLogsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane fade" id="tabWeeklySummary" role="tabpanel" aria-labelledby="tabWeeklySummaryBtn">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Weekly Summary</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="openStageBillingBtn">
+                                    <i class="fas fa-layer-group me-2"></i>Generate Stage Billing
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" id="generateBillingBtn">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i>Generate Billing Summary
+                                </button>
+                            </div>
+                        </div>
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-key="week">Week (Mon - Sun) <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable text-end" data-key="totalMaterialCost">Total Material Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklySummaryBody"></tbody>
+                        </table>
                     </div>
                 </div>
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="sortable" data-key="week">Week (Mon - Sun) <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                            <th class="sortable text-end" data-key="totalMaterialCost">Total Material Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
-                        </tr>
-                    </thead>
-                    <tbody id="weeklySummaryBody"></tbody>
-                </table>
             </div>
 
             <!-- Requested Materials Section -->
@@ -1029,54 +1043,61 @@
                     </div>
 
                     <div class="row mt-4 g-3">
-                        <!-- Materials Used Column -->
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0"><i class="fas fa-box me-2"></i>Materials Used</h6>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" id="addMaterialRowBtn">
-                                    <i class="fas fa-plus me-2"></i>Add Material
-                                </button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Material Name</th>
-                                            <th style="width: 100px;" class="text-end">Qty</th>
-                                            <th style="width: 100px;" class="text-end">Price</th>
-                                            <th style="width: 50px;" class="text-center">X</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="materialsBody"></tbody>
-                                </table>
+                        <!-- Materials Used (Row 1) -->
+                        <div class="col-12">
+                            <div class="p-3 border rounded-3 shadow-sm mb-3 bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0"><i class="fas fa-box me-2"></i>Materials Used</h6>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="addMaterialRowBtn">
+                                        <i class="fas fa-plus me-2"></i>Add Material
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Material</th>
+                                                <th style="width: 140px;">Source</th>
+                                                <th style="width: 120px;" class="text-end">Available</th>
+                                                <th style="width: 120px;" class="text-end">Qty</th>
+                                                <th style="width: 140px;" class="text-end">Unit Price</th>
+                                                <th style="width: 160px;" class="text-end">Subtotal</th>
+                                                <th style="width: 60px;" class="text-center">Remove</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="materialsBody"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Labor Used Column -->
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Labor Used</h6>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-primary btn-sm" id="fetchWorkersBtn">
-                                        <i class="fas fa-sync me-2"></i>Fetch from Today
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addLaborRowBtn">
-                                        <i class="fas fa-plus me-2"></i>Add Worker
-                                    </button>
+                        <!-- Labor Used (Row 2) -->
+                        <div class="col-12">
+                            <div class="p-3 border rounded-3 shadow-sm bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Labor Used</h6>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-primary btn-sm" id="fetchWorkersBtn">
+                                            <i class="fas fa-sync me-2"></i>Fetch from Today
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="addLaborRowBtn">
+                                            <i class="fas fa-plus me-2"></i>Add Worker
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Worker Name</th>
-                                            <th style="width: 90px;" class="text-end">Hours</th>
-                                            <th style="width: 90px;" class="text-end">OT</th>
-                                            <th style="width: 50px;" class="text-center">X</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="laborBody"></tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Worker Name</th>
+                                                <th style="width: 110px;" class="text-end">Hours</th>
+                                                <th style="width: 110px;" class="text-end">OT</th>
+                                                <th style="width: 60px;" class="text-center">Remove</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="laborBody"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1288,6 +1309,13 @@
     // Track whether daily log modal can be closed
     let canCloseDailyLogModal = true;
 
+    // Performance helpers
+    const DBG = false; // set true to enable debug logs
+    function dlog() { if (DBG && typeof console !== 'undefined') console.log.apply(console, arguments); }
+    function debounce(fn, wait = 200) {
+        let t; return function(...args){ clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
+    }
+
     // Fetch actual projects from database
     async function loadActualProjects() {
         try {
@@ -1418,6 +1446,20 @@
         editProgressModal = new bootstrap.Modal(document.getElementById('editProgressModal'));
         dailyLogModal = new bootstrap.Modal(document.getElementById('dailyLogModal'));
         stageBillingModal = new bootstrap.Modal(document.getElementById('stageBillingModal'));
+
+        // Tabs: re-render appropriate pane on show
+        const dailyBtn = document.getElementById('tabDailyLogsBtn');
+        const weeklyBtn = document.getElementById('tabWeeklySummaryBtn');
+        if (dailyBtn) {
+            dailyBtn.addEventListener('shown.bs.tab', () => {
+                renderDailyLogsTable(true); // today only
+            });
+        }
+        if (weeklyBtn) {
+            weeklyBtn.addEventListener('shown.bs.tab', () => {
+                renderWeeklySummaries();
+            });
+        }
     });
 
     // Initialize sidebar
@@ -1476,7 +1518,7 @@
 
     // Initialize event listeners
     function initializeEventListeners() {
-        document.getElementById('searchBar').addEventListener('input', filterProjects);
+        document.getElementById('searchBar').addEventListener('input', debounce(filterProjects, 250));
         document.getElementById('filterDropdown').addEventListener('change', filterProjects);
         document.getElementById('entriesPerPage').addEventListener('change', function() {
             const value = this.value;
@@ -1486,7 +1528,7 @@
         });
 
         // Table header click for sorting
-        document.querySelector('thead').addEventListener('click', handleHeaderClick);
+        document.querySelector('thead').addEventListener('click', debounce(handleHeaderClick, 100));
 
         // Pagination event listener
         document.getElementById('paginationControls').addEventListener('click', (e) => {
@@ -1752,35 +1794,36 @@
             </td>`;
             tbody.appendChild(tr);
         } else {
+            const frag = document.createDocumentFragment();
             rows.forEach(project => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${project.id}</td>
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
                     <td class="fw-semibold">${project.name}</td>
-                    <td><img src="${project.image}" alt="Project Image" style="width:50px;height:50px;object-fit:cover;border-radius:8px;box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></td>
-                <td>${project.developer}</td>
-                <td>${project.foreman}</td>
-                <td>${project.location}</td>
+                    <td><img src="${project.image}" alt="Project Image" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:8px;box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></td>
+                    <td>${project.developer}</td>
+                    <td>${project.foreman}</td>
+                    <td>${project.location}</td>
                     <td><span class="badge bg-${getStatusColor(project.status)} status-badge">${project.status}</span></td>
                     <td class="text-center">
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
-                    </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: ${project.progress}%"></div>
+                        </div>
                         <small class="text-muted fw-semibold">${project.progress}%</small>
-                </td>
+                    </td>
                     <td class="text-center">
-                    <div class="action-buttons">
-                        <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="action-btn edit-btn" onclick="updateProject(${project.id})" title="Update Progress">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
+                        <div class="action-buttons">
+                            <button class="action-btn view-btn" onclick="viewProject(${project.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn edit-btn" onclick="updateProject(${project.id})" title="Update Progress">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>`;
+                frag.appendChild(row);
+            });
+            tbody.appendChild(frag);
         }
     }
 
@@ -1919,7 +1962,7 @@
                 
                 // Convert database entries to format expected by frontend
                 divisionProgress = data.entries.map(entry => ({
-                    img: 'https://via.placeholder.com/60x60?text=Img', // Placeholder image
+                    img: buildDivisionImageUrl(entry.picture),
                     division: entry.division_name,
                     progress: entry.progress_percentage,
                     date: new Date(entry.created_at).toLocaleDateString('en-US', { 
@@ -1992,11 +2035,12 @@
         });
         // Display newest first, but use precomputed totals
         const displayRows = [...withTotals].sort((a,b) => new Date(b.entry.date) - new Date(a.entry.date));
+        const frag = document.createDocumentFragment();
         displayRows.forEach(({ entry, added, totalAt }) => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
-                    <img src="${entry.img}" class="division-img" alt="Division Image" 
+                    <img src="${entry.img}" class="division-img" alt="Division Image" loading="lazy"
                         style="cursor: pointer;" onclick="previewImage('${entry.img}')">
                 </td>
                 <td>${entry.division}</td>
@@ -2017,10 +2061,10 @@
                             <i class="fas fa-edit"></i> Edit
                         </button>
                     </div>
-                </td>
-            `;
-            tbody.appendChild(row);
+                </td>`;
+            frag.appendChild(row);
         });
+        tbody.appendChild(frag);
     }
 
     // Update chart with current progress
@@ -2191,22 +2235,36 @@
                 // Filter materials to only include those with quantity_requested > 0
                 // This ensures only materials that have been requested/supplied are shown
                 const filteredMaterials = data.materials.filter(m => {
-                    // For owner supply, must have quantity_requested
+                    // For owner supply, must have quantity_requested > 0
                     if (m.source_type === 'owner_supply') {
                         return Number(m.requested_qty || 0) > 0;
                     }
-                    // For other materials, include them
-                    return true;
+                    // For company supply, include if requested_qty > 0 OR if material exists
+                    // Sometimes requested_qty might be missing but material is still available
+                    if (m.source_type === 'company_supply') {
+                        const requestedQty = Number(m.requested_qty || 0);
+                        // Include if requested_qty > 0 OR if material name exists (fallback)
+                        return requestedQty > 0 || (m.name && m.name.trim() !== '');
+                    }
+                    // For other materials, include them if they have a name
+                    return m.name && m.name.trim() !== '';
                 });
+                
+                console.log(`📦 Raw materials received:`, data.materials.length);
+                console.log(`📦 Filtered materials:`, filteredMaterials.length);
+                console.log(`📦 Materials details:`, filteredMaterials);
                 
                 // Update the project in state.records with filtered materials
                 const project = state.records.find(p => p.id === currentProjectId);
                 if (project) {
                     project.requestedMaterials = filteredMaterials;
                     console.log(`✅ Project materials loaded for project ${currentProjectId}:`, filteredMaterials.length, 'materials');
+                } else {
+                    console.error('❌ Project not found in state.records:', currentProjectId);
                 }
             } else {
-                console.error('Failed to load project materials:', data.error);
+                console.error('Failed to load project materials:', data.error || 'Unknown error');
+                console.error('Response data:', data);
             }
         } catch (error) {
             console.error('Error loading project materials:', error);
@@ -2296,15 +2354,16 @@
                 
                 console.log('💾 Sending request to save division progress:', { projectId: currentProjectId, divisionId, progressValue: pendingProgressData.progress });
                 
-                // Save division progress to database IMMEDIATELY on confirm
+                // Save division progress to database IMMEDIATELY on confirm (multipart to upload picture)
+                const fd = new FormData();
+                fd.append('projectId', String(currentProjectId));
+                fd.append('divisionId', String(divisionId));
+                fd.append('progressValue', String(pendingProgressData.progress));
+                const picFile = document.getElementById('progressImage')?.files?.[0] || null;
+                if (picFile) fd.append('picture', picFile);
                 fetch('/manufacturing/save-division-progress', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projectId: currentProjectId,
-                        divisionId: divisionId,
-                        progressValue: pendingProgressData.progress
-                    }),
+                    body: fd,
                     credentials: 'include'
                 })
                 .then(response => response.json())
@@ -2315,8 +2374,11 @@
                         // Store division name before clearing pendingProgressData
                         const divisionName = pendingProgressData.division;
                         
+                        // Resolve stored image URL from filename if provided
+                        const storedImgUrl = data.picture ? buildDivisionImageUrl(data.picture) : pendingProgressData.img;
+                        
                         // Add to local state
-                        divisionProgress.push({ ...pendingProgressData, type: 'progress' });
+                        divisionProgress.push({ ...pendingProgressData, img: storedImgUrl, type: 'progress' });
                         renderDivisionTable();
                         updateChart();
                         updateDivisionSelectOptions();
@@ -2435,7 +2497,51 @@
                 }
             }
 
-            // Update the progress data
+            // Persist to backend if this row has a database ID
+            try {
+                const entry = divisionProgress[currentEditIndex];
+                const entryId = entry && entry.dbId;
+                const divisionId = getDivisionIdByName(division);
+                if (entryId && divisionId) {
+                    const hasNewFile = !!document.getElementById('editProgressImage')?.files?.[0];
+                    let resp, json;
+                    if (hasNewFile) {
+                        const fd = new FormData();
+                        fd.append('divisionId', String(divisionId));
+                        fd.append('progressValue', String(progress));
+                        fd.append('picture', document.getElementById('editProgressImage').files[0]);
+                        resp = await fetch(`/manufacturing/division-progress/${entryId}`, {
+                            method: 'PUT',
+                            body: fd,
+                            credentials: 'include'
+                        });
+                    } else {
+                        resp = await fetch(`/manufacturing/division-progress/${entryId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                                divisionId: divisionId,
+                                progressValue: progress,
+                                picture: (entry.img && entry.img.startsWith('http')) ? null : (entry.img || null)
+                            })
+                        });
+                    }
+                    json = await resp.json();
+                    if (!resp.ok || !json?.success) {
+                        showWarningMessage(json?.error || 'Failed to update division progress');
+                        return;
+                    }
+                    if (json.picture) {
+                        imgUrl = buildDivisionImageUrl(json.picture);
+                    }
+                }
+            } catch (e) {
+                showWarningMessage('Error updating division progress');
+                return;
+            }
+
+            // Update the progress data locally
             divisionProgress[currentEditIndex] = {
                 ...divisionProgress[currentEditIndex],
                 division,
@@ -2722,19 +2828,18 @@
             })
             .map(m => {
                 const sourceType = m.source_type || 'company_supply';
-                const sourceBadge = sourceType === 'owner_supply' ? '🏢 Owner' : '🏭 Company';
                 const displayedQty = Number(m.requested_qty || 0);
                 const dataRemaining = Number(m.remaining_qty ?? NaN);
-                // Attach identifiers so downstream can distinguish
                 const dataProposal = m.proposal_id || '';
                 const dataProject = m.project_id || currentProjectId || '';
                 return `<option value="${m.id}"
                     data-price="${Number(m.unit_price || 0)}"
                     data-remaining="${isNaN(dataRemaining) ? '' : String(dataRemaining)}"
+                    data-requested="${String(displayedQty)}"
                     data-source="${sourceType}"
                     data-proposal-id="${dataProposal}"
                     data-project-id="${dataProject}">
-                    ${escapeHtml(m.name)} - ${sourceBadge} (RQ: ${displayedQty} ${m.unit || ''})
+                    ${escapeHtml(m.name)}
                 </option>`;
             })
             .join('');
@@ -2745,6 +2850,12 @@
                     <option value="" selected disabled>Select material</option>
                     ${options || '<option disabled>No materials available</option>'}
                 </select>
+            </td>
+            <td class="align-middle">
+                <span class="badge bg-light text-dark border material-source">-</span>
+            </td>
+            <td>
+                <input type="number" class="form-control text-end material-avail" placeholder="0" readonly>
             </td>
             <td>
                 <input type="number" class="form-control text-end material-qty" placeholder="0" min="0" step="any" required>
@@ -2768,15 +2879,21 @@
             const price = Number(sel?.dataset.price || 0);
             const remainingRaw = sel?.dataset.remaining;
             const remaining = remainingRaw === '' || remainingRaw === undefined ? NaN : Number(remainingRaw);
+            const reqQty = Number(sel?.dataset.requested || 0);
+            const isOwner = (sel?.dataset.source || '').toLowerCase() === 'owner_supply';
+            const source = isOwner ? 'Owner Supply' : 'Company Supply';
             const priceInput = tr.querySelector('.material-price');
             const qtyInput = tr.querySelector('.material-qty');
+            const availInput = tr.querySelector('.material-avail');
+            const sourceBadge = tr.querySelector('.material-source');
             priceInput.value = price.toFixed(2);
-            // Set max only when remaining is a valid number
-            if (!isNaN(remaining)) {
-                qtyInput.removeAttribute('max');
-                qtyInput.max = String(Math.max(0, remaining));
-            } else {
-                qtyInput.removeAttribute('max');
+            sourceBadge.textContent = source;
+            // Show available
+            const availVal = isOwner ? reqQty : (isNaN(remaining) ? '' : remaining);
+            availInput.value = availVal === '' ? '' : String(availVal);
+            qtyInput.removeAttribute('max');
+            if (availVal !== '' && !isNaN(Number(availVal))) {
+                qtyInput.max = String(Math.max(0, Number(availVal)));
             }
             updateRowSubtotal();
         });
@@ -3066,10 +3183,17 @@
     }
 
     // Render daily logs table
-    function renderDailyLogsTable() {
+    function renderDailyLogsTable(filterToday = false) {
         const tbody = document.getElementById('dailyLogsBody');
         tbody.innerHTML = '';
-        if (!currentDailyLogs.length) {
+        let data = currentDailyLogs || [];
+        if (filterToday) {
+            const today = new Date().toISOString().slice(0,10);
+            data = data.filter(l => {
+                try { return new Date(l.date).toISOString().slice(0,10) === today; } catch(_) { return false; }
+            });
+        }
+        if (!data.length) {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No daily logs yet.</td>`;
             tbody.appendChild(tr);
@@ -3078,22 +3202,16 @@
 
         const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
         // Sort logs by date ascending
-        const rows = [...currentDailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const rows = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const frag = document.createDocumentFragment();
         rows.forEach((log, idx) => {
             const tr = document.createElement('tr');
             const materialsCount = log.materials?.length || 0;
-            
-            // Format materials list for display
             let materialsDisplay = '-';
             if (log.materials && log.materials.length > 0) {
-                const materialsList = log.materials.map(m => 
-                    `${escapeHtml(m.name)} (${m.quantity}${m.quantity > 1 ? ' units' : ' unit'})`
-                ).join(', ');
-                materialsDisplay = materialsList.length > 50 ? 
-                    materialsList.substring(0, 50) + '...' : 
-                    materialsList;
+                const materialsList = log.materials.map(m => `${escapeHtml(m.name)} (${m.quantity}${m.quantity > 1 ? ' units' : ' unit'})`).join(', ');
+                materialsDisplay = materialsList.length > 50 ? materialsList.substring(0, 50) + '...' : materialsList;
             }
-            
             tr.innerHTML = `
                 <td>${formatDateNice(log.date)}</td>
                 <td>${escapeHtml(log.division || '-')}</td>
@@ -3104,8 +3222,9 @@
                 <td class="text-center">
                     <button class="btn btn-sm btn-outline-primary" onclick="viewMaterials(${idx})"><i class="fas fa-eye"></i> View</button>
                 </td>`;
-            tbody.appendChild(tr);
+            frag.appendChild(tr);
         });
+        tbody.appendChild(frag);
     }
 
     function viewMaterials(index) {
@@ -3216,6 +3335,14 @@
 
     function escapeHtml(str) {
         return (str || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    // Build image URL for division progress given a stored filename
+    function buildDivisionImageUrl(picture) {
+        if (!picture) return 'https://via.placeholder.com/60x60?text=Img';
+        const s = String(picture);
+        if (s.startsWith('http') || s.startsWith('data:')) return s;
+        return `/uploads/division_progress/${s}`;
     }
 
     // Billing summary modal content

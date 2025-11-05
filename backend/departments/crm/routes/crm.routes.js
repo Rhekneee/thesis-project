@@ -80,6 +80,7 @@ router.get('/default-profile-picture', (req, res) => {
 // 🔹 Resume Upload Route
 router.post("/upload", upload.single("resume"), CRMController.uploadResume);
 router.post('/submitVisitRequest', CRMController.createVisitRequest);
+router.post('/submitPropertyRating', CRMController.submitPropertyRating);
 
 // (Moved to HR) Job Posting Routes removed from CRM to avoid duplication
 
@@ -115,18 +116,23 @@ router.get('/developer/check-session', (req, res) => {
 router.get('/virtual-tour/locations', checkGeneralForemanRole, CRMController.listVirtualLocations);
 router.get('/virtual-tour/locations/:id', checkGeneralForemanRole, CRMController.getVirtualLocationById);
 router.post('/virtual-tour/locations', checkGeneralForemanRole, virtualLocationUpload, CRMController.createVirtualLocation);
+// INTENDED: Public list for properties form - vtour locations linked to projects
+router.get('/virtual-tour/locations-with-projects', CRMController.getVtourLocationsForProperties_INTENDED);
 
 // Virtual Tour: Scenes
 router.get('/virtual-tour/scenes/:location_id', checkGeneralForemanRole, CRMController.getVirtualScenesByLocation);
 router.post('/virtual-tour/scenes', checkGeneralForemanRole, virtualSceneUpload, CRMController.createVirtualScene);
 router.put('/virtual-tour/scenes/:id', checkGeneralForemanRole, virtualSceneUpload, CRMController.updateVirtualScene);
 router.delete('/virtual-tour/scenes/:id', checkGeneralForemanRole, CRMController.deleteVirtualScene);
+// INTENDED: Public read-only routes for viewing vtour scenes & hotspots (no role guard)
+router.get('/virtual-tour/public/scenes/:location_id', CRMController.getVirtualScenesByLocation);
 
 // Virtual Tour: Hotspots
 router.get('/virtual-tour/hotspots/:scene_id', checkGeneralForemanRole, CRMController.getVirtualHotspotsByScene);
 router.post('/virtual-tour/hotspots', checkGeneralForemanRole, CRMController.createVirtualHotspot);
 router.put('/virtual-tour/hotspots/:id', checkGeneralForemanRole, CRMController.updateVirtualHotspot);
 router.delete('/virtual-tour/hotspots/:id', checkGeneralForemanRole, CRMController.deleteVirtualHotspot);
+router.get('/virtual-tour/public/hotspots/:scene_id', CRMController.getVirtualHotspotsByScene);
 
 // Inquiry submission route
 router.post('/submit-inquiry', CRMController.submitInquiry);

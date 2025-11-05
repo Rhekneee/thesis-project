@@ -67,7 +67,61 @@
         .container {
             padding: 0 15px;
         }
+
+        /* INTENDED: Combobox dropdown for linking Virtual Tour Location */
+        .vt-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .vt-dropdown-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vt-dropdown-item:hover,
+        .vt-dropdown-item.active {
+            background: #f1f5f9;
+        }
+        .vt-dropdown-empty {
+            padding: 10px 12px;
+            color: #64748b;
+        }
+
+        /* Hotspot styling for Pannellum preview (view-only) */
+        .custom-hotspot {
+            background: rgba(37, 99, 235, 0.85);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(37,99,235,0.4);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .custom-hotspot:hover {
+            background: rgba(37, 99, 235, 1);
+            transform: scale(1.1);
+        }
+        .custom-hotspot::before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
     </style>
+    <!-- Pannellum CSS for Virtual Tour Preview -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
 </head>
 
 <body>
@@ -197,9 +251,21 @@
             <div class="container mt-4">
                 <h3>Add New Property</h3>
                 <form id="propertyForm" class="property-form" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="propertyName" class="form-label">Property Name</label>
-                        <input type="text" class="form-control" id="propertyName" name="propertyName" required>
+                    <div class="mb-3 position-relative">
+                        <label for="propertyName" class="form-label">Property Name (Link to Virtual Tour) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="propertyName" name="propertyName" placeholder="Type to search project..." autocomplete="off" required>
+                            <button class="btn btn-outline-secondary" type="button" id="vtLinkToggle" aria-label="Toggle vtour list"><i class="fas fa-caret-down"></i></button>
+                        </div>
+                        <div class="invalid-feedback" id="vtLinkError">Unknown project</div>
+                        <input type="hidden" id="vtourLocationId" name="vtourLocationId">
+                        <div id="vtLinkDropdown" class="vt-dropdown" style="display:none;"></div>
+                        <div class="mt-1">
+                            <button id="vtPreviewBtn" type="button" class="btn btn-outline-primary btn-sm" style="display:none;">
+                                <i class="fas fa-vr-cardboard me-1"></i>Open Virtual Tour
+                            </button>
+                        </div>
+                        <div class="form-text">Select a project that has a Virtual Tour Location to link this property.</div>
                     </div>
                     <div class="mb-3">
                         <label for="propertyTypeSelect" class="form-label">Property Type</label>
@@ -215,14 +281,16 @@
                         <input type="text" class="form-control" id="customPropertyType" name="customPropertyType" placeholder="Enter property type">
                     </div>
                     <div class="mb-3">
-                        <label for="location" class="form-label">Location</label>
+                        <label for="location" class="form-label">Developer</label>
                         <select class="form-select" id="location" name="location" required>
                             <option value="">Select a developer company</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="price" class="form-label">Price</label>
-                        <input type="number" class="form-control" id="price" name="price" required>
+                        <label for="price" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="price" name="price" readonly>
+                        <input type="hidden" id="projectLocationValue" name="projectLocationValue">
+                        <div class="form-text" id="projectLocationHelp"></div>
                     </div>
                     <div class="mb-3">
                         <label for="parking" class="form-label">Number of Parking Spaces</label>
@@ -266,11 +334,7 @@
                         <input type="file" class="form-control" id="property_image" name="property_image" accept="image/*" required>
                         <div class="form-text">Accepted formats: JPEG, PNG, GIF. Max size: 5MB</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="virtual_tour_image" class="form-label">360° Virtual Tour Image (Coming Soon)</label>
-                        <input type="file" class="form-control" id="virtual_tour_image" name="virtual_tour_image" accept="image/*" disabled>
-                        <div class="form-text">Dynamic virtual tour feature will be available in future updates.</div>
-                    </div>
+                    
 
                     <!-- Add Coming Soon Modal -->
             <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
@@ -297,6 +361,26 @@
         </form>
     </div>
 </div>
+    </div>
+
+    <!-- Virtual Tour Preview Modal (View-only) -->
+    <div class="modal fade" id="vtPreviewModal" tabindex="-1" aria-labelledby="vtPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vtPreviewModalLabel">
+                        <i class="fas fa-vr-cardboard me-2"></i><span id="vtPreviewTitle">Virtual Tour</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="vtPreviewViewer" style="width:100%; height:550px; border-radius: 12px; overflow: hidden; background:#000;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Success Message Modal -->
@@ -339,6 +423,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/side_top.js"></script>
+    <!-- Pannellum JS for Virtual Tour Preview -->
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <script>
         // Handle custom property type input
         document.getElementById('propertyTypeSelect').addEventListener('change', function() {
@@ -377,8 +463,116 @@
             }
         }
 
-        // Call the function when the page loads
-        document.addEventListener('DOMContentLoaded', loadActiveDeveloperCompanies);
+        // INTENDED: Fetch vtour locations linked to projects
+        async function loadVtourLocationsWithProjects() {
+            try {
+                const res = await fetch('/crm/virtual-tour/locations-with-projects');
+                if (!res.ok) throw new Error('Failed to fetch vtour locations');
+                const data = await res.json();
+                window.__vtLinkLocations = (data.locations || []).map(r => ({
+                    id: r.id,
+                    name: r.project_name || r.location_name,
+                    projectId: r.project_id,
+                    locationName: r.location_name,
+                    developer: r.developer_company || '',
+                    projectLocation: r.project_location || ''
+                }));
+                window.__vtLinkMap = new Map(window.__vtLinkLocations.map(x => [x.name, x.id]));
+                renderVtLinkDropdown('');
+            } catch (e) {
+                console.warn('Failed to load vtour locations with projects:', e);
+            }
+        }
+
+        function renderVtLinkDropdown(query) {
+            const box = document.getElementById('vtLinkDropdown');
+            const input = document.getElementById('propertyName');
+            const idEl = document.getElementById('vtourLocationId');
+            const list = window.__vtLinkLocations || [];
+            const q = (query || '').trim().toLowerCase();
+            const items = q ? list.filter(x => x.name.toLowerCase().includes(q) || (x.locationName||'').toLowerCase().includes(q)) : list.slice(0, 50);
+            box.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'vt-dropdown-empty';
+                empty.textContent = 'No matching projects';
+                box.appendChild(empty);
+            } else {
+                items.forEach((x, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'vt-dropdown-item';
+                    div.setAttribute('data-index', idx.toString());
+                    div.innerHTML = `<i class=\"fas fa-diagram-project text-primary\"></i><div><div style=\"font-weight:600;\">${x.name}</div><div class=\"text-muted\" style=\"font-size:12px;\">VT: ${x.locationName || '-'} · ID: ${x.id}</div></div>`;
+                    div.addEventListener('mousedown', () => {
+                        input.value = x.name;
+                        idEl.value = x.id;
+                        hideVtLinkDropdown();
+                        validateVtLinkInput();
+                        // Auto-fill Developer (location select) and show Project Location help
+                        const locSelect = document.getElementById('location');
+                        if (x.developer) {
+                            // Ensure option exists
+                            let opt = Array.from(locSelect.options).find(o => o.value === x.developer);
+                            if (!opt) {
+                                opt = document.createElement('option');
+                                opt.value = x.developer;
+                                opt.textContent = x.developer;
+                                locSelect.appendChild(opt);
+                            }
+                            locSelect.value = x.developer;
+                        }
+                        const help = document.getElementById('projectLocationHelp');
+                        const locVal = document.getElementById('projectLocationValue');
+                        const locInput = document.getElementById('price');
+                        if (help) {
+                            help.textContent = x.projectLocation ? `Project Location: ${x.projectLocation}` : '';
+                        }
+                        if (locVal) locVal.value = x.projectLocation || '';
+                        if (locInput) locInput.value = x.projectLocation || '';
+                        // Update preview link to start at this virtual location
+                        const preview = document.getElementById('vtPreviewBtn');
+                        if (preview) {
+                            preview.style.display = x.id ? '' : 'none';
+                        }
+                    });
+                    box.appendChild(div);
+                });
+            }
+            showVtLinkDropdown();
+            box._activeIndex = -1;
+        }
+
+        function showVtLinkDropdown() {
+            const box = document.getElementById('vtLinkDropdown');
+            box.style.display = '';
+        }
+        function hideVtLinkDropdown() {
+            const box = document.getElementById('vtLinkDropdown');
+            box.style.display = 'none';
+        }
+        function validateVtLinkInput() {
+            const input = document.getElementById('propertyName');
+            const idEl = document.getElementById('vtourLocationId');
+            const err = document.getElementById('vtLinkError');
+            const typed = (input.value || '').trim();
+            const isValid = !!(window.__vtLinkMap && window.__vtLinkMap.has(typed));
+            if (typed && !isValid) {
+                input.classList.add('is-invalid');
+                err.textContent = 'Unknown project';
+                idEl.value = '';
+            } else {
+                input.classList.remove('is-invalid');
+                err.textContent = '';
+                if (isValid) idEl.value = window.__vtLinkMap.get(typed);
+            }
+            return isValid;
+        }
+
+        // Call the functions when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadActiveDeveloperCompanies();
+            loadVtourLocationsWithProjects();
+        });
 
         // Handle form submission
         document.getElementById('propertyForm').addEventListener('submit', async function(e) {
@@ -416,14 +610,24 @@
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Uploading...';
 
+            // Validate vtour link selection
+            if (!validateVtLinkInput()) {
+                document.getElementById('vtLinkError').textContent = 'Unknown project';
+                return;
+            }
+
             try {
                 // Add all form fields to FormData
                 formData.append('propertyName', form.propertyName.value);
+                if (document.getElementById('vtourLocationId').value) {
+                    formData.append('vtour_location_id', document.getElementById('vtourLocationId').value);
+                }
                 formData.append('propertyTypeSelect', form.propertyTypeSelect.value);
                 if (form.customPropertyType.value) {
                     formData.append('customPropertyType', form.customPropertyType.value);
                 }
-                formData.append('location', form.location.value);
+                // Use project location from projects table
+                formData.append('location', document.getElementById('projectLocationValue')?.value || '');
                 formData.append('price', form.price.value);
                 formData.append('parking', form.parking.value);
                 formData.append('bedrooms', form.bedrooms.value);
@@ -454,11 +658,157 @@
             }
         });
 
-        // Show coming soon message when clicking virtual tour input
-        document.getElementById('virtual_tour_image').addEventListener('click', function(e) {
-            e.preventDefault();
-            $('#comingSoonModal').modal('show');
-        });
+        // Typing dropdown interactions for vtour link
+        (function initVtLinkCombobox(){
+            const input = document.getElementById('propertyName');
+            const idEl = document.getElementById('vtourLocationId');
+            const box = document.getElementById('vtLinkDropdown');
+            const toggle = document.getElementById('vtLinkToggle');
+            input.addEventListener('input', () => {
+                idEl.value = '';
+                renderVtLinkDropdown(input.value);
+                validateVtLinkInput();
+            });
+            input.addEventListener('focus', () => {
+                renderVtLinkDropdown(input.value);
+            });
+            input.addEventListener('blur', () => {
+                setTimeout(hideVtLinkDropdown, 120);
+                validateVtLinkInput();
+                // Hide preview if invalid
+                const typed = (input.value || '').trim();
+                const preview = document.getElementById('vtPreviewBtn');
+                if (preview && (!window.__vtLinkMap || !window.__vtLinkMap.has(typed))) {
+                    preview.style.display = 'none';
+                }
+            });
+            toggle?.addEventListener('click', () => {
+                if (box.style.display === 'none' || box.style.display === '') {
+                    renderVtLinkDropdown(input.value);
+                } else {
+                    hideVtLinkDropdown();
+                }
+                input.focus();
+            });
+            input.addEventListener('keydown', (e) => {
+                const items = Array.from(box.querySelectorAll('.vt-dropdown-item'));
+                if (!items.length) return;
+                let idx = box._activeIndex ?? -1;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    idx = Math.min(items.length - 1, idx + 1);
+                    items.forEach(el => el.classList.remove('active'));
+                    items[idx].classList.add('active');
+                    box._activeIndex = idx;
+                    items[idx].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    idx = Math.max(0, idx - 1);
+                    items.forEach(el => el.classList.remove('active'));
+                    items[idx].classList.add('active');
+                    box._activeIndex = idx;
+                    items[idx].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    if (idx >= 0) {
+                        e.preventDefault();
+                        const name = items[idx].querySelector('div > div')?.textContent || '';
+                        const match = (window.__vtLinkLocations || []).find(x => x.name === name);
+                        if (match) {
+                            input.value = match.name;
+                            idEl.value = match.id;
+                            hideVtLinkDropdown();
+                            validateVtLinkInput();
+                        }
+                    }
+                }
+            });
+            // Open vtour modal on preview click
+            document.getElementById('vtPreviewBtn')?.addEventListener('click', () => {
+                const locId = document.getElementById('vtourLocationId')?.value;
+                if (locId) openVtourPreviewModal(locId);
+            });
+        })();
+
+        // View-only Pannellum preview modal
+        async function openVtourPreviewModal(locationId) {
+            try {
+                // Load scenes for the location
+                const res = await fetch(`/crm/virtual-tour/public/scenes/${locationId}`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to load scenes');
+                const data = await res.json();
+                const scenes = data.scenes || [];
+                if (scenes.length === 0) {
+                    showVtourModalContent('No scenes available for this virtual tour.');
+                    return;
+                }
+                // Load hotspots for first scene, then initialize viewer
+                currentPreviewScenes = scenes; // cache for navigation
+                await initVtourViewerWithScene(scenes[0]);
+                const modal = new bootstrap.Modal(document.getElementById('vtPreviewModal'));
+                modal.show();
+            } catch (err) {
+                showVtourModalContent('Failed to load virtual tour.');
+                console.warn('VT preview error:', err);
+                const modal = new bootstrap.Modal(document.getElementById('vtPreviewModal'));
+                modal.show();
+            }
+        }
+
+        function showVtourModalContent(message) {
+            const container = document.getElementById('vtPreviewViewer');
+            if (container) container.innerHTML = `<div class="text-center text-muted py-5">${message}</div>`;
+        }
+
+        let vtViewer = null;
+        let currentPreviewScenes = [];
+        async function initVtourViewerWithScene(scene) {
+            try {
+                // Fetch hotspots for scene
+                const hsRes = await fetch(`/crm/virtual-tour/public/hotspots/${scene.id}`, { credentials: 'include' });
+                const hsData = hsRes.ok ? await hsRes.json() : { hotspots: [] };
+                const hotspots = hsData.hotspots || [];
+                const pannHotspots = hotspots.map(h => ({
+                    pitch: h.pitch,
+                    yaw: h.yaw,
+                    type: 'info',
+                    text: h.tooltip,
+                    cssClass: 'custom-hotspot',
+                    clickHandlerFunc: () => {
+                        if (h.type === 'link' && h.target_scene_id) {
+                            const target = currentPreviewScenes.find(s => s.id == h.target_scene_id);
+                            if (target) initVtourViewerWithScene(target);
+                        } else if (h.type === 'info') {
+                            // info-only view
+                        }
+                    }
+                }));
+                // Destroy old viewer
+                if (vtViewer) { vtViewer.destroy(); vtViewer = null; }
+                // Initialize viewer
+                vtViewer = pannellum.viewer('vtPreviewViewer', {
+                    type: 'equirectangular',
+                    panorama: scene.image_path ? `/uploads/virtual_scenes/${scene.image_path}` : '',
+                    autoLoad: true,
+                    showControls: true,
+                    hotSpots: pannHotspots,
+                    hfov: 100,
+                    minHfov: 50,
+                    maxHfov: 120,
+                    pitch: scene.pitch || 0,
+                    yaw: scene.yaw || 0,
+                    doubleClickZoom: false,
+                    autoRotate: 0,
+                    compass: true
+                });
+                // Update modal title
+                const title = document.getElementById('vtPreviewTitle');
+                if (title) title.textContent = scene.scene_name || 'Virtual Tour';
+            } catch (e) {
+                showVtourModalContent('Unable to render the virtual tour.');
+            }
+        }
+
+        
 
         // Handle coordinator-only sections visibility
         document.addEventListener('DOMContentLoaded', function() {

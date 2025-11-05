@@ -597,66 +597,86 @@
       </ul>
     </div>
   <div id="content">
-    <!-- Manufacturing Material Requests Section -->
-    <div class="mt-4">
-      <h3>Manufacturing Material Requests</h3>
-      <div class="glass-card p-3 h-100 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-muted">Material requests submitted by manufacturing department</span>
-        </div>
-        <div class="data-table table-responsive">
-          <table class="table mb-0 align-middle text-center" id="manufacturing-requests-table">
-            <thead>
-              <tr>
-                <th class="text-center">Request No</th>
-                <th class="text-center">Project</th>
-                <th class="text-center">Requested By</th>
-                <th class="text-center">Request Date</th>
-                <th class="text-center">Source Type</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="manufacturingRequestsBody">
-              <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
-                  <i class="fa-regular fa-box me-2"></i>Loading manufacturing requests...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+    <!-- Tabs for Request and Releasing -->
+    <ul class="nav nav-tabs mt-4" id="requestTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requestsTab" type="button" role="tab" aria-controls="requestsTab" aria-selected="true">
+          Requests
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="releasing-tab" data-bs-toggle="tab" data-bs-target="#releasingTab" type="button" role="tab" aria-controls="releasingTab" aria-selected="false">
+          Releasing
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="requestTabsContent">
+      <!-- Requests Pane -->
+      <div class="tab-pane fade show active" id="requestsTab" role="tabpanel" aria-labelledby="requests-tab">
+        <div class="mt-4">
+          <h3>Manufacturing Material Requests</h3>
+          <div class="glass-card p-3 h-100 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="text-muted">Material requests submitted by manufacturing department</span>
+            </div>
+            <div class="data-table table-responsive">
+              <table class="table mb-0 align-middle text-center" id="manufacturing-requests-table">
+                <thead>
+                  <tr>
+                    <th class="text-center">Request No</th>
+                    <th class="text-center">Project</th>
+                    <th class="text-center">Requested By</th>
+                    <th class="text-center">Request Date</th>
+                    <th class="text-center">Source Type</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="manufacturingRequestsBody">
+                  <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                      <i class="fas fa-box me-2"></i>Loading manufacturing requests...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Approved Materials for Delivery Section (appears below Manufacturing Material Requests) -->
-    <div class="mt-4">
-      <h3>Approved Materials for Delivery</h3>
-      <div class="glass-card p-3 h-100 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-muted">Materials approved and ready for delivery</span>
-        </div>
-        <div class="data-table table-responsive">
-          <table class="table mb-0 align-middle text-center" id="delivery-table">
-            <thead>
-              <tr>
-                <th class="text-center">Request No</th>
-                <th class="text-center">Project</th>
-                <th class="text-center">Requested By</th>
-                <th class="text-center">Request Date</th>
-                <th class="text-center">Source Type</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="deliveryBody">
-              <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
-                  <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Releasing Pane -->
+      <div class="tab-pane fade" id="releasingTab" role="tabpanel" aria-labelledby="releasing-tab">
+        <div class="mt-4">
+          <h3>Approved Materials for Delivery</h3>
+          <div class="glass-card p-3 h-100 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="text-muted">Materials approved and ready for delivery</span>
+            </div>
+            <div class="data-table table-responsive">
+              <table class="table mb-0 align-middle text-center" id="delivery-table">
+                <thead>
+                  <tr>
+                    <th class="text-center">Request No</th>
+                    <th class="text-center">Project</th>
+                    <th class="text-center">Requested By</th>
+                    <th class="text-center">Request Date</th>
+                    <th class="text-center">Source Type</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="deliveryBody">
+                  <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                      <i class="fas fa-truck me-2"></i>No approved materials for delivery yet.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -670,7 +690,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="manufacturingRequestDetailsModalLabel">
-            <i class="fa-solid fa-file-invoice"></i> Manufacturing Request Details
+            <i class="fas fa-file-invoice"></i> Manufacturing Request Details
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -727,10 +747,10 @@
         <div class="modal-footer">
           <div class="d-flex justify-content-between w-100">
             <button type="button" class="btn btn-success" id="approveSelectedMaterialsBtn" onclick="approveSelectedManufacturingMaterials()" disabled style="display: none;">
-              <i class="fa-solid fa-check"></i> Approve Selected Materials
+              <i class="fas fa-check"></i> Approve Selected Materials
             </button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              <i class="fa-solid fa-times"></i> Close
+              <i class="fas fa-times"></i> Close
             </button>
           </div>
         </div>
@@ -1030,11 +1050,52 @@
     </div>
   </div>
 
+  <!-- Approve Confirmation Modal -->
+  <div class="modal fade" id="approveConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Approval</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning mb-3">
+            You are about to approve <span id="approveItemsCount" class="fw-bold">0</span> selected material(s).
+          </div>
+          <p class="mb-0">This will mark the request as approved. Proceed?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+          <button type="button" class="btn btn-success" id="confirmApproveBtn"><i class="fas fa-check me-1"></i>Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approval Success Modal -->
+  <div class="modal fade" id="approveSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Approved</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Selected materials have been approved successfully.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-bs-dismiss="modal"><i class="fas fa-check me-1"></i>OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Manufacturing requests data
     let manufacturingRequests = [];
     let currentReleaseRequest = null;
     let employees = [];
+  let pendingApproval = null;
 
     // Load manufacturing requests on page load
     async function loadManufacturingRequests() {
@@ -1084,7 +1145,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="text-center py-5 text-muted">
-              <i class="fa-regular fa-box me-2"></i>No pending request materials.
+              <i class="fas fa-box me-2"></i>No pending request materials.
             </td>
           </tr>
         `;
@@ -1110,7 +1171,7 @@
           <td class="text-center">
             <div class="btn-group">
               <button class="btn btn-sm btn-outline-info" onclick="viewManufacturingRequest('${request.request_no}')">
-                <i class="fa-solid fa-eye"></i> View
+                <i class="fas fa-eye"></i> View
               </button>
             </div>
           </td>
@@ -1407,9 +1468,9 @@
       
       // Update button text with count
       if (approveBtn && checkedCheckboxes.length > 0) {
-        approveBtn.innerHTML = `<i class="fa-solid fa-check"></i> Approve Selected Materials (${checkedCheckboxes.length})`;
+        approveBtn.innerHTML = `<i class="fas fa-check"></i> Approve Selected Materials (${checkedCheckboxes.length})`;
       } else if (approveBtn) {
-        approveBtn.innerHTML = `<i class="fa-solid fa-check"></i> Approve Selected Materials`;
+        approveBtn.innerHTML = `<i class="fas fa-check"></i> Approve Selected Materials`;
       }
     }
 
@@ -1435,14 +1496,39 @@
       }
 
       const selectedMaterials = selectedIndices.map(index => request.materials[index]);
-      
-      console.log('Approving materials for request:', requestNo);
-      console.log('Selected materials:', selectedMaterials);
-      console.log('Current request status:', request.status);
-      
-      if (confirm(`Are you sure you want to approve ${selectedMaterials.length} selected material(s)?`)) {
-        // Update the status to approved and show release form
-        updateManufacturingRequestStatus(requestNo, 'approved', selectedMaterials, selectedIndices);
+
+      // Store for confirm modal action
+      pendingApproval = { requestNo, selectedMaterials, selectedIndices };
+
+      // Show confirmation modal with count
+      const countEl = document.getElementById('approveItemsCount');
+      if (countEl) countEl.textContent = String(selectedMaterials.length);
+      const confirmModal = new bootstrap.Modal(document.getElementById('approveConfirmModal'));
+      confirmModal.show();
+    }
+
+    // Handle confirm approve from modal
+    async function confirmApproveSelectedMaterials() {
+      try {
+        const btn = document.getElementById('confirmApproveBtn');
+        if (btn) btn.disabled = true;
+        const { requestNo, selectedMaterials, selectedIndices } = pendingApproval || {};
+        if (!requestNo) return;
+        // Close confirm modal first
+        const confirmInstance = bootstrap.Modal.getInstance(document.getElementById('approveConfirmModal'));
+        if (confirmInstance) confirmInstance.hide();
+
+        await updateManufacturingRequestStatus(requestNo, 'approved', selectedMaterials, selectedIndices);
+
+        // Show success modal
+        const successModal = new bootstrap.Modal(document.getElementById('approveSuccessModal'));
+        successModal.show();
+      } catch (_) {
+        // No-op; updateManufacturingRequestStatus already shows notifications
+      } finally {
+        const btn = document.getElementById('confirmApproveBtn');
+        if (btn) btn.disabled = false;
+        pendingApproval = null;
       }
     }
 
@@ -1450,7 +1536,7 @@
       console.log('Updating request status:', requestNo, 'to:', newStatus);
       
       // Call the backend API to update the database
-      fetch('/scm/manufacturing-requests/status', {
+      return fetch('/scm/manufacturing-requests/status', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -1503,7 +1589,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="text-center py-5 text-muted">
-              <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
+              <i class="fas fa-truck me-2"></i>No approved materials for delivery yet.
             </td>
           </tr>
         `;
@@ -1529,7 +1615,7 @@
           <td class="text-center">
             <div class="btn-group">
               <button class="btn btn-sm btn-outline-info" onclick="viewApprovedRequestFromDelivery('${request.request_no}')">
-                <i class="fa-solid fa-eye"></i> View
+                <i class="fas fa-eye"></i> View
               </button>
               <button class="btn btn-sm btn-success" onclick="showReleaseForm('${request.request_no}')">
                 <i class="fa-solid fa-truck"></i> Release
@@ -1970,7 +2056,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="4" class="text-center py-5 text-muted">
-              <i class="fa-regular fa-truck me-2"></i>No approved materials for delivery yet.
+              <i class="fas fa-truck me-2"></i>No approved materials for delivery yet.
             </td>
           </tr>
         `;
@@ -1991,7 +2077,7 @@
           <td class="text-center">
             <div class="btn-group">
               <button class="btn btn-sm btn-outline-secondary" onclick="viewDeliveryDetails(${index})">
-                <i class="fa-solid fa-eye"></i> View Details
+                <i class="fas fa-eye"></i> View Details
               </button>
             </div>
           </td>
@@ -2137,6 +2223,9 @@
       // Load manufacturing requests and employees
       loadManufacturingRequests();
       loadEmployees();
+      // Wire confirm approve modal button
+      const confirmBtn = document.getElementById('confirmApproveBtn');
+      if (confirmBtn) confirmBtn.addEventListener('click', confirmApproveSelectedMaterials);
     });
 
   </script>

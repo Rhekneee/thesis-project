@@ -117,7 +117,45 @@ const constructionWorkerUpload = multer({
   }
 }).single('picture');
 
+// Configure multer for division progress images
+const divisionProgressStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', 'division_progress');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `division-progress-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const divisionProgressUpload = multer({
+  storage: divisionProgressStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
 const ManufacturingController = {
+  // INTENDED: Return projects with approved vtour permissions (for CRM typing dropdown)
+  getApprovedVtourProjects: async (req, res) => {
+    try {
+      const rows = await ManufacturingModel.getApprovedVtourProjects();
+      return res.json({ success: true, projects: rows });
+    } catch (error) {
+      console.error('Error in getApprovedVtourProjects:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch approved vtour projects' });
+    }
+  },
   // =============================================
   // DASHBOARD KPIs (Manufacturing) - Dedicated Endpoint
   // =============================================
@@ -559,6 +597,40 @@ const ManufacturingController = {
         success: false,
         error: "Failed to delete supply material" 
       });
+    }
+  },
+
+  // Owners Supply: mark arrival with quantity and set status (Completed/Partial)
+  markOwnerSupplyArrival: async (req, res) => {
+    try {
+      const items = Array.isArray(req.body?.items) ? req.body.items : [req.body];
+      if (!items || items.length === 0) {
+        return res.status(400).json({ success: false, error: 'No items provided' });
+      }
+
+      // Validate inputs first
+      for (const it of items) {
+        if (!it || it.supply_id === undefined || it.supply_id === null) {
+          return res.status(400).json({ success: false, error: 'supply_id is required for each item' });
+        }
+        if (it.quantity_arrive === undefined || it.quantity_arrive === null || String(it.quantity_arrive).trim() === '') {
+          return res.status(400).json({ success: false, error: 'quantity_arrive is required for each item' });
+        }
+      }
+
+      const results = [];
+      for (const it of items) {
+        const result = await ManufacturingModel.markOwnerSupplyArrival({
+          supplyId: Number(it.supply_id),
+          quantityArrive: Number(it.quantity_arrive)
+        });
+        results.push({ supply_id: it.supply_id, ...result });
+      }
+
+      return res.json({ success: true, results });
+    } catch (error) {
+      console.error('Error marking owner supply arrival:', error);
+      return res.status(500).json({ success: false, error: 'Failed to mark owner supply arrival' });
     }
   },
 
@@ -1480,7 +1552,8 @@ const ManufacturingController = {
   // Save division progress entry for manufacturing progress tracking
   saveDivisionProgress: async (req, res) => {
     try {
-      const { projectId, divisionId, progressValue } = req.body;
+      const { projectId, divisionId, progressValue, picture } = req.body;
+      const pictureFilename = req.file ? req.file.filename : (picture || null);
       
       console.log('📝 Saving division progress:', { projectId, divisionId, progressValue });
       
@@ -1491,7 +1564,7 @@ const ManufacturingController = {
         });
       }
 
-      const result = await ManufacturingModel.saveDivisionProgressEntry(projectId, divisionId, progressValue);
+      const result = await ManufacturingModel.saveDivisionProgressEntry(projectId, divisionId, progressValue, pictureFilename || null);
       
       console.log('✅ Division progress saved with ID:', result.entryId);
       console.log('📊 Overall progress:', result.overallProgress, '%');
@@ -1506,7 +1579,8 @@ const ManufacturingController = {
         entryId: result.entryId,
         overallProgress: result.overallProgress || 0,
         isCompleted,
-        message: isCompleted ? 'Division progress saved successfully! 🎉 Project completed (100% overall progress)!' : 'Division progress saved successfully'
+        message: isCompleted ? 'Division progress saved successfully! 🎉 Project completed (100% overall progress)!' : 'Division progress saved successfully',
+        picture: pictureFilename || null
       });
     } catch (error) {
       console.error('❌ Error saving division progress:', error);
@@ -1589,6 +1663,21 @@ const ManufacturingController = {
     }
   },
 
+  // Get owner supply materials by proposal for request form (Delivered/Partial with is_delivered=true)
+  getOwnerSupplyMaterialsByProposal: async (req, res) => {
+    try {
+      const { proposalId } = req.params;
+      if (!proposalId) {
+        return res.status(400).json({ success: false, error: 'proposalId is required' });
+      }
+      const materials = await ManufacturingModel.getOwnerSupplyMaterialsByProposal(Number(proposalId));
+      return res.json({ success: true, materials });
+    } catch (error) {
+      console.error('Error getting owner supply materials by proposal:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get owner supply materials' });
+    }
+  },
+
   // Get material releases intended for a specific project
   getProjectMaterialReleases: async (req, res) => {
     try {
@@ -1622,6 +1711,30 @@ const ManufacturingController = {
         success: false,
         error: 'Failed to get division progress'
       });
+    }
+  }
+  ,
+  // Update a division progress entry (edit modal)
+  updateDivisionProgress: async (req, res) => {
+    try {
+      const entryId = Number(req.params.entryId);
+      const { divisionId, progressValue, picture } = req.body || {};
+      const pictureFilename = req.file ? req.file.filename : (picture ?? undefined);
+      if (!entryId || !divisionId || progressValue === undefined) {
+        return res.status(400).json({ success: false, error: 'entryId, divisionId and progressValue are required' });
+      }
+      const result = await ManufacturingModel.updateDivisionProgressEntry(entryId, {
+        divisionId: Number(divisionId),
+        progressValue: Number(progressValue),
+        picture: pictureFilename === undefined ? (picture || null) : (pictureFilename || null)
+      });
+      if (!result.success) {
+        return res.status(404).json({ success: false, error: 'Division progress entry not found' });
+      }
+      return res.json({ success: true, picture: (pictureFilename || picture || null) });
+    } catch (error) {
+      console.error('Error updating division progress entry:', error);
+      return res.status(500).json({ success: false, error: 'Failed to update division progress entry' });
     }
   }
   ,
@@ -2512,5 +2625,6 @@ module.exports = {
   ManufacturingController,
   projectUpload,
   signatureUpload,
-  constructionWorkerUpload
+  constructionWorkerUpload,
+  divisionProgressUpload
 };

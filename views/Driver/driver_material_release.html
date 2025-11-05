@@ -473,12 +473,12 @@
                     <td>${statusBadge}</td>
                     <td>
                         ${release.material_status !== 'received' ? `
-                            <button class="btn btn-sm btn-success" onclick="markAsReceived(${release.release_id})" title="Mark as Received">
-                                <i class="fas fa-check-circle"></i> Mark as Received
+                            <button class=\"btn btn-sm btn-success\" onclick=\"approveRelease(${release.release_id})\" title=\"Approve\">
+                                <i class=\"fas fa-check\"></i> Approve
                             </button>
                         ` : `
-                            <span class="text-success">
-                                <i class="fas fa-check-circle"></i> Delivered
+                            <span class=\"text-success\">
+                                <i class=\"fas fa-check-circle\"></i> Delivered
                             </span>
                         `}
                     </td>
@@ -589,6 +589,30 @@
             } catch (error) {
                 console.error('❌ Error marking as received:', error);
                 alert('Failed to mark material as received. Please try again.');
+            }
+        }
+
+        // Frontend-only approve: does not call backend; turns button into Delivered (which triggers backend on confirm)
+        function approveRelease(releaseId) {
+            try {
+                const tbody = document.getElementById('materialReleasesBody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                for (const row of rows) {
+                    const actionCell = row.querySelector('td:last-child');
+                    if (!actionCell) continue;
+                    const btn = actionCell.querySelector('button.btn.btn-sm.btn-success');
+                    if (btn && btn.getAttribute('onclick') === `approveRelease(${releaseId})`) {
+                        actionCell.innerHTML = `
+                            <button class="btn btn-sm btn-info" onclick="markAsReceived(${releaseId})" title="Delivered">
+                                <i class="fas fa-truck"></i> Delivered
+                            </button>
+                        `;
+                        showNotification('Approved. You can now mark as Delivered.', 'success');
+                        break;
+                    }
+                }
+            } catch (_) {
+                // no-op
             }
         }
 

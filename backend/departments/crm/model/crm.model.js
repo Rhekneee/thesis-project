@@ -284,6 +284,7 @@ const CRMModel = {
                 property_name,
                 property_type,
                 location,
+                virtual_location_id,
                 price,
                 parking_spaces,
                 bedrooms,
@@ -291,7 +292,6 @@ const CRMModel = {
                 floors,
                 description,
                 property_image,
-                virtual_tour_image,
                 created_at,
                 updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
@@ -301,14 +301,14 @@ const CRMModel = {
             data.property_name,
             data.property_type,
             data.location,
+            data.virtual_location_id || null,
             data.price,
             data.parking_spaces,
             data.bedrooms,
             data.bathrooms,
             data.floors,
             data.description,
-            data.property_image,
-            data.virtual_tour_image || null  // Handle null virtual tour image
+            data.property_image
         ]);
 
         return result.insertId;
@@ -338,6 +338,7 @@ const CRMModel = {
                 property_id as id,
                 property_name as name,
                 location,
+                virtual_location_id,
                 CONCAT('₱', FORMAT(price, 2)) as price,
                 property_type as type,
                 status,
@@ -375,7 +376,6 @@ const CRMModel = {
                 floors,
                 description,
                 property_image,
-                virtual_tour_image,
                 status,
                 DATE_FORMAT(created_at, '%Y-%m-%d') as added_date
             FROM properties 
@@ -421,10 +421,7 @@ const CRMModel = {
             query += ', property_image = ?';
             params.push(data.property_image);
         }
-        if (data.virtual_tour_image) {
-            query += ', virtual_tour_image = ?';
-            params.push(data.virtual_tour_image);
-        }
+        // virtual tour image is not used; tours are linked by virtual_location_id
         query += ' WHERE property_id = ?';
         params.push(propertyId);
         await db.execute(query, params);
@@ -489,6 +486,26 @@ const CRMModel = {
         `;
         const [rows] = await db.execute(query, [id]);
         return rows[0] || null;
+    },
+
+    // INTENDED: List virtual tour locations that are linked to a project (for properties form)
+    // Returns: location id, name, project_id, project_name if available
+    getVtourLocationsWithProjects_INTENDED: async () => {
+        const sql = `
+            SELECT 
+                vl.id,
+                vl.location_name,
+                vl.project_id,
+                p.project_name,
+                p.client_name AS developer_company,
+                p.location AS project_location
+            FROM virtual_locations vl
+            LEFT JOIN projects p ON p.id = vl.project_id
+            WHERE vl.project_id IS NOT NULL
+            ORDER BY COALESCE(p.project_name, vl.location_name) ASC
+        `;
+        const [rows] = await db.execute(sql);
+        return rows;
     },
 
     // Virtual Tour: Scenes
@@ -951,6 +968,20 @@ const CRMModel = {
             WHERE id = ?
         `;
         await db.execute(query, [reason, developerId]);
+    },
+
+    // Property Ratings Management
+    storePropertyRating: async (data) => {
+        const query = `
+            INSERT INTO property_ratings (property_id, rating, comment, created_at, updated_at)
+            VALUES (?, ?, ?, NOW(), NOW())
+        `;
+        const [result] = await db.execute(query, [
+            data.property_id,
+            data.rating,
+            data.comment || null
+        ]);
+        return result.insertId;
     }
 };
 

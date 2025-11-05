@@ -670,7 +670,8 @@ const CRMController = {
                 bedrooms,
                 bathrooms,
                 floors,
-                description
+                description,
+                vtour_location_id
             } = req.body;
 
             // Validate required fields
@@ -698,6 +699,7 @@ const CRMController = {
                     property_name: propertyName,
                     property_type: property_type,
                     location: location,
+                    virtual_location_id: vtour_location_id ? parseInt(vtour_location_id) : null,
                     price: parseFloat(price),
                     parking_spaces: parseInt(parking),
                     bedrooms: parseInt(bedrooms),
@@ -893,6 +895,17 @@ const CRMController = {
         } catch (error) {
             console.error('Error fetching virtual location:', error);
             res.status(500).json({ error: 'Failed to fetch virtual location' });
+        }
+    },
+
+    // INTENDED: Provide vtour locations linked to projects for property form dropdown
+    getVtourLocationsForProperties_INTENDED: async (req, res) => {
+        try {
+            const rows = await CRMModel.getVtourLocationsWithProjects_INTENDED();
+            return res.json({ success: true, locations: rows });
+        } catch (error) {
+            console.error('Error in getVtourLocationsForProperties_INTENDED:', error);
+            return res.status(500).json({ success: false, error: 'Failed to fetch virtual tour locations' });
         }
     },
 
@@ -1484,6 +1497,59 @@ const CRMController = {
         } catch (error) {
             console.error('Error rejecting developer:', error);
             res.status(500).json({ error: 'Failed to reject developer' });
+        }
+    },
+
+    // Submit Property Rating
+    submitPropertyRating: async (req, res) => {
+        try {
+            const { property_id, rating, comment } = req.body;
+
+            // Validate required fields
+            if (!property_id || !rating) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Property ID and rating are required" 
+                });
+            }
+
+            // Validate rating is between 1 and 5
+            const ratingNum = parseInt(rating);
+            if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "Rating must be between 1 and 5" 
+                });
+            }
+
+            // Validate property exists
+            const property = await CRMModel.getPropertyById(property_id);
+            if (!property) {
+                return res.status(404).json({ 
+                    success: false,
+                    error: "Property not found" 
+                });
+            }
+
+            // Store rating in database
+            const ratingId = await CRMModel.storePropertyRating({
+                property_id: parseInt(property_id),
+                rating: ratingNum,
+                comment: comment || null
+            });
+
+            res.status(201).json({ 
+                success: true, 
+                message: "Property rating submitted successfully",
+                ratingId 
+            });
+
+        } catch (error) {
+            console.error("Error submitting property rating:", error);
+            res.status(500).json({ 
+                success: false,
+                error: "Failed to submit property rating. Please try again later." 
+            });
         }
     }
 };
