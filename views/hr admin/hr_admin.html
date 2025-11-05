@@ -1485,23 +1485,6 @@
                     </div>
                 </div>
 
-                <div class="row chart-container">
-                    <div class="col-md-6">
-                        <h4>Absenteeism Rate</h4>
-                        <canvas id="absenteeismRateChart"></canvas>
-                    </div>
-                    <div class="col-md-6">
-                        <h4>Employee Turnover</h4>
-                        <canvas id="employeeTurnoverChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="row chart-container">
-                    <div class="col-md-12">
-                        <h4>Employee Retention Rate</h4>
-                        <canvas id="employeeRetentionChart"></canvas>
-                    </div>
-                </div>
                 </div>
                 <!-- End Admin-only content -->
                 
@@ -1938,25 +1921,33 @@
         document.addEventListener('DOMContentLoaded', refreshPayrollApprovalDonut);
         setInterval(refreshPayrollApprovalDonut, 30000);
 
-        const payrollOverviewChart = new Chart(document.getElementById('payrollOverviewChart'), {
-            type: 'bar',
-            data: payrollOverviewData
-        });
+        (function() {
+            const el = document.getElementById('payrollOverviewChart');
+            if (el) {
+                new Chart(el, { type: 'bar', data: payrollOverviewData });
+            }
+        })();
 
-        const absenteeismRateChart = new Chart(document.getElementById('absenteeismRateChart'), {
-            type: 'line',
-            data: absenteeismRateData
-        });
+        (function() {
+            const el = document.getElementById('absenteeismRateChart');
+            if (el) {
+                new Chart(el, { type: 'line', data: absenteeismRateData });
+            }
+        })();
 
-        const employeeTurnoverChart = new Chart(document.getElementById('employeeTurnoverChart'), {
-            type: 'line',
-            data: employeeTurnoverData
-        });
+        (function() {
+            const el = document.getElementById('employeeTurnoverChart');
+            if (el) {
+                new Chart(el, { type: 'line', data: employeeTurnoverData });
+            }
+        })();
 
-        const employeeRetentionChart = new Chart(document.getElementById('employeeRetentionChart'), {
-            type: 'line',
-            data: employeeRetentionData
-        });
+        (function() {
+            const el = document.getElementById('employeeRetentionChart');
+            if (el) {
+                new Chart(el, { type: 'line', data: employeeRetentionData });
+            }
+        })();
     
         // Notifications UI logic
         let notificationsCache = [];

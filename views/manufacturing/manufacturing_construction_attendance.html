@@ -252,6 +252,107 @@
             background-color: #fff3cd;
             color: #856404;
         }
+
+        .scanner-container-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .scanner-guide-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 3px solid #28a745;
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .scanner-guide-overlay::before,
+        .scanner-guide-overlay::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #28a745;
+        }
+
+        .scanner-guide-overlay::before {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+            border-top-left-radius: 12px;
+        }
+
+        .scanner-guide-overlay::after {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+            border-bottom-right-radius: 12px;
+        }
+
+        .scanner-guide-corner-top-left {
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 30px;
+            height: 30px;
+            border-top: 3px solid #28a745;
+            border-left: 3px solid #28a745;
+            border-top-left-radius: 12px;
+        }
+
+        .scanner-guide-corner-top-right {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 30px;
+            height: 30px;
+            border-top: 3px solid #28a745;
+            border-right: 3px solid #28a745;
+            border-top-right-radius: 12px;
+        }
+
+        .scanner-guide-corner-bottom-left {
+            position: absolute;
+            bottom: -3px;
+            left: -3px;
+            width: 30px;
+            height: 30px;
+            border-bottom: 3px solid #28a745;
+            border-left: 3px solid #28a745;
+            border-bottom-left-radius: 12px;
+        }
+
+        .scanner-guide-corner-bottom-right {
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 30px;
+            height: 30px;
+            border-bottom: 3px solid #28a745;
+            border-right: 3px solid #28a745;
+            border-bottom-right-radius: 12px;
+        }
+
+        .scanner-guide-text {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -399,8 +500,17 @@
                             </div>
                             <div class="card-body text-center">
                                 <div id="scanner-container" class="mb-3">
-                                    <video id="scanner-video" width="100%" height="300" style="border: 2px solid #007bff; border-radius: 8px; display: none;"></video>
-                                    <canvas id="scanner-canvas" style="display: none;"></canvas>
+                                    <div class="scanner-container-wrapper">
+                                        <video id="scanner-video" width="100%" height="300" style="border: 2px solid #007bff; border-radius: 8px; display: none; position: relative;"></video>
+                                        <div id="scanner-guide-overlay" class="scanner-guide-overlay" style="display: none;">
+                                            <div class="scanner-guide-corner-top-left"></div>
+                                            <div class="scanner-guide-corner-top-right"></div>
+                                            <div class="scanner-guide-corner-bottom-left"></div>
+                                            <div class="scanner-guide-corner-bottom-right"></div>
+                                            <div class="scanner-guide-text">Position QR code here</div>
+                                        </div>
+                                        <canvas id="scanner-canvas" style="display: none;"></canvas>
+                                    </div>
                                     <div id="scanner-placeholder" class="scanner-placeholder">
                                         <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
                                         <p class="text-muted">Click "Start Scanner" to begin scanning QR codes</p>
@@ -484,7 +594,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetScannerState()">Cancel</button>
                         <button type="button" id="confirm-attendance-btn" class="btn btn-success" style="display: none;">
                             <i class="fas fa-check"></i> Confirm Attendance
                         </button>
@@ -509,6 +619,9 @@
         let stream = null;
         let scanning = false;
         let currentWorker = null;
+        let lastScannedCode = null;
+        let lastScanTime = 0;
+        let isProcessingQR = false;
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -535,6 +648,12 @@
                     manualScan();
                 }
             });
+
+            // Listen for modal close events to reset scanner state
+            const attendanceModal = document.getElementById('attendanceModal');
+            attendanceModal.addEventListener('hidden.bs.modal', function() {
+                resetScannerState();
+            });
         });
 
         // Start QR scanner
@@ -552,8 +671,9 @@
                 video.srcObject = stream;
                 video.play();
                 
-                // Show video, hide placeholder
+                // Show video and guide overlay, hide placeholder
                 video.style.display = 'block';
+                document.getElementById('scanner-guide-overlay').style.display = 'block';
                 placeholder.style.display = 'none';
                 
                 // Update button states
@@ -561,9 +681,11 @@
                 document.getElementById('stop-scanner-btn').style.display = 'inline-block';
                 
                 scanning = true;
+                lastScannedCode = null;
+                lastScanTime = 0;
                 scanQRCode();
                 
-                showAlert('Scanner started successfully!', 'success');
+                showAlert('Scanner started successfully! Ready to scan multiple QR codes.', 'success');
             } catch (error) {
                 console.error('Error starting scanner:', error);
                 showAlert('Failed to start camera. Please check permissions.', 'danger');
@@ -579,13 +701,19 @@
                 stream = null;
             }
             
-            // Hide video, show placeholder
+            // Hide video and guide overlay, show placeholder
             document.getElementById('scanner-video').style.display = 'none';
+            document.getElementById('scanner-guide-overlay').style.display = 'none';
             document.getElementById('scanner-placeholder').style.display = 'flex';
             
             // Update button states
             document.getElementById('start-scanner-btn').style.display = 'inline-block';
             document.getElementById('stop-scanner-btn').style.display = 'none';
+            
+            // Reset scanning state
+            lastScannedCode = null;
+            lastScanTime = 0;
+            isProcessingQR = false;
             
             showAlert('Scanner stopped.', 'info');
         }
@@ -593,6 +721,12 @@
         // Scan QR code from video stream
         function scanQRCode() {
             if (!scanning) return;
+            
+            // Don't scan if we're currently processing a QR code
+            if (isProcessingQR) {
+                requestAnimationFrame(scanQRCode);
+                return;
+            }
             
             const video = document.getElementById('scanner-video');
             const canvas = document.getElementById('scanner-canvas');
@@ -607,9 +741,21 @@
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
                 
                 if (code) {
+                    const currentTime = Date.now();
+                    const timeSinceLastScan = currentTime - lastScanTime;
+                    
+                    // Prevent duplicate scans within 2 seconds and same QR code
+                    if (code.data === lastScannedCode && timeSinceLastScan < 2000) {
+                        // Continue scanning - same code detected too soon
+                        requestAnimationFrame(scanQRCode);
+                        return;
+                    }
+                    
                     console.log('QR Code detected:', code.data);
+                    lastScannedCode = code.data;
+                    lastScanTime = currentTime;
                     processQRCode(code.data);
-                    return; // Stop scanning after successful detection
+                    // Continue scanning after processing (don't return here)
                 }
             }
             
@@ -632,6 +778,9 @@
 
         // Process scanned QR code
         async function processQRCode(qrData) {
+            // Set processing flag to prevent duplicate scans
+            isProcessingQR = true;
+            
             try {
                 showAlert('Processing QR code...', 'info');
                 
@@ -666,10 +815,18 @@
                     showWorkerDetails(result.worker, result.todayAttendance);
                 } else {
                     showAlert(result.error || 'Failed to process QR code', 'danger');
+                    // Reset processing flag after a delay to allow retry
+                    setTimeout(() => {
+                        isProcessingQR = false;
+                    }, 1000);
                 }
             } catch (error) {
                 console.error('Error processing QR code:', error);
                 showAlert('Failed to process QR code', 'danger');
+                // Reset processing flag after error
+                setTimeout(() => {
+                    isProcessingQR = false;
+                }, 1000);
             }
         }
 
@@ -762,8 +919,15 @@
                     showAlert('Time in recorded successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
                     loadTodayAttendance(); // Refresh attendance records
+                    // Reset processing flag so scanner can continue
+                    isProcessingQR = false;
+                    // Clear last scanned code to allow re-scanning same worker
+                    lastScannedCode = null;
+                    lastScanTime = 0;
                 } else {
                     showAlert(result.error || 'Failed to record time in', 'danger');
+                    // Reset processing flag after error
+                    isProcessingQR = false;
                 }
             } catch (error) {
                 console.error('Error recording time in:', error);
@@ -792,8 +956,15 @@
                     showAlert('Time out recorded successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
                     loadTodayAttendance(); // Refresh attendance records
+                    // Reset processing flag so scanner can continue
+                    isProcessingQR = false;
+                    // Clear last scanned code to allow re-scanning same worker
+                    lastScannedCode = null;
+                    lastScanTime = 0;
                 } else {
                     showAlert(result.error || 'Failed to record time out', 'danger');
+                    // Reset processing flag after error
+                    isProcessingQR = false;
                 }
             } catch (error) {
                 console.error('Error recording time out:', error);
@@ -889,6 +1060,12 @@
                     alert.remove();
                 }
             }, 5000);
+        }
+
+        // Reset scanner state when modal is closed
+        function resetScannerState() {
+            isProcessingQR = false;
+            // Don't reset lastScannedCode here - allow it to prevent immediate duplicate scans
         }
 
         // Clean up when page unloads

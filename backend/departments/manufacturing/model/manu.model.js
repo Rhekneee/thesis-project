@@ -2040,7 +2040,49 @@ const ManufacturingModel = {
     }
   },
 
-  // Get division progress entries for a project
+  // Get projects with billing status from stage_billing_summary for payment overview
+  getProjectsWithBillingStatus: async (developerId = null) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT DISTINCT
+          p.id,
+          p.project_name as name,
+          p.project_code,
+          p.location,
+          p.start_date,
+          p.status as project_status,
+          SUM(sbs.amount_due) as total_cost,
+          -- Determine overall billing status: Paid > Partially Paid > Generated
+          CASE 
+            WHEN SUM(CASE WHEN sbs.billing_status = 'Paid' THEN 1 ELSE 0 END) > 0 THEN 'Paid'
+            WHEN SUM(CASE WHEN sbs.billing_status = 'Partially Paid' THEN 1 ELSE 0 END) > 0 THEN 'Partially Paid'
+            ELSE MAX(sbs.billing_status)
+          END as billing_status,
+          MAX(sbs.billing_date) as latest_billing_date
+        FROM stage_billing_summary sbs
+        INNER JOIN projects p ON sbs.project_id = p.id
+        ${developerId ? 'WHERE p.developer_id = ?' : ''}
+        GROUP BY p.id, p.project_name, p.project_code, p.location, p.start_date, p.status
+        HAVING COUNT(sbs.id) > 0
+        ORDER BY latest_billing_date DESC, p.id DESC
+      `, developerId ? [developerId] : []);
+      
+      return rows.map(row => ({
+        id: row.id,
+        name: row.name || `Project ${row.id}`,
+        location: row.location || '-',
+        acceptedDate: row.start_date || new Date().toISOString().split('T')[0],
+        cost: Number(row.total_cost || 0),
+        status: row.billing_status || 'Generated', // Use billing_status from stage_billing_summary
+        image: '/image/project-2.jpg', // Default image path
+        project_status: row.project_status
+      }));
+    } catch (error) {
+      console.error('❌ Error getting projects with billing status:', error);
+      throw error;
+    }
+  }
+  ,
   getDivisionProgressByProject: async (projectId) => {
     try {
       const [rows] = await db.query(`

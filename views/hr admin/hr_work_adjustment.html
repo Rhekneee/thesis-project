@@ -335,10 +335,13 @@
             <!-- ========== Work Adjustment Request Content ========== -->
             <h2>Work Adjustment Request</h2>
 
-            <!-- Tabs for Active/Archived Requests -->
+            <!-- Tabs for Active/Expired/Archived Requests -->
             <ul class="nav nav-tabs mb-3" id="workAdjustmentTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">Active Requests</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button" role="tab" aria-controls="expired" aria-selected="false">Expired Requests</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab" aria-controls="archived" aria-selected="false">Archived Requests</button>
@@ -388,6 +391,26 @@
                             <!-- Active work adjustment request rows will be dynamically inserted here -->
                 </tbody>
             </table>
+                </div>
+
+                <!-- Expired Requests Tab -->
+                <div class="tab-pane fade" id="expired" role="tabpanel" aria-labelledby="expired-tab">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Remarks</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expiredWorkAdjustmentList">
+                                <!-- Expired work adjustment requests will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Archived Requests Tab -->
@@ -750,6 +773,7 @@
                 case 'rejected': return 'danger';
                 case 'pending': return 'warning';
                 case 'cancelled': return 'secondary';
+                case 'expired': return 'secondary';
                 default: return 'secondary';
             }
         }
@@ -879,9 +903,13 @@
         function viewWorkAdjustment(id) {
             const request = workAdjustments.find(req => req.id === id);
             if (request) {
+                const expired = isExpired(request);
                 const timeDisplay = request.request_type === 'halfday' 
                     ? (request.timeSlot === 'morning' ? '9:00 AM - 12:00 PM' : '1:00 PM - 6:00 PM')
                     : `${request.overtimeHours} hours`;
+
+                const displayStatus = expired ? 'expired' : request.status;
+                const statusBadgeColor = expired ? 'secondary' : getStatusBadgeColor(request.status);
 
                 const details = `
                     <div class="mb-3">
@@ -889,14 +917,14 @@
                         <p><strong>Type:</strong> ${request.request_type === 'halfday' ? 'Half-Day Leave' : 'Overtime'}</p>
                         <p><strong>Date:</strong> ${formatDate(request.request_date)}</p>
                         <p><strong>Time:</strong> ${timeDisplay}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        <p><strong>Status:</strong> <span class="badge bg-${statusBadgeColor}">${displayStatus}</span></p>
                     <p><strong>Remarks:</strong> ${request.remarks}</p>
                     </div>
                 `;
                 document.getElementById('workAdjustmentDetails').innerHTML = details;
 
-                // Show cancel button only for pending requests
-                const cancelButtonHTML = request.status === 'pending' ? 
+                // Show cancel button only for pending requests that are not expired
+                const cancelButtonHTML = (request.status === 'pending' && !expired) ? 
                     `<button class="btn btn-danger" onclick="cancelWorkAdjustment(${request.id})">Cancel Request</button>` : 
                     '';
                 document.getElementById('cancelButtonContainer').innerHTML = cancelButtonHTML;
@@ -937,7 +965,21 @@
             }
         });
 
-        // Update fetchWorkAdjustments function to separate active and archived requests
+        // Check if a work adjustment request is expired
+        function isExpired(request) {
+            if (!request.request_date) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const requestDate = new Date(request.request_date);
+            requestDate.setHours(0, 0, 0, 0);
+            
+            // A request is expired if:
+            // 1. The request_date has passed (requestDate < today)
+            // 2. Status is pending or approved
+            return requestDate < today && (request.status === 'pending' || request.status === 'approved');
+        }
+
+        // Update fetchWorkAdjustments function to separate active, expired, and archived requests
         async function fetchWorkAdjustments() {
             try {
                 if (!employeeId) {
@@ -958,16 +1000,54 @@
                     status: request.status
                 }));
 
-                // Separate active and archived requests
-                workAdjustments = allRequests.filter(req => req.status !== 'cancelled');
-                archivedWorkAdjustments = allRequests.filter(req => req.status === 'cancelled');
+                // Separate active, expired, and archived requests
+                const archivedRequests = allRequests.filter(req => req.status === 'cancelled');
+                const expiredRequests = allRequests.filter(req => isExpired(req));
+                workAdjustments = allRequests.filter(req => req.status !== 'cancelled' && !isExpired(req));
+                archivedWorkAdjustments = archivedRequests;
                 
                 renderWorkAdjustments();
+                renderExpiredWorkAdjustments(expiredRequests);
                 renderArchivedWorkAdjustments();
             } catch (error) {
                 console.error('Error fetching work adjustments:', error);
                 showAlert('Failed to load work adjustments. Please try again.', true);
             }
+        }
+
+        // Function to render expired work adjustments
+        function renderExpiredWorkAdjustments(requests) {
+            const expiredList = document.getElementById('expiredWorkAdjustmentList');
+            if (!expiredList) return;
+            
+            expiredList.innerHTML = '';
+
+            if (requests.length === 0) {
+                expiredList.innerHTML = '<tr><td colspan="5" class="text-center">No expired work adjustment requests found</td></tr>';
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                let timeDisplay = '';
+                
+                if (request.request_type === 'halfday') {
+                    timeDisplay = request.timeSlot === 'morning' 
+                        ? '9:00 AM - 12:00 PM' 
+                        : '1:00 PM - 6:00 PM';
+                } else if (request.request_type === 'overtime') {
+                    timeDisplay = `${request.overtimeHours} hours`;
+                }
+
+                row.innerHTML = `
+                    <td>${request.request_type === 'halfday' ? 'Half-Day Leave' : 'Overtime'}</td>
+                    <td>${formatDate(request.request_date)}</td>
+                    <td>${timeDisplay}</td>
+                    <td>${request.remarks}</td>
+                    <td><span class="badge bg-secondary">expired</span></td>
+                `;
+                expiredList.appendChild(row);
+            });
         }
 
         // Function to render archived work adjustments

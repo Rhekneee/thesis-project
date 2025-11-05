@@ -33,21 +33,49 @@ const sendEmailNotification = async (to, subject, date, time) => {
             to: to,
             subject: subject,
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #4f6ef5;">Interview Schedule Notification</h2>
-                    <p>Dear Applicant,</p>
-                    <p>We are pleased to inform you that your interview has been scheduled:</p>
-                    <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <p style="margin: 5px 0;"><strong>Date:</strong> ${formattedDate}</p>
-                        <p style="margin: 5px 0;"><strong>Time:</strong> ${formattedTime}</p>
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f9fafc; padding: 30px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 30px;">
+                    
+                    <div style="text-align: center; border-bottom: 2px solid #4f6ef5; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h2 style="color: #1a2a6c; margin: 0;">Interview Schedule Notification</h2>
                     </div>
-                    <p>Please arrive 15 minutes before your scheduled time.</p>
-                    <p>Location: M.D. Buendia Construction Inc. Office</p>
-                    <p>If you need to reschedule or have any questions, please contact us immediately.</p>
+                    
+                    <p style="font-size: 16px; color: #333;">Dear Applicant,</p>
+                    <p style="font-size: 15px; color: #444; line-height: 1.6;">
+                    We are pleased to inform you that your interview has been scheduled. Please see the details below:
+                    </p>
+
+                    <div style="background-color: #f4f6ff; border-left: 4px solid #4f6ef5; padding: 15px 20px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0; font-size: 15px;"><strong>Date:</strong> ${formattedDate}</p>
+                    <p style="margin: 5px 0; font-size: 15px;"><strong>Time:</strong> ${formattedTime}</p>
+                    <p style="margin: 5px 0; font-size: 15px;"><strong>Location:</strong> M.D. Buendia Construction Inc. Office</p>
+                    </div>
+
+                    <p style="font-size: 15px; color: #444; line-height: 1.6;">
+                    Please arrive at least <strong>15 minutes before</strong> your scheduled interview time. 
+                    </p>
+
+                    <p style="font-size: 15px; color: #444; line-height: 1.6;">
+                    Interview schedules are <strong>strictly followed</strong>. Failure to attend on the assigned date and time 
+                    will be considered as a <strong>withdrawal or rejection</strong> of your application.
+                    </p>
+
+                    <p style="font-size: 15px; color: #444; line-height: 1.6;">
+                    If you need to reschedule or have any questions, please contact our HR Department immediately.
+                    </p>
+
                     <br>
-                    <p>Best regards,</p>
-                    <p>HR Department<br>M.D. Buendia Construction Inc.</p>
+                    <p style="font-size: 15px; color: #333; margin-bottom: 4px;">Best regards,</p>
+                    <p style="font-size: 15px; color: #1a2a6c; font-weight: 600; margin: 0;">HR Department</p>
+                    <p style="font-size: 14px; color: #555; margin: 0;">M.D. Buendia Construction Inc.</p>
+                    
                 </div>
+
+                <p style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+                    This is an automated message. Please do not reply directly to this email.
+                </p>
+                </div>
+
             `
         };
 

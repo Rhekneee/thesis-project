@@ -96,9 +96,19 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .status-pending {
+        .status-paid {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: #fff;
+        }
+
+        .status-partially-paid {
             background: linear-gradient(45deg, #ffc107, #ffb300);
             color: #000;
+        }
+
+        .status-pending {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: #fff;
         }
 
         .status-approved {
@@ -574,44 +584,23 @@
     <script src="/js/side_top.js"></script>
 
     <script>
-        // Load projects dynamically from backend
+        // Load projects dynamically from backend with billing status from stage_billing_summary
         let manufacturingProjects = [];
         
         async function loadProjects() {
             try {
-                const resp = await fetch('/manufacturing/projects-for-progress', { credentials: 'include' });
+                // Use new endpoint that gets data from stage_billing_summary
+                const resp = await fetch('/manufacturing/projects-with-billing-status', { credentials: 'include' });
                 const data = await resp.json();
                 if (data && data.success && Array.isArray(data.projects)) {
-                    // Only include projects that have stage billing entries
-                    const projectsWithBillings = await Promise.all(
-                        data.projects.map(async (p) => {
-                            try {
-                                const billingResp = await fetch(`/manufacturing/stage-billings/${p.id}`, { credentials: 'include' });
-                                const billingData = await billingResp.json();
-                                const hasBillings = billingData && billingData.success && Array.isArray(billingData.billings) && billingData.billings.length > 0;
-                                if (hasBillings) {
-                                    // Calculate total cost from stage billings (sum of amount_due)
-                                    const totalCost = billingData.billings.reduce((sum, billing) => {
-                                        return sum + Number(billing.amount_due || 0);
-                                    }, 0);
-                                    
-                                    return {
-                                        id: p.id,
-                                        name: p.name || p.project_name || `Project ${p.id}`,
-                                        location: p.location || '-',
-                                        acceptedDate: p.start_date || p.submissionDate || new Date().toISOString().split('T')[0],
-                                        cost: totalCost,
-                                        status: (p.status === 'in_progress' || p.status === 'On Going') ? 'in-progress' : (p.status || 'planning'),
-                                        image: p.image || '/image/project-2.jpg'
-                                    };
-                                }
-                                return null;
-                            } catch (_) {
-                                return null;
-                            }
-                        })
-                    );
-                    manufacturingProjects = projectsWithBillings.filter(p => p !== null);
+                    manufacturingProjects = data.projects.map(p => ({
+                        ...p,
+                        // Normalize status for display - use billing_status from stage_billing_summary
+                        status: p.status === 'Paid' ? 'paid' : 
+                               p.status === 'Partially Paid' ? 'partially-paid' :
+                               p.status === 'Generated' ? 'pending' :
+                               'pending'
+                    }));
                 }
             } catch (e) {
                 console.error('Failed to load projects:', e);
@@ -656,7 +645,7 @@
                     <td>${project.location}</td>
                     <td>${project.acceptedDate}</td>
                     <td>₱${project.cost.toLocaleString()}</td>
-                    <td><span class="project-status status-${project.status}">${project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
+                    <td><span class="project-status status-${project.status}">${project.status === 'paid' ? 'Paid' : project.status === 'partially-paid' ? 'Partially Paid' : project.status === 'pending' ? 'Pending' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn view-btn" onclick="openLatestStageBillingDetail(${project.id})" title="View Stage Billing">

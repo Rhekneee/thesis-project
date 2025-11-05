@@ -80,6 +80,8 @@ router.get('/divisions', ManufacturingController.getAllDivisions);
 
 // Projects for progress tracking
 router.get('/projects-for-progress', ManufacturingController.getProjectsForProgress);
+// Projects with billing status for payment overview
+router.get('/projects-with-billing-status', ManufacturingController.getProjectsWithBillingStatus);
 
 // Get completed projects for developer
 router.get('/completed-projects', ManufacturingController.getCompletedProjectsByDeveloper);

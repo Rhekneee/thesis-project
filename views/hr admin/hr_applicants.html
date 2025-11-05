@@ -9,23 +9,41 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Flatpickr CSS for time picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Add side_top.css early to prevent flickering -->
     <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
         /* Main content styles */
         #content {
             margin-left: 0;
-            transition: margin-left 0.3s;
+            margin-right: 0;
+            left: 0;
+            right: auto;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             padding: 20px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         /* Table and form styles */
         .applicants-table {
             margin-top: 20px;
+            width: 100%;
+            table-layout: auto;
+            max-width: 100%;
         }
 
         .applicants-table th, .applicants-table td {
             text-align: center;
+        }
+        
+        /* Ensure table container respects content width */
+        #content > * {
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .form-group {
@@ -98,6 +116,279 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Slide Panel Styles */
+        .slide-panel-overlay {
+            display: none; /* Hide overlay - not needed for push effect */
+        }
+
+        .slide-panel {
+            position: fixed;
+            top: 60px; /* Start below the top bar */
+            right: -360px;
+            width: 360px;
+            height: calc(100vh - 60px); /* Full height minus top bar */
+            background-color: #fff;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1050;
+            overflow-y: auto;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+        }
+
+        .slide-panel.show {
+            right: 0;
+        }
+
+        .slide-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .slide-panel-header h4 {
+            margin: 0;
+            color: #333;
+        }
+
+        .slide-panel-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide-panel-close:hover {
+            color: #000;
+        }
+
+        .slide-panel-body {
+            padding: 0;
+        }
+
+        .slide-panel-details {
+            margin-bottom: 25px;
+        }
+
+        .slide-panel-details p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .slide-panel-details strong {
+            color: #495057;
+            display: inline-block;
+            min-width: 140px;
+        }
+
+        /* Schedule Interview Form Styles */
+        .slide-panel-form {
+            margin-bottom: 25px;
+        }
+
+        .slide-panel-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .slide-panel-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .slide-panel-form .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .slide-panel-form .form-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        /* Flatpickr time picker styling */
+        .flatpickr-calendar {
+            z-index: 9999 !important;
+        }
+
+        .flatpickr-time {
+            z-index: 9999 !important;
+        }
+
+        #slidePanelInterviewTime {
+            cursor: pointer;
+        }
+
+        #scheduleLoadingIndicator,
+        #rejectLoadingIndicator {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #scheduleLoadingIndicator.show,
+        #rejectLoadingIndicator.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #slidePanelDetailsView,
+        #slidePanelScheduleView,
+        #slidePanelRejectView {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #slidePanelDetailsView.hidden,
+        #slidePanelScheduleView.hidden,
+        #slidePanelRejectView.hidden {
+            opacity: 0;
+            transform: translateX(10px);
+            pointer-events: none;
+        }
+
+        .slide-panel-form-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 25px;
+            opacity: 1;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .slide-panel-form-actions.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: white;
+        }
+
+        .slide-panel-form-actions .btn {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .slide-panel-form-actions .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .slide-panel-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .slide-panel-actions .btn {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+
+        .btn-schedule-interview {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .btn-schedule-interview:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            color: white;
+        }
+
+        .btn-reject {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+            color: white;
+        }
+
+        .slide-panel-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .slide-panel-notice i {
+            color: #007bff;
+            margin-right: 8px;
+        }
+
+        /* Make table rows clickable */
+        .applicants-table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .applicants-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Adjust content when panel is open */
+        .content-with-panel {
+            right: 360px !important;
+            left: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Ensure table doesn't overflow when panel is open */
+        .content-with-panel .applicants-table {
+            max-width: 100%;
+            width: 100%;
+        }
+        
+        .content-with-panel .table {
+            max-width: 100%;
+            width: 100%;
+        }
+        
+        /* Ensure all direct children respect container width */
+        .content-with-panel > * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
         }
     </style>
 </head>
@@ -295,9 +586,7 @@
                         <th onclick="sortTable(4)">Birthdate <i class="fas fa-sort sort-icon" id="sortBirthdate"></i></th>
                         <th onclick="sortTable(5)">Email <i class="fas fa-sort sort-icon" id="sortEmail"></i></th>
                         <th onclick="sortTable(6)">Phone <i class="fas fa-sort sort-icon" id="sortContactNumber"></i></th>
-                        <th>Resume</th>
                         <th>Status</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="applicantsList"></tbody>
@@ -308,6 +597,111 @@
                 <nav>
                     <ul class="pagination" id="paginationControls"></ul>
                 </nav>
+            </div>
+
+            <!-- Slide Panel for Applicant Details -->
+            <div class="slide-panel-overlay" id="slidePanelOverlay"></div>
+            <div class="slide-panel" id="slidePanel">
+                <div class="slide-panel-header">
+                    <h4>Applicant Details</h4>
+                    <button class="slide-panel-close" id="closeSlidePanel" onclick="closeSlidePanel()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="slide-panel-body">
+                    <!-- Applicant Details View -->
+                    <div id="slidePanelDetailsView">
+                        <div class="slide-panel-details" id="slidePanelDetails">
+                            <!-- Applicant details will be inserted here -->
+                        </div>
+                        <div class="slide-panel-actions" id="slidePanelActions">
+                            <!-- Action buttons will be inserted here -->
+                        </div>
+                        <div class="slide-panel-notice">
+                            <i class="fas fa-info-circle"></i>
+                            Approval or rejection of the interview will be sent to the applicant's provided email address.
+                        </div>
+                    </div>
+                    
+                    <!-- Schedule Interview Form View -->
+                    <div id="slidePanelScheduleView" class="hidden" style="display: none;">
+                        <div style="margin-bottom: 20px;">
+                            <button type="button" class="btn btn-link p-0" onclick="goBackToApplicantDetails()" style="color: #007bff; text-decoration: none;">
+                                <i class="fas fa-arrow-left"></i> Back to Applicant Details
+                            </button>
+                        </div>
+                        <div class="slide-panel-form">
+                            <form id="slidePanelInterviewForm">
+                                <div class="form-group">
+                                    <label for="slidePanelInterviewDate">📅 Interview Date</label>
+                                    <input type="date" id="slidePanelInterviewDate" class="form-control" required>
+                                    <small class="form-text text-muted">Please select a date that is at least 2 days from today.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="slidePanelInterviewTime">🕐 Interview Time</label>
+                                    <input type="text" id="slidePanelInterviewTime" class="form-control" placeholder="Select time" readonly required>
+                                    <small class="form-text text-muted">Available time slots: 9:00 AM - 5:00 PM (30-minute intervals)</small>
+                                </div>
+                                <div class="slide-panel-form-actions">
+                                    <button type="submit" class="btn btn-schedule-interview" id="confirmScheduleBtn">
+                                        <i class="fas fa-check-circle"></i> Confirm
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="goBackToApplicantDetails()" id="cancelScheduleBtn">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                                <div id="scheduleLoadingIndicator">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Sending email notification...</p>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="slide-panel-notice">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <em><strong>*Approval and rejection for interview will be sent*</strong></em><br>
+                            <small><em>*to the applicant's registered email address.*</em></small>
+                        </div>
+                    </div>
+
+                    <!-- Reject Applicant Form View -->
+                    <div id="slidePanelRejectView" class="hidden" style="display: none;">
+                        <div style="margin-bottom: 20px;">
+                            <button type="button" class="btn btn-link p-0" onclick="goBackToApplicantDetails()" style="color: #007bff; text-decoration: none;">
+                                <i class="fas fa-arrow-left"></i> Back to Applicant Details
+                            </button>
+                        </div>
+                        <div class="slide-panel-form">
+                            <form id="slidePanelRejectForm">
+                                <div class="form-group">
+                                    <label for="slidePanelRejectRemarks">Reason for Rejection <span class="text-danger">*</span></label>
+                                    <textarea id="slidePanelRejectRemarks" class="form-control" rows="5" placeholder="Please provide a reason for rejecting this applicant..." required></textarea>
+                                    <small class="form-text text-muted">This reason will be included in the email notification sent to the applicant.</small>
+                                </div>
+                                <div class="slide-panel-form-actions">
+                                    <button type="submit" class="btn btn-reject" id="confirmRejectBtn">
+                                        <i class="fas fa-check-circle"></i> Confirm
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="goBackToApplicantDetails()" id="cancelRejectBtn">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                                <div id="rejectLoadingIndicator">
+                                    <div class="spinner-border text-danger" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Sending rejection notification...</p>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="slide-panel-notice">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <em><strong>*Rejection notification will be sent*</strong></em><br>
+                            <small><em>*to the applicant's registered email address.*</em></small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Modal for Adding and Editing Applicant -->
@@ -370,32 +764,6 @@
                                 <button class="btn btn-danger" id="rejectBtn" onclick="rejectApplicant()">Reject</button>
                                 <button class="btn btn-primary" id="scheduleInterviewBtn" onclick="scheduleInterview()">Schedule Interview</button>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Schedule Interview Modal -->
-            <div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="interviewForm">
-                                <div class="form-group">
-                                    <label for="interviewDate">Interview Date</label>
-                                    <input type="date" id="interviewDate" class="form-control" required>
-                                    <small class="form-text text-muted">Please select a date that is at least 2 days from today.</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="interviewTime">Interview Time</label>
-                                    <input type="time" id="interviewTime" class="form-control" required>
-                                </div>
-                                <button type="submit" class="btn btn-success">Save Interview Schedule</button>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -493,6 +861,8 @@
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS for time picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/public/js/side_top.js"></script>
     <script src="/public/js/hr_role_visibility.js"></script>
     <script>
@@ -505,6 +875,7 @@
         let currentPage = 1;
         let filteredApplicants = null;
         let applicantToDelete = null;
+        let interviewTimePicker = null; // Flatpickr instance for time picker
     
         // Render applicants dynamically
         function renderApplicants() {
@@ -518,6 +889,12 @@
     
             currentApplicants.forEach(applicant => {
                 const row = document.createElement('tr');
+                row.onclick = (e) => {
+                    // Don't trigger if clicking on a link or button
+                    if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                        viewApplicantDetails(applicant.id);
+                    }
+                };
                 row.innerHTML = `
                     <td>${applicant.full_name || 'N/A'}</td>
                     <td>${applicant.middleinitial || 'N/A'}</td>
@@ -525,14 +902,7 @@
                     <td>${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</td>
                     <td>${applicant.email || 'N/A'}</td>
                     <td>${applicant.phone || 'N/A'}</td>
-                    <td> ${applicant.resume ? 
-                    `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` : 
-                    'N/A'}
-            </td>
-            <td>${applicant.status || 'Pending'}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="viewApplicantDetails(${applicant.id})">View</button>
-                    </td>
+                    <td>${applicant.status || 'Pending'}</td>
                 `;
                 applicantsList.appendChild(row);
             });
@@ -556,58 +926,170 @@
             alert('Viewing Resume: ' + resumeFile);
         }
     
-        // View Applicant Details
+        // View Applicant Details - Show in Slide Panel
         function viewApplicantDetails(applicantId) {
             currentApplicantId = applicantId;
             const applicant = applicants.find(applicant => applicant.id === applicantId);
             
             if (applicant) {
+                // Reset to details view with smooth transition
+                const detailsView = document.getElementById('slidePanelDetailsView');
+                const scheduleView = document.getElementById('slidePanelScheduleView');
+                const rejectView = document.getElementById('slidePanelRejectView');
+                
+                // Ensure schedule and reject views are hidden
+                scheduleView.classList.add('hidden');
+                scheduleView.style.display = 'none';
+                rejectView.classList.add('hidden');
+                rejectView.style.display = 'none';
+                
+                // Show details view
+                detailsView.style.display = 'block';
+                setTimeout(() => {
+                    detailsView.classList.remove('hidden');
+                }, 10);
+                
+                document.querySelector('.slide-panel-header h4').textContent = 'Applicant Details';
+                
                 const applicantDetails = `
-                <p><strong>Full Name:</strong> ${applicant.full_name || 'N/A'}</p>
-                <p><strong>Middle Initial:</strong> ${applicant.middleinitial || 'N/A'}</p>
-                <p><strong>Age:</strong> ${applicant.age || 'N/A'}</p>
-                <p><strong>Birthdate:</strong> ${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</p>
-                <p><strong>Email:</strong> ${applicant.email || 'N/A'}</p>
-                <p><strong>Phone:</strong> ${applicant.phone || 'N/A'}</p>
-                <p><strong>Status:</strong> ${applicant.status || 'Pending'}</p>
-                <p><strong>Resume:</strong> ${
-                    applicant.resume 
-                        ? `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` 
-                        : 'N/A'
-                }</p>
-            `;
+                    <p><strong>Full Name:</strong> ${applicant.full_name || 'N/A'}</p>
+                    <p><strong>Middle Initial:</strong> ${applicant.middleinitial || 'N/A'}</p>
+                    <p><strong>Age:</strong> ${applicant.age || 'N/A'}</p>
+                    <p><strong>Birthdate:</strong> ${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Email:</strong> ${applicant.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${applicant.phone || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-${applicant.status === 'Pending' ? 'warning' : applicant.status === 'Rejected' ? 'danger' : 'success'}">${applicant.status || 'Pending'}</span></p>
+                    ${applicant.resume ? `<p><strong>Resume:</strong> <a href="/uploads/resume/${applicant.resume}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i> View Resume</a></p>` : ''}
+                `;
 
-                document.getElementById('applicantDetails').innerHTML = applicantDetails;
+                document.getElementById('slidePanelDetails').innerHTML = applicantDetails;
                 
                 // Show or hide Reject and Schedule Interview buttons based on status
+                let actionButtons = '';
                 if (applicant.status === 'Pending') {
-                    document.getElementById('applicantActions').style.display = 'block';
+                    actionButtons = `
+                        <button class="btn btn-schedule-interview" onclick="scheduleInterview()">
+                            <i class="fas fa-calendar-check"></i> Schedule Interview
+                        </button>
+                        <button class="btn btn-reject" onclick="rejectApplicant()">
+                            <i class="fas fa-times-circle"></i> Reject
+                        </button>
+                    `;
                 } else {
-                    document.getElementById('applicantActions').style.display = 'none';
+                    actionButtons = `
+                        <p class="text-muted">No actions available for ${applicant.status} status.</p>
+                    `;
                 }
+                document.getElementById('slidePanelActions').innerHTML = actionButtons;
                 
-                $('#viewApplicantModal').modal('show');
+                // Show slide panel
+                openSlidePanel();
             }
         }
 
-        // Reject Applicant - Show modal with remarks field
-        function rejectApplicant() {
-            $('#viewApplicantModal').modal('hide');
-            // Clear previous remarks
-            document.getElementById('rejectRemarks').value = '';
-            $('#rejectModal').modal('show');
+        // Open Slide Panel
+        function openSlidePanel() {
+            const panel = document.getElementById('slidePanel');
+            const content = document.getElementById('content');
+            
+            panel.classList.add('show');
+            content.classList.add('content-with-panel');
         }
 
-        // Confirm Rejection with Remarks
-        const confirmRejectBtn = document.getElementById('confirmRejectBtn');
-        if (confirmRejectBtn) {
-            confirmRejectBtn.addEventListener('click', async function () {
-                const remarks = document.getElementById('rejectRemarks').value.trim();
+        // Close Slide Panel
+        function closeSlidePanel() {
+            const panel = document.getElementById('slidePanel');
+            const content = document.getElementById('content');
+            
+            panel.classList.remove('show');
+            content.classList.remove('content-with-panel');
+            
+            // Reset to details view
+            const detailsView = document.getElementById('slidePanelDetailsView');
+            const scheduleView = document.getElementById('slidePanelScheduleView');
+            const rejectView = document.getElementById('slidePanelRejectView');
+            
+            scheduleView.classList.add('hidden');
+            scheduleView.style.display = 'none';
+            rejectView.classList.add('hidden');
+            rejectView.style.display = 'none';
+            detailsView.style.display = 'block';
+            detailsView.classList.remove('hidden');
+            
+            // Reset form state for schedule view
+            const scheduleLoadingIndicator = document.getElementById('scheduleLoadingIndicator');
+            const scheduleFormActions = document.querySelector('#slidePanelInterviewForm .slide-panel-form-actions');
+            if (scheduleLoadingIndicator) scheduleLoadingIndicator.classList.remove('show');
+            if (scheduleFormActions) scheduleFormActions.classList.remove('hidden');
+            
+            // Reset form state for reject view
+            const rejectLoadingIndicator = document.getElementById('rejectLoadingIndicator');
+            const rejectFormActions = document.querySelector('#slidePanelRejectForm .slide-panel-form-actions');
+            if (rejectLoadingIndicator) rejectLoadingIndicator.classList.remove('show');
+            if (rejectFormActions) rejectFormActions.classList.remove('hidden');
+            
+            document.querySelector('.slide-panel-header h4').textContent = 'Applicant Details';
+        }
+
+        // Reject Applicant - Show form in slide panel
+        function rejectApplicant() {
+            // Clear previous remarks
+            const rejectRemarksInput = document.getElementById('slidePanelRejectRemarks');
+            if (rejectRemarksInput) {
+                rejectRemarksInput.value = '';
+            }
+            
+            // Switch to reject applicant view with smooth transition
+            const detailsView = document.getElementById('slidePanelDetailsView');
+            const scheduleView = document.getElementById('slidePanelScheduleView');
+            const rejectView = document.getElementById('slidePanelRejectView');
+            
+            detailsView.classList.add('hidden');
+            scheduleView.classList.add('hidden');
+            
+            setTimeout(() => {
+                detailsView.style.display = 'none';
+                scheduleView.style.display = 'none';
+                rejectView.style.display = 'block';
+                setTimeout(() => {
+                    rejectView.classList.remove('hidden');
+                }, 10);
+            }, 150);
+            
+            document.querySelector('.slide-panel-header h4').textContent = '❌ Reject Applicant';
+            
+            // Ensure panel is open
+            openSlidePanel();
+        }
+
+        // Handle Reject Form Submission in Slide Panel
+        const slidePanelRejectForm = document.getElementById('slidePanelRejectForm');
+        if (slidePanelRejectForm) {
+            slidePanelRejectForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const remarks = document.getElementById('slidePanelRejectRemarks').value.trim();
                 
                 if (!remarks) {
                     alert('Please provide a reason for rejection.');
                     return;
                 }
+
+                // Show loading indicator and disable buttons
+                const loadingIndicator = document.getElementById('rejectLoadingIndicator');
+                const confirmBtn = document.getElementById('confirmRejectBtn');
+                const cancelBtn = document.getElementById('cancelRejectBtn');
+                const formActions = document.querySelector('#slidePanelRejectForm .slide-panel-form-actions');
+                
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Hide form actions with smooth transition
+                formActions.classList.add('hidden');
+                
+                // Show loading indicator with smooth transition
+                setTimeout(() => {
+                    loadingIndicator.classList.add('show');
+                }, 150);
 
                 try {
                     const response = await fetch('/hr/updateStatus', {
@@ -622,15 +1104,34 @@
                         })
                     });
 
+                    // Hide loading indicator with smooth transition
+                    loadingIndicator.classList.remove('show');
+
                     if (response.ok) {
-                        $('#rejectModal').modal('hide');
-                        $('#rejectSuccessModal').modal('show');
-                        fetchApplicantsByStatus(); // refresh list
+                        // Close panel and show success modal
+                        setTimeout(() => {
+                            closeSlidePanel();
+                            $('#rejectSuccessModal').modal('show');
+                            fetchApplicantsByStatus(); // refresh list
+                        }, 300);
                     } else {
+                        // Re-enable buttons and show form again with smooth transition
+                        setTimeout(() => {
+                            confirmBtn.disabled = false;
+                            cancelBtn.disabled = false;
+                            formActions.classList.remove('hidden');
+                        }, 150);
                         const error = await response.json();
                         alert('Failed to reject applicant: ' + (error.error || 'Unknown error'));
                     }
                 } catch (error) {
+                    // Re-enable buttons and show form again with smooth transition
+                    loadingIndicator.classList.remove('show');
+                    setTimeout(() => {
+                        confirmBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                        formActions.classList.remove('hidden');
+                    }, 150);
                     console.error('Error rejecting applicant:', error);
                     alert('An error occurred while rejecting the applicant.');
                 }
@@ -650,25 +1151,211 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Schedule Interview
+        // Schedule Interview - Show form in slide panel
         function scheduleInterview() {
             // Set minimum date to 2 days from today
             const minDate = getMinInterviewDate();
-            const interviewDateInput = document.getElementById('interviewDate');
+            const interviewDateInput = document.getElementById('slidePanelInterviewDate');
+            const interviewTimeInput = document.getElementById('slidePanelInterviewTime');
+            
             interviewDateInput.setAttribute('min', minDate);
             interviewDateInput.value = ''; // Clear previous value
             
-            $('#viewApplicantModal').modal('hide');
-            $('#scheduleInterviewModal').modal('show');
+            // Initialize or reinitialize Flatpickr time picker
+            if (interviewTimePicker) {
+                interviewTimePicker.destroy();
+            }
+            
+            interviewTimePicker = flatpickr(interviewTimeInput, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K", // 12-hour format with AM/PM
+                time_24hr: false,
+                minuteIncrement: 30, // 30-minute intervals
+                minTime: "9:00 AM",
+                maxTime: "5:00 PM",
+                allowInput: false, // Prevent manual input that could bypass restrictions
+                clickOpens: true, // Only allow selection via picker
+                defaultHour: 9,
+                defaultMinute: 0,
+                onReady: function(selectedDates, dateStr, instance) {
+                    // Limit hour selection to 9 AM - 5 PM after picker is ready
+                    const hourInput = instance.calendarContainer.querySelector('.flatpickr-hour');
+                    if (hourInput) {
+                        hourInput.addEventListener('change', function() {
+                            const hour = parseInt(this.value);
+                            if (hour > 17) {
+                                this.value = 17;
+                                const minuteInput = instance.calendarContainer.querySelector('.flatpickr-minute');
+                                if (minuteInput) {
+                                    minuteInput.value = 0;
+                                }
+                            } else if (hour < 9 && hour !== 12) {
+                                // Allow 12 (noon) but reset hours < 9 (except 12)
+                                const actualHour = hour === 12 ? 12 : (hour < 9 ? 9 : hour);
+                                this.value = actualHour;
+                            }
+                        });
+                    }
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Parse the selected time and validate it's not beyond 5:00 PM
+                    if (dateStr) {
+                        const timeRegex = /(\d+):(\d+)\s*(AM|PM)/i;
+                        const match = dateStr.match(timeRegex);
+                        
+                        if (match) {
+                            let hours = parseInt(match[1]);
+                            const minutes = parseInt(match[2]);
+                            const period = match[3].toUpperCase();
+                            
+                            // Convert to 24-hour format for validation
+                            if (period === 'PM' && hours !== 12) {
+                                hours += 12;
+                            } else if (period === 'AM' && hours === 12) {
+                                hours = 0;
+                            }
+                            
+                            // Check if time exceeds 5:00 PM (17:00)
+                            const selectedTimeMinutes = hours * 60 + minutes;
+                            const maxTimeMinutes = 17 * 60; // 5:00 PM = 1020 minutes
+                            
+                            if (selectedTimeMinutes > maxTimeMinutes) {
+                                // Reset to 5:00 PM if exceeds
+                                const maxDate = new Date();
+                                maxDate.setHours(17, 0, 0, 0);
+                                instance.setDate(maxDate, false);
+                                interviewTimeInput.value = "5:00 PM";
+                                alert("Interview time cannot exceed 5:00 PM. Time has been set to 5:00 PM.");
+                                return;
+                            }
+                            
+                            // Also check if before 9:00 AM
+                            const minTimeMinutes = 9 * 60; // 9:00 AM = 540 minutes
+                            if (selectedTimeMinutes < minTimeMinutes) {
+                                // Reset to 9:00 AM if before
+                                instance.setDate(new Date().setHours(9, 0, 0, 0), false);
+                                alert("Interview time cannot be before 9:00 AM. Time has been set to 9:00 AM.");
+                                return;
+                            }
+                        }
+                    }
+                    validateInterviewTime();
+                },
+                onValueUpdate: function(selectedDates, dateStr, instance) {
+                    // Additional validation on value update
+                    if (dateStr) {
+                        const timeRegex = /(\d+):(\d+)\s*(AM|PM)/i;
+                        const match = dateStr.match(timeRegex);
+                        
+                        if (match) {
+                            let hours = parseInt(match[1]);
+                            const minutes = parseInt(match[2]);
+                            const period = match[3].toUpperCase();
+                            
+                            if (period === 'PM' && hours !== 12) {
+                                hours += 12;
+                            } else if (period === 'AM' && hours === 12) {
+                                hours = 0;
+                            }
+                            
+                            const selectedTimeMinutes = hours * 60 + minutes;
+                            const maxTimeMinutes = 17 * 60;
+                            const minTimeMinutes = 9 * 60;
+                            
+                            if (selectedTimeMinutes > maxTimeMinutes) {
+                                const maxDate = new Date();
+                                maxDate.setHours(17, 0, 0, 0);
+                                instance.setDate(maxDate, false);
+                                interviewTimeInput.value = "5:00 PM";
+                            } else if (selectedTimeMinutes < minTimeMinutes) {
+                                const minDate = new Date();
+                                minDate.setHours(9, 0, 0, 0);
+                                instance.setDate(minDate, false);
+                                interviewTimeInput.value = "9:00 AM";
+                            }
+                        }
+                    }
+                }
+            });
+            
+            interviewTimeInput.value = ''; // Clear previous value
+            
+            // Switch to schedule interview view with smooth transition
+            const detailsView = document.getElementById('slidePanelDetailsView');
+            const scheduleView = document.getElementById('slidePanelScheduleView');
+            
+            detailsView.classList.add('hidden');
+            
+            setTimeout(() => {
+                detailsView.style.display = 'none';
+                scheduleView.style.display = 'block';
+                setTimeout(() => {
+                    scheduleView.classList.remove('hidden');
+                }, 10);
+            }, 150);
+            
+            document.querySelector('.slide-panel-header h4').textContent = '🗓️ Schedule Interview';
+            
+            // Ensure panel is open
+            openSlidePanel();
         }
 
-        // Save Interview Schedule
-        const interviewForm = document.getElementById('interviewForm');
-        if (interviewForm) {
-            interviewForm.addEventListener('submit', async function (event) {
+        // Go back to Applicant Details view
+        function goBackToApplicantDetails() {
+            // Reset form state for schedule view
+            const scheduleLoadingIndicator = document.getElementById('scheduleLoadingIndicator');
+            const confirmScheduleBtn = document.getElementById('confirmScheduleBtn');
+            const cancelScheduleBtn = document.getElementById('cancelScheduleBtn');
+            const scheduleFormActions = document.querySelector('#slidePanelInterviewForm .slide-panel-form-actions');
+            
+            if (scheduleLoadingIndicator) scheduleLoadingIndicator.classList.remove('show');
+            if (confirmScheduleBtn) confirmScheduleBtn.disabled = false;
+            if (cancelScheduleBtn) cancelScheduleBtn.disabled = false;
+            if (scheduleFormActions) {
+                scheduleFormActions.classList.remove('hidden');
+            }
+            
+            // Reset form state for reject view
+            const rejectLoadingIndicator = document.getElementById('rejectLoadingIndicator');
+            const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+            const cancelRejectBtn = document.getElementById('cancelRejectBtn');
+            const rejectFormActions = document.querySelector('#slidePanelRejectForm .slide-panel-form-actions');
+            
+            if (rejectLoadingIndicator) rejectLoadingIndicator.classList.remove('show');
+            if (confirmRejectBtn) confirmRejectBtn.disabled = false;
+            if (cancelRejectBtn) cancelRejectBtn.disabled = false;
+            if (rejectFormActions) {
+                rejectFormActions.classList.remove('hidden');
+            }
+            
+            // Switch back to details view with smooth transition
+            const detailsView = document.getElementById('slidePanelDetailsView');
+            const scheduleView = document.getElementById('slidePanelScheduleView');
+            const rejectView = document.getElementById('slidePanelRejectView');
+            
+            scheduleView.classList.add('hidden');
+            rejectView.classList.add('hidden');
+            
+            setTimeout(() => {
+                scheduleView.style.display = 'none';
+                rejectView.style.display = 'none';
+                detailsView.style.display = 'block';
+                setTimeout(() => {
+                    detailsView.classList.remove('hidden');
+                }, 10);
+            }, 150);
+            
+            document.querySelector('.slide-panel-header h4').textContent = 'Applicant Details';
+        }
+
+        // Save Interview Schedule - Handle form submission in slide panel
+        const slidePanelInterviewForm = document.getElementById('slidePanelInterviewForm');
+        if (slidePanelInterviewForm) {
+            slidePanelInterviewForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
-                const interviewDate = document.getElementById('interviewDate').value;
-                const interviewTime = document.getElementById('interviewTime').value;
+                const interviewDate = document.getElementById('slidePanelInterviewDate').value;
+                const interviewTime12Hour = document.getElementById('slidePanelInterviewTime').value;
                 
                 // Validate that the date is at least 2 days from today
                 const selectedDate = new Date(interviewDate);
@@ -685,30 +1372,120 @@
                     return;
                 }
                 
+                // Convert Flatpickr 12-hour format to 24-hour format for server
+                const timeRegex = /(\d+):(\d+)\s*(AM|PM)/i;
+                const match = interviewTime12Hour.match(timeRegex);
+                
+                if (!match) {
+                    alert("Invalid time format. Please select a valid time.");
+                    return;
+                }
+                
+                let hours = parseInt(match[1]);
+                const minutes = parseInt(match[2]);
+                const period = match[3].toUpperCase();
+                
+                // Convert to 24-hour format
+                if (period === 'PM' && hours !== 12) {
+                    hours += 12;
+                } else if (period === 'AM' && hours === 12) {
+                    hours = 0;
+                }
+                
+                // Format as HH:mm for server (24-hour format)
+                const interviewTime = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+                
+                // Validate time is within 9:00 AM - 5:00 PM (09:00 - 17:00)
+                const selectedTimeMinutes = hours * 60 + minutes;
+                const minTimeMinutes = 9 * 60; // 9:00 AM = 540 minutes
+                const maxTimeMinutes = 17 * 60; // 5:00 PM = 1020 minutes
+                
+                if (selectedTimeMinutes < minTimeMinutes || selectedTimeMinutes > maxTimeMinutes) {
+                    alert("Interview time must be between 9:00 AM and 5:00 PM. Please select a valid time.");
+                    return;
+                }
+                
+                // If the selected date is today, check if the time has passed
+                const todayDate = new Date();
+                todayDate.setHours(0, 0, 0, 0);
+                const selectedDateOnly = new Date(interviewDate);
+                selectedDateOnly.setHours(0, 0, 0, 0);
+                
+                // Check if it's the same day (shouldn't happen due to 2-day minimum, but double-check)
+                if (selectedDateOnly.getTime() === todayDate.getTime()) {
+                    const now = new Date();
+                    const selectedDateTime = new Date(interviewDate + 'T' + interviewTime);
+                    
+                    if (selectedDateTime <= now) {
+                        alert("The selected time has already passed. Please select a future time.");
+                        return;
+                    }
+                }
+                
+                // Show loading indicator and disable buttons
+                const loadingIndicator = document.getElementById('scheduleLoadingIndicator');
+                const confirmBtn = document.getElementById('confirmScheduleBtn');
+                const cancelBtn = document.getElementById('cancelScheduleBtn');
+                const formActions = document.querySelector('.slide-panel-form-actions');
+                
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Hide form actions with smooth transition
+                formActions.classList.add('hidden');
+                
+                // Show loading indicator with smooth transition
+                setTimeout(() => {
+                    loadingIndicator.classList.add('show');
+                }, 150);
+                
                 const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
                 
                 if (applicant) {
-                const response = await fetch('/hr/scheduleInterview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: currentApplicantId,
-                        date: interviewDate,
-                        time: interviewTime
-                    })
-                });
+                    try {
+                        const response = await fetch('/hr/scheduleInterview', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                id: currentApplicantId,
+                                date: interviewDate,
+                                time: interviewTime
+                            })
+                        });
 
-                if (response.ok) {
-                    $('#scheduleInterviewModal').modal('hide');
-                    $('#successModal').modal('show');
-                    fetchApplicantsByStatus(); // refresh list
-                } else {
-                    alert("Failed to schedule interview.");
+                        // Hide loading indicator with smooth transition
+                        loadingIndicator.classList.remove('show');
+                        
+                        if (response.ok) {
+                            // Close panel and show success modal
+                            setTimeout(() => {
+                                closeSlidePanel();
+                                $('#successModal').modal('show');
+                                fetchApplicantsByStatus(); // refresh list
+                            }, 300);
+                        } else {
+                            // Re-enable buttons and show form again with smooth transition
+                            setTimeout(() => {
+                                confirmBtn.disabled = false;
+                                cancelBtn.disabled = false;
+                                formActions.classList.remove('hidden');
+                            }, 150);
+                            alert("Failed to schedule interview. Please try again.");
+                        }
+                    } catch (error) {
+                        // Re-enable buttons and show form again with smooth transition
+                        loadingIndicator.classList.remove('show');
+                        setTimeout(() => {
+                            confirmBtn.disabled = false;
+                            cancelBtn.disabled = false;
+                            formActions.classList.remove('hidden');
+                        }, 150);
+                        alert("An error occurred while scheduling the interview. Please try again.");
+                        console.error('Error scheduling interview:', error);
+                    }
                 }
-            }
-
             });
         }
 
@@ -774,8 +1551,9 @@
             const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
             if (searchTerm) {
                 filteredApplicants = applicants.filter(applicant =>
-                    applicant.firstName.toLowerCase().includes(searchTerm) ||
-                    applicant.lastName.toLowerCase().includes(searchTerm)
+                    (applicant.full_name && applicant.full_name.toLowerCase().includes(searchTerm)) ||
+                    (applicant.email && applicant.email.toLowerCase().includes(searchTerm)) ||
+                    (applicant.phone && applicant.phone.toLowerCase().includes(searchTerm))
                 );
             } else {
                 filteredApplicants = null;
@@ -787,19 +1565,99 @@
         // Set minimum date on page load (so date picker automatically disables early dates)
         function setInterviewDateMin() {
             const minDate = getMinInterviewDate();
-            const interviewDateInput = document.getElementById('interviewDate');
+            const interviewDateInput = document.getElementById('slidePanelInterviewDate');
             if (interviewDateInput) {
                 interviewDateInput.setAttribute('min', minDate);
             }
         }
 
-        // Set minimum date when modal is shown (for additional safety and to refresh the min date)
-        $('#scheduleInterviewModal').on('show.bs.modal', function () {
-            const minDate = getMinInterviewDate();
-            const interviewDateInput = document.getElementById('interviewDate');
-            interviewDateInput.setAttribute('min', minDate);
-            interviewDateInput.value = ''; // Clear previous value
+        // Initialize event listeners for date validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const interviewDateInput = document.getElementById('slidePanelInterviewDate');
+            
+            // Only need date change listener - time validation is handled by Flatpickr's onChange
+            if (interviewDateInput) {
+                interviewDateInput.addEventListener('change', validateInterviewTime);
+            }
+            
+            // Set minimum date on page load
+            setInterviewDateMin();
         });
+
+        // Validate time input when it changes
+        function validateInterviewTime() {
+            const interviewTimeInput = document.getElementById('slidePanelInterviewTime');
+            const interviewDateInput = document.getElementById('slidePanelInterviewDate');
+            
+            if (!interviewTimeInput || !interviewDateInput) return;
+            
+            const interviewTime = interviewTimeInput.value;
+            const interviewDate = interviewDateInput.value;
+            
+            if (!interviewTime) {
+                interviewTimeInput.setCustomValidity('');
+                return true;
+            }
+            
+            // Convert Flatpickr 12-hour format (e.g., "9:00 AM", "6:00 PM") to 24-hour format for validation
+            const timeRegex = /(\d+):(\d+)\s*(AM|PM)/i;
+            const match = interviewTime.match(timeRegex);
+            
+            if (!match) {
+                interviewTimeInput.setCustomValidity('Invalid time format.');
+                interviewTimeInput.reportValidity();
+                return false;
+            }
+            
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const period = match[3].toUpperCase();
+            
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            // Validate time is within 9:00 AM - 5:00 PM (09:00 - 17:00)
+            const selectedTimeMinutes = hours * 60 + minutes;
+            const minTimeMinutes = 9 * 60; // 9:00 AM = 540 minutes
+            const maxTimeMinutes = 17 * 60; // 5:00 PM = 1020 minutes
+            
+            if (selectedTimeMinutes < minTimeMinutes || selectedTimeMinutes > maxTimeMinutes) {
+                interviewTimeInput.setCustomValidity('Interview time must be between 9:00 AM and 5:00 PM.');
+                interviewTimeInput.reportValidity();
+                return false;
+            }
+            
+            // If date is selected and it's today, check if time has passed
+            if (interviewDate) {
+                const today = new Date();
+                const selectedDate = new Date(interviewDate);
+                
+                today.setHours(0, 0, 0, 0);
+                selectedDate.setHours(0, 0, 0, 0);
+                
+                // Only validate past time if date is today (though it shouldn't be due to 2-day minimum)
+                if (selectedDate.getTime() === today.getTime()) {
+                    const now = new Date();
+                    // Create date-time string in 24-hour format for parsing
+                    const time24Hour = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+                    const selectedDateTime = new Date(interviewDate + 'T' + time24Hour);
+                    
+                    if (selectedDateTime <= now) {
+                        interviewTimeInput.setCustomValidity('The selected time has already passed. Please select a future time.');
+                        interviewTimeInput.reportValidity();
+                        return false;
+                    }
+                }
+            }
+            
+            // Clear any previous validation errors
+            interviewTimeInput.setCustomValidity('');
+            return true;
+        }
 
         // Set minimum date when jQuery is ready
         $(document).ready(function() {

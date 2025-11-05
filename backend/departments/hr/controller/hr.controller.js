@@ -378,7 +378,9 @@ const HRController = {
     getAllEmployees: async (req, res) => {
         try {
             const includeDeleted = req.query.includeDeleted === 'true';
-            const employees = await HRModel.getAllEmployees(includeDeleted);
+            // Exclude the current logged-in user from the employee list
+            const excludeUserId = req.session?.user?.id || null;
+            const employees = await HRModel.getAllEmployees(includeDeleted, excludeUserId);
             res.status(200).json(employees);
         } catch (err) {
             console.error("❌ Fetching employees failed:", err);

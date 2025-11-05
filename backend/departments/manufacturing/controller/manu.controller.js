@@ -1409,7 +1409,26 @@ const ManufacturingController = {
     }
   },
 
-  // Get projects for manufacturing progress tracking
+  // Get projects with billing status for payment overview
+  getProjectsWithBillingStatus: async (req, res) => {
+    try {
+      // If session user is developer, restrict by developer_id
+      const user = req.session?.user || {};
+      const developerId = (user.role_name === 'developer' || user.role_id === 1) ? user.id : null;
+      const projects = await ManufacturingModel.getProjectsWithBillingStatus(developerId);
+      res.json({
+        success: true,
+        projects
+      });
+    } catch (error) {
+      console.error('Error getting projects with billing status:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to get projects with billing status' 
+      });
+    }
+  },
+  
   getProjectsForProgress: async (req, res) => {
     try {
       // If session user is developer, restrict by developer_id
@@ -2003,12 +2022,42 @@ const ManufacturingController = {
         console.log('💰 Payment ID:', paymentData.id);
         console.log('💰 Amount:', payment.amount);
         console.log('💰 Status:', payment.status);
+        console.log('📋 Full payload:', JSON.stringify(payload, null, 2));
         
-        // Extract metadata from the payment
-        const billingId = payment.metadata?.billing_id || payment.attributes?.metadata?.billing_id;
+        // Extract metadata from multiple possible locations in PayMongo webhook
+        let billingId = null;
+        if (payment.metadata && payment.metadata.billing_id) {
+          billingId = payment.metadata.billing_id;
+        } else if (paymentData.attributes && paymentData.attributes.metadata && paymentData.attributes.metadata.billing_id) {
+          billingId = paymentData.attributes.metadata.billing_id;
+        } else if (payload.data && payload.data.attributes && payload.data.attributes.metadata && payload.data.attributes.metadata.billing_id) {
+          billingId = payload.data.attributes.metadata.billing_id;
+        } else if (paymentData && paymentData.metadata && paymentData.metadata.billing_id) {
+          billingId = paymentData.metadata.billing_id;
+        }
+        
+        // Try to get billing_id from paymongo_sessions table as fallback
+        if (!billingId && paymentData.id) {
+          try {
+            const [sessionRows] = await db.query(`
+              SELECT stage_billing_id 
+              FROM paymongo_sessions 
+              WHERE session_id = ? 
+              ORDER BY created_at DESC 
+              LIMIT 1
+            `, [paymentData.id]);
+            if (sessionRows && sessionRows.length > 0) {
+              billingId = sessionRows[0].stage_billing_id;
+              console.log('📋 Found billing_id from paymongo_sessions:', billingId);
+            }
+          } catch (sessionErr) {
+            console.warn('Could not query paymongo_sessions:', sessionErr.message);
+          }
+        }
+        
         const amountPaid = payment.amount / 100; // Convert from centavos to pesos
         
-        console.log('💳 Billing ID:', billingId);
+        console.log('💳 Extracted billing_id:', billingId);
         console.log('💳 Amount paid:', amountPaid);
         
         if (billingId) {
@@ -2017,7 +2066,7 @@ const ManufacturingController = {
             const existingPayments = await ManufacturingModel.getPaymentsByReference(paymentData.id);
             
             if (existingPayments.length === 0) {
-              // Store payment record in database
+              // Store payment record in database (this will update status to Paid if amount matches)
               await ManufacturingModel.storePaymentRecord({
                 billingId: Number(billingId),
                 paymentMethod: 'paymongo',
@@ -2025,6 +2074,38 @@ const ManufacturingController = {
                 amountPaid: amountPaid,
                 remarks: `PayMongo payment completed - Payment ID: ${paymentData.id}`
               });
+              
+              // Explicitly update status to 'Paid' in stage_billing_summary
+              // This ensures status is updated even if there are edge cases
+              try {
+                const [billingRows] = await db.query(`
+                  SELECT amount_due FROM stage_billing_summary WHERE id = ?
+                `, [Number(billingId)]);
+                
+                if (billingRows && billingRows.length > 0) {
+                  const amountDue = Number(billingRows[0].amount_due || 0);
+                  const totalPaid = await ManufacturingModel.getTotalPaidAmount(Number(billingId));
+                  
+                  // Update status to 'Paid' if payment amount matches or exceeds amount due
+                  if (totalPaid >= amountDue) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Paid in stage_billing_summary');
+                  } else if (totalPaid > 0) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Partially Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Partially Paid in stage_billing_summary');
+                  }
+                }
+              } catch (statusErr) {
+                console.error('❌ Error updating billing status:', statusErr);
+              }
               
               console.log('✅ Payment record stored successfully in database');
             } else {
@@ -2034,7 +2115,7 @@ const ManufacturingController = {
             console.error('❌ Error storing payment record:', dbError);
           }
         } else {
-          console.log('⚠️ No billing_id found in metadata, skipping payment record');
+          console.log('⚠️ No billing_id found in metadata, cannot process payment');
         }
       } 
       // Handle Checkout Session Payment Paid event
@@ -2045,10 +2126,43 @@ const ManufacturingController = {
         console.log('✅ Checkout.payment.paid event received');
         console.log('🛒 Checkout ID:', checkoutData.id);
         console.log('💰 Amount:', checkout.amount);
+        console.log('📋 Full payload:', JSON.stringify(payload, null, 2));
         
-        // Extract metadata from the checkout
-        const billingId = checkout.metadata?.billing_id || payload.data.attributes?.metadata?.billing_id;
+        // Extract metadata from multiple possible locations in PayMongo webhook
+        let billingId = null;
+        if (checkout.metadata && checkout.metadata.billing_id) {
+          billingId = checkout.metadata.billing_id;
+        } else if (checkoutData.attributes && checkoutData.attributes.metadata && checkoutData.attributes.metadata.billing_id) {
+          billingId = checkoutData.attributes.metadata.billing_id;
+        } else if (payload.data && payload.data.attributes && payload.data.attributes.metadata && payload.data.attributes.metadata.billing_id) {
+          billingId = payload.data.attributes.metadata.billing_id;
+        } else if (checkoutData && checkoutData.metadata && checkoutData.metadata.billing_id) {
+          billingId = checkoutData.metadata.billing_id;
+        }
+        
+        // Try to get billing_id from paymongo_sessions table as fallback
+        if (!billingId && checkoutData.id) {
+          try {
+            const [sessionRows] = await db.query(`
+              SELECT stage_billing_id 
+              FROM paymongo_sessions 
+              WHERE session_id = ? 
+              ORDER BY created_at DESC 
+              LIMIT 1
+            `, [checkoutData.id]);
+            if (sessionRows && sessionRows.length > 0) {
+              billingId = sessionRows[0].stage_billing_id;
+              console.log('📋 Found billing_id from paymongo_sessions:', billingId);
+            }
+          } catch (sessionErr) {
+            console.warn('Could not query paymongo_sessions:', sessionErr.message);
+          }
+        }
+        
         const amountPaid = checkout.amount / 100; // Convert from centavos to pesos
+        
+        console.log('💳 Extracted billing_id:', billingId);
+        console.log('💳 Amount paid:', amountPaid);
         
         if (billingId) {
           try {
@@ -2056,7 +2170,7 @@ const ManufacturingController = {
             const existingPayments = await ManufacturingModel.getPaymentsByReference(checkoutData.id);
             
             if (existingPayments.length === 0) {
-              // Store payment record in database
+              // Store payment record in database (this will update status to Paid if amount matches)
               await ManufacturingModel.storePaymentRecord({
                 billingId: Number(billingId),
                 paymentMethod: 'paymongo',
@@ -2065,6 +2179,38 @@ const ManufacturingController = {
                 remarks: `PayMongo checkout payment completed - Checkout ID: ${checkoutData.id}`
               });
               
+              // Explicitly update status to 'Paid' in stage_billing_summary
+              // This ensures status is updated even if there are edge cases
+              try {
+                const [billingRows] = await db.query(`
+                  SELECT amount_due FROM stage_billing_summary WHERE id = ?
+                `, [Number(billingId)]);
+                
+                if (billingRows && billingRows.length > 0) {
+                  const amountDue = Number(billingRows[0].amount_due || 0);
+                  const totalPaid = await ManufacturingModel.getTotalPaidAmount(Number(billingId));
+                  
+                  // Update status to 'Paid' if payment amount matches or exceeds amount due
+                  if (totalPaid >= amountDue) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Paid in stage_billing_summary');
+                  } else if (totalPaid > 0) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Partially Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Partially Paid in stage_billing_summary');
+                  }
+                }
+              } catch (statusErr) {
+                console.error('❌ Error updating billing status:', statusErr);
+              }
+              
               console.log('✅ Payment record stored successfully in database');
             } else {
               console.log('⚠️ Payment already recorded in database');
@@ -2072,6 +2218,8 @@ const ManufacturingController = {
           } catch (dbError) {
             console.error('❌ Error storing payment record:', dbError);
           }
+        } else {
+          console.log('⚠️ No billing_id found in metadata, cannot process payment');
         }
       } 
       // Handle Link Payment events
@@ -2082,10 +2230,43 @@ const ManufacturingController = {
         console.log('✅ Link.payment.paid event received');
         console.log('🔗 Link ID:', linkData.id);
         console.log('💰 Amount:', link.amount);
+        console.log('📋 Full payload:', JSON.stringify(payload, null, 2));
         
-        // Extract metadata from the link
-        const billingId = link.metadata?.billing_id || payload.data.attributes?.metadata?.billing_id;
+        // Extract metadata from multiple possible locations in PayMongo webhook
+        let billingId = null;
+        if (link.metadata && link.metadata.billing_id) {
+          billingId = link.metadata.billing_id;
+        } else if (linkData.attributes && linkData.attributes.metadata && linkData.attributes.metadata.billing_id) {
+          billingId = linkData.attributes.metadata.billing_id;
+        } else if (payload.data && payload.data.attributes && payload.data.attributes.metadata && payload.data.attributes.metadata.billing_id) {
+          billingId = payload.data.attributes.metadata.billing_id;
+        } else if (linkData && linkData.metadata && linkData.metadata.billing_id) {
+          billingId = linkData.metadata.billing_id;
+        }
+        
+        // Try to get billing_id from paymongo_sessions table as fallback
+        if (!billingId && linkData.id) {
+          try {
+            const [sessionRows] = await db.query(`
+              SELECT stage_billing_id 
+              FROM paymongo_sessions 
+              WHERE session_id = ? 
+              ORDER BY created_at DESC 
+              LIMIT 1
+            `, [linkData.id]);
+            if (sessionRows && sessionRows.length > 0) {
+              billingId = sessionRows[0].stage_billing_id;
+              console.log('📋 Found billing_id from paymongo_sessions:', billingId);
+            }
+          } catch (sessionErr) {
+            console.warn('Could not query paymongo_sessions:', sessionErr.message);
+          }
+        }
+        
         const amountPaid = link.amount / 100; // Convert from centavos to pesos
+        
+        console.log('💳 Extracted billing_id:', billingId);
+        console.log('💳 Amount paid:', amountPaid);
         
         if (billingId) {
           try {
@@ -2093,7 +2274,7 @@ const ManufacturingController = {
             const existingPayments = await ManufacturingModel.getPaymentsByReference(linkData.id);
             
             if (existingPayments.length === 0) {
-              // Store payment record in database
+              // Store payment record in database (this will update status to Paid if amount matches)
               await ManufacturingModel.storePaymentRecord({
                 billingId: Number(billingId),
                 paymentMethod: 'paymongo',
@@ -2102,6 +2283,38 @@ const ManufacturingController = {
                 remarks: `PayMongo link payment completed - Link ID: ${linkData.id}`
               });
               
+              // Explicitly update status to 'Paid' in stage_billing_summary
+              // This ensures status is updated even if there are edge cases
+              try {
+                const [billingRows] = await db.query(`
+                  SELECT amount_due FROM stage_billing_summary WHERE id = ?
+                `, [Number(billingId)]);
+                
+                if (billingRows && billingRows.length > 0) {
+                  const amountDue = Number(billingRows[0].amount_due || 0);
+                  const totalPaid = await ManufacturingModel.getTotalPaidAmount(Number(billingId));
+                  
+                  // Update status to 'Paid' if payment amount matches or exceeds amount due
+                  if (totalPaid >= amountDue) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Paid in stage_billing_summary');
+                  } else if (totalPaid > 0) {
+                    await db.query(`
+                      UPDATE stage_billing_summary 
+                      SET billing_status = 'Partially Paid' 
+                      WHERE id = ?
+                    `, [Number(billingId)]);
+                    console.log('✅ Billing status updated to Partially Paid in stage_billing_summary');
+                  }
+                }
+              } catch (statusErr) {
+                console.error('❌ Error updating billing status:', statusErr);
+              }
+              
               console.log('✅ Payment record stored successfully in database');
             } else {
               console.log('⚠️ Payment already recorded in database');
@@ -2109,6 +2322,8 @@ const ManufacturingController = {
           } catch (dbError) {
             console.error('❌ Error storing payment record:', dbError);
           }
+        } else {
+          console.log('⚠️ No billing_id found in metadata, cannot process payment');
         }
       } else {
         console.log('ℹ️ Unhandled event type:', eventType);

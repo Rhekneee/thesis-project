@@ -13,18 +13,6 @@
     <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
 
-        /* Main content styles */
-        #content {
-            margin-left: 0;
-            transition: margin-left 0.3s;
-            padding: 20px;
-        }
-
-        /* Table and form styles */
-        .applicants-table {
-            margin-top: 20px;
-        }
-
         .applicants-table th, .applicants-table td {
             text-align: center;
         }
@@ -99,6 +87,198 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            margin-right: 0;
+            left: 0;
+            right: auto;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        /* Table and form styles */
+        .applicants-table {
+            margin-top: 20px;
+            width: 100%;
+            table-layout: auto;
+            max-width: 100%;
+        }
+
+        /* Ensure table container respects content width */
+        #content > * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Slide Panel Styles */
+        .slide-panel-overlay {
+            display: none; /* Hide overlay - not needed for push effect */
+        }
+
+        .slide-panel {
+            position: fixed;
+            top: 60px; /* Start below the top bar */
+            right: -360px;
+            width: 360px;
+            height: calc(100vh - 60px); /* Full height minus top bar */
+            background-color: #fff;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1050;
+            overflow-y: auto;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+        }
+
+        .slide-panel.show {
+            right: 0;
+        }
+
+        .slide-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .slide-panel-header h4 {
+            margin: 0;
+            color: #333;
+        }
+
+        .slide-panel-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide-panel-close:hover {
+            color: #000;
+        }
+
+        .slide-panel-body {
+            padding: 0;
+        }
+
+        .slide-panel-details {
+            margin-bottom: 25px;
+        }
+
+        .slide-panel-details p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .slide-panel-details strong {
+            color: #495057;
+            display: inline-block;
+            min-width: 140px;
+        }
+
+        .slide-panel-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .slide-panel-actions .btn {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+
+        .btn-hire {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .btn-hire:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            color: white;
+        }
+
+        .btn-reject {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+            color: white;
+        }
+
+        .slide-panel-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .slide-panel-notice i {
+            color: #007bff;
+            margin-right: 8px;
+        }
+
+        /* Make table rows clickable */
+        .applicants-table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .applicants-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Adjust content when panel is open */
+        .content-with-panel {
+            right: 360px !important;
+            left: 0 !important;
+            width: auto !important;
+            max-width: none !important;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Ensure table doesn't overflow when panel is open */
+        .content-with-panel .applicants-table {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .content-with-panel .table {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        /* Ensure all direct children respect container width */
+        .content-with-panel > * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
         }
     </style>
 </head>
@@ -298,7 +478,6 @@
                         <th onclick="sortTable(6)">Phone <i class="fas fa-sort sort-icon" id="sortContactNumber"></i></th>
                         <th>Resume</th>
                         <th>Status</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="applicantsList"></tbody>
@@ -309,6 +488,29 @@
                 <nav>
                     <ul class="pagination" id="paginationControls"></ul>
                 </nav>
+            </div>
+
+            <!-- Slide Panel for Applicant Details -->
+            <div class="slide-panel-overlay" id="slidePanelOverlay"></div>
+            <div class="slide-panel" id="slidePanel">
+                <div class="slide-panel-header">
+                    <h4>Applicant Details</h4>
+                    <button class="slide-panel-close" id="closeSlidePanel" onclick="closeSlidePanel()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="slide-panel-body">
+                    <div class="slide-panel-details" id="slidePanelDetails">
+                        <!-- Applicant details will be inserted here -->
+                    </div>
+                    <div class="slide-panel-actions" id="slidePanelActions">
+                        <!-- Action buttons will be inserted here -->
+                    </div>
+                    <div class="slide-panel-notice">
+                        <i class="fas fa-info-circle"></i>
+                        Approval or rejection will be sent to the applicant's provided email address.
+                    </div>
+                </div>
             </div>
 
             <!-- View Applicant Details Modal -->
@@ -455,6 +657,12 @@
     
             currentApplicants.forEach(applicant => {
                 const row = document.createElement('tr');
+                row.onclick = (e) => {
+                    // Don't trigger if clicking on a link or button
+                    if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                        viewApplicantDetails(applicant.id);
+                    }
+                };
                 row.innerHTML = `
                     <td>${applicant.full_name || 'N/A'}</td>
                     <td>${applicant.middleinitial || 'N/A'}</td>
@@ -462,14 +670,11 @@
                     <td>${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</td>
                     <td>${applicant.email || 'N/A'}</td>
                     <td>${applicant.phone || 'N/A'}</td>
-                    <td> ${applicant.resume ? 
+                    <td>${applicant.resume ? 
                     `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` : 
                     'N/A'}
                     </td>
-                    <td>${applicant.status || 'Pending'}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="viewApplicantDetails(${applicant.id})">View</button>
-                    </td>
+                    <td>${applicant.status === 'Ready for Interview' ? 'Ready for Interview' : applicant.status || 'Pending'}</td>
                 `;
                 applicantsList.appendChild(row);
             });
@@ -483,42 +688,68 @@
             alert('Viewing Resume: ' + resumeFile);
         }
     
-        // View Applicant Details
+        // View Applicant Details - Show in Slide Panel
         function viewApplicantDetails(applicantId) {
             currentApplicantId = applicantId;
             const applicant = applicants.find(applicant => applicant.id === applicantId);
             
             if (applicant) {
                 const applicantDetails = `
-                <p><strong>Full Name:</strong> ${applicant.full_name || 'N/A'}</p>
-                <p><strong>Middle Initial:</strong> ${applicant.middleinitial || 'N/A'}</p>
-                <p><strong>Age:</strong> ${applicant.age || 'N/A'}</p>
-                <p><strong>Birthdate:</strong> ${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</p>
-                <p><strong>Email:</strong> ${applicant.email || 'N/A'}</p>
-                <p><strong>Phone:</strong> ${applicant.phone || 'N/A'}</p>
-                <p><strong>Status:</strong> ${applicant.status || 'Pending'}</p>
-                <p><strong>Resume:</strong> ${
-                    applicant.resume 
-                        ? `<a href="/uploads/resume/${applicant.resume}" target="_blank">View Resume</a>` 
-                        : 'N/A'
-                }</p>
-            `;
+                    <p><strong>Full Name:</strong> ${applicant.full_name || 'N/A'}</p>
+                    <p><strong>Middle Initial:</strong> ${applicant.middleinitial || 'N/A'}</p>
+                    <p><strong>Age:</strong> ${applicant.age || 'N/A'}</p>
+                    <p><strong>Birthdate:</strong> ${applicant.birthdate ? new Date(applicant.birthdate).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Email:</strong> ${applicant.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${applicant.phone || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-${applicant.status === 'Pending' ? 'warning' : applicant.status === 'Rejected' ? 'danger' : 'success'}">${applicant.status || 'Pending'}</span></p>
+                    ${applicant.resume ? `<p><strong>Resume:</strong> <a href="/uploads/resume/${applicant.resume}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i> View Resume</a></p>` : ''}
+                `;
 
-                document.getElementById('applicantDetails').innerHTML = applicantDetails;
+                document.getElementById('slidePanelDetails').innerHTML = applicantDetails;
                 
-                // Show or hide Reject and Schedule Interview buttons based on status
-                if (applicant.status === 'Pending') {
-                    document.getElementById('applicantActions').style.display = 'block';
+                // Show or hide Reject and Hire buttons based on status
+                let actionButtons = '';
+                if (applicant.status === 'Ready for Interview' || applicant.status === 'Pending') {
+                    actionButtons = `
+                        <button class="btn btn-hire" onclick="hireApplicant()">
+                            <i class="fas fa-check-circle"></i> Hire
+                        </button>
+                        <button class="btn btn-reject" onclick="rejectApplicant()">
+                            <i class="fas fa-times-circle"></i> Reject
+                        </button>
+                    `;
                 } else {
-                    document.getElementById('applicantActions').style.display = 'none';
+                    actionButtons = `
+                        <p class="text-muted">No actions available for ${applicant.status} status.</p>
+                    `;
                 }
+                document.getElementById('slidePanelActions').innerHTML = actionButtons;
                 
-                $('#viewApplicantModal').modal('show');
+                // Show slide panel
+                openSlidePanel();
             }
         }
 
+        // Open Slide Panel
+        function openSlidePanel() {
+            const panel = document.getElementById('slidePanel');
+            const content = document.getElementById('content');
+            
+            panel.classList.add('show');
+            content.classList.add('content-with-panel');
+        }
+
+        // Close Slide Panel
+        function closeSlidePanel() {
+            const panel = document.getElementById('slidePanel');
+            const content = document.getElementById('content');
+            
+            panel.classList.remove('show');
+            content.classList.remove('content-with-panel');
+        }
+
         function rejectApplicant() {
-            $('#viewApplicantModal').modal('hide');
+            closeSlidePanel();
             // Clear previous remarks
             document.getElementById('rejectRemarks').value = '';
             $('#rejectModal').modal('show');
@@ -551,6 +782,7 @@
                     if (response.ok) {
                         $('#rejectModal').modal('hide');
                         $('#rejectSuccessModal').modal('show');
+                        closeSlidePanel(); // Ensure panel is closed
                         fetchApplicants(); // refresh list
                     } else {
                         const error = await response.json();
@@ -566,29 +798,31 @@
 
 
         // Hire Applicant
-
         async function hireApplicant() {
-    const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
-    if (applicant) {
-        try {
-            const response = await fetch('/hr/updateStatus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: applicant.id, status: 'Accepted' })
-            });
+            const applicant = applicants.find(applicant => applicant.id === currentApplicantId);
+            if (applicant) {
+                try {
+                    const response = await fetch('/hr/updateStatus', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: applicant.id, status: 'Accepted' })
+                    });
 
-            const result = await response.json();
-            alert(result.message);  // Optional
-            $('#viewApplicantModal').modal('hide');
-            $('#successModal').modal('show');
-            fetchApplicants();  // Reload updated list
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    }
-}        
+                    if (response.ok) {
+                        closeSlidePanel();
+                        $('#successModal').modal('show');
+                        fetchApplicants(); // Reload updated list
+                    } else {
+                        alert("Failed to hire applicant.");
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('An error occurred while hiring the applicant.');
+                }
+            }
+        }        
         // Delete applicant
         function confirmDelete(applicantId) {
             applicantToDelete = applicantId;

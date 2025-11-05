@@ -418,6 +418,20 @@
             <!-- ========== Employee Leave Request Content ========== -->
             <h2>Employee Leave Requests</h2>
 
+            <!-- Tabs for Active/Expired Requests -->
+            <ul class="nav nav-tabs mb-3" id="leaveRequestTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">Active Requests</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button" role="tab" aria-controls="expired" aria-selected="false">Expired Requests</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="leaveRequestTabsContent">
+                <!-- Active Requests Tab -->
+                <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
             <!-- Search Bar and Entries Per Page -->
             <div class="search-container">
                 <input type="text" id="searchBar" class="form-control" placeholder="Search leave requests..." onkeyup="filterLeaveRequests()">
@@ -461,6 +475,29 @@
             <nav>
                 <ul class="pagination" id="paginationControls"></ul>
             </nav>
+                </div>
+
+                <!-- Expired Requests Tab -->
+                <div class="tab-pane fade" id="expired" role="tabpanel" aria-labelledby="expired-tab">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">Employee Name <i class="fas fa-sort sort-icon" id="sortEmployeeName"></i></th>
+                                    <th onclick="sortTable(1)">Department <i class="fas fa-sort sort-icon" id="sortDepartment"></i></th>
+                                    <th onclick="sortTable(2)">Leave Type <i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
+                                    <th onclick="sortTable(3)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
+                                    <th onclick="sortTable(4)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
+                                    <th onclick="sortTable(5)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="expiredLeaveRequestsList">
+                                <!-- Expired leave requests will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -500,23 +537,45 @@
         let filteredLeaveRequests = null;
         let sortDirection = {};
 
+        // Check if a leave request is expired
+        function isExpired(request) {
+            if (!request.end_date) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const endDate = new Date(request.end_date);
+            endDate.setHours(0, 0, 0, 0);
+            
+            // A request is expired if:
+            // 1. The end_date has passed (endDate < today)
+            // 2. Status is pending or approved
+            return endDate < today && (request.status === 'pending' || request.status === 'approved');
+        }
+
         // Fetch leave requests from the server
         async function fetchLeaveRequests() {
             try {
                 const response = await fetch(`${API_URL}/all-leave-requests`);
                 if (!response.ok) throw new Error('Failed to fetch leave requests');
                 leaveRequests = await response.json();
-                renderLeaveRequests();
+                
+                // Separate active and expired requests
+                const expiredRequests = leaveRequests.filter(req => isExpired(req));
+                const activeRequests = leaveRequests.filter(req => !isExpired(req));
+                
+                renderLeaveRequests(activeRequests, 'leaveRequestsList');
+                renderExpiredLeaveRequests(expiredRequests, 'expiredLeaveRequestsList');
             } catch (error) {
                 console.error('Error fetching leave requests:', error);
                 document.getElementById('leaveRequestsList').innerHTML = 
-                    '<tr><td colspan="6" class="text-center">Error loading leave requests</td></tr>';
+                    '<tr><td colspan="7" class="text-center">Error loading leave requests</td></tr>';
+                document.getElementById('expiredLeaveRequestsList').innerHTML = 
+                    '<tr><td colspan="6" class="text-center">Error loading expired requests</td></tr>';
             }
         }
 
-        function renderLeaveRequests() {
-            const list = filteredLeaveRequests || leaveRequests;
-            const leaveRequestsList = document.getElementById('leaveRequestsList');
+        function renderLeaveRequests(requests, containerId) {
+            const list = filteredLeaveRequests || requests;
+            const leaveRequestsList = document.getElementById(containerId);
             leaveRequestsList.innerHTML = '';
 
             const start = (currentPage - 1) * itemsPerPage;
@@ -524,7 +583,7 @@
             const currentLeaveRequests = list.slice(start, end);
 
             if (currentLeaveRequests.length === 0) {
-                leaveRequestsList.innerHTML = '<tr><td colspan="6" class="text-center">No leave requests found</td></tr>';
+                leaveRequestsList.innerHTML = '<tr><td colspan="7" class="text-center">No leave requests found</td></tr>';
                 return;
             }
 
@@ -560,11 +619,37 @@
             updateEntriesMessage();
         }
 
+        function renderExpiredLeaveRequests(requests, containerId) {
+            const expiredList = document.getElementById(containerId);
+            if (!expiredList) return;
+            
+            expiredList.innerHTML = '';
+
+            if (requests.length === 0) {
+                expiredList.innerHTML = '<tr><td colspan="6" class="text-center">No expired leave requests found</td></tr>';
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${request.employee_name}</td>
+                    <td>${request.department_name}</td>
+                    <td>${request.leave_type_name}</td>
+                    <td>${formatDate(request.start_date)}</td>
+                    <td>${formatDate(request.end_date)}</td>
+                    <td><span class="badge bg-secondary">expired</span></td>
+                `;
+                expiredList.appendChild(row);
+            });
+        }
+
         function getStatusBadgeColor(status) {
             switch(status.toLowerCase()) {
                 case 'approved': return 'success';
                 case 'rejected': return 'danger';
                 case 'pending': return 'warning';
+                case 'expired': return 'secondary';
                 default: return 'secondary';
             }
         }
@@ -577,6 +662,11 @@
         function viewLeaveRequest(id) {
             const request = leaveRequests.find(req => req.id === id);
             if (request) {
+                // Check if request is expired
+                const expired = isExpired(request);
+                const displayStatus = expired ? 'expired' : request.status;
+                const statusBadgeColor = expired ? 'secondary' : getStatusBadgeColor(request.status);
+                
                 const leaveDetails = `
                     <div class="mb-3">
                         <h6>Employee Information</h6>
@@ -589,15 +679,15 @@
                         <p><strong>From:</strong> ${formatDate(request.start_date)}</p>
                         <p><strong>To:</strong> ${formatDate(request.end_date)}</p>
                         <p><strong>Total Days:</strong> ${request.total_days || 'N/A'}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        <p><strong>Status:</strong> <span class="badge bg-${statusBadgeColor}">${displayStatus}</span></p>
                         ${request.remarks ? `<p><strong>Remarks:</strong> ${request.remarks}</p>` : ''}
                     </div>
                 `;
                 document.getElementById('leaveDetails').innerHTML = leaveDetails;
 
-                // Show approval buttons only for pending requests
+                // Show approval buttons only for pending requests that are not expired
                 const approvalButtons = document.getElementById('approvalButtons');
-                if (request.status === 'pending') {
+                if (request.status === 'pending' && !expired) {
                     approvalButtons.innerHTML = `
                         <div class="btn-group w-100">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -648,7 +738,8 @@
         }
 
         function renderPagination() {
-            const list = filteredLeaveRequests || leaveRequests;
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
+            const list = filteredLeaveRequests || activeRequests;
             const paginationControls = document.getElementById('paginationControls');
             const totalPages = Math.ceil(list.length / itemsPerPage);
             paginationControls.innerHTML = '';
@@ -666,17 +757,20 @@
 
         function goToPage(page) {
             currentPage = page;
-            renderLeaveRequests();
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
+            renderLeaveRequests(activeRequests, 'leaveRequestsList');
         }
 
         function setEntriesPerPage() {
             itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
             currentPage = 1;
-            renderLeaveRequests();
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
+            renderLeaveRequests(activeRequests, 'leaveRequestsList');
         }
 
         function updateEntriesMessage() {
-            const list = filteredLeaveRequests || leaveRequests;
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
+            const list = filteredLeaveRequests || activeRequests;
             const start = (currentPage - 1) * itemsPerPage + 1;
             const end = Math.min(currentPage * itemsPerPage, list.length);
             const message = `Showing ${start} to ${end} of ${list.length} entries`;
@@ -685,9 +779,10 @@
 
         function filterLeaveRequests() {
             const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
 
             if (searchTerm) {
-                filteredLeaveRequests = leaveRequests.filter(request =>
+                filteredLeaveRequests = activeRequests.filter(request =>
                     request.employee_name.toLowerCase().includes(searchTerm) ||
                     request.leave_type_name.toLowerCase().includes(searchTerm) ||
                     request.status.toLowerCase().includes(searchTerm)
@@ -697,11 +792,12 @@
             }
 
             currentPage = 1;
-            renderLeaveRequests();
+            renderLeaveRequests(activeRequests, 'leaveRequestsList');
         }
 
         function sortTable(columnIndex) {
-            const list = filteredLeaveRequests || leaveRequests;
+            const activeRequests = leaveRequests.filter(req => !isExpired(req));
+            const list = filteredLeaveRequests || activeRequests;
             const columnNames = ['employee_name', 'leave_type_name', 'start_date', 'end_date', 'status'];
             const columnName = columnNames[columnIndex];
 
@@ -723,7 +819,7 @@
                 return 0;
             });
 
-            renderLeaveRequests();
+            renderLeaveRequests(list, 'leaveRequestsList');
         }
 
         // Initial load

@@ -441,8 +441,8 @@ const HRModel = {
         return rows.length > 0 ? rows[0] : null;
     },
 
-    // 🔹 Get all employees (filtered by is_deleted flag)
-    getAllEmployees: async (includeDeleted = true) => {
+    // 🔹 Get all employees (filtered by is_deleted flag, excluding Owner role and current logged-in user)
+    getAllEmployees: async (includeDeleted = true, excludeUserId = null) => {
         let query = `
             SELECT 
                 e.*, 
@@ -454,15 +454,22 @@ const HRModel = {
                 roles r ON e.role_id = r.id
             JOIN 
                 departments d ON r.department_id = d.id
+            WHERE r.name != 'Owner'
         `;
     
         // Add the filter condition if needed
         if (!includeDeleted) {
-            query += ` WHERE e.is_deleted = 0`; // Only active employees
+            query += ` AND e.is_deleted = 0`; // Only active employees
+        }
+
+        // Exclude the current logged-in user from the list
+        if (excludeUserId) {
+            query += ` AND e.user_id != ?`;
         }
 
         try {
-            const [employees] = await db.query(query);
+            const queryParams = excludeUserId ? [excludeUserId] : [];
+            const [employees] = await db.query(query, queryParams);
             return employees.map(employee => ({
                 ...employee,
                 birthday: employee.birthday
@@ -518,7 +525,7 @@ const HRModel = {
         }
     },
 
-    // 🔹 Get all permissions with salary and position information (excluding supplier and developer)
+    // 🔹 Get all permissions with salary and position information (excluding supplier, developer, and superadmin)
     getAllRoles: async () => {
         try {
             const query = `
@@ -533,6 +540,7 @@ const HRModel = {
                 WHERE r.name != 'Owner' 
                 AND r.name != 'Supplier' 
                 AND r.name != 'Developer'
+                AND LOWER(r.name) != 'superadmin'
                 ORDER BY r.name
             `;
     
@@ -1276,43 +1284,43 @@ const HRModel = {
                     CROSS JOIN (SELECT 0 AS a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) AS c
                     WHERE CURDATE() - INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY BETWEEN ? AND ?
                 ),
-                employee_dates AS (
-                    SELECT e.employee_id, d.date
-                    FROM employees e
-                    CROSS JOIN date_range d
-                    WHERE e.is_deleted = 0
-                )
-                SELECT 
-                    e.employee_id, 
-                    e.full_name, 
-                    e.role_id,
-                    r.name as position,
-                    COALESCE(p.salary, 0) AS monthly_salary,
-                    COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.total_hours ELSE 0 END), 0) AS total_hours, 
-                    COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.overtime_hours ELSE 0 END), 0) AS overtime_hours,
-                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Present', 'Late', 'Overtime') THEN DATE(a.date) END), 0) AS days_present,
-                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Half Day' THEN DATE(a.date) END), 0) AS days_half_day,
-                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Early Out' THEN DATE(a.date) END), 0) AS days_early_out,
-                    COALESCE(COUNT(DISTINCT CASE 
-                        WHEN ed.date BETWEEN ? AND ? 
-                        AND (a.status = 'Absent' OR a.status IS NULL) 
-                        AND ed.date NOT IN (
-                            SELECT date 
-                            FROM attendance 
-                            WHERE user_id = e.user_id 
-                            AND status IN ('Holiday', 'Rest Day', 'On Leave')
-                        )
-                        THEN ed.date 
-                    END), 0) AS days_absent,
-                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Holiday', 'Rest Day') THEN DATE(a.date) END), 0) AS days_holiday_rest,
-                    COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'On Leave' THEN DATE(a.date) END), 0) AS days_on_leave
+                            employee_dates AS (
+                SELECT e.employee_id, d.date
+                FROM employees e
+                CROSS JOIN date_range d
+                WHERE e.is_deleted = 0
+            )
+            SELECT 
+                e.employee_id, 
+                e.full_name, 
+                e.role_id,
+                r.name as position,
+                COALESCE(p.salary, 0) AS monthly_salary,
+                COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.total_hours ELSE 0 END), 0) AS total_hours, 
+                COALESCE(SUM(CASE WHEN a.date BETWEEN ? AND ? THEN a.overtime_hours ELSE 0 END), 0) AS overtime_hours,
+                COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Present', 'Late', 'Overtime') THEN DATE(a.date) END), 0) AS days_present,
+                COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Half Day' THEN DATE(a.date) END), 0) AS days_half_day,
+                COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'Early Out' THEN DATE(a.date) END), 0) AS days_early_out,
+                COALESCE(COUNT(DISTINCT CASE 
+                    WHEN ed.date BETWEEN ? AND ? 
+                    AND (a.status = 'Absent' OR a.status IS NULL) 
+                    AND ed.date NOT IN (
+                        SELECT date 
+                        FROM attendance 
+                        WHERE user_id = e.user_id 
+                        AND status IN ('Holiday', 'Rest Day', 'On Leave')
+                    )
+                    THEN ed.date 
+                END), 0) AS days_absent,
+                COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status IN ('Holiday', 'Rest Day') THEN DATE(a.date) END), 0) AS days_holiday_rest,
+                COALESCE(COUNT(DISTINCT CASE WHEN a.date BETWEEN ? AND ? AND a.status = 'On Leave' THEN DATE(a.date) END), 0) AS days_on_leave
                 FROM employees e
                 LEFT JOIN roles r ON e.role_id = r.id
                 LEFT JOIN positions p ON e.role_id = p.role_id 
                 LEFT JOIN attendance a ON e.user_id = a.user_id
                 LEFT JOIN employee_dates ed ON e.employee_id = ed.employee_id
                 WHERE e.is_deleted = 0
-                AND (r.name IS NULL OR LOWER(r.name) <> 'owner')
+                AND r.name != 'Owner'
                 GROUP BY e.employee_id, e.full_name, e.role_id, r.name, p.salary`;
 
             const params = [

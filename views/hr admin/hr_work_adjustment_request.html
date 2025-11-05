@@ -399,6 +399,20 @@
         <div id="content">
             <h2>Work Adjustment Requests</h2>
 
+            <!-- Tabs for Active/Expired Requests -->
+            <ul class="nav nav-tabs mb-3" id="workAdjustmentTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">Active Requests</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button" role="tab" aria-controls="expired" aria-selected="false">Expired Requests</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="workAdjustmentTabsContent">
+                <!-- Active Requests Tab -->
+                <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
             <!-- Search Bar and Entries Per Page -->
             <div class="search-container">
                 <input type="text" id="searchBar" class="form-control" placeholder="Search work adjustment requests..." onkeyup="filterRequests()">
@@ -443,6 +457,32 @@
                     </nav>
                 </div>
             </div>
+                </div>
+
+                <!-- Expired Requests Tab -->
+                <div class="tab-pane fade" id="expired" role="tabpanel" aria-labelledby="expired-tab">
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee Name</th>
+                                        <th>Department</th>
+                                        <th>Request Type</th>
+                                        <th>Date</th>
+                                        <th>Time Slot</th>
+                                        <th>Overtime Hours</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expiredRequestsList">
+                                    <!-- Expired requests will be dynamically inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -482,6 +522,20 @@
         let filteredRequests = null;
         let sortDirection = {};
 
+        // Check if a work adjustment request is expired
+        function isExpired(request) {
+            if (!request.request_date) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const requestDate = new Date(request.request_date);
+            requestDate.setHours(0, 0, 0, 0);
+            
+            // A request is expired if:
+            // 1. The request_date has passed (requestDate < today)
+            // 2. Status is pending or approved
+            return requestDate < today && (request.status === 'pending' || request.status === 'approved');
+        }
+
         // Fetch work adjustment requests
         async function fetchRequests() {
             try {
@@ -490,7 +544,12 @@
                 
                 requests = await response.json();
                 if (Array.isArray(requests)) {
-                    renderRequests();
+                    // Separate active and expired requests
+                    const expiredRequests = requests.filter(req => isExpired(req));
+                    const activeRequests = requests.filter(req => !isExpired(req));
+                    
+                    renderRequests(activeRequests);
+                    renderExpiredRequests(expiredRequests);
                 } else {
                     console.error('Invalid response format:', requests);
                     document.getElementById('requestsList').innerHTML = 
@@ -507,19 +566,19 @@
             }
         }
 
-        function renderRequests() {
-            const list = filteredRequests || requests;
-            const requestsList = document.getElementById('requestsList');
-            if (!requestsList) return;
+        function renderRequests(requestsList) {
+            const list = filteredRequests || requestsList;
+            const requestsListElement = document.getElementById('requestsList');
+            if (!requestsListElement) return;
 
-            requestsList.innerHTML = '';
+            requestsListElement.innerHTML = '';
 
             const start = (currentPage - 1) * itemsPerPage;
             const end = currentPage * itemsPerPage;
             const currentRequests = list.slice(start, end);
 
             if (currentRequests.length === 0) {
-                requestsList.innerHTML = '<tr><td colspan="8" class="text-center">No work adjustment requests found</td></tr>';
+                requestsListElement.innerHTML = '<tr><td colspan="8" class="text-center">No work adjustment requests found</td></tr>';
                 updateEntriesMessage();
                 return;
             }
@@ -561,11 +620,48 @@
                         </div>
                     </td>
                 `;
-                requestsList.appendChild(row);
+                requestsListElement.appendChild(row);
             });
 
             renderPagination();
             updateEntriesMessage();
+        }
+
+        function renderExpiredRequests(requests) {
+            const expiredList = document.getElementById('expiredRequestsList');
+            if (!expiredList) return;
+            
+            expiredList.innerHTML = '';
+
+            if (requests.length === 0) {
+                expiredList.innerHTML = '<tr><td colspan="7" class="text-center">No expired work adjustment requests found</td></tr>';
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                // Format time slot based on request type
+                const timeSlot = request.request_type === 'halfday' 
+                    ? (request.time_slot === 'morning' ? '9:00 AM - 12:00 PM' : 
+                       request.time_slot === 'afternoon' ? '1:00 PM - 6:00 PM' : '-')
+                    : '-';
+                
+                // Format overtime hours
+                const overtimeHours = request.request_type === 'overtime' 
+                    ? `${request.overtime_hours} hours`
+                    : '-';
+
+                row.innerHTML = `
+                    <td>${request.employee_name}</td>
+                    <td>${request.department_name || 'N/A'}</td>
+                    <td>${request.request_type === 'halfday' ? 'Half Day' : 'Overtime'}</td>
+                    <td>${formatDate(request.request_date)}</td>
+                    <td>${timeSlot}</td>
+                    <td>${overtimeHours}</td>
+                    <td><span class="badge bg-secondary">expired</span></td>
+                `;
+                expiredList.appendChild(row);
+            });
         }
 
         function getStatusBadgeColor(status) {
@@ -574,6 +670,7 @@
                 case 'rejected': return 'danger';
                 case 'pending': return 'warning';
                 case 'cancelled': return 'secondary';
+                case 'expired': return 'secondary';
                 default: return 'secondary';
             }
         }
@@ -586,6 +683,11 @@
         function viewRequest(id) {
             const request = requests.find(req => req.id === id);
             if (request) {
+                // Check if request is expired
+                const expired = isExpired(request);
+                const displayStatus = expired ? 'expired' : request.status;
+                const statusBadgeColor = expired ? 'secondary' : getStatusBadgeColor(request.status);
+                
                 // Format time slot for display
                 const timeSlot = request.request_type === 'halfday' 
                     ? (request.time_slot === 'morning' ? '9:00 AM - 12:00 PM' : 
@@ -610,15 +712,15 @@
                         <p><strong>Date:</strong> ${formatDate(request.request_date)}</p>
                         <p><strong>Time Slot:</strong> ${timeSlot}</p>
                         <p><strong>Overtime Hours:</strong> ${overtimeHours}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status}</span></p>
+                        <p><strong>Status:</strong> <span class="badge bg-${statusBadgeColor}">${displayStatus}</span></p>
                         ${request.remarks ? `<p><strong>Remarks:</strong> ${request.remarks}</p>` : ''}
                     </div>
                 `;
                 document.getElementById('requestDetails').innerHTML = requestDetails;
 
-                // Show approval buttons only for pending requests
+                // Show approval buttons only for pending requests that are not expired
                 const approvalButtons = document.getElementById('approvalButtons');
-                if (request.status === 'pending') {
+                if (request.status === 'pending' && !expired) {
                     approvalButtons.innerHTML = `
                         <div class="btn-group w-100">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -669,7 +771,8 @@
         }
 
         function renderPagination() {
-            const list = filteredRequests || requests;
+            const activeRequests = requests.filter(req => !isExpired(req));
+            const list = filteredRequests || activeRequests;
             const paginationControls = document.getElementById('paginationControls');
             const totalPages = Math.ceil(list.length / itemsPerPage);
             paginationControls.innerHTML = '';
@@ -687,17 +790,20 @@
 
         function goToPage(page) {
             currentPage = page;
-            renderRequests();
+            const activeRequests = requests.filter(req => !isExpired(req));
+            renderRequests(activeRequests);
         }
 
         function setEntriesPerPage() {
             itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
             currentPage = 1;
-            renderRequests();
+            const activeRequests = requests.filter(req => !isExpired(req));
+            renderRequests(activeRequests);
         }
 
         function updateEntriesMessage() {
-            const list = filteredRequests || requests;
+            const activeRequests = requests.filter(req => !isExpired(req));
+            const list = filteredRequests || activeRequests;
             const start = (currentPage - 1) * itemsPerPage + 1;
             const end = Math.min(currentPage * itemsPerPage, list.length);
             const total = list.length;
@@ -714,9 +820,10 @@
 
         function filterRequests() {
             const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+            const activeRequests = requests.filter(req => !isExpired(req));
 
             if (searchTerm) {
-                filteredRequests = requests.filter(request =>
+                filteredRequests = activeRequests.filter(request =>
                     request.employee_name.toLowerCase().includes(searchTerm) ||
                     request.department_name?.toLowerCase().includes(searchTerm) ||
                     request.request_type.toLowerCase().includes(searchTerm) ||
@@ -727,11 +834,12 @@
             }
 
             currentPage = 1;
-            renderRequests();
+            renderRequests(activeRequests);
         }
 
         function sortTable(columnIndex) {
-            const list = filteredRequests || requests;
+            const activeRequests = requests.filter(req => !isExpired(req));
+            const list = filteredRequests || activeRequests;
             const columnNames = ['employee_name', 'department_name', 'request_type', 'request_date', 'time_slot', 'overtime_hours', 'status'];
             const columnName = columnNames[columnIndex];
 
@@ -753,7 +861,7 @@
                 return 0;
             });
 
-            renderRequests();
+            renderRequests(list);
         }
 
         // Initial load
