@@ -625,14 +625,16 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            // Set current date
-            const today = new Date().toLocaleDateString('en-US', {
+            // Set current date in local timezone
+            const today = new Date();
+            const options = {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
-            });
-            document.getElementById('currentDate').textContent = today;
+                day: 'numeric',
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Use local timezone
+            };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', options);
 
             // Load today's attendance records
             loadTodayAttendance();
@@ -782,8 +784,6 @@
             isProcessingQR = true;
             
             try {
-                showAlert('Processing QR code...', 'info');
-                
                 // Extract the unique code from QR data
                 let uniqueCode = qrData;
                 
@@ -813,8 +813,13 @@
                 if (result.success) {
                     currentWorker = result.worker;
                     showWorkerDetails(result.worker, result.todayAttendance);
+                    // Reset processing flag after successfully showing worker details
+                    // This allows the scanner to continue and allows re-scanning if needed
+                    setTimeout(() => {
+                        isProcessingQR = false;
+                    }, 500);
                 } else {
-                    showAlert(result.error || 'Failed to process QR code', 'danger');
+                    showAlert(result.error || 'Unknown QR code or failed to process', 'danger');
                     // Reset processing flag after a delay to allow retry
                     setTimeout(() => {
                         isProcessingQR = false;
@@ -824,9 +829,7 @@
                 console.error('Error processing QR code:', error);
                 showAlert('Failed to process QR code', 'danger');
                 // Reset processing flag after error
-                setTimeout(() => {
-                    isProcessingQR = false;
-                }, 1000);
+                isProcessingQR = false;
             }
         }
 
@@ -919,11 +922,11 @@
                     showAlert('Time in recorded successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
                     loadTodayAttendance(); // Refresh attendance records
-                    // Reset processing flag so scanner can continue
+                    // Reset all scanner state to allow immediate re-scanning
                     isProcessingQR = false;
-                    // Clear last scanned code to allow re-scanning same worker
                     lastScannedCode = null;
                     lastScanTime = 0;
+                    currentWorker = null;
                 } else {
                     showAlert(result.error || 'Failed to record time in', 'danger');
                     // Reset processing flag after error
@@ -932,6 +935,8 @@
             } catch (error) {
                 console.error('Error recording time in:', error);
                 showAlert('Failed to record time in', 'danger');
+                // Reset processing flag after error
+                isProcessingQR = false;
             }
         }
 
@@ -956,11 +961,11 @@
                     showAlert('Time out recorded successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
                     loadTodayAttendance(); // Refresh attendance records
-                    // Reset processing flag so scanner can continue
+                    // Reset all scanner state to allow immediate re-scanning
                     isProcessingQR = false;
-                    // Clear last scanned code to allow re-scanning same worker
                     lastScannedCode = null;
                     lastScanTime = 0;
+                    currentWorker = null;
                 } else {
                     showAlert(result.error || 'Failed to record time out', 'danger');
                     // Reset processing flag after error
@@ -969,14 +974,25 @@
             } catch (error) {
                 console.error('Error recording time out:', error);
                 showAlert('Failed to record time out', 'danger');
+                // Reset processing flag after error
+                isProcessingQR = false;
             }
+        }
+
+        // Get today's date in local timezone (YYYY-MM-DD format)
+        function getTodayDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         // Load today's attendance records
         async function loadTodayAttendance() {
             try {
                 // Get all attendance records for today (not filtered by project)
-                const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+                const today = getTodayDate(); // Use local timezone date
                 const response = await fetch(`/manufacturing/attendance/today?date=${today}`);
                 const result = await response.json();
                 
@@ -1039,9 +1055,13 @@
             });
         }
 
-        // Show alert message
+        // Show alert message (replaces existing alerts)
         function showAlert(message, type) {
             const alertContainer = document.getElementById('alert-container');
+            
+            // Clear any existing alerts first
+            alertContainer.innerHTML = '';
+            
             const alertId = 'alert-' + Date.now();
             
             const alertHtml = `
@@ -1065,7 +1085,10 @@
         // Reset scanner state when modal is closed
         function resetScannerState() {
             isProcessingQR = false;
-            // Don't reset lastScannedCode here - allow it to prevent immediate duplicate scans
+            // Clear last scanned code when modal closes to allow re-scanning
+            lastScannedCode = null;
+            lastScanTime = 0;
+            currentWorker = null;
         }
 
         // Clean up when page unloads

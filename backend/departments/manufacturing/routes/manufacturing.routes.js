@@ -93,8 +93,11 @@ router.get('/developers/:developerId/completed-projects', ManufacturingControlle
 router.post('/save-division-progress', divisionProgressUpload.single('picture'), ManufacturingController.saveDivisionProgress);
 router.post('/save-daily-log-progress', ManufacturingController.saveDailyLogProgress);
 router.get('/daily-logs/:projectId', ManufacturingController.getDailyLogsProgress);
+router.get('/unbilled-date-range/:projectId', ManufacturingController.getUnbilledDateRange);
 router.get('/project-materials/:projectId', ManufacturingController.getProjectMaterialsProgress);
 router.get('/project-material-releases/:projectId', ManufacturingController.getProjectMaterialReleases);
+// Monitoring table for used supply (INTENDED: For Requested Materials section)
+router.get('/monitoring-table/:projectId', ManufacturingController.getMonitoringTableForUsedSupply);
 router.get('/division-progress/:projectId', ManufacturingController.getDivisionProgressByProject);
 router.put('/division-progress/:entryId', divisionProgressUpload.single('picture'), ManufacturingController.updateDivisionProgress);
 // Owner supply materials for request form (by proposal)
@@ -104,6 +107,7 @@ router.get('/project-tracking/:projectId', ManufacturingController.getProjectTra
 // Stage billing summary
 router.post('/stage-billing', ManufacturingController.createStageBilling);
 router.get('/stage-billing/labor-cost/:projectId', ManufacturingController.getLaborCostForRange);
+router.get('/stage-billing/labor-cost-breakdown/:projectId', ManufacturingController.getLaborCostBreakdownByRole);
 router.get('/stage-billings/:projectId', ManufacturingController.getStageBillingsByProject);
 router.get('/stage-billing/detail/:billingId', ManufacturingController.getStageBillingDetail);
 

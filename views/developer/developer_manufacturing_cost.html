@@ -1082,45 +1082,243 @@
                 if (!data || !data.success || !data.detail) { showWarningMessage('No detail found.'); return; }
                 const { base, materials, materials_total, labor_total } = data.detail;
                 
-                // Store billing detail for payment (add amount_due to base)
-                const amountDue = (materials_total || 0) + (labor_total || 0);
-                currentBillingDetail = { base: { ...base, amount_due: amountDue }, materials, materials_total, labor_total };
+                // Fetch project details
+                let projectInfo = null;
+                try {
+                    const projectResp = await fetch(`/manufacturing/projects-for-progress`);
+                    const projectData = await projectResp.json();
+                    if (projectData.success && Array.isArray(projectData.projects)) {
+                        projectInfo = projectData.projects.find(p => p.id === base.project_id);
+                    }
+                } catch (e) {
+                    console.error('Error fetching project info:', e);
+                }
                 
-                // Show billing details in dynamic modal
-                showBillingDetailsInModal(base, materials, materials_total, labor_total);
+                // Fetch labor breakdown by role
+                let laborBreakdown = [];
+                try {
+                    const laborResp = await fetch(`/manufacturing/stage-billing/labor-cost-breakdown/${base.project_id}?start_date=${encodeURIComponent(base.start_date)}&end_date=${encodeURIComponent(base.end_date)}`);
+                    const laborData = await laborResp.json();
+                    if (laborData && laborData.success && Array.isArray(laborData.breakdown)) {
+                        laborBreakdown = laborData.breakdown;
+                    }
+                } catch (e) {
+                    console.error('Error fetching labor breakdown:', e);
+                }
+                
+                // Use DB-stored totals when available; fallback to recomputed
+                const matTotalDisplay = (base.total_material_cost !== undefined && base.total_material_cost !== null)
+                    ? Number(base.total_material_cost || 0) : Number(materials_total || 0);
+                const laborTotalDisplay = (base.total_labor_cost !== undefined && base.total_labor_cost !== null)
+                    ? Number(base.total_labor_cost || 0) : Number(labor_total || 0);
+                const amountDueDisplay = (base.amount_due !== undefined && base.amount_due !== null)
+                    ? Number(base.amount_due || 0) : (matTotalDisplay + laborTotalDisplay);
+                
+                // Store billing detail for payment using DB amount due prioritization
+                currentBillingDetail = { base: { ...base, amount_due: amountDueDisplay }, materials, materials_total: matTotalDisplay, labor_total: laborTotalDisplay, projectInfo, laborBreakdown };
+                
+                // Show billing details in dynamic modal (pass display totals)
+                showBillingDetailsInModal({ ...base, amount_due: amountDueDisplay }, materials, matTotalDisplay, laborTotalDisplay, projectInfo, laborBreakdown);
             } catch (e) {
                 showWarningMessage('Failed to load billing detail.');
             }
         }
 
-        // Show billing details in dynamic modal
-        function showBillingDetailsInModal(base, materials, materials_total, labor_total) {
+        // Format date nicely
+        function formatDateNice(iso) {
+            const d = new Date(iso);
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+        }
+
+        // Escape HTML
+        function escapeHtml(str) {
+            return (str || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        }
+
+        // Show billing details in dynamic modal - Professional Document Layout
+        function showBillingDetailsInModal(base, materials, materials_total, labor_total, projectInfo, laborBreakdown) {
             // Restore modal-xl size for billing details
             const modalDialog = document.getElementById('dynamicModalDialog');
             modalDialog.classList.add('modal-xl');
             
             const fmt = (n) => `₱${Number(n||0).toLocaleString()}`;
+            const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+            // Prefer DB amount_due if present in base
+            const grandTotal = (base && base.amount_due !== undefined && base.amount_due !== null)
+                ? Number(base.amount_due || 0)
+                : (Number(materials_total || 0) + Number(labor_total || 0));
+            
+            // Professional Document Layout
             let html = '';
-            html += `<div class="mb-3"><strong>Billing No:</strong> ${base.billing_number} &nbsp;&nbsp; <strong>Division:</strong> ${base.division_name || '-'}</div>`;
-            html += `<div class="row g-3 mb-3">
-                <div class="col-md-3"><div class="small text-muted">Start Date</div><div>${base.start_date||''}</div></div>
-                <div class="col-md-3"><div class="small text-muted">End Date</div><div>${base.end_date||''}</div></div>
-                <div class="col-md-3"><div class="small text-muted">Progress %</div><div>${Number(base.progress_percent||0)}%</div></div>
-                <div class="col-md-3"><div class="small text-muted">Status</div><div>${base.billing_status||''}</div></div>
-            </div>`;
-            html += `<div class="table-responsive mb-3">
-                <table class="table table-sm table-bordered">
-                    <thead class="table-light"><tr><th>Date</th><th>Division</th><th>Material</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Subtotal</th></tr></thead>
-                    <tbody>
-                    ${ (materials||[]).map(m => `<tr><td>${m.date||''}</td><td>${m.division_name||''}</td><td>${m.name||''}</td><td class='text-end'>${Number(m.quantity||0)}</td><td class='text-end'>${fmt(m.unit_price)}</td><td class='text-end'>${fmt(m.subtotal)}</td></tr>`).join('') || `<tr><td colspan='6' class='text-center text-muted'>No materials</td></tr>` }
-                    </tbody>
-                    <tfoot>
-                      <tr><th colspan="5" class="text-end">Materials Total</th><th class="text-end">${fmt(materials_total)}</th></tr>
-                      <tr><th colspan="5" class="text-end">Labor Total</th><th class="text-end">${fmt(labor_total)}</th></tr>
-                      <tr><th colspan="5" class="text-end">Amount Due</th><th class="text-end">${fmt((materials_total||0) + (labor_total||0))}</th></tr>
-                    </tfoot>
-                </table>
-            </div>`;
+            html += `<div style="background: white; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 210mm; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1);">`;
+            
+            // Header Section
+            html += `<div style="border-bottom: 3px solid #0d6efd; padding-bottom: 20px; margin-bottom: 30px;">`;
+            html += `<div style="text-align: center; margin-bottom: 20px;">`;
+            html += `<h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 700;">STAGE BILLING STATEMENT</h1>`;
+            html += `<p style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px;">MDB Construction Company</p>`;
+            html += `</div>`;
+            
+            // Progress check if available
+            if (base.progress_percent !== undefined || base.overall_project_progress !== undefined) {
+                html += `<div style="max-width: 210mm; margin: 10px auto 20px auto;">`;
+                html += `<div style="background: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #0d6efd; border-radius: 4px; padding: 10px 12px; color: #495057; font-size: 13px;">`;
+                html += `<strong>Progress Check:</strong> ${escapeHtml(base.division_name || 'Division')} = ${Number(base.progress_percent || 0)}%`;
+                if (base.overall_project_progress !== undefined) {
+                    html += ` &nbsp; | &nbsp; Overall = ${Number(base.overall_project_progress || 0)}%`;
+                }
+                html += `</div>`;
+                html += `</div>`;
+            }
+            
+            html += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">`;
+            html += `<div>`;
+            if (projectInfo) {
+                html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Project:</strong> ${escapeHtml(projectInfo.name || 'N/A')}</p>`;
+                html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Location:</strong> ${escapeHtml(projectInfo.location || 'N/A')}</p>`;
+            }
+            html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Division:</strong> ${escapeHtml(base.division_name || '-')}</p>`;
+            html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Billing No:</strong> ${escapeHtml(base.billing_number || '-')}</p>`;
+            html += `</div>`;
+            html += `<div style="text-align: right;">`;
+            html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Billing Period:</strong></p>`;
+            html += `<p style="margin: 5px 0; font-size: 13px;">${formatDateNice(base.start_date)} - ${formatDateNice(base.end_date)}</p>`;
+            html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Date Generated:</strong> ${base.billing_date ? formatDateNice(base.billing_date) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>`;
+            html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Status:</strong> ${escapeHtml(base.billing_status || 'Generated')}</p>`;
+            html += `</div>`;
+            html += `</div>`;
+            html += `</div>`;
+            
+            if (!materials || materials.length === 0) {
+                html += '<div style="padding: 20px; text-align: center; color: #6c757d; border: 1px solid #dee2e6; border-radius: 5px; margin: 20px 0;">No materials found for this stage.</div>';
+            } else {
+                // Materials Section
+                html += `<div style="margin-bottom: 30px;">`;
+                html += `<h2 style="color: #212529; font-size: 20px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">MATERIALS USED</h2>`;
+                
+                // Group materials by date
+                const groups = new Map();
+                materials.forEach(m => {
+                    const key = String(m.date);
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key).push(m);
+                });
+                const orderedDates = Array.from(groups.keys()).sort((a,b)=> new Date(a) - new Date(b));
+                
+                orderedDates.forEach(dateKey => {
+                    const dayMaterials = groups.get(dateKey) || [];
+                    const dayCost = dayMaterials.reduce((s, m) => s + Number(m.subtotal || 0), 0);
+                    
+                    html += `<div style="margin-bottom: 25px;">`;
+                    html += `<h3 style="color: #495057; font-size: 16px; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-left: 4px solid #0d6efd;">${formatDateNice(dateKey)}</h3>`;
+                    
+                    if (dayMaterials.length) {
+                        html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">`;
+                        html += `<thead>`;
+                        html += `<tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">`;
+                        html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #495057;">Material</th>`;
+                        html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 100px;">Quantity</th>`;
+                        html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 130px;">Unit Price</th>`;
+                        html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 140px;">Subtotal</th>`;
+                        html += `</tr>`;
+                        html += `</thead>`;
+                        html += `<tbody>`;
+                        dayMaterials.forEach(m => {
+                            html += `<tr style="border-bottom: 1px solid #e9ecef;">`;
+                            html += `<td style="padding: 10px;">${escapeHtml(m.name || '')}</td>`;
+                            html += `<td style="padding: 10px; text-align: right;">${Number(m.quantity || 0).toLocaleString()}</td>`;
+                            html += `<td style="padding: 10px; text-align: right;">${formatter.format(Number(m.unit_price || 0))}</td>`;
+                            html += `<td style="padding: 10px; text-align: right; font-weight: 500;">${formatter.format(Number(m.subtotal || 0))}</td>`;
+                            html += `</tr>`;
+                        });
+                        html += `<tr style="background: #f8f9fa; font-weight: 600;">`;
+                        html += `<td colspan="3" style="padding: 12px; text-align: right;">Date Total:</td>`;
+                        html += `<td style="padding: 12px; text-align: right; color: #0d6efd;">${formatter.format(dayCost)}</td>`;
+                        html += `</tr>`;
+                        html += `</tbody>`;
+                        html += `</table>`;
+                    }
+                    html += `</div>`;
+                });
+                
+                html += `<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<span style="font-size: 15px; font-weight: 600; color: #495057;">Total Material Cost:</span>`;
+                html += `<span style="font-size: 18px; font-weight: 700; color: #0d6efd;">${formatter.format(materials_total)}</span>`;
+                html += `</div>`;
+                html += `</div>`;
+                html += `</div>`;
+            }
+            
+            // Labor Cost Section
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h2 style="color: #212529; font-size: 20px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">LABOR COST BREAKDOWN</h2>`;
+            
+            if (laborBreakdown && laborBreakdown.length > 0) {
+                html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">`;
+                html += `<thead>`;
+                html += `<tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">`;
+                html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #495057;">Role</th>`;
+                html += `<th style="padding: 12px; text-align: center; font-weight: 600; color: #495057; width: 120px;">Count</th>`;
+                html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 150px;">Basic Salary (Daily Rate)</th>`;
+                html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 150px;">Total</th>`;
+                html += `</tr>`;
+                html += `</thead>`;
+                html += `<tbody>`;
+                
+                laborBreakdown.forEach(item => {
+                    const roleTotal = item.count * item.basic_salary;
+                    html += `<tr style="border-bottom: 1px solid #e9ecef;">`;
+                    html += `<td style="padding: 10px; font-weight: 500;">${escapeHtml(item.role_name)}</td>`;
+                    html += `<td style="padding: 10px; text-align: center;">${item.count}</td>`;
+                    html += `<td style="padding: 10px; text-align: right;">${formatter.format(item.basic_salary)}</td>`;
+                    html += `<td style="padding: 10px; text-align: right; font-weight: 500;">${formatter.format(roleTotal)}</td>`;
+                    html += `</tr>`;
+                });
+                
+                html += `<tr style="background: #f8f9fa; font-weight: 600; border-top: 2px solid #dee2e6;">`;
+                html += `<td colspan="3" style="padding: 12px; text-align: right;">Total Labor Cost:</td>`;
+                html += `<td style="padding: 12px; text-align: right; color: #0d6efd; font-size: 16px;">${formatter.format(labor_total)}</td>`;
+                html += `</tr>`;
+                html += `</tbody>`;
+                html += `</table>`;
+            } else {
+                html += `<div style="padding: 15px; text-align: center; color: #6c757d; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 15px;">No labor records found for this period.</div>`;
+                html += `<div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<span style="font-size: 15px; font-weight: 600; color: #495057;">Total Labor Cost:</span>`;
+                html += `<span style="font-size: 18px; font-weight: 700; color: #0d6efd;">${formatter.format(labor_total)}</span>`;
+                html += `</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+            
+            // Summary Section
+            html += `<div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); border-radius: 8px; color: white;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">`;
+            html += `<span style="font-size: 18px; font-weight: 600;">Total Material Cost:</span>`;
+            html += `<span style="font-size: 18px; font-weight: 600;">${formatter.format(materials_total)}</span>`;
+            html += `</div>`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">`;
+            html += `<span style="font-size: 18px; font-weight: 600;">Total Labor Cost:</span>`;
+            html += `<span style="font-size: 18px; font-weight: 600;">${formatter.format(labor_total)}</span>`;
+            html += `</div>`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.3);">`;
+            html += `<span style="font-size: 24px; font-weight: 700;">GRAND TOTAL:</span>`;
+            html += `<span style="font-size: 24px; font-weight: 700;">${formatter.format(grandTotal)}</span>`;
+            html += `</div>`;
+            html += `</div>`;
+            
+            // Footer
+            html += `<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; color: #6c757d; font-size: 12px;">`;
+            html += `<p style="margin: 5px 0;">This is a computer-generated document.</p>`;
+            html += `<p style="margin: 5px 0;">For inquiries, please contact MDB Construction Company.</p>`;
+            html += `</div>`;
+            
+            html += `</div>`;
+            
+            // Store HTML for download function
+            currentBillingHtml = html;
             
             // Set modal content
             document.getElementById('dynamicModalTitle').innerHTML = '<i class="fas fa-list-alt me-2"></i>Stage Billing Detail';
@@ -1133,12 +1331,55 @@
                 : `<button type="button" class="btn btn-success" onclick="showPaymentFormInModal()"><i class="fas fa-credit-card me-2"></i>Pay Now</button>`;
             
             document.getElementById('dynamicModalFooter').innerHTML = `
+                <button type="button" class="btn btn-outline-primary" onclick="downloadBillingPDF()"><i class="fas fa-download me-2"></i>Download PDF</button>
                 ${payButtonHtml}
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
             
             // Show modal
             new bootstrap.Modal(document.getElementById('dynamicModal')).show();
+        }
+        
+        // Store current billing HTML for download
+        let currentBillingHtml = '';
+        
+        // Download billing as PDF
+        function downloadBillingPDF() {
+            if (!currentBillingHtml) {
+                showWarningMessage('No billing content available to download.');
+                return;
+            }
+            
+            // Create a new window with the billing content
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Stage Billing Statement</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            @page { margin: 1cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${currentBillingHtml}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            // Wait for content to load, then print/download
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
         }
 
         // Show payment form in the same dynamic modal

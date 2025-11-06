@@ -1,5 +1,16 @@
 const db = require("../../../db");
 
+// Helper function to get today's date in Asia/Manila timezone (YYYY-MM-DD format)
+function getTodayDateManila() {
+  const now = new Date();
+  // Convert to Asia/Manila timezone
+  const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  const year = manilaTime.getFullYear();
+  const month = String(manilaTime.getMonth() + 1).padStart(2, '0');
+  const day = String(manilaTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const ManufacturingModel = {
   // =============================================
   // DASHBOARD KPIs (Manufacturing) - Dedicated Endpoint
@@ -1562,7 +1573,7 @@ const ManufacturingModel = {
   // Check if worker already has attendance record for today
   checkTodayAttendance: async (workerId) => {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const today = getTodayDateManila(); // Use Manila timezone date
       const [rows] = await db.query(`
         SELECT * FROM attendance_construction 
         WHERE worker_id = ? AND attendance_date = ?
@@ -1577,7 +1588,7 @@ const ManufacturingModel = {
   // Record attendance (time in)
   recordTimeIn: async (workerId, projectId) => {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const today = getTodayDateManila(); // Use Manila timezone date
       const now = new Date();
       
       // Check if already has attendance record for today
@@ -1603,7 +1614,7 @@ const ManufacturingModel = {
   // Record attendance (time out)
   recordTimeOut: async (workerId) => {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const today = getTodayDateManila(); // Use Manila timezone date
       const now = new Date();
       
       const [result] = await db.query(`
@@ -1653,6 +1664,7 @@ const ManufacturingModel = {
           cw.middlename,
           cw.lastname,
           cr.role_name,
+          cr.daily_rate,
           p.project_name,
           CASE 
             WHEN ar.time_in IS NOT NULL AND ar.time_out IS NOT NULL THEN
@@ -1681,6 +1693,14 @@ const ManufacturingModel = {
       query += ` ORDER BY ar.attendance_date DESC, ar.time_in ASC`;
       
       const [rows] = await db.query(query, params);
+      
+      // Debug: Log workers with missing daily_rate
+      rows.forEach(row => {
+        if (!row.daily_rate || row.daily_rate === 0) {
+          console.warn(`⚠️ Worker ${row.firstname} ${row.lastname} (ID: ${row.worker_id}) has no daily_rate. Role: ${row.role_name || 'NO ROLE'}`);
+        }
+      });
+      
       return rows;
     } catch (error) {
       console.error('❌ Error getting project attendance records:', error);
@@ -1921,7 +1941,7 @@ const ManufacturingModel = {
   },
 
   // Save daily log entry (for manufacturing progress tracking)
-  saveDailyLogEntry: async (projectId, divisionName, logDate, description, materialsArray, totalMaterialCost, workersArray) => {
+  saveDailyLogEntry: async (projectId, divisionName, logDate, description, materialsArray, totalMaterialCost, totalLaborCost, workersArray) => {
     try {
       // Get division_id from division_master
       const [divisionRows] = await db.execute(`
@@ -1939,14 +1959,15 @@ const ManufacturingModel = {
       // Insert into daily_logs table
       const [result] = await db.execute(`
         INSERT INTO daily_logs (
-          project_id, division_id, log_date, description, material_used, quantity, total_material_cost
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [projectId, divisionId, logDate, description, materialUsed, quantity, totalMaterialCost]);
+          project_id, division_id, log_date, description, material_used, quantity, total_material_cost, labor_cost
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [projectId, divisionId, logDate, description, materialUsed, quantity, totalMaterialCost, totalLaborCost]);
       
       const logId = result.insertId;
       console.log(`✅ Daily log saved: ${description.substring(0, 30)}... (ID: ${logId})`);
       
       // Save workers to daily_log_workers table
+      let calculatedTotalLaborCost = 0;
       if (workersArray && workersArray.length > 0) {
         for (const worker of workersArray) {
           // Get worker's daily rate from construction_roles
@@ -1959,21 +1980,35 @@ const ManufacturingModel = {
           
           const dailyRate = roleRows.length > 0 ? Number(roleRows[0].daily_rate || 0) : 0;
           
-          // Calculate labor cost: (hours_worked * daily_rate / 8) + (overtime_hours * daily_rate / 8 * 1.25)
+          // Estimation cost is always the daily_rate (regardless of hours worked)
+          // This matches the frontend logic - estimation is based on daily_rate, not hours
           const regularHours = Number(worker.hoursWorked || 0);
           const otHours = Number(worker.overtimeHours || 0);
-          const hourlyRate = dailyRate / 8; // Assuming 8-hour day
-          const laborCost = (regularHours * hourlyRate) + (otHours * hourlyRate * 1.25);
           
-          // Insert into daily_log_workers
+          // Estimation cost = daily_rate (same as frontend)
+          const estimationCost = dailyRate;
+          
+          // Accumulate to total
+          calculatedTotalLaborCost += estimationCost;
+          
+          // Insert into daily_log_workers (still save individual worker data for reference)
           await db.execute(`
             INSERT INTO daily_log_workers (
               daily_log_id, worker_id, attendance_id, hours_worked, overtime_hours, labor_cost
             ) VALUES (?, ?, ?, ?, ?, ?)
-          `, [logId, worker.workerId, worker.attendanceId, regularHours, otHours, laborCost]);
+          `, [logId, worker.workerId, worker.attendanceId, regularHours, otHours, estimationCost]);
           
-          console.log(`✅ Worker ${worker.workerId} added to daily log with labor cost: ₱${laborCost.toFixed(2)}`);
+          console.log(`✅ Worker ${worker.workerId} added to daily log with estimation cost (daily_rate): ₱${estimationCost.toFixed(2)}`);
         }
+        
+        // Update daily_logs with calculated total (ensures consistency)
+        await db.execute(`
+          UPDATE daily_logs 
+          SET labor_cost = ?
+          WHERE id = ?
+        `, [calculatedTotalLaborCost, logId]);
+        
+        console.log(`✅ Total labor cost calculated and saved: ₱${calculatedTotalLaborCost.toFixed(2)}`);
       }
 
       // Reflect material usage into inventory tables (owner_supply and project_company_supplies)
@@ -1988,55 +2023,45 @@ const ManufacturingModel = {
             if (matId.startsWith('owner_')) {
               const supplyId = Number(matId.split('_')[1] || 0);
               if (supplyId > 0) {
-                // Increment quantity_used; optional: cap not beyond quantity_arrive
+                // Increment quantity_used and update quantity_requested (reduce available quantity)
+                // This ensures the dropdown automatically shows less available materials
                 await db.execute(`
                   UPDATE owners_supply
-                  SET quantity_used = COALESCE(quantity_used, 0) + ?
-                WHERE supply_id = ?
-                `, [usedQty, supplyId]);
+                  SET quantity_used = COALESCE(quantity_used, 0) + ?,
+                      quantity_requested = GREATEST(
+                        COALESCE(quantity_requested, 0) - ?,
+                        0
+                      )
+                  WHERE supply_id = ?
+                `, [usedQty, usedQty, supplyId]);
+                
+                console.log(`✅ Owner supply ${supplyId}: Used ${usedQty}, updated quantity_requested`);
               }
               continue;
             }
 
-            // Company-supply: id format 'release_<material_release_id>'
+            // Company-supply: id format 'release_<request_material_id>_<material_id>'
             if (matId.startsWith('release_')) {
-              const releaseId = Number(matId.split('_')[1] || 0);
-              if (releaseId > 0) {
-                // Get the corresponding request_material id and material_id
-                const [relRows] = await db.query(`
-                  SELECT mr.request_id, mr.material_id, mr.project_id
-                  FROM material_releases mr
-                  WHERE mr.id = ?
-                `, [releaseId]);
-                if (relRows && relRows.length) {
-                  const reqId = relRows[0].request_id;
-                  const materialId = relRows[0].material_id;
-                  const projId = relRows[0].project_id;
-
-                  // Update project_company_supplies usage; cap at quantity_supplied
-                  const [updRes] = await db.execute(`
+              const parts = matId.split('_');
+              if (parts.length >= 3) {
+                const reqId = Number(parts[1] || 0);
+                const materialId = Number(parts[2] || 0);
+                
+                if (reqId > 0 && materialId > 0) {
+                  // Subtract from quantity_supplied in project_company_supplies
+                  await db.execute(`
                     UPDATE project_company_supplies
-                    SET quantity_used = LEAST(COALESCE(quantity_used,0) + ?, COALESCE(quantity_supplied,0))
-                    WHERE request_material_id = ? AND material_id = ? AND project_id = ?
-                  `, [usedQty, reqId, materialId, projId]);
-
-                  // If no row exists (defensive), insert a minimal row with quantity_used
-                  if (!updRes || updRes.affectedRows === 0) {
-                    // Get quantities from request_material for a sane default
-                    const [rmRows] = await db.query(`
-                      SELECT COALESCE(quantity_supplied, quantity, 0) AS qty_supplied, COALESCE(quantity, 0) AS qty_requested, unit
-                      FROM request_material WHERE id = ?
-                    `, [reqId]);
-                    const qtySupplied = (rmRows && rmRows[0]) ? Number(rmRows[0].qty_supplied || 0) : 0;
-                    const qtyRequested = (rmRows && rmRows[0]) ? Number(rmRows[0].qty_requested || 0) : 0;
-                    const unit = (rmRows && rmRows[0]) ? rmRows[0].unit : null;
-                    await db.execute(`
-                      INSERT INTO project_company_supplies (
-                        request_material_id, project_id, material_id,
-                        quantity_requested, quantity_supplied, quantity_used, unit, status, requested_at
-                      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'released', NOW())
-                    `, [reqId, projId, materialId, qtyRequested, qtySupplied, Math.min(usedQty, qtySupplied), unit]);
-                  }
+                    SET quantity_supplied = GREATEST(
+                      COALESCE(quantity_supplied, 0) - ?,
+                      0
+                    ),
+                    quantity_used = COALESCE(quantity_used, 0) + ?
+                    WHERE request_material_id = ? 
+                      AND material_id = ? 
+                      AND project_id = ?
+                  `, [usedQty, usedQty, reqId, materialId, projectId]);
+                  
+                  console.log(`✅ Company supply updated: request_material_id=${reqId}, material_id=${materialId}, subtracted ${usedQty} from quantity_supplied`);
                 }
               }
             }
@@ -2053,6 +2078,36 @@ const ManufacturingModel = {
     }
   },
 
+  // Get date range for unbilled daily logs (is_billed = 0, billing_id IS NULL) for a specific division
+  getUnbilledDateRange: async (projectId, divisionName) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          MIN(dl.log_date) as start_date,
+          MAX(dl.log_date) as end_date
+        FROM daily_logs dl
+        JOIN division_master dm ON dl.division_id = dm.id
+        WHERE dl.project_id = ?
+          AND dm.division_name = ?
+          AND dl.is_billed = 0
+          AND (dl.billing_id IS NULL OR dl.billing_id = 0)
+        ORDER BY dl.log_date ASC
+      `, [projectId, divisionName]);
+      
+      if (rows && rows.length > 0 && rows[0].start_date && rows[0].end_date) {
+        return {
+          startDate: rows[0].start_date,
+          endDate: rows[0].end_date
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting unbilled date range:', error);
+      throw error;
+    }
+  },
+
   // Get daily logs for a project (for manufacturing progress tracking)
   getDailyLogsByProject: async (projectId) => {
     try {
@@ -2062,11 +2117,13 @@ const ManufacturingModel = {
           dl.project_id,
           dl.division_id,
           dm.division_name,
-          dl.log_date,
+          DATE_FORMAT(dl.log_date, '%Y-%m-%d') as log_date,
           dl.description,
           dl.material_used,
           dl.quantity,
           dl.total_material_cost,
+          dl.is_billed,
+          dl.billing_id,
           dl.created_at
         FROM daily_logs dl
         JOIN division_master dm ON dl.division_id = dm.id
@@ -2138,34 +2195,52 @@ const ManufacturingModel = {
         }
       }
       
-      // Step 2: Get company supply materials; quantity figures sourced from project_company_supplies when available
+      // Step 2: Get company supply materials directly from project_company_supplies table
+      // Use quantity_supplied as the available quantity
+      
+      // Debug: Check what's actually in project_company_supplies for this project
+      const [debugRows] = await db.query(`
+        SELECT 
+          pcs.request_material_id,
+          pcs.material_id,
+          pcs.quantity_supplied,
+          pcs.quantity_used,
+          m.name as material_name
+        FROM project_company_supplies pcs
+        LEFT JOIN materials m ON pcs.material_id = m.material_id
+        WHERE pcs.project_id = ?
+      `, [projectId]);
+      console.log(`🔍 Debug: All project_company_supplies for project ${projectId}:`, debugRows.length);
+      debugRows.forEach(row => {
+        console.log(`   - Material ID: ${row.material_id}, Name: ${row.material_name || 'NO NAME'}, quantity_supplied: ${row.quantity_supplied}, quantity_used: ${row.quantity_used}`);
+      });
+      
       let query = `
         SELECT 
-          CONCAT('release_', mr.id) as id,
-          m.name,
-          rm.unit,
-          MAX(COALESCE(pcs.quantity_supplied, rm.quantity_supplied, rm.quantity, 0)) as requested_qty,
-          MAX(COALESCE(pcs.quantity_remaining, COALESCE(rm.quantity - COALESCE(rm.quantity_supplied, 0), rm.quantity, 0))) as remaining_qty,
-          MAX(COALESCE(m.price, 0.00)) as unit_price,
-          mr.source_type,
-          mr.id as release_id,
-          NULL as proposal_id
-        FROM material_releases mr
-        INNER JOIN request_material rm ON mr.request_id = rm.id
-        LEFT JOIN materials m ON mr.material_id = m.material_id
-        LEFT JOIN project_company_supplies pcs 
-          ON pcs.request_material_id = rm.id
-         AND pcs.material_id = mr.material_id
-         AND pcs.project_id = mr.project_id
-        WHERE mr.project_id = ?
-          AND mr.status IN ('released','received')
-          AND mr.source_type = 'company_supply'
-          AND m.name IS NOT NULL
-          AND COALESCE(pcs.quantity_supplied, rm.quantity_supplied, rm.quantity, 0) > 0
-        GROUP BY mr.id, m.name, rm.unit, mr.source_type
+          CONCAT('release_', pcs.request_material_id, '_', pcs.material_id) as id,
+          COALESCE(m.name, 'Unknown Material') as name,
+          pcs.unit,
+          pcs.quantity_supplied as requested_qty,
+          pcs.quantity_supplied as remaining_qty,
+          COALESCE(m.price, 0.00) as unit_price,
+          'company_supply' as source_type,
+          pcs.request_material_id,
+          pcs.material_id,
+          NULL as proposal_id,
+          pcs.project_id
+        FROM project_company_supplies pcs
+        LEFT JOIN materials m ON pcs.material_id = m.material_id
+        WHERE pcs.project_id = ?
+          AND COALESCE(pcs.quantity_supplied, 0) > 0
       `;
       
       const [requestedMaterials] = await db.query(query, [projectId]);
+      
+      // Debug: Log all company supply materials found
+      console.log(`📦 Company supply materials from project_company_supplies for project ${projectId}:`, requestedMaterials.length);
+      requestedMaterials.forEach(m => {
+        console.log(`   - ${m.name} (ID: ${m.id}): quantity_supplied = ${m.requested_qty}`);
+      });
       
       // Add requested materials
       materials.push(...requestedMaterials);
@@ -2605,7 +2680,7 @@ const ManufacturingModel = {
    *  - billing_number: Unique human-friendly number (SB-YYYY-XXXXXX)
    *  - amount_due: Mirrors totalExpense currently
    */
-  createStageBillingSummary: async ({ projectId, divisionId, startDate, endDate, progressPercent, totalMaterialCost, remarks }) => {
+  createStageBillingSummary: async ({ projectId, divisionId, startDate, endDate, progressPercent, overallProgressPercent, totalMaterialCost, remarks }) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -2619,21 +2694,14 @@ const ManufacturingModel = {
       const rand = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
       const billingNo = `SB-${year}-${rand}`;
 
-      // Compute labor cost from payroll/payslip data if available.
-      // NOTE: This query assumes a payslips (or payroll) table with columns: project_id, pay_date, total_amount
-      // If your schema differs, update this section accordingly.
+      // Compute labor cost using the same method as getLaborCostForRange
+      // (from attendance_construction using daily_rate from construction_roles)
       let totalLabor = 0;
       try {
-        const [laborRows] = await connection.query(`
-          SELECT COALESCE(SUM(total_amount), 0) AS labor_cost
-          FROM payslips
-          WHERE project_id = ?
-            AND pay_date BETWEEN ? AND ?
-        `, [projectId, startDate, endDate]);
-        totalLabor = Number(laborRows && laborRows[0] && laborRows[0].labor_cost || 0);
+        totalLabor = await ManufacturingModel.getLaborCostForRange(projectId, normStartDate, normEndDate);
       } catch (err) {
-        // If payroll/payslips table does not exist or columns differ, fall back to 0
-        // This ensures the billing can still be stored using material cost only
+        // If calculation fails, fall back to 0
+        console.error('Error calculating labor cost:', err);
         totalLabor = 0;
       }
 
@@ -2641,27 +2709,52 @@ const ManufacturingModel = {
       const amountDue = totalLabor + totalMaterial;
 
       // Insert the stage billing summary record
-      await connection.query(`
+      const [insertRes] = await connection.query(`
         INSERT INTO stage_billing_summary (
           project_id, division_id, start_date, end_date,
           total_labor_cost, total_material_cost,
-          progress_percent,
+          progress_percent, overall_project_progress,
           billing_number, billing_date, billing_status,
           amount_due, remarks
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, 'Generated', ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, 'Generated', ?, ?)
       `, [
         projectId,
         divisionId || null,
         normStartDate, normEndDate,
         totalLabor, totalMaterial,
         Number(progressPercent || 0),
+        Number(overallProgressPercent || 0),
         billingNo,
         amountDue,
         remarks || null
       ]);
 
+      const newBillingId = insertRes && insertRes.insertId ? insertRes.insertId : null;
+
+      // Update related daily_logs to link this billing (set billing_id and is_billed=1)
+      try {
+        if (newBillingId) {
+          const params = [newBillingId, projectId, normStartDate, normEndDate];
+          let sql = `
+            UPDATE daily_logs
+            SET billing_id = ?, is_billed = 1
+            WHERE project_id = ?
+              AND log_date BETWEEN ? AND ?
+          `;
+          if (divisionId && Number(divisionId) > 0) {
+            sql += ` AND division_id = ?`;
+            params.push(Number(divisionId));
+          }
+          sql += ` AND (billing_id IS NULL OR billing_id = 0) AND (is_billed = 0 OR is_billed IS NULL)`;
+          await connection.query(sql, params);
+        }
+      } catch (updErr) {
+        console.error('❌ Error updating daily_logs with billing_id:', updErr);
+        // Do not rollback entire billing creation if daily_logs update fails; continue
+      }
+
       await connection.commit();
-      return { success: true, billing_number: billingNo, total_labor_cost: totalLabor, total_material_cost: totalMaterial, amount_due: amountDue };
+      return { success: true, billing_id: newBillingId, billing_number: billingNo, total_labor_cost: totalLabor, total_material_cost: totalMaterial, amount_due: amountDue };
     } catch (error) {
       await connection.rollback();
       console.error('❌ Error creating stage billing summary:', error);
@@ -2691,24 +2784,107 @@ const ManufacturingModel = {
       
       console.log(`[DEBUG] getLaborCostForRange: projectId=${projectId}, startDate=${startDate}->${normStartDate}, endDate=${endDate}->${normEndDate}`);
       
-      // Get labor cost from construction payslips where date range overlaps
-      // Use start_date and end_date to match the pay period range
-      const [conRows] = await db.query(`
-        SELECT COALESCE(SUM(cp.net_salary), 0) AS labor_cost
-        FROM construction_payslip cp
-        WHERE cp.project_id = ?
-          AND cp.start_date <= ?
-          AND cp.end_date >= ?
-      `, [projectId, normEndDate, normStartDate]);
+      // Calculate labor cost from attendance_construction using daily_rate from construction_roles
+      // Formula: hourlyRate = dailyRate / 8, totalPay = hourlyRate * hoursWorked
+      const [attendanceRows] = await db.query(`
+        SELECT 
+          cr.daily_rate,
+          CASE
+            WHEN ar.time_in IS NOT NULL AND ar.time_out IS NOT NULL THEN
+              ROUND(TIMESTAMPDIFF(SECOND, ar.time_in, ar.time_out) / 3600.0, 2)
+            ELSE 0
+          END as hours_worked,
+          CASE
+            WHEN ar.time_in IS NOT NULL AND ar.time_out IS NOT NULL THEN
+              GREATEST(0, ROUND((TIMESTAMPDIFF(SECOND, ar.time_in, ar.time_out) / 3600.0) - 8, 2))
+            ELSE 0
+          END as overtime_hours
+        FROM attendance_construction ar
+        JOIN construction_workers cw ON ar.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        WHERE ar.project_id = ?
+          AND ar.attendance_date BETWEEN ? AND ?
+          AND ar.time_in IS NOT NULL 
+          AND ar.time_out IS NOT NULL
+      `, [projectId, normStartDate, normEndDate]);
       
-      const conLaborCost = Number(conRows && conRows[0] && conRows[0].labor_cost || 0);
-      console.log(`[DEBUG] Query result: labor_cost=${conLaborCost}`);
+      let totalLaborCost = 0;
       
-      return conLaborCost;
+      attendanceRows.forEach(row => {
+        const dailyRate = Number(row.daily_rate || 0);
+        const hoursWorked = Number(row.hours_worked || 0);
+        const overtimeHours = Number(row.overtime_hours || 0);
+        
+        if (dailyRate > 0 && hoursWorked > 0) {
+          // Calculate hourly rate from daily rate
+          const hourlyRate = dailyRate / 8;
+          
+          // Calculate total pay: hourlyRate * hoursWorked
+          // Overtime is already included in hours_worked, so we just use hoursWorked
+          const totalPay = hourlyRate * hoursWorked;
+          
+          totalLaborCost += totalPay;
+        }
+      });
+      
+      console.log(`[DEBUG] Labor cost calculation: ${attendanceRows.length} attendance records, total cost = ${totalLaborCost}`);
+      
+      return Math.round(totalLaborCost * 100) / 100; // Round to 2 decimal places
     } catch (err) {
       console.error('Error getting labor cost for range:', err);
-      // If finance tables are not present or schema differs, return 0 to keep UI functional
+      // If attendance tables are not present or schema differs, return 0 to keep UI functional
       return 0;
+    }
+  },
+
+  /**
+   * Get labor cost breakdown by role for stage billing
+   * Returns an array of objects with role_name, count (number of workers), and basic_salary (daily_rate)
+   * This is a NEW endpoint specifically for stage billing display
+   */
+  getLaborCostBreakdownByRole: async (projectId, startDate, endDate) => {
+    try {
+      // Normalize dates to YYYY-MM-DD format safely
+      const toYmd = (d) => {
+        if (!d) return null;
+        if (typeof d === 'string') return d.includes('T') ? d.split('T')[0] : d;
+        try { return new Date(d).toISOString().split('T')[0]; } catch(_) { return String(d); }
+      };
+      const normStartDate = toYmd(startDate);
+      const normEndDate = toYmd(endDate);
+      
+      console.log(`[DEBUG] getLaborCostBreakdownByRole: projectId=${projectId}, startDate=${startDate}->${normStartDate}, endDate=${endDate}->${normEndDate}`);
+      
+      // Get labor cost breakdown grouped by role from attendance_construction
+      // Count distinct workers per role and get their daily_rate (basic salary)
+      const [roleRows] = await db.query(`
+        SELECT 
+          COALESCE(cr.role_name, 'Unassigned') as role_name,
+          COUNT(DISTINCT ar.worker_id) as worker_count,
+          COALESCE(cr.daily_rate, 0) as basic_salary
+        FROM attendance_construction ar
+        JOIN construction_workers cw ON ar.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        WHERE ar.project_id = ?
+          AND ar.attendance_date BETWEEN ? AND ?
+          AND ar.time_in IS NOT NULL 
+          AND ar.time_out IS NOT NULL
+        GROUP BY cr.role_name, cr.daily_rate
+        ORDER BY cr.role_name ASC
+      `, [projectId, normStartDate, normEndDate]);
+      
+      const breakdown = roleRows.map(row => ({
+        role_name: row.role_name || 'Unassigned',
+        count: Number(row.worker_count || 0),
+        basic_salary: Number(row.basic_salary || 0)
+      }));
+      
+      console.log(`[DEBUG] Labor cost breakdown by role:`, breakdown);
+      
+      return breakdown;
+    } catch (err) {
+      console.error('Error getting labor cost breakdown by role:', err);
+      return [];
     }
   },
   
@@ -2908,6 +3084,87 @@ const ManufacturingModel = {
     }
   },
 
+  /**
+   * Get monitoring table for used supply (INTENDED: For Requested Materials section display only)
+   * Combines owner supply and project_company_supplies with quantity_requested, quantity_used, and remaining columns
+   * INTENDED: Dedicated endpoint for Requested Materials monitoring table
+   */
+  getMonitoringTableForUsedSupply: async (projectId) => {
+    try {
+      const materials = [];
+      let proposalId = null;
+      
+      // Step 1: Get proposal_id from contract that created this project
+      const [projectRows] = await db.query(`
+        SELECT project_code FROM projects WHERE id = ?
+      `, [projectId]);
+      
+      if (projectRows.length === 0) {
+        return [];
+      }
+      
+      // Extract contract_id from project_code (format: PRJ-YYYY-####)
+      const projectCode = projectRows[0].project_code;
+      const contractIdMatch = projectCode.match(/PRJ-\d{4}-(\d+)/);
+      
+      if (contractIdMatch) {
+        const contractId = contractIdMatch[1];
+        
+        // Get proposal_id from contract
+        const [contractRows] = await db.query(`
+          SELECT proposal_id FROM contracts WHERE contract_id = ?
+        `, [contractId]);
+        
+        if (contractRows.length > 0) {
+          proposalId = contractRows[0].proposal_id;
+          
+          // Get owner supply materials
+          const [ownerSupplyMaterials] = await db.query(`
+            SELECT 
+              os.material_name as name,
+              os.unit,
+              os.quantity_requested as quantity_requested,
+              COALESCE(os.quantity_used, 0) as quantity_used,
+              os.quantity_requested as remaining,
+              COALESCE(os.quantity_requested * 0, 0.00) as unit_price,
+              'owner_supply' as source_type
+            FROM owners_supply os
+            WHERE os.proposal_id = ? 
+              AND os.status = 'delivered'
+              AND os.quantity_requested IS NOT NULL 
+              AND os.quantity_requested > 0
+            GROUP BY os.supply_id
+          `, [proposalId]);
+          
+          materials.push(...ownerSupplyMaterials);
+        }
+      }
+      
+      // Step 2: Get company supply materials from project_company_supplies
+      const [companySupplyMaterials] = await db.query(`
+        SELECT 
+          COALESCE(m.name, 'Unknown Material') as name,
+          pcs.unit,
+          pcs.quantity_supplied as quantity_requested,
+          COALESCE(pcs.quantity_used, 0) as quantity_used,
+          pcs.quantity_supplied as remaining,
+          COALESCE(m.price, 0.00) as unit_price,
+          'company_supply' as source_type
+        FROM project_company_supplies pcs
+        LEFT JOIN materials m ON pcs.material_id = m.material_id
+        WHERE pcs.project_id = ?
+          AND COALESCE(pcs.quantity_supplied, 0) > 0
+      `, [projectId]);
+      
+      materials.push(...companySupplyMaterials);
+      
+      return materials;
+    } catch (error) {
+      console.error('❌ Error getting monitoring table for used supply:', error);
+      throw error;
+    }
+  }
+  ,
   /**
    * Update vtour permission status
    */

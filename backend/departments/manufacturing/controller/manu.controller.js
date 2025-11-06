@@ -8,6 +8,17 @@ const pathConfig = require('../../../utils/pathConfig'); // Import path configur
 const { sendLaborSubmissionNotification } = require('../../../utils/emailService');
 const Notifications = require('../../../models/notification.model');
 
+// Helper function to get today's date in Asia/Manila timezone (YYYY-MM-DD format)
+function getTodayDateManila() {
+  const now = new Date();
+  // Convert to Asia/Manila timezone
+  const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  const year = manilaTime.getFullYear();
+  const month = String(manilaTime.getMonth() + 1).padStart(2, '0');
+  const day = String(manilaTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Normalize PayMongo environment variables to align with .env keys
 const PAYMONGO_SECRET = process.env.PAYMONGO_SECRET_KEY 
   || process.env.PAYMONGO_SECRET 
@@ -1337,14 +1348,15 @@ const ManufacturingController = {
     try {
       const { qrData } = req.body;
       
+      // If no QR data provided, return invalid worker error
       if (!qrData) {
-        return res.status(400).json({ error: 'QR code data is required' });
+        return res.status(404).json({ error: 'Worker is invalid' });
       }
 
       const worker = await ManufacturingModel.getConstructionWorkerByQRCode(qrData);
       
       if (!worker) {
-        return res.status(404).json({ error: 'Worker not found or inactive' });
+        return res.status(404).json({ error: 'Worker is invalid' });
       }
 
       // Check if worker already has attendance record for today
@@ -1451,7 +1463,7 @@ const ManufacturingController = {
   getTodayAttendance: async (req, res) => {
     try {
       const { date } = req.query;
-      const targetDate = date || new Date().toISOString().split('T')[0]; // Default to today
+      const targetDate = date || getTodayDateManila(); // Use Manila timezone if no date provided
       
       const records = await ManufacturingModel.getTodayAttendanceRecords(targetDate);
       res.json({
@@ -1594,7 +1606,7 @@ const ManufacturingController = {
   // Save daily log entry for manufacturing progress tracking
   saveDailyLogProgress: async (req, res) => {
     try {
-      const { projectId, divisionName, logDate, description, materials, totalMaterialCost, workers } = req.body;
+      const { projectId, divisionName, logDate, description, materials, totalMaterialCost, totalLaborCost, workers } = req.body;
       
       console.log('📝 Saving daily log:', { projectId, divisionName, logDate, description: description?.substring(0, 50) });
       
@@ -1605,7 +1617,7 @@ const ManufacturingController = {
         });
       }
 
-      const logId = await ManufacturingModel.saveDailyLogEntry(projectId, divisionName, logDate, description, materials || [], totalMaterialCost || 0, workers || []);
+      const logId = await ManufacturingModel.saveDailyLogEntry(projectId, divisionName, logDate, description, materials || [], totalMaterialCost || 0, totalLaborCost || 0, workers || []);
       
       console.log('✅ Daily log saved with ID:', logId);
       
@@ -1623,6 +1635,34 @@ const ManufacturingController = {
     }
   },
 
+  // Get unbilled date range for a project and division
+  getUnbilledDateRange: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { division } = req.query;
+      
+      if (!projectId || !division) {
+        return res.status(400).json({
+          success: false,
+          error: 'projectId and division are required'
+        });
+      }
+      
+      const dateRange = await ManufacturingModel.getUnbilledDateRange(Number(projectId), division);
+      
+      res.json({
+        success: true,
+        dateRange
+      });
+    } catch (error) {
+      console.error('Error getting unbilled date range:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get unbilled date range'
+      });
+    }
+  },
+
   // Get daily logs for a project
   getDailyLogsProgress: async (req, res) => {
     try {
@@ -1630,9 +1670,13 @@ const ManufacturingController = {
       
       const logs = await ManufacturingModel.getDailyLogsByProject(projectId);
       
+      // Get today's date from server (Manila timezone)
+      const todayDate = getTodayDateManila();
+      
       res.json({
         success: true,
-        logs
+        logs,
+        todayDate // Include server date for frontend filtering
       });
     } catch (error) {
       console.error('Error getting daily logs:', error);
@@ -1906,7 +1950,7 @@ const ManufacturingController = {
    *   - total_material_cost: number (front-end computed from daily logs/materials)
    *   - remarks: optional string
    *
-   * Backend computes total_labor_cost by summing payslips within [start_date, end_date] for the project.
+   * Backend computes labor_cost by summing payslips within [start_date, end_date] for the project.
    */
   createStageBilling: async (req, res) => {
     try {
@@ -1920,6 +1964,7 @@ const ManufacturingController = {
         startDate: start_date,
         endDate: end_date,
         progressPercent: Number(progress_percent || 0),
+        overallProgressPercent: Number(req.body?.overall_division_progress || 0),
         totalMaterialCost: Number(total_material_cost || 0),
         remarks: remarks || null
       });
@@ -1945,6 +1990,25 @@ const ManufacturingController = {
     } catch (error) {
       console.error('Error getting labor cost for range:', error);
       return res.status(500).json({ success: false, error: 'Failed to compute labor cost' });
+    }
+  },
+
+  /**
+   * Get labor cost breakdown by role for stage billing (NEW endpoint)
+   * Returns breakdown showing role name, count of workers, and basic salary
+   */
+  getLaborCostBreakdownByRole: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { start_date, end_date } = req.query;
+      if (!projectId || !start_date || !end_date) {
+        return res.status(400).json({ success: false, error: 'projectId, start_date, end_date are required' });
+      }
+      const breakdown = await ManufacturingModel.getLaborCostBreakdownByRole(Number(projectId), start_date, end_date);
+      return res.json({ success: true, breakdown });
+    } catch (error) {
+      console.error('Error getting labor cost breakdown by role:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get labor cost breakdown' });
     }
   },
   
@@ -2570,6 +2634,32 @@ const ManufacturingController = {
     }
   },
 
+  /**
+   * Get monitoring table for used supply (INTENDED: For Requested Materials section display only)
+   * INTENDED: Dedicated endpoint for Requested Materials monitoring table
+   */
+  getMonitoringTableForUsedSupply: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      if (!projectId) {
+        return res.status(400).json({ success: false, error: 'projectId is required' });
+      }
+      
+      const materials = await ManufacturingModel.getMonitoringTableForUsedSupply(Number(projectId));
+      
+      res.json({
+        success: true,
+        materials
+      });
+    } catch (error) {
+      console.error('Error getting monitoring table for used supply:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get monitoring table for used supply'
+      });
+    }
+  }
+  ,
   /**
    * Update vtour permission status
    */

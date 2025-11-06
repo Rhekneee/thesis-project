@@ -130,6 +130,27 @@
         .form-control:focus, .form-select:focus {
             box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
         }
+        
+        /* Material quantity validation styles */
+        .material-qty.is-invalid,
+        .material-qty.border-danger {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        
+        .material-qty-error {
+            display: none;
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            color: #dc3545;
+        }
+        
+        /* Disabled quantity input styling */
+        .material-qty:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
 
         .search-container {
             display: flex;
@@ -869,7 +890,7 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="tabWeeklySummaryBtn" data-bs-toggle="tab" data-bs-target="#tabWeeklySummary" type="button" role="tab" aria-controls="tabWeeklySummary" aria-selected="false">
-                            <i class="fas fa-calendar-week me-2"></i>Weekly
+                            <i class="fas fa-history me-2"></i>History
                         </button>
                     </li>
                 </ul>
@@ -877,6 +898,14 @@
                     <div class="tab-pane fade show active" id="tabDailyLogs" role="tabpanel" aria-labelledby="tabDailyLogsBtn">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="mb-0">Daily Logs (Today)</h5>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="openStageBillingBtn">
+                                    <i class="fas fa-layer-group me-2"></i>Generate Stage Billing
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" id="generateBillingBtn">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i>Generate Billing Summary
+                                </button>
+                            </div>
                         </div>
                         <table class="table table-bordered align-middle">
                             <thead class="table-light">
@@ -895,7 +924,7 @@
                     </div>
                     <div class="tab-pane fade" id="tabWeeklySummary" role="tabpanel" aria-labelledby="tabWeeklySummaryBtn">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="mb-0">Weekly Summary</h5>
+                            <h5 class="mb-0">Daily Logs History</h5>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="openStageBillingBtn">
                                     <i class="fas fa-layer-group me-2"></i>Generate Stage Billing
@@ -908,8 +937,13 @@
                         <table class="table table-bordered align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="sortable" data-key="week">Week (Mon - Sun) <i class="fas fa-sort-alpha-up sort-icon"></i></th>
-                                    <th class="sortable text-end" data-key="totalMaterialCost">Total Material Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="date">Date <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="division">Division <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="description">Description <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable" data-key="materials">Materials Used <i class="fas fa-sort-alpha-up sort-icon"></i></th>
+                                    <th class="sortable text-end" data-key="materialsCount">Count <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                    <th class="sortable text-end" data-key="totalMaterialCost">Total Cost <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="weeklySummaryBody"></tbody>
@@ -928,6 +962,7 @@
                         <tr>
                             <th class="sortable" data-key="material">Material <i class="fas fa-sort-alpha-up sort-icon"></i></th>
                             <th class="sortable text-end" data-key="requestedQty">Requested Qty <i class="fas fa-sort-numeric-up sort-icon"></i></th>
+                            <th class="sortable text-end" data-key="quantityUsed">Quantity Used <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                             <th class="sortable text-end" data-key="remainingQty">Remaining Qty <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                             <th class="sortable text-end" data-key="unitPrice">Unit Price <i class="fas fa-sort-numeric-up sort-icon"></i></th>
                         </tr>
@@ -1075,7 +1110,10 @@
                         <div class="col-12">
                             <div class="p-3 border rounded-3 shadow-sm bg-white">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Labor Used</h6>
+                                    <div>
+                                        <h6 class="mb-0"><i class="fas fa-users me-2"></i>Labor Used</h6>
+                                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>This cost is only for estimation, the final cost will be reflected in the stage billing.</small>
+                                    </div>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-primary btn-sm" id="fetchWorkersBtn">
                                             <i class="fas fa-sync me-2"></i>Fetch from Today
@@ -1092,11 +1130,20 @@
                                                 <th>Worker Name</th>
                                                 <th style="width: 110px;" class="text-end">Hours</th>
                                                 <th style="width: 110px;" class="text-end">OT</th>
+                                                <th style="width: 140px;" class="text-end">Estimation Cost</th>
                                                 <th style="width: 60px;" class="text-center">Remove</th>
                                             </tr>
                                         </thead>
                                         <tbody id="laborBody"></tbody>
                                     </table>
+                                </div>
+                                <div class="mt-3 d-flex justify-content-end">
+                                    <div class="border-top pt-2" style="width: 200px;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong>Total Labor Cost:</strong>
+                                            <span class="text-success fw-bold" id="totalLaborCost">₱0.00</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1121,7 +1168,7 @@
             </div>
             <div class="modal-body">
                 <div class="row g-3 mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="billingDivisionSelect" class="form-label">Stage / Division</label>
                         <select id="billingDivisionSelect" class="form-select">
                             <option value="Foundation">Foundation</option>
@@ -1131,13 +1178,15 @@
                             <option value="Finishing">Finishing</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label for="billingStartDate" class="form-label">Start Date</label>
-                        <input type="date" id="billingStartDate" class="form-control" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="billingEndDate" class="form-label">End Date</label>
-                        <input type="date" id="billingEndDate" class="form-control" required>
+                    <div class="col-md-6">
+                        <label class="form-label">Date Range (Auto-selected from unbilled logs)</label>
+                        <div class="alert alert-info mb-0" id="billingDateRangeDisplay">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <span id="billingDateRangeText">Loading date range...</span>
+                        </div>
+                        <!-- Hidden inputs to store dates for functions -->
+                        <input type="hidden" id="billingStartDate">
+                        <input type="hidden" id="billingEndDate">
                     </div>
                 </div>
                 <div id="stageBillingContent"></div>
@@ -1553,20 +1602,139 @@
         document.getElementById('generateBillingBtn').addEventListener('click', openBillingSummaryModal);
 
         // Stage billing
-        document.getElementById('openStageBillingBtn').addEventListener('click', () => {
+        document.getElementById('openStageBillingBtn').addEventListener('click', async () => {
             if (!currentProjectId) { showWarningMessage('Please select a project first.'); return; }
-            const project = state.records.find(p => p.id === currentProjectId);
-            if (project && project.dailyLogs && project.dailyLogs.length > 0) {
-                const allDateStrings = project.dailyLogs.map(l => String(l.date)).sort();
-                // Set default date range to earliest and latest log dates
-                document.getElementById('billingStartDate').value = allDateStrings[0].split('T')[0];
-                document.getElementById('billingEndDate').value = allDateStrings[allDateStrings.length - 1].split('T')[0];
+            
+            // Auto-set division to Foundation
+            const divisionSelect = document.getElementById('billingDivisionSelect');
+            divisionSelect.value = 'Foundation';
+            
+            // Fetch unbilled date range for Foundation division
+            try {
+                const response = await fetch(`/manufacturing/unbilled-date-range/${currentProjectId}?division=Foundation`);
+                const data = await response.json();
+                
+                if (data.success && data.dateRange && data.dateRange.startDate && data.dateRange.endDate) {
+                    // Set start and end dates from unbilled logs
+                    const startDate = data.dateRange.startDate;
+                    const endDate = data.dateRange.endDate;
+                    document.getElementById('billingStartDate').value = startDate;
+                    document.getElementById('billingEndDate').value = endDate;
+                    
+                    // Display dates in readable format
+                    const startDateFormatted = new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    const endDateFormatted = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    document.getElementById('billingDateRangeText').textContent = `${startDateFormatted} to ${endDateFormatted}`;
+                    
+                    console.log('✅ Auto-filled dates from unbilled logs:', startDate, 'to', endDate);
+                } else {
+                    // Fallback: filter unbilled logs from frontend data
+                    const project = state.records.find(p => p.id === currentProjectId);
+                    if (project && project.dailyLogs && project.dailyLogs.length > 0) {
+                        // Filter: Foundation division, is_billed = 0, billing_id is null
+                        const unbilledFoundationLogs = project.dailyLogs.filter(l => {
+                            const isFoundation = l.division === 'Foundation';
+                            const isUnbilled = Number(l.is_billed || 0) === 0;
+                            const hasNoBillingId = l.billing_id === null || l.billing_id === undefined || l.billing_id === 0;
+                            return isFoundation && isUnbilled && hasNoBillingId;
+                        });
+                        
+                        if (unbilledFoundationLogs.length > 0) {
+                            const allDateStrings = unbilledFoundationLogs.map(l => String(l.date)).sort();
+                            const startDate = allDateStrings[0].split('T')[0];
+                            const endDate = allDateStrings[allDateStrings.length - 1].split('T')[0];
+                            document.getElementById('billingStartDate').value = startDate;
+                            document.getElementById('billingEndDate').value = endDate;
+                            
+                            // Display dates in readable format
+                            const startDateFormatted = new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                            const endDateFormatted = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                            document.getElementById('billingDateRangeText').textContent = `${startDateFormatted} to ${endDateFormatted}`;
+                            
+                            console.log('✅ Auto-filled dates from frontend unbilled logs:', startDate, 'to', endDate);
+                        } else {
+                            console.warn('⚠️ No unbilled Foundation logs found');
+                            // Clear dates if no unbilled logs
+                            document.getElementById('billingStartDate').value = '';
+                            document.getElementById('billingEndDate').value = '';
+                            document.getElementById('billingDateRangeText').textContent = 'No unbilled logs found';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching unbilled date range:', error);
+                // Fallback: filter unbilled logs from frontend data
+                const project = state.records.find(p => p.id === currentProjectId);
+                if (project && project.dailyLogs && project.dailyLogs.length > 0) {
+                    // Filter: Foundation division, is_billed = 0, billing_id is null
+                    const unbilledFoundationLogs = project.dailyLogs.filter(l => {
+                        const isFoundation = l.division === 'Foundation';
+                        const isUnbilled = Number(l.is_billed || 0) === 0;
+                        const hasNoBillingId = l.billing_id === null || l.billing_id === undefined || l.billing_id === 0;
+                        return isFoundation && isUnbilled && hasNoBillingId;
+                    });
+                    
+                    if (unbilledFoundationLogs.length > 0) {
+                        const allDateStrings = unbilledFoundationLogs.map(l => String(l.date)).sort();
+                        const startDate = allDateStrings[0].split('T')[0];
+                        const endDate = allDateStrings[allDateStrings.length - 1].split('T')[0];
+                        document.getElementById('billingStartDate').value = startDate;
+                        document.getElementById('billingEndDate').value = endDate;
+                        
+                        // Display dates in readable format
+                        const startDateFormatted = new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        const endDateFormatted = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        document.getElementById('billingDateRangeText').textContent = `${startDateFormatted} to ${endDateFormatted}`;
+                        
+                        console.log('✅ Auto-filled dates from frontend unbilled logs (fallback):', startDate, 'to', endDate);
+                    } else {
+                        console.warn('⚠️ No unbilled Foundation logs found');
+                        // Clear dates if no unbilled logs
+                        document.getElementById('billingStartDate').value = '';
+                        document.getElementById('billingEndDate').value = '';
+                        document.getElementById('billingDateRangeText').textContent = 'No unbilled logs found';
+                    }
+                }
             }
+            
             document.getElementById('stageBillingContent').innerHTML = '';
             stageBillingModal.show();
+            
+            // Reset button listeners to avoid duplicate handlers when reopening modal
+            try {
+                const genBtnOld = document.getElementById('generateStageBillingBtn');
+                const sendBtnOld = document.getElementById('emailStageBillingBtn');
+                const printBtnOld = document.getElementById('printStageBillingBtn');
+                if (genBtnOld) {
+                    const genBtn = genBtnOld.cloneNode(true);
+                    genBtnOld.parentNode.replaceChild(genBtn, genBtnOld);
+                    genBtn.addEventListener('click', generateStageBilling);
+                }
+                if (sendBtnOld) {
+                    const sendBtn = sendBtnOld.cloneNode(true);
+                    sendBtnOld.parentNode.replaceChild(sendBtn, sendBtnOld);
+                    sendBtn.addEventListener('click', emailStageBilling);
+                }
+                if (printBtnOld) {
+                    const printBtn = printBtnOld.cloneNode(true);
+                    printBtnOld.parentNode.replaceChild(printBtn, printBtnOld);
+                    printBtn.addEventListener('click', downloadStageBillingPDF);
+                }
+            } catch(_) {}
+            
+            // Initial button visibility: show Generate, hide Send to Client and Print/PDF until content is generated
+            try {
+                const genBtn = document.getElementById('generateStageBillingBtn');
+                const sendBtn = document.getElementById('emailStageBillingBtn');
+                const printBtn = document.getElementById('printStageBillingBtn');
+                if (genBtn) genBtn.style.display = 'inline-block';
+                if (sendBtn) sendBtn.style.display = 'none';
+                if (printBtn) printBtn.style.display = 'none';
+            } catch(_) {}
         });
         document.getElementById('generateStageBillingBtn').addEventListener('click', generateStageBilling);
-        document.getElementById('printStageBillingBtn').addEventListener('click', () => window.print());
+        // Print only the generated billing content
+        document.getElementById('printStageBillingBtn').addEventListener('click', downloadStageBillingPDF);
         document.getElementById('emailStageBillingBtn').addEventListener('click', emailStageBilling);
     }
 
@@ -1996,6 +2164,9 @@
             const res = await fetch(`/manufacturing/daily-logs/${currentProjectId}`);
             const data = await res.json();
             if (data && data.success && Array.isArray(data.logs)) {
+                // Store server's today date for filtering
+                window.serverTodayDate = data.todayDate || new Date().toISOString().slice(0, 10);
+                
                 // Normalize backend fields to frontend shape
                 currentDailyLogs = data.logs.map(l => ({
                     date: l.log_date,
@@ -2003,7 +2174,9 @@
                     description: l.description,
                     // material_used is a JSON string; best-effort parse
                     materials: (()=>{ try { return JSON.parse(l.material_used||'[]'); } catch(_) { return []; } })(),
-                    totalCost: Number(l.total_material_cost || 0)
+                    totalCost: Number(l.total_material_cost || 0),
+                    is_billed: Number(l.is_billed || 0),
+                    billing_id: l.billing_id || null
                 }));
                 project.dailyLogs = [...currentDailyLogs];
             } else {
@@ -2012,7 +2185,7 @@
         } catch (_) {
             currentDailyLogs = [...(project.dailyLogs || [])];
         }
-        renderDailyLogsTable();
+        renderDailyLogsTable(true); // Show today's logs by default
         renderWeeklySummaries();
         renderRequestedMaterialsTable();
     }
@@ -2239,12 +2412,11 @@
                     if (m.source_type === 'owner_supply') {
                         return Number(m.requested_qty || 0) > 0;
                     }
-                    // For company supply, include if requested_qty > 0 OR if material exists
-                    // Sometimes requested_qty might be missing but material is still available
+                    // For company supply, include if quantity_supplied > 0 (from project_company_supplies)
                     if (m.source_type === 'company_supply') {
-                        const requestedQty = Number(m.requested_qty || 0);
-                        // Include if requested_qty > 0 OR if material name exists (fallback)
-                        return requestedQty > 0 || (m.name && m.name.trim() !== '');
+                        const requestedQty = Number(m.requested_qty || m.remaining_qty || 0);
+                        // Include if quantity_supplied > 0 (this is what we get from project_company_supplies)
+                        return requestedQty > 0;
                     }
                     // For other materials, include them if they have a name
                     return m.name && m.name.trim() !== '';
@@ -2253,6 +2425,13 @@
                 console.log(`📦 Raw materials received:`, data.materials.length);
                 console.log(`📦 Filtered materials:`, filteredMaterials.length);
                 console.log(`📦 Materials details:`, filteredMaterials);
+                
+                // Debug: Log company supply materials specifically
+                const companySupply = filteredMaterials.filter(m => m.source_type === 'company_supply');
+                console.log(`📦 Company supply materials:`, companySupply.length);
+                companySupply.forEach(m => {
+                    console.log(`   - ${m.name || 'NO NAME'} (ID: ${m.id}): quantity_supplied = ${m.requested_qty || m.remaining_qty || 0}`);
+                });
                 
                 // Update the project in state.records with filtered materials
                 const project = state.records.find(p => p.id === currentProjectId);
@@ -2542,16 +2721,14 @@
             }
 
             // Update the progress data locally
+            // Preserve the original date when editing (don't change it to today's date)
+            const originalEntry = divisionProgress[currentEditIndex];
             divisionProgress[currentEditIndex] = {
-                ...divisionProgress[currentEditIndex],
+                ...originalEntry,
                 division,
                 progress,
                 img: imgUrl,
-                date: new Date().toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: '2-digit' 
-                })
+                date: originalEntry.date // Keep the original date, don't update it
             };
 
             // Update the UI
@@ -2599,6 +2776,15 @@
         
         // Show the modal
         currentSuccessModal.show();
+
+        // Ensure backdrops are fully removed when modal hides
+        const successEl = document.getElementById('successModal');
+        successEl.addEventListener('hidden.bs.modal', () => {
+            // Remove any lingering backdrops and reset body state
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+        }, { once: true });
         
         // Auto-hide after 3 seconds
         successModalTimeout = setTimeout(() => {
@@ -2606,6 +2792,10 @@
                 currentSuccessModal.hide();
                 currentSuccessModal = null;
             }
+            // Safety: also remove any lingering backdrops and body state
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
             successModalTimeout = null;
         }, 3000);
     }
@@ -2620,6 +2810,10 @@
             currentSuccessModal.hide();
             currentSuccessModal = null;
         }
+        // Ensure no leftover backdrops/blur remains
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
     }
 
     // Cleanup on page unload
@@ -2735,6 +2929,12 @@
         document.getElementById('materialsBody').innerHTML = '';
         document.getElementById('laborBody').innerHTML = '';
         
+        // Reset total labor cost display
+        const totalLaborCostEl = document.getElementById('totalLaborCost');
+        if (totalLaborCostEl) {
+            totalLaborCostEl.textContent = '₱0.00';
+        }
+        
         // Refresh project materials so newly released company items appear
         try {
             await loadProjectMaterials();
@@ -2806,30 +3006,144 @@
         canCloseDailyLogModal = true;
     });
 
+    // Get all currently selected material IDs across all rows
+    function getSelectedMaterialIds(excludeRow = null) {
+        const selectedIds = new Set();
+        const allSelects = document.querySelectorAll('#materialsBody .material-select');
+        allSelects.forEach(select => {
+            // Skip the row that's being updated (to allow reselecting the same material)
+            if (excludeRow && select.closest('tr') === excludeRow) {
+                return;
+            }
+            if (select.value && select.value !== '') {
+                selectedIds.add(select.value);
+            }
+        });
+        return selectedIds;
+    }
+
+    // Refresh all material dropdowns to hide selected materials
+    function refreshMaterialDropdowns(excludeRow = null) {
+        const project = state.records.find(p => p.id === currentProjectId);
+        if (!project || !project.requestedMaterials) return;
+        
+        const selectedIds = getSelectedMaterialIds(excludeRow);
+        const allSelects = document.querySelectorAll('#materialsBody .material-select');
+        
+        allSelects.forEach(select => {
+            const currentRow = select.closest('tr');
+            const currentValue = select.value;
+            
+            // Build available options for this dropdown
+            const availableMaterials = (project.requestedMaterials || [])
+                .filter(m => {
+                    const sourceType = m.source_type || 'company_supply';
+                    const requested = Number(m.requested_qty || 0);
+                    const remaining = Number(m.remaining_qty ?? 0);
+                    
+                    // Filter by availability
+                    if (sourceType === 'owner_supply') {
+                        if (!(requested > 0 && remaining > 0)) return false;
+                    }
+                    
+                    // Exclude already selected materials (except current row's selection)
+                    if (selectedIds.has(m.id) && m.id !== currentValue) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+            
+            // Store current selection to restore it
+            const currentSelectedId = currentValue;
+            
+            // Remove all options except the first one (placeholder)
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // Add available materials as options
+            if (availableMaterials.length === 0) {
+                const noOption = document.createElement('option');
+                noOption.disabled = true;
+                noOption.textContent = 'No materials available';
+                select.appendChild(noOption);
+            } else {
+                availableMaterials.forEach(m => {
+                    const sourceType = m.source_type || 'company_supply';
+                    const displayedQty = sourceType === 'company_supply' 
+                        ? Number(m.remaining_qty || m.requested_qty || 0) 
+                        : Number(m.requested_qty || 0);
+                    const dataRemaining = sourceType === 'company_supply'
+                        ? Number(m.remaining_qty || m.requested_qty || 0)
+                        : Number(m.remaining_qty ?? NaN);
+                    const dataProposal = m.proposal_id || '';
+                    const dataProject = m.project_id || currentProjectId || '';
+                    
+                    const option = document.createElement('option');
+                    option.value = m.id;
+                    option.dataset.price = Number(m.unit_price || 0);
+                    option.dataset.remaining = isNaN(dataRemaining) ? '' : String(dataRemaining);
+                    option.dataset.requested = String(displayedQty);
+                    option.dataset.source = sourceType;
+                    option.dataset.proposalId = dataProposal;
+                    option.dataset.projectId = dataProject;
+                    option.textContent = escapeHtml(m.name);
+                    
+                    select.appendChild(option);
+                });
+                
+                // Restore selection if it was valid
+                if (currentSelectedId && Array.from(select.options).some(opt => opt.value === currentSelectedId)) {
+                    select.value = currentSelectedId;
+                } else {
+                    select.value = '';
+                }
+            }
+        });
+    }
+
     // Add a new material row (select from requested materials and owner supply)
     function addMaterialRow() {
         const tbody = document.getElementById('materialsBody');
         const tr = document.createElement('tr');
         const project = state.records.find(p => p.id === currentProjectId);
         
+        // Get already selected material IDs
+        const selectedIds = getSelectedMaterialIds();
+        
         // Build options from project materials (owner supply + company supply)
         // - Owner supply: require requested_qty > 0 and remaining > 0
         // - Company supply: include when requested_qty > 0 (remaining may be 0/undefined)
+        // - Exclude materials that are already selected in other rows
         const options = (project?.requestedMaterials || [])
             .filter(m => {
                 const sourceType = m.source_type || 'company_supply';
                 const requested = Number(m.requested_qty || 0);
                 const remaining = Number(m.remaining_qty ?? 0);
+                
+                // Filter by availability
                 if (sourceType === 'owner_supply') {
-                    return requested > 0 && remaining > 0;
+                    if (!(requested > 0 && remaining > 0)) return false;
                 }
-                // company_supply: include whenever present in backend list
+                
+                // Exclude already selected materials
+                if (selectedIds.has(m.id)) {
+                    return false;
+                }
+                
                 return true;
             })
             .map(m => {
                 const sourceType = m.source_type || 'company_supply';
-                const displayedQty = Number(m.requested_qty || 0);
-                const dataRemaining = Number(m.remaining_qty ?? NaN);
+                // For company supply, use quantity_supplied as both requested and remaining
+                // For owner supply, use existing fields
+                const displayedQty = sourceType === 'company_supply' 
+                    ? Number(m.remaining_qty || m.requested_qty || 0) 
+                    : Number(m.requested_qty || 0);
+                const dataRemaining = sourceType === 'company_supply'
+                    ? Number(m.remaining_qty || m.requested_qty || 0) // quantity_supplied
+                    : Number(m.remaining_qty ?? NaN);
                 const dataProposal = m.proposal_id || '';
                 const dataProject = m.project_id || currentProjectId || '';
                 return `<option value="${m.id}"
@@ -2858,7 +3172,8 @@
                 <input type="number" class="form-control text-end material-avail" placeholder="0" readonly>
             </td>
             <td>
-                <input type="number" class="form-control text-end material-qty" placeholder="0" min="0" step="any" required>
+                <input type="number" class="form-control text-end material-qty" placeholder="0" min="0" step="any" required disabled>
+                <small class="text-danger material-qty-error" style="display: none; font-size: 0.75rem;">Quantity cannot exceed available</small>
             </td>
             <td>
                 <div class="input-group">
@@ -2868,36 +3183,199 @@
             </td>
             <td class="text-end align-middle material-subtotal">₱0.00</td>
             <td class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="
+                    const row = this.closest('tr');
+                    row.remove();
+                    refreshMaterialDropdowns();
+                ">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>`;
         
+        tbody.appendChild(tr);
+        
+        // Refresh all dropdowns after adding a new row to ensure consistency
+        refreshMaterialDropdowns();
+        
         // bind change events for select and qty to auto-fill price and subtotal
         tr.querySelector('.material-select').addEventListener('change', function() {
-            const sel = this.selectedOptions[0];
-            const price = Number(sel?.dataset.price || 0);
-            const remainingRaw = sel?.dataset.remaining;
-            const remaining = remainingRaw === '' || remainingRaw === undefined ? NaN : Number(remainingRaw);
-            const reqQty = Number(sel?.dataset.requested || 0);
-            const isOwner = (sel?.dataset.source || '').toLowerCase() === 'owner_supply';
-            const source = isOwner ? 'Owner Supply' : 'Company Supply';
-            const priceInput = tr.querySelector('.material-price');
-            const qtyInput = tr.querySelector('.material-qty');
-            const availInput = tr.querySelector('.material-avail');
-            const sourceBadge = tr.querySelector('.material-source');
-            priceInput.value = price.toFixed(2);
-            sourceBadge.textContent = source;
-            // Show available
-            const availVal = isOwner ? reqQty : (isNaN(remaining) ? '' : remaining);
-            availInput.value = availVal === '' ? '' : String(availVal);
-            qtyInput.removeAttribute('max');
-            if (availVal !== '' && !isNaN(Number(availVal))) {
-                qtyInput.max = String(Math.max(0, Number(availVal)));
+            const currentRow = this.closest('tr');
+            const qtyInput = currentRow.querySelector('.material-qty');
+            
+            // Refresh all dropdowns to hide/show materials based on current selections
+            refreshMaterialDropdowns(currentRow);
+            
+            // Get the refreshed select element
+            const refreshedSelect = currentRow.querySelector('.material-select');
+            
+            // Enable quantity input only when a material is selected
+            if (this.value && this.value !== '') {
+                // Re-select the current value after refresh
+                refreshedSelect.value = this.value;
+                const updatedSel = refreshedSelect.selectedOptions[0];
+                
+                if (updatedSel) {
+                    const price = Number(updatedSel?.dataset.price || 0);
+                    const remainingRaw = updatedSel?.dataset.remaining;
+                    const remaining = remainingRaw === '' || remainingRaw === undefined ? NaN : Number(remainingRaw);
+                    const reqQty = Number(updatedSel?.dataset.requested || 0);
+                    const isOwner = (updatedSel?.dataset.source || '').toLowerCase() === 'owner_supply';
+                    const source = isOwner ? 'Owner Supply' : 'Company Supply';
+                    const priceInput = currentRow.querySelector('.material-price');
+                    const availInput = currentRow.querySelector('.material-avail');
+                    const sourceBadge = currentRow.querySelector('.material-source');
+                    const errorMsg = currentRow.querySelector('.material-qty-error');
+                    
+                    priceInput.value = price.toFixed(2);
+                    sourceBadge.textContent = source;
+                    
+                    // Show available
+                    const availVal = isOwner ? reqQty : (isNaN(remaining) ? '' : remaining);
+                    availInput.value = availVal === '' ? '' : String(availVal);
+                    qtyInput.removeAttribute('max');
+                    if (availVal !== '' && !isNaN(Number(availVal))) {
+                        qtyInput.max = String(Math.max(0, Number(availVal)));
+                    }
+                    
+                    // Reset validation state when material changes
+                    qtyInput.classList.remove('is-invalid', 'border-danger');
+                    if (errorMsg) errorMsg.style.display = 'none';
+                    
+                    // Enable quantity input
+                    qtyInput.disabled = false;
+                    qtyInput.placeholder = 'Enter quantity';
+                    
+                    updateRowSubtotal();
+                }
+            } else {
+                // Material deselected
+                qtyInput.disabled = true;
+                qtyInput.value = '';
+                qtyInput.placeholder = 'Select material first';
+                // Reset validation state
+                qtyInput.classList.remove('is-invalid', 'border-danger');
+                const errorMsg = currentRow.querySelector('.material-qty-error');
+                if (errorMsg) errorMsg.style.display = 'none';
+                // Refresh dropdowns when material is deselected
+                refreshMaterialDropdowns();
             }
+        });
+        
+        // Validation function for quantity input
+        function validateQuantityInput(qtyInput) {
+            const availInput = qtyInput.closest('tr').querySelector('.material-avail');
+            const errorMsg = qtyInput.closest('tr').querySelector('.material-qty-error');
+            const availVal = availInput.value.trim();
+            
+            // Remove any existing validation classes
+            qtyInput.classList.remove('is-invalid', 'border-danger');
+            if (errorMsg) errorMsg.style.display = 'none';
+            
+            // Get input value
+            const inputValue = qtyInput.value.trim();
+            
+            // Prevent negative numbers and letters
+            if (inputValue !== '' && (inputValue.includes('-') || isNaN(Number(inputValue)) || Number(inputValue) < 0)) {
+                // Remove invalid characters
+                const cleanValue = inputValue.replace(/[^0-9.]/g, '');
+                if (cleanValue !== inputValue) {
+                    qtyInput.value = cleanValue;
+                }
+                // If still invalid, set to empty or 0
+                if (qtyInput.value === '' || Number(qtyInput.value) < 0) {
+                    qtyInput.value = '';
+                    return;
+                }
+            }
+            
+            // Validate against available quantity
+            if (availVal !== '' && !isNaN(Number(availVal))) {
+                const qty = Number(qtyInput.value || 0);
+                const available = Number(availVal);
+                
+                if (qty > available) {
+                    // Show error - make input red
+                    qtyInput.classList.add('is-invalid', 'border-danger');
+                    if (errorMsg) {
+                        errorMsg.textContent = `Quantity cannot exceed available (${available})`;
+                        errorMsg.style.display = 'block';
+                    }
+                } else {
+                    // Remove error state
+                    qtyInput.classList.remove('is-invalid', 'border-danger');
+                    if (errorMsg) errorMsg.style.display = 'none';
+                }
+            }
+        }
+        
+        // Add input event listener for quantity validation
+        tr.querySelector('.material-qty').addEventListener('input', function() {
+            // Prevent negative numbers and letters
+            let value = this.value;
+            
+            // Remove any negative signs or non-numeric characters (except decimal point)
+            value = value.replace(/[^0-9.]/g, '');
+            
+            // Prevent negative numbers
+            if (value.startsWith('-')) {
+                value = value.replace('-', '');
+            }
+            
+            // Update the value
+            if (value !== this.value) {
+                this.value = value;
+            }
+            
+            // Validate against available quantity
+            validateQuantityInput(this);
+            
+            // Update subtotal
             updateRowSubtotal();
         });
-        tr.querySelector('.material-qty').addEventListener('input', updateRowSubtotal);
+        
+        // Prevent typing minus/negative sign
+        tr.querySelector('.material-qty').addEventListener('keydown', function(e) {
+            // Prevent minus key (-) and negative numbers
+            if (e.key === '-' || e.key === 'Minus' || e.keyCode === 189 || e.keyCode === 109) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Allow: backspace, delete, tab, escape, enter, decimal point, and numbers
+            if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                (e.keyCode === 67 && e.ctrlKey === true) ||
+                (e.keyCode === 86 && e.ctrlKey === true) ||
+                (e.keyCode === 88 && e.ctrlKey === true) ||
+                // Allow: home, end, left, right arrow keys
+                (e.keyCode >= 35 && e.keyCode <= 39)) {
+                return;
+            }
+            
+            // Ensure that it is a number and stop the keypress if not
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+        
+        // Also validate on blur
+        tr.querySelector('.material-qty').addEventListener('blur', function() {
+            validateQuantityInput(this);
+        });
+        
+        // Prevent paste of invalid values
+        tr.querySelector('.material-qty').addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const cleanValue = pastedText.replace(/[^0-9.]/g, '');
+            if (cleanValue && !isNaN(Number(cleanValue)) && Number(cleanValue) >= 0) {
+                this.value = cleanValue;
+                validateQuantityInput(this);
+                updateRowSubtotal();
+            }
+        });
+        
         function updateRowSubtotal() {
             const qty = Number(tr.querySelector('.material-qty').value || 0);
             const price = Number(tr.querySelector('.material-price').value || 0);
@@ -2925,6 +3403,7 @@
                     worker_id: record.worker_id,
                     full_name: `${record.firstname} ${record.middlename || ''} ${record.lastname}`.trim(),
                     role: record.role_name || '',
+                    daily_rate: Number(record.daily_rate || 0),
                     time_in: record.time_in,
                     time_out: record.time_out,
                     status: record.status,
@@ -2932,6 +3411,14 @@
                     overtime_hours: record.overtime_hours || 0
                 }));
                 console.log(`✅ Loaded ${availableWorkers.length} workers for date ${date}`);
+                // Debug: Log daily_rate values
+                availableWorkers.forEach(w => {
+                    if (w.daily_rate === 0) {
+                        console.warn(`⚠️ Worker ${w.full_name} (ID: ${w.worker_id}) has daily_rate = 0`);
+                    } else {
+                        console.log(`💰 Worker ${w.full_name}: daily_rate = ₱${w.daily_rate}`);
+                    }
+                });
             } else {
                 availableWorkers = [];
                 console.log('ℹ️ No workers found for this date');
@@ -2952,7 +3439,8 @@
             return `<option value="${worker.worker_id}"
                 data-attendance-id="${worker.attendance_id}"
                 data-hours="${worker.hours_worked}"
-                data-ot="${worker.overtime_hours}">
+                data-ot="${worker.overtime_hours}"
+                data-daily-rate="${worker.daily_rate}">
                 ${escapeHtml(worker.full_name)}${worker.role ? ' - ' + worker.role : ''}
             </option>`;
         }).join('');
@@ -2965,29 +3453,119 @@
                 </select>
             </td>
             <td>
-                <input type="number" class="form-control text-end labor-hours" placeholder="0" min="0" max="24" step="0.01" required>
+                <input type="number" class="form-control text-end labor-hours" placeholder="Enter hours" min="0" max="24" step="0.01" required>
             </td>
             <td>
-                <input type="number" class="form-control text-end labor-ot" placeholder="0" min="0" step="0.01" required>
+                <input type="number" class="form-control text-end labor-ot" placeholder="Enter OT" min="0" step="0.01" required>
             </td>
+            <td class="text-end align-middle labor-estimation-cost">₱0.00</td>
             <td class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove(); updateTotalLaborCost();">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>`;
         
-        // Bind change event to auto-fill hours and OT from attendance
+        // Bind change event to auto-fill hours and OT from attendance, and calculate costs
         tr.querySelector('.labor-select').addEventListener('change', function() {
             const sel = this.selectedOptions[0];
             const hoursInput = tr.querySelector('.labor-hours');
             const otInput = tr.querySelector('.labor-ot');
             const hours = Number(sel?.dataset.hours || 0);
             const ot = Number(sel?.dataset.ot || 0);
+            const dailyRate = Number(sel?.dataset.dailyRate || 0);
+            
+            console.log(`🔍 Worker selected:`, {
+                name: sel?.textContent,
+                dailyRate: dailyRate,
+                hours: hours,
+                ot: ot
+            });
+            
             if (hoursInput) hoursInput.value = hours;
             if (otInput) otInput.value = ot;
+            updateLaborRowCosts(tr);
+            updateTotalLaborCost();
+        });
+        
+        // Update costs when worker is selected (estimation cost is daily_rate, not hours-based)
+        // Note: Hours and OT inputs still update for tracking, but don't affect estimation cost
+        tr.querySelector('.labor-hours').addEventListener('input', () => {
+            // Hours change doesn't affect estimation cost (it's always daily_rate)
+            // But we keep this for potential future use or tracking
+        });
+        tr.querySelector('.labor-ot').addEventListener('input', () => {
+            // OT change doesn't affect estimation cost (it's always daily_rate)
+            // But we keep this for potential future use or tracking
         });
         
         tbody.appendChild(tr);
+    }
+    
+    // Calculate labor estimation cost for a row (based on daily_rate from construction_roles)
+    // Note: Estimation cost is always the daily_rate regardless of hours (for estimation purposes)
+    function updateLaborRowCosts(row) {
+        const select = row.querySelector('.labor-select');
+        const hoursInput = row.querySelector('.labor-hours');
+        const otInput = row.querySelector('.labor-ot');
+        const estimationCostCell = row.querySelector('.labor-estimation-cost');
+        
+        if (!select || !select.value || !hoursInput || !otInput) {
+            if (estimationCostCell) estimationCostCell.textContent = '₱0.00';
+            return;
+        }
+        
+        const selectedOption = select.selectedOptions[0];
+        const dailyRate = Number(selectedOption?.dataset.dailyRate || 0);
+        const hours = Number(hoursInput.value || 0);
+        const otHours = Number(otInput.value || 0);
+        
+        console.log(`💰 Calculating estimation cost:`, {
+            worker: selectedOption?.textContent,
+            dailyRate: dailyRate,
+            hours: hours,
+            otHours: otHours,
+            rawDailyRate: selectedOption?.dataset.dailyRate
+        });
+        
+        // Debug logging
+        if (dailyRate === 0) {
+            console.warn(`⚠️ Estimation cost is 0: Worker ${selectedOption?.textContent || 'Unknown'} has daily_rate = ${selectedOption?.dataset.dailyRate || 'NOT SET'}`);
+        }
+        
+        if (dailyRate === 0) {
+            if (estimationCostCell) estimationCostCell.textContent = '₱0.00';
+            return;
+        }
+        
+        // Estimation cost is always the daily_rate (regardless of hours worked)
+        // This is for estimation purposes - actual cost calculation happens in stage billing
+        const estimationCost = dailyRate;
+        
+        console.log(`✅ Estimation cost (daily_rate): ₱${estimationCost.toFixed(2)}`);
+        
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        if (estimationCostCell) estimationCostCell.textContent = formatter.format(estimationCost);
+    }
+    
+    // Calculate and update total labor cost (sum of all estimation costs)
+    function updateTotalLaborCost() {
+        const laborRows = Array.from(document.querySelectorAll('#laborBody tr'));
+        let totalCost = 0;
+        
+        laborRows.forEach(row => {
+            const estimationCostCell = row.querySelector('.labor-estimation-cost');
+            if (estimationCostCell) {
+                const costText = estimationCostCell.textContent.replace(/[₱,]/g, '').trim();
+                const cost = parseFloat(costText) || 0;
+                totalCost += cost;
+            }
+        });
+        
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        const totalLaborCostEl = document.getElementById('totalLaborCost');
+        if (totalLaborCostEl) {
+            totalLaborCostEl.textContent = formatter.format(totalCost);
+        }
     }
 
     // Fetch and populate workers from today's attendance automatically
@@ -3031,7 +3609,8 @@
                         <option value="${worker.worker_id}" selected
                             data-attendance-id="${worker.attendance_id}"
                             data-hours="${worker.hours_worked}"
-                            data-ot="${worker.overtime_hours}">
+                            data-ot="${worker.overtime_hours}"
+                            data-daily-rate="${worker.daily_rate}">
                             ${escapeHtml(worker.full_name)}${worker.role ? ' - ' + worker.role : ''}
                         </option>
                     </select>
@@ -3042,14 +3621,30 @@
                 <td>
                     <input type="number" class="form-control text-end labor-ot" value="${worker.overtime_hours || 0}" min="0" step="0.01" required>
                 </td>
+                <td class="text-end align-middle labor-estimation-cost">₱0.00</td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove(); updateTotalLaborCost();">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>`;
             
+            // Bind change events for cost calculation
+            // Note: Estimation cost is always daily_rate, not hours-based
+            tr.querySelector('.labor-select').addEventListener('change', () => {
+                updateLaborRowCosts(tr);
+                updateTotalLaborCost();
+            });
+            // Hours and OT changes don't affect estimation cost (it's always daily_rate)
+            // But we keep them for tracking purposes
+            
+            // Calculate initial costs (will show daily_rate)
+            updateLaborRowCosts(tr);
+            
             tbody.appendChild(tr);
         });
+        
+        // Update total labor cost after populating all rows
+        updateTotalLaborCost();
         
         showSuccessMessage(`Loaded ${availableWorkers.length} worker(s) from today's attendance.`);
     }
@@ -3107,6 +3702,17 @@
             };
         }).filter(Boolean);
 
+        // Calculate total labor cost (sum of all estimation costs)
+        const totalLaborCost = laborRows.reduce((sum, row) => {
+            const estimationCostCell = row.querySelector('.labor-estimation-cost');
+            if (estimationCostCell) {
+                const costText = estimationCostCell.textContent.replace(/[₱,]/g, '').trim();
+                const cost = parseFloat(costText) || 0;
+                return sum + cost;
+            }
+            return sum;
+        }, 0);
+
         // Require at least one material with quantity > 0 OR at least one worker
         const hasMaterials = materials.length > 0 && materials.some(m => Number(m.quantity) > 0);
         const hasWorkers = workers.length > 0 && workers.some(w => Number(w.hoursWorked) > 0);
@@ -3139,6 +3745,40 @@
 
         // Validation and persist; also decrement remaining quantities
         if (!project) return;
+        
+        // Validate quantity inputs - check for any invalid quantities (exceeds available)
+        const invalidRows = materialRows.filter(row => {
+            const qtyInput = row.querySelector('.material-qty');
+            const availInput = row.querySelector('.material-avail');
+            const matSelect = row.querySelector('.material-select');
+            
+            if (!matSelect?.value) return false; // Skip empty rows
+            
+            const qty = Number(qtyInput?.value || 0);
+            const availVal = availInput?.value.trim();
+            
+            // Check if quantity exceeds available
+            if (availVal !== '' && !isNaN(Number(availVal))) {
+                const available = Number(availVal);
+                if (qty > available) {
+                    return true; // This row is invalid
+                }
+            }
+            
+            return false;
+        });
+        
+        if (invalidRows.length > 0) {
+            showWarningMessage('Please correct the material quantities. Some quantities exceed the available amount.');
+            // Focus on first invalid input
+            const firstInvalid = invalidRows[0].querySelector('.material-qty');
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+        
         // Validate remaining quantities
         for (const it of materials) {
             if (Number(it.quantity) <= 0) { showWarningMessage('Material quantities must be greater than 0.'); return; }
@@ -3168,6 +3808,7 @@
                 description: descInput.value.trim(),
                 materials: materials,
                 totalMaterialCost: totalCost,
+                totalLaborCost: totalLaborCost,
                 workers: workers
             }),
             credentials: 'include'
@@ -3182,20 +3823,64 @@
         showSuccessMessage('Daily log saved successfully.');
     }
 
-    // Render daily logs table
+    // Render daily logs table - shows only TODAY's date records (using server date)
     function renderDailyLogsTable(filterToday = false) {
         const tbody = document.getElementById('dailyLogsBody');
         tbody.innerHTML = '';
         let data = currentDailyLogs || [];
+        
         if (filterToday) {
-            const today = new Date().toISOString().slice(0,10);
+            // Use server's today date, fallback to client date if not available
+            const today = window.serverTodayDate || new Date().toISOString().slice(0, 10);
+            
+            console.log('🔍 Filtering daily logs for today:', today);
+            console.log('🔍 Available logs:', data.length);
+            console.log('🔍 Log dates:', data.map(l => l.date));
+            
             data = data.filter(l => {
-                try { return new Date(l.date).toISOString().slice(0,10) === today; } catch(_) { return false; }
+                try { 
+                    // Handle date format - if it's already YYYY-MM-DD string, use it directly
+                    // Otherwise parse it carefully
+                    let logDateStr = '';
+                    if (typeof l.date === 'string') {
+                        // If it's already in YYYY-MM-DD format, use it directly
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(l.date)) {
+                            logDateStr = l.date;
+                        } else {
+                            // Parse other date formats
+                            const d = new Date(l.date);
+                            // Use local date components to avoid timezone issues
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            logDateStr = `${year}-${month}-${day}`;
+                        }
+                    } else {
+                        // If it's a Date object
+                        const d = new Date(l.date);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        logDateStr = `${year}-${month}-${day}`;
+                    }
+                    
+                    const matches = logDateStr === today;
+                    if (matches) {
+                        console.log('✅ Match found:', logDateStr, '===', today);
+                    }
+                    return matches;
+                } catch(e) { 
+                    console.error('❌ Error parsing date:', l.date, e);
+                    return false; 
+                }
             });
+            
+            console.log('🔍 Filtered logs count:', data.length);
         }
+        
         if (!data.length) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No daily logs yet.</td>`;
+            tr.innerHTML = `<td colspan="7" class="text-center text-muted py-4">${filterToday ? 'No daily logs for today.' : 'No daily logs yet.'}</td>`;
             tbody.appendChild(tr);
             return;
         }
@@ -3212,6 +3897,12 @@
                 const materialsList = log.materials.map(m => `${escapeHtml(m.name)} (${m.quantity}${m.quantity > 1 ? ' units' : ' unit'})`).join(', ');
                 materialsDisplay = materialsList.length > 50 ? materialsList.substring(0, 50) + '...' : materialsList;
             }
+            // Find the original index in currentDailyLogs for viewMaterials
+            const originalIndex = currentDailyLogs.findIndex(l => 
+                l.date === log.date && 
+                l.division === log.division && 
+                l.description === log.description
+            );
             tr.innerHTML = `
                 <td>${formatDateNice(log.date)}</td>
                 <td>${escapeHtml(log.division || '-')}</td>
@@ -3220,7 +3911,7 @@
                 <td class="text-end">${materialsCount}</td>
                 <td class="text-end">${formatter.format(log.totalCost || 0)}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewMaterials(${idx})"><i class="fas fa-eye"></i> View</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewMaterials(${originalIndex >= 0 ? originalIndex : idx})"><i class="fas fa-eye"></i> View</button>
                 </td>`;
             frag.appendChild(tr);
         });
@@ -3246,32 +3937,109 @@
         new bootstrap.Modal(document.getElementById('viewMaterialsModal')).show();
     }
 
-    // Render weekly summaries
+    // Render daily logs history (unbilled logs, excluding today)
     function renderWeeklySummaries() {
         const tbody = document.getElementById('weeklySummaryBody');
         tbody.innerHTML = '';
-        const summaries = calculateWeeklySummaries();
-        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-        if (!summaries.length) {
+        
+        // Filter logs: exclude today's date, only include is_billed = 0 and billing_id IS NULL
+        const today = window.serverTodayDate || new Date().toISOString().slice(0, 10);
+        const filteredLogs = (currentDailyLogs || []).filter(log => {
+            try {
+                // Handle date format - if it's already YYYY-MM-DD string, use it directly
+                let logDateStr = '';
+                if (typeof log.date === 'string') {
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(log.date)) {
+                        logDateStr = log.date;
+                    } else {
+                        const d = new Date(log.date);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        logDateStr = `${year}-${month}-${day}`;
+                    }
+                } else {
+                    const d = new Date(log.date);
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    logDateStr = `${year}-${month}-${day}`;
+                }
+                
+                // Exclude today's date
+                if (logDateStr === today) return false;
+                // Only include logs with is_billed = 0 and billing_id IS NULL
+                return Number(log.is_billed || 0) === 0 && (log.billing_id === null || log.billing_id === undefined);
+            } catch(_) {
+                return false;
+            }
+        });
+        
+        if (!filteredLogs.length) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td colspan="3" class="text-center text-muted py-4">No weekly summaries yet.</td>`;
+            tr.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No daily logs history available.</td>`;
             tbody.appendChild(tr);
             return;
         }
-        summaries.forEach(s => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${formatDateNice(s.weekStart)} - ${formatDateNice(s.weekEnd)}</td>
-                <td class="text-end">${formatter.format(s.totalCost)}</td>`;
-            tbody.appendChild(tr);
+        
+        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+        // Sort logs by date descending (newest first)
+        const sortedLogs = [...filteredLogs].sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateB - dateA; // Descending order
         });
+        
+        const frag = document.createDocumentFragment();
+        sortedLogs.forEach((log, idx) => {
+            const tr = document.createElement('tr');
+            const materialsCount = log.materials?.length || 0;
+            let materialsDisplay = '-';
+            if (log.materials && log.materials.length > 0) {
+                const materialsList = log.materials.map(m => `${escapeHtml(m.name)} (${m.quantity}${m.quantity > 1 ? ' units' : ' unit'})`).join(', ');
+                materialsDisplay = materialsList.length > 50 ? materialsList.substring(0, 50) + '...' : materialsList;
+            }
+            // Find the original index in currentDailyLogs for viewMaterials
+            const originalIndex = currentDailyLogs.findIndex(l => 
+                l.date === log.date && 
+                l.division === log.division && 
+                l.description === log.description
+            );
+            tr.innerHTML = `
+                <td>${formatDateNice(log.date)}</td>
+                <td>${escapeHtml(log.division || '-')}</td>
+                <td>${escapeHtml(log.description)}</td>
+                <td title="${log.materials ? log.materials.map(m => `${m.name} (${m.quantity})`).join(', ') : 'No materials'}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${materialsDisplay}</td>
+                <td class="text-end">${materialsCount}</td>
+                <td class="text-end">${formatter.format(log.totalCost || 0)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewMaterials(${originalIndex >= 0 ? originalIndex : idx})"><i class="fas fa-eye"></i> View</button>
+                </td>`;
+            frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
     }
 
     // Group logs by calendar week (Mon-Sun) and compute aggregates
+    // Only includes logs with billing_id IS NULL and is_billed = 0, excluding today's date
     function calculateWeeklySummaries() {
-        // Materials cost derived from daily logs
+        // Filter logs: exclude today's date, only include is_billed = 0 and billing_id IS NULL
+        const today = window.serverTodayDate || new Date().toISOString().slice(0, 10);
+        const filteredLogs = (currentDailyLogs || []).filter(log => {
+            try {
+                const logDate = new Date(log.date).toISOString().slice(0, 10);
+                // Exclude today's date
+                if (logDate === today) return false;
+                // Only include logs with is_billed = 0 and billing_id IS NULL
+                return Number(log.is_billed || 0) === 0 && (log.billing_id === null || log.billing_id === undefined);
+            } catch(_) {
+                return false;
+            }
+        });
+        
+        // Materials cost derived from filtered daily logs
         const groups = new Map();
-        (currentDailyLogs || []).forEach(log => {
+        filteredLogs.forEach(log => {
             const d = new Date(log.date);
             const start = getWeekStartMonday(d);
             const key = start.toISOString().slice(0,10);
@@ -3367,59 +4135,51 @@
         new bootstrap.Modal(document.getElementById('billingSummaryModal')).show();
     }
 
-    // Render requested materials table
-    function renderRequestedMaterialsTable() {
+    // Render requested materials table (INTENDED: Uses monitoring table endpoint)
+    async function renderRequestedMaterialsTable() {
         const tbody = document.getElementById('requestedMaterialsBody');
-        tbody.innerHTML = '';
-        const project = state.records.find(p => p.id === currentProjectId);
-        const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-        const rows = (project?.requestedMaterials || []).map(m => ({
-            material: m.name,
-            requested: Number(m.requested_qty || 0),
-            remaining: Number(m.remaining_qty || 0),
-            price: Number(m.unit_price || 0)
-        }));
-        // Also fetch and append material releases intended for this project
-        if (currentProjectId) {
-            fetch(`/manufacturing/project-material-releases/${currentProjectId}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data && data.success && Array.isArray(data.releases)) {
-                        data.releases.forEach(rel => {
-                            rows.push({
-                                material: rel.material_name,
-                                requested: Number(rel.quantity || 0),
-                                remaining: Number(rel.quantity_backorder || 0),
-                                price: Number(rel.unit_price || 0)
-                            });
-                        });
-                    }
-                })
-                .finally(() => {
-                    rows.forEach(r => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${escapeHtml(r.material)}</td>
-                            <td class="text-end">${r.requested}</td>
-                            <td class="text-end">${r.remaining}</td>
-                            <td class="text-end">${formatter.format(r.price)}</td>`;
-                        tbody.appendChild(tr);
-                    });
-                });
-        } else {
-            rows.forEach(r => {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>';
+        
+        if (!currentProjectId) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No project selected</td></tr>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/manufacturing/monitoring-table/${currentProjectId}`);
+            const data = await response.json();
+            
+            tbody.innerHTML = '';
+            
+            if (!data.success || !Array.isArray(data.materials) || data.materials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No materials found</td></tr>';
+                return;
+            }
+            
+            const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+            
+            data.materials.forEach(m => {
                 const tr = document.createElement('tr');
+                const requestedQty = Number(m.quantity_requested || 0);
+                const quantityUsed = Number(m.quantity_used || 0);
+                const remaining = Number(m.remaining || requestedQty);
+                const unitPrice = Number(m.unit_price || 0);
+                
                 tr.innerHTML = `
-                    <td>${escapeHtml(r.material)}</td>
-                    <td class="text-end">${r.requested}</td>
-                    <td class="text-end">${r.remaining}</td>
-                    <td class="text-end">${formatter.format(r.price)}</td>`;
+                    <td>${escapeHtml(m.name)}</td>
+                    <td class="text-end">${requestedQty.toLocaleString()}</td>
+                    <td class="text-end">${quantityUsed.toLocaleString()}</td>
+                    <td class="text-end">${remaining.toLocaleString()}</td>
+                    <td class="text-end">${formatter.format(unitPrice)}</td>`;
                 tbody.appendChild(tr);
             });
+        } catch (error) {
+            console.error('Error loading monitoring table:', error);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading materials</td></tr>';
         }
     }
 
-    // Generate stage billing content
+    // Generate stage billing content - Professional Document Layout
     async function generateStageBilling() {
         const division = document.getElementById('billingDivisionSelect').value;
         const startDateInput = document.getElementById('billingStartDate').value;
@@ -3430,41 +4190,143 @@
             return;
         }
         
+        // Check if billing already exists for this date range and division (overlap or same endpoints)
+        let existingBilling = null;
+        try {
+            const checkResp = await fetch(`/manufacturing/stage-billings/${currentProjectId}`);
+            const checkData = await checkResp.json();
+            if (checkData && checkData.success && Array.isArray(checkData.billings)) {
+                const divisionId = getDivisionIdByName(division);
+                const selStart = new Date(startDateInput);
+                const selEnd = new Date(endDateInput);
+                existingBilling = checkData.billings.find(b => {
+                    if (b.division_id !== divisionId) return false;
+                    const bStart = new Date(b.start_date);
+                    const bEnd = new Date(b.end_date);
+                    // Same start OR same end
+                    const sameStart = b.start_date === startDateInput;
+                    const sameEnd = b.end_date === endDateInput;
+                    // Any overlap: (selStart <= bEnd) && (bStart <= selEnd)
+                    const overlaps = (selStart <= bEnd) && (bStart <= selEnd);
+                    return sameStart || sameEnd || overlaps;
+                });
+                
+                if (existingBilling) {
+                    showWarningMessage(`A stage billing already exists in this period for ${division}. (${formatDateNice(existingBilling.start_date)} - ${formatDateNice(existingBilling.end_date)}) Billing No: ${existingBilling.billing_number || 'N/A'}`);
+                    return; // Block generation when duplicate/overlap exists
+                }
+            }
+        } catch (err) {
+            console.error('Error checking existing billings:', err);
+            // Continue even if check fails
+        }
+        
         const project = state.records.find(p => p.id === currentProjectId);
         if (!project) return;
         
-        // Filter logs by division AND date range
+        // Filter logs by division, date range, AND unbilled status (is_billed = 0, billing_id IS NULL)
         const logs = (project.dailyLogs || []).filter(l => {
             const matchDivision = (l.division || '') === division;
             const logDate = new Date(l.date);
             const startDate = new Date(startDateInput);
             const endDate = new Date(endDateInput);
             const matchDate = logDate >= startDate && logDate <= endDate;
-            return matchDivision && matchDate;
+            const isUnbilled = Number(l.is_billed || 0) === 0;
+            const hasNoBillingId = l.billing_id === null || l.billing_id === undefined || l.billing_id === 0;
+            return matchDivision && matchDate && isUnbilled && hasNoBillingId;
         });
         
         const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
         let totalCost = 0;
         logs.forEach(l => totalCost += Number(l.totalCost || 0));
         
-        console.log(`[DEBUG] generateStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} logs`);
+        console.log(`[DEBUG] generateStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} unbilled logs`);
         
+        // Fetch labor cost breakdown by role
+        let laborBreakdown = [];
         let laborCost = 0;
         try {
-            const resp = await fetch(`/manufacturing/stage-billing/labor-cost/${currentProjectId}?start_date=${encodeURIComponent(startDateInput)}&end_date=${encodeURIComponent(endDateInput)}`);
+            const resp = await fetch(`/manufacturing/stage-billing/labor-cost-breakdown/${currentProjectId}?start_date=${encodeURIComponent(startDateInput)}&end_date=${encodeURIComponent(endDateInput)}`);
             const data = await resp.json();
-            if (data && data.success) laborCost = Number(data.labor_cost || 0);
-        } catch (_) {}
+            if (data && data.success && Array.isArray(data.breakdown)) {
+                laborBreakdown = data.breakdown;
+            }
+            
+            // Also get total labor cost for grand total
+            const respTotal = await fetch(`/manufacturing/stage-billing/labor-cost/${currentProjectId}?start_date=${encodeURIComponent(startDateInput)}&end_date=${encodeURIComponent(endDateInput)}`);
+            const dataTotal = await respTotal.json();
+            if (dataTotal && dataTotal.success) laborCost = Number(dataTotal.labor_cost || 0);
+        } catch (err) {
+            console.error('Error fetching labor cost:', err);
+        }
+        
         const grandTotal = Number(totalCost) + Number(laborCost);
+        
+        // Compute division progress snapshot for validation/display
+        const divisions = getDivisionsOrder();
+        const cumulative = Object.fromEntries(divisions.map(d => [d, 0]));
+        const sortedAsc = [...divisionProgress].sort((a,b) => new Date(a.date) - new Date(b.date));
+        sortedAsc.forEach(entry => {
+            if (!divisions.includes(entry.division)) return;
+            const value = Math.max(0, Math.min(100, Number(entry.progress) || 0));
+            const current = Number(cumulative[entry.division] || 0);
+            if (entry.type === 'rework') {
+                cumulative[entry.division] = Math.min(100, current);
+            } else {
+                cumulative[entry.division] = Math.min(100, current + value);
+            }
+        });
+        const stageProgressPct = Number(cumulative[division] || 0);
+        const overallProgressPct = divisions.length ? Math.round(divisions.reduce((s,d)=> s + Number(cumulative[d]||0), 0) / divisions.length) : 0;
+
+        // Professional Document Layout
         let html = '';
-        html += `<div class="mb-3"><strong>Project:</strong> ${escapeHtml(project.name)} &nbsp; <span class="badge bg-secondary">${escapeHtml(division)}</span></div>`;
+        html += `<div style="background: white; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 210mm; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1);">`;
+        
+        // Header Section
+        html += `<div style="border-bottom: 3px solid #0d6efd; padding-bottom: 20px; margin-bottom: 30px;">`;
+        html += `<div style="text-align: center; margin-bottom: 20px;">`;
+        html += `<h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 700;">STAGE BILLING STATEMENT</h1>`;
+        html += `<p style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px;">MDB Construction Company</p>`;
+        html += `</div>`;
+        
+        // Progress validation snapshot (e.g., Foundation 85% => overall 17%)
+        html += `<div style="max-width: 210mm; margin: 10px auto 20px auto;">`;
+        html += `<div style="background: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #0d6efd; border-radius: 4px; padding: 10px 12px; color: #495057; font-size: 13px;">`;
+        html += `<strong>Progress Check:</strong> ${escapeHtml(division)} = ${stageProgressPct}% &nbsp; | &nbsp; Overall = ${overallProgressPct}%`;
+        html += `</div>`;
+        html += `</div>`;
+        
+        // Show warning if billing already exists
+        if (existingBilling) {
+            html += `<div style="max-width: 210mm; margin: 10px auto 20px auto;">`;
+            html += `<div style="background: #fff3cd; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 4px; padding: 12px 15px; color: #856404; font-size: 13px;">`;
+            html += `<strong><i class="fas fa-exclamation-triangle me-2"></i>Warning:</strong> A stage billing entry already exists for this date range (${formatDateNice(startDateInput)} - ${formatDateNice(endDateInput)}) and division. Existing Billing No: <strong>${escapeHtml(existingBilling.billing_number || 'N/A')}</strong>`;
+            html += `</div>`;
+            html += `</div>`;
+        }
+        
+        html += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">`;
+        html += `<div>`;
+        html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Project:</strong> ${escapeHtml(project.name)}</p>`;
+        html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Division:</strong> ${escapeHtml(division)}</p>`;
+        html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Location:</strong> ${escapeHtml(project.location || 'N/A')}</p>`;
+        html += `</div>`;
+        html += `<div style="text-align: right;">`;
+        html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Billing Period:</strong></p>`;
+        html += `<p style="margin: 5px 0; font-size: 13px;">${formatDateNice(startDateInput)} - ${formatDateNice(endDateInput)}</p>`;
+        html += `<p style="margin: 5px 0; font-size: 13px;"><strong>Date Generated:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>`;
+        html += `</div>`;
+        html += `</div>`;
+        html += `</div>`;
+        
         if (!logs.length) {
-            html += '<div class="alert alert-light border text-muted">No daily logs for this stage.</div>';
+            html += '<div style="padding: 20px; text-align: center; color: #6c757d; border: 1px solid #dee2e6; border-radius: 5px; margin: 20px 0;">No daily logs for this stage.</div>';
         } else {
-            // Summary header
-            html += '<div class="table-responsive">';
-            html += '<table class="table table-bordered align-middle mb-3">';
-            html += '<thead class="table-light"><tr><th style="width: 130px;">Date</th><th>Description</th><th style="width: 120px;" class="text-end">Items</th><th style="width: 160px;" class="text-end">Cost</th></tr></thead><tbody>';
+            // Materials Section
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h2 style="color: #212529; font-size: 20px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">MATERIALS USED</h2>`;
+            
             // Group logs by date
             const groups = new Map();
             logs.forEach(l => {
@@ -3472,19 +4334,17 @@
                 if (!groups.has(key)) groups.set(key, []);
                 groups.get(key).push(l);
             });
-            // Sort dates ascending
             const orderedDates = Array.from(groups.keys()).sort((a,b)=> new Date(a) - new Date(b));
+            
             orderedDates.forEach(dateKey => {
                 const dayLogs = groups.get(dateKey) || [];
                 const dayItems = dayLogs.reduce((n, lg) => n + (lg.materials||[]).length, 0);
                 const dayCost = dayLogs.reduce((s, lg) => s + Number(lg.totalCost||0), 0);
-                // Date summary row
-                html += `<tr class="table-secondary">
-                    <td><span class="badge bg-light text-dark border">${formatDateNice(dateKey)}</span></td>
-                    <td colspan="2">${dayLogs.length} log(s), ${dayItems} item(s)</td>
-                    <td class="text-end fw-semibold">${formatter.format(dayCost)}</td>
-                </tr>`;
-                // One combined materials table for the entire date (no repeated headers per item)
+                
+                html += `<div style="margin-bottom: 25px;">`;
+                html += `<h3 style="color: #495057; font-size: 16px; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-left: 4px solid #0d6efd;">${formatDateNice(dateKey)}</h3>`;
+                
+                // Combined materials for this date
                 const combinedMaterials = [];
                 dayLogs.forEach(l => {
                     (l.materials||[]).forEach(m => {
@@ -3494,42 +4354,125 @@
                         combinedMaterials.push({ name: m.name || '', qty, up, sub });
                     });
                 });
+                
                 if (combinedMaterials.length) {
-                    html += '<tr><td colspan="4" class="p-0">';
-                    html += '<div class="table-responsive"><table class="table table-sm mb-0">';
-                    html += '<thead class="table-light"><tr><th>Material</th><th class="text-end" style="width:120px;">Qty</th><th class="text-end" style="width:160px;">Unit Price</th><th class="text-end" style="width:180px;">Subtotal</th></tr></thead><tbody>';
+                    html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">`;
+                    html += `<thead>`;
+                    html += `<tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">`;
+                    html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #495057;">Material</th>`;
+                    html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 100px;">Quantity</th>`;
+                    html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 130px;">Unit Price</th>`;
+                    html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 140px;">Subtotal</th>`;
+                    html += `</tr>`;
+                    html += `</thead>`;
+                    html += `<tbody>`;
                     combinedMaterials.forEach(row => {
-                        html += `<tr>
-                            <td>${escapeHtml(row.name)}</td>
-                            <td class="text-end">${row.qty}</td>
-                            <td class="text-end">${formatter.format(row.up)}</td>
-                            <td class="text-end">${formatter.format(row.sub)}</td>
-                        </tr>`;
+                        html += `<tr style="border-bottom: 1px solid #e9ecef;">`;
+                        html += `<td style="padding: 10px;">${escapeHtml(row.name)}</td>`;
+                        html += `<td style="padding: 10px; text-align: right;">${row.qty.toLocaleString()}</td>`;
+                        html += `<td style="padding: 10px; text-align: right;">${formatter.format(row.up)}</td>`;
+                        html += `<td style="padding: 10px; text-align: right; font-weight: 500;">${formatter.format(row.sub)}</td>`;
+                        html += `</tr>`;
                     });
-                    html += '</tbody></table></div>';
-                    html += '</td></tr>';
+                    html += `<tr style="background: #f8f9fa; font-weight: 600;">`;
+                    html += `<td colspan="3" style="padding: 12px; text-align: right;">Date Total:</td>`;
+                    html += `<td style="padding: 12px; text-align: right; color: #0d6efd;">${formatter.format(dayCost)}</td>`;
+                    html += `</tr>`;
+                    html += `</tbody>`;
+                    html += `</table>`;
                 }
-                // Divider between dates
-                html += '<tr><td colspan="4" class="p-0"><div style="height:8px;background:#f8f9fa;border-top:1px solid #e9ecef;border-bottom:1px solid #e9ecef;"></div></td></tr>';
+                html += `</div>`;
             });
-            html += `</tbody><tfoot>
-                <tr>
-                    <th colspan="3" class="text-end">Total Material Cost</th>
-                    <th class="text-end">${formatter.format(totalCost)}</th>
-                </tr>
-                <tr>
-                    <th colspan="3" class="text-end">Total Labor Cost</th>
-                    <th class="text-end">${formatter.format(laborCost)}</th>
-                </tr>
-                <tr>
-                    <th colspan="3" class="text-end">Grand Total</th>
-                    <th class="text-end">${formatter.format(grandTotal)}</th>
-                </tr>
-            </tfoot></table></div>`;
-            // Legend
-            html += '<div class="small text-muted">Prices in PHP. Subtotals per log are derived from quantity × unit price.</div>';
+            
+            html += `<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+            html += `<span style="font-size: 15px; font-weight: 600; color: #495057;">Total Material Cost:</span>`;
+            html += `<span style="font-size: 18px; font-weight: 700; color: #0d6efd;">${formatter.format(totalCost)}</span>`;
+            html += `</div>`;
+            html += `</div>`;
+            html += `</div>`;
+            
+            // Labor Cost Section
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h2 style="color: #212529; font-size: 20px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">LABOR COST BREAKDOWN</h2>`;
+            
+            if (laborBreakdown.length > 0) {
+                html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">`;
+                html += `<thead>`;
+                html += `<tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">`;
+                html += `<th style="padding: 12px; text-align: left; font-weight: 600; color: #495057;">Role</th>`;
+                html += `<th style="padding: 12px; text-align: center; font-weight: 600; color: #495057; width: 120px;">Count</th>`;
+                html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 150px;">Basic Salary (Daily Rate)</th>`;
+                html += `<th style="padding: 12px; text-align: right; font-weight: 600; color: #495057; width: 150px;">Total</th>`;
+                html += `</tr>`;
+                html += `</thead>`;
+                html += `<tbody>`;
+                
+                laborBreakdown.forEach(item => {
+                    const roleTotal = item.count * item.basic_salary;
+                    html += `<tr style="border-bottom: 1px solid #e9ecef;">`;
+                    html += `<td style="padding: 10px; font-weight: 500;">${escapeHtml(item.role_name)}</td>`;
+                    html += `<td style="padding: 10px; text-align: center;">${item.count}</td>`;
+                    html += `<td style="padding: 10px; text-align: right;">${formatter.format(item.basic_salary)}</td>`;
+                    html += `<td style="padding: 10px; text-align: right; font-weight: 500;">${formatter.format(roleTotal)}</td>`;
+                    html += `</tr>`;
+                });
+                
+                html += `<tr style="background: #f8f9fa; font-weight: 600; border-top: 2px solid #dee2e6;">`;
+                html += `<td colspan="3" style="padding: 12px; text-align: right;">Total Labor Cost:</td>`;
+                html += `<td style="padding: 12px; text-align: right; color: #0d6efd; font-size: 16px;">${formatter.format(laborCost)}</td>`;
+                html += `</tr>`;
+                html += `</tbody>`;
+                html += `</table>`;
+            } else {
+                html += `<div style="padding: 15px; text-align: center; color: #6c757d; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 15px;">No labor records found for this period.</div>`;
+                html += `<div style="padding: 15px; background: #f8f9fa; border-radius: 5px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<span style="font-size: 15px; font-weight: 600; color: #495057;">Total Labor Cost:</span>`;
+                html += `<span style="font-size: 18px; font-weight: 700; color: #0d6efd;">${formatter.format(laborCost)}</span>`;
+                html += `</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+            
+            // Summary Section
+            html += `<div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); border-radius: 8px; color: white;">`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">`;
+            html += `<span style="font-size: 18px; font-weight: 600;">Total Material Cost:</span>`;
+            html += `<span style="font-size: 18px; font-weight: 600;">${formatter.format(totalCost)}</span>`;
+            html += `</div>`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">`;
+            html += `<span style="font-size: 18px; font-weight: 600;">Total Labor Cost:</span>`;
+            html += `<span style="font-size: 18px; font-weight: 600;">${formatter.format(laborCost)}</span>`;
+            html += `</div>`;
+            html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.3);">`;
+            html += `<span style="font-size: 24px; font-weight: 700;">GRAND TOTAL:</span>`;
+            html += `<span style="font-size: 24px; font-weight: 700;">${formatter.format(grandTotal)}</span>`;
+            html += `</div>`;
+            html += `</div>`;
+            
+            // Footer
+            html += `<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; color: #6c757d; font-size: 12px;">`;
+            html += `<p style="margin: 5px 0;">This is a computer-generated document.</p>`;
+            html += `<p style="margin: 5px 0;">For inquiries, please contact MDB Construction Company.</p>`;
+            html += `</div>`;
         }
+        
+        html += `</div>`;
         document.getElementById('stageBillingContent').innerHTML = html;
+        
+        // Store for PDF/Print download
+        window.currentStageBillingHtml = html;
+        
+        // Toggle buttons: hide Generate, show Send to Client and Print/PDF
+        try {
+            const genBtn = document.getElementById('generateStageBillingBtn');
+            const sendBtn = document.getElementById('emailStageBillingBtn');
+            const printBtn = document.getElementById('printStageBillingBtn');
+            if (genBtn) genBtn.style.display = 'none';
+            if (sendBtn) sendBtn.style.display = 'inline-block';
+            if (printBtn) printBtn.style.display = 'inline-block';
+        } catch(_) {}
     }
 
     function emailStageBilling() {
@@ -3545,32 +4488,52 @@
         const project = state.records.find(p => p.id === currentProjectId);
         if (!project) { showWarningMessage('Please select a project first.'); return; }
         
-        // Filter logs by division AND date range
+        // Filter logs by division, date range, AND unbilled status (is_billed = 0, billing_id IS NULL)
         const logs = (project.dailyLogs || []).filter(l => {
             const matchDivision = (l.division || '') === division;
             const logDate = new Date(l.date);
             const startDate = new Date(startDateInput);
             const endDate = new Date(endDateInput);
             const matchDate = logDate >= startDate && logDate <= endDate;
-            return matchDivision && matchDate;
+            const isUnbilled = Number(l.is_billed || 0) === 0;
+            const hasNoBillingId = l.billing_id === null || l.billing_id === undefined || l.billing_id === 0;
+            return matchDivision && matchDate && isUnbilled && hasNoBillingId;
         });
         
-        if (!logs.length) { showWarningMessage('No daily logs for this stage to bill within the selected date range.'); return; }
+        if (!logs.length) { showWarningMessage('No unbilled daily logs for this stage to bill within the selected date range.'); return; }
         
-        console.log(`[DEBUG] emailStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} logs`);
+        console.log(`[DEBUG] emailStageBilling: Date range ${startDateInput} to ${endDateInput}, division ${division}, found ${logs.length} unbilled logs`);
         
         const totalMaterialCost = logs.reduce((s, l) => s + Number(l.totalCost || 0), 0);
         const progressPercent = Number(document.getElementById('updateTotalProgress')?.textContent?.replace('%','') || 0);
 
-        // Use the user-selected dates directly (already in YYYY-MM-DD format from date inputs)
-        const normStart = startDateInput;
-        const normEnd = endDateInput;
-
-        // Hide stage billing modal to ensure confirmation modal appears on top
-        try { stageBillingModal && stageBillingModal.hide && stageBillingModal.hide(); } catch (_) {}
+        // Compute progress snapshot to include in insert
+        const divisions = getDivisionsOrder();
+        const cumulative = Object.fromEntries(divisions.map(d => [d, 0]));
+        const sortedAsc = [...divisionProgress].sort((a,b) => new Date(a.date) - new Date(b.date));
+        sortedAsc.forEach(entry => {
+            if (!divisions.includes(entry.division)) return;
+            const value = Math.max(0, Math.min(100, Number(entry.progress) || 0));
+            const current = Number(cumulative[entry.division] || 0);
+            if (entry.type === 'rework') {
+                cumulative[entry.division] = Math.min(100, current);
+            } else {
+                cumulative[entry.division] = Math.min(100, current + value);
+            }
+        });
+        const stageProgressPct = Number(cumulative[division] || 0);
+        const overallProgressPct = divisions.length ? Math.round(divisions.reduce((s,d)=> s + Number(cumulative[d]||0), 0) / divisions.length) : 0;
 
         // Confirm before storing
         showConfirmationDialog(`Send stage billing to client for ${division}?`, async () => {
+            // Hide the Stage Billing modal immediately after confirm
+            try {
+                stageBillingModal && stageBillingModal.hide && stageBillingModal.hide();
+                // Remove any lingering backdrops and reset body state
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            } catch(_) {}
             try {
                 const resp = await fetch('/manufacturing/stage-billing', {
                     method: 'POST',
@@ -3579,23 +4542,61 @@
                     body: JSON.stringify({
                         project_id: currentProjectId,
                         division_id: getDivisionIdByName(division),
-                        start_date: normStart,
-                        end_date: normEnd,
-                        progress_percent: progressPercent,
+                        start_date: startDateInput,
+                        end_date: endDateInput,
+                        progress_percent: stageProgressPct,
+                        overall_division_progress: overallProgressPct,
                         total_material_cost: totalMaterialCost,
                         remarks: `Stage billing generated from UI for division ${division}`
                     })
                 });
                 const data = await resp.json();
                 if (data && data.success) {
+                    // Update local daily logs to reflect billed state using returned billing_id
+                    const billingId = data.billing_id || null;
+                    if (billingId) {
+                        (project.dailyLogs || []).forEach(l => {
+                            const logDate = new Date(l.date);
+                            const startDate = new Date(startDateInput);
+                            const endDate = new Date(endDateInput);
+                            const matchDate = logDate >= startDate && logDate <= endDate;
+                            if ((l.division || '') === division && matchDate) {
+                                l.is_billed = 1;
+                                l.billing_id = billingId;
+                            }
+                        });
+                    }
+                    // Reload from backend to ensure consistency
+                    await loadDailyLogs();
+
                     showSuccessMessage(`Stage billing ${data.billing_number} stored successfully.`);
+
+                    // Toggle buttons: after generation, show Send & Print, hide Generate
+                    try {
+                        const genBtn = document.getElementById('generateStageBillingBtn');
+                        const sendBtn = document.getElementById('emailStageBillingBtn');
+                        const printBtn = document.getElementById('printStageBillingBtn');
+                        if (genBtn) genBtn.style.display = 'none';
+                        if (sendBtn) sendBtn.style.display = 'inline-block';
+                        if (printBtn) printBtn.style.display = 'inline-block';
+                    } catch(_) {}
                 } else {
-                    showWarningMessage('Failed to store stage billing.');
+                    showWarningMessage(data?.error || 'Failed to store stage billing.');
                 }
             } catch (e) {
                 showWarningMessage('Error sending stage billing.');
             }
         });
+    }
+    
+    // Download billing as PDF via browser print dialog for the generated content only
+    function downloadStageBillingPDF() {
+        const html = window.currentStageBillingHtml || '';
+        if (!html) { showWarningMessage('Please generate the billing preview first.'); return; }
+        const w = window.open('', '_blank');
+        w.document.write(`<!DOCTYPE html><html><head><title>Stage Billing</title><style>@page{margin:1cm}body{font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:20px}</style></head><body>${html}</body></html>`);
+        w.document.close();
+        setTimeout(() => { w.print(); }, 250);
     }
 </script>
 </body>

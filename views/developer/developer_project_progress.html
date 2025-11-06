@@ -581,14 +581,14 @@
                                 <p><strong><i class="fas fa-clock me-2"></i>Deadline:</strong> <span id="modalDeadline"></span></p>
                                 <p><strong><i class="fas fa-tasks me-2"></i>Status:</strong> <span id="modalStatus"></span></p>
                             </div>
+                            <div class="division-progress" style="margin-top: 20px;">
+                                <h5><i class="fas fa-chart-line me-2"></i>Division Progress</h5>
+                                <div id="modalDivisionProgress"></div>
+                            </div>
                         </div>
                         <div class="col-md-8">
                             <div class="chart-container">
                                 <canvas id="progressChart"></canvas>
-                            </div>
-                            <div class="division-progress">
-                                <h5><i class="fas fa-chart-line me-2"></i>Division Progress</h5>
-                                <div id="modalDivisionProgress"></div>
                             </div>
                         </div>
                     </div>
@@ -903,29 +903,40 @@
             document.getElementById('modalDeadline').textContent = project.end_date ? formatDate(project.end_date) : '';
             document.getElementById('modalStatus').textContent = project.status || '';
 
-            // Division progress list
-            const divisionProgressHtml = (divisions || []).map(d => `
-                <div class="division-item">
-                    <div class="division-name">${d.division_name}</div>
-                    <div class="division-bar">
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: ${Number(d.progress_percentage||0)}%"></div>
-                        </div>
-                        <div class="division-last-update">Last updated: ${d.created_at ? formatDate(d.created_at) : '-'}</div>
-                    </div>
-                    <div class="division-percentage">${Number(d.progress_percentage||0)}%</div>
-                </div>
-            `).join('');
-            document.getElementById('modalDivisionProgress').innerHTML = divisionProgressHtml;
-
-            // Chart: compute combined per-division from entries
+            // Aggregate division progress by division name (cumulative)
             const divMap = new Map();
             (divisions || []).slice().reverse().forEach(d => {
-                const name = d.division_name; const val = Number(d.progress_percentage||0);
-                const current = divMap.get(name) || 0; const next = Math.min(100, current + val); divMap.set(name, next);
+                const name = d.division_name; 
+                const val = Math.max(0, Math.min(100, Number(d.progress_percentage||0)));
+                const current = divMap.get(name) || 0; 
+                const next = Math.min(100, current + val); 
+                divMap.set(name, next);
             });
-            const labels = Array.from(divMap.keys());
-            const values = Array.from(divMap.values());
+
+            // Define division order
+            const divisionOrder = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+            
+            // Create division progress HTML with aggregated values
+            const divisionProgressHtml = divisionOrder.map(divisionName => {
+                const cumulativeProgress = Math.min(100, Math.round(divMap.get(divisionName) || 0));
+                return `
+                    <div class="division-item">
+                        <div class="division-name">${divisionName}</div>
+                        <div class="division-bar">
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: ${cumulativeProgress}%"></div>
+                            </div>
+                        </div>
+                        <div class="division-percentage">${cumulativeProgress}%</div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('modalDivisionProgress').innerHTML = divisionProgressHtml;
+
+            // Chart: use aggregated division values in correct order (show all divisions)
+            const labels = divisionOrder;
+            const values = labels.map(name => Math.min(100, Math.round(divMap.get(name) || 0)));
             const overall = labels.length ? Math.round(values.reduce((a,b)=>a+b,0) / labels.length) : 0;
 
             if (progressChart) { progressChart.destroy(); }
