@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <!-- Bootstrap CSS -->
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+ <!-- Font Awesome for icons -->
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+ <!-- Add side_top.css early to prevent flickering -->
+ <link rel="stylesheet" href="/public/css/side_top.css">
+ <style>
+   #content {
+       margin-left: 0;
+       transition: margin-left 0.3s;
+       padding: 20px;
+   }
+
+   #content h2 {
+       font-size: 28px;
+   }
+
+   .pagination {
+       justify-content: flex-end;
+       margin-top: 20px;
+   }
+
+   /* Sort icons */
+   .sort-icon {
+       cursor: pointer;
+       transition: color 0.3s ease;
+   }
+
+   .sort-icon.active {
+       color: #007bff;
+   }
+
+   .sort-icon:hover {
+       color: #0056b3;
+   }
+
+   /* Flexbox styling for search and entries per page */
+   .search-container {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+       margin-bottom: 20px;
+   }
+
+   .search-container .form-select,
+   .search-container .form-control {
+       width: auto;
+       margin-left: 10px;
+   }
+
+   .search-container label {
+       margin-bottom: 0;
+   }
+
+   /* Bottom message */
+   #entriesMessage {
+       margin-top: 20px;
+       display: flex;
+       justify-content: space-between;
+   }
+
+   .table {
+       margin-top: 20px;
+   }
+
+   /* Table styling */
+   th,
+   td {
+       text-align: center;
+       padding: 15px;
+   }
+
+   .table-actions {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+   }
+
+   /* Modal Styling */
+   .modal-body {
+       padding: 20px;
+   }
+
+   .modal-header {
+       background-color: #007bff;
+       color: white;
+   }
+
+   .modal-footer {
+       display: flex;
+       justify-content: space-between;
+   }
+
+   /* Custom styling for modal button alignment */
+   .modal-footer .btn {
+       width: 48%;
+   }
+
+   /* Confirm modal spacing adjustments */
+   .modal-footer button {
+       font-size: 16px;
+       padding: 10px;
+   }
+
+   /* Cancel button styling */
+   .btn-danger {
+       background-color: #dc3545;
+       border-color: #dc3545;
+       float: right;
+       margin-bottom: 10px;
+       margin-right: 5px;
+   }
+
+   .btn-danger:hover {
+       background-color: #c82333;
+       border-color: #c82333;
+   }
+
+   .btn-secondary {
+       margin-bottom: 10px;
+   }
+ </style>
+
+  <title>Dashboard UI</title>
+</head>
+<body>
+         <!-- Topbar -->
+         <div class="topbar">
+          <div class="topbar-left">
+              <div class="menu-toggle" onclick="toggleSidebar()">
+                  <i class="fas fa-bars"></i>
+              </div>
+          </div>
+          <div class="topbar-right">
+              <div class="notification-icon" onclick="toggleNotifications()">
+                  <i class="fas fa-bell"></i>
+                  <span class="notification-badge"></span>
+              </div>
+              <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                  <div class="profile-info">
+                      <div class="profile-name"></div>
+                      <div class="profile-position"></div>
+                  </div>
+                  <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                      <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                  <span>Notifications</span>
+                  <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">New Leave Request</div>
+                  <div class="notification-time">5 minutes ago</div>
+              </div>
+              <div class="notification-item">
+                  <div class="notification-title">Payroll Processed</div>
+                  <div class="notification-time">1 hour ago</div>
+              </div>
+              <div class="notification-item">
+                      <span class="profile-name">John Doe</span>
+                      <span class="profile-position">HR Manager</span>
+                  </div>
+              </div>
+              
+              <!-- Notification Dropdown -->
+              <div class="notification-dropdown" id="notificationDropdown">
+                  <div class="notification-header">
+                      <span>Notifications</span>
+                      <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Leave Request</div>
+                      <div class="notification-time">5 minutes ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">Payroll Processed</div>
+                      <div class="notification-time">1 hour ago</div>
+                  </div>
+                  <div class="notification-item">
+                      <div class="notification-title">New Employee Added</div>
+                      <div class="notification-time">2 hours ago</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+      <span class="company-title">MDB Construction</span>
+  </div>
+  <ul class="list-unstyled">
+    <li class="nav-item">
+      <a class="nav-item" href="/scm/scm-dashboard"><i class="fas fa-tachometer-alt"></i> <span> Dashboard</span></a>
+    </li>
+    <li class="nav-item">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+        <i class="fas fa-calendar-check"></i> Attendance
+      </a>
+      <ul class="collapse" id="Attendance">
+      <li class="nav-item procurement-restricted supply-chain-restricted" style="display: none;">
+        <a href="/scm/scm_daily_attendance"><i class="fas fa-calendar-check"></i> <span> Daily Attendance</span></a>
+      </li>
+      <li class="nav-item procurement-restricted supply-chain-restricted" style="display: none;">
+        <a href="/scm/scm_leave_request"><i class="fas fa-file-invoice"></i> <span> Request Leave</span></a>
+      </li>
+      <li class="nav-item procurement-restricted supply-chain-restricted" style="display: none;">
+        <a href="/scm/scm_halfday_request"><i class="fas fa-clock"></i> <span> Request Halfday</span></a>
+      </li>
+    </ul>
+    </li>
+    <li class="nav-item">
+      <a href="/scm/inventory"><i class="fas fa-box"></i> <span> Inventory</span></a>
+    </li>
+    <li class="nav-item procurement-restricted" style="display: none;">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#supplyrequest" aria-expanded="false">
+        <i class="fas fa-users"></i> Supplier
+      </a>
+      <ul class="collapse" id="supplyrequest">
+          <li class="nav-item procurement-restricted" style="display: none;"><a href="/scm/supplier"><i class="fas fa-users"></i> <span> Supplier</span></a></li>
+          <li class="nav-item procurement-restricted" style="display: none;"><a href="/scm/product_request"><i class="fas fa-user-tie"></i> <span> Product Request</span></a></li>
+        </ul>
+    </li>
+    
+    <li class="nav-item supply-chain-restricted" style="display: none;">
+      <a href="#" data-bs-toggle="collapse" data-bs-target="#PurchaseRequest" aria-expanded="false">
+        <i class="fas fa-file-invoice"></i> Purchase Request
+      </a>
+      <ul class="collapse" id="PurchaseRequest">
+        <li class="nav-item supply-chain-restricted" style="display: none;"><a href="/scm/purchase_request"><i class="fas fa-list-alt"></i> <span>Registered</span></a></li>
+        <li class="nav-item supply-chain-restricted" style="display: none;"><a href="/scm/manual_purchase"><i class="fas fa-plus-circle"></i> <span>Manual</span></a></li>
+      </ul>
+    </li>
+   
+    <li class="nav-item supply-chain-restricted" style="display: none;">
+      <a href="/scm/request_material"><i class="fas fa-shopping-cart"></i> <span> Request Material</span></a>
+    </li>
+ 
+    <li class="nav-item">
+      <a href="/scm/order"><i class="fas fa-shopping-cart"></i> <span> Order</span></a>
+    </li>
+    <li class="nav-item supply-chain-restricted" style="display: none;">
+        <a href="/scm/owners_supply"><i class="fas fa-user-tie"></i> <span> Owners Supply</span></a>
+    </li>
+    <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span> Logout</span></a></li>
+  </ul>
+</div>
+
+  <div id="content">
+    <!-- ========== Half-Day Leave Requests Content ========== -->
+    <h2>Half-Day Leave Requests</h2>
+
+    <!-- Search Bar and Entries Per Page -->
+    <div class="search-container">
+        <input type="text" id="searchBar" class="form-control" placeholder="Search half-day requests..." onkeyup="filterHalfDayRequests()">
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <label for="entriesPerPage" class="form-label">Entries per page:</label>
+                <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Half-Day Leave Request Table -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Remarks<i class="fas fa-sort sort-icon" id="sortLeaveType"></i></th>
+                <th onclick="sortTable(1)">Employee Name <i class="fas fa-sort sort-icon" id="sortEmployeeName"></i></th>
+                <th onclick="sortTable(2)">Date<i class="fas fa-sort sort-icon" id="sortLeaveDate"></i></th>
+                <th onclick="sortTable(3)">From <i class="fas fa-sort sort-icon" id="sortFrom"></i></th>
+                <th onclick="sortTable(4)">To <i class="fas fa-sort sort-icon" id="sortTo"></i></th>
+                <th onclick="sortTable(5)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="halfDayRequestsList">
+            <!-- Half-day leave request rows will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <!-- Showing entries message -->
+    <div id="entriesMessage">
+        <span id="showingEntries"></span>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination" id="paginationControls"></ul>
+    </nav>
+
+    <!-- View Half-Day Request Modal -->
+    <div class="modal fade" id="viewHalfDayModal" tabindex="-1" aria-labelledby="viewHalfDayModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewHalfDayModalLabel">View Half-Day Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="halfDayDetails">
+                    <!-- Half-day details will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="approveBtn">Approve</button>
+                    <button type="button" class="btn btn-danger" id="rejectBtn">Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+
+<script>
+    // Dynamically set API_URL based on current origin
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:4000/scm' 
+        : `${window.location.origin}/scm`;
+    
+    let halfDayRequests = [];
+    let itemsPerPage = 5;
+    let currentPage = 1;
+    let filteredHalfDayRequests = null;
+
+    // Fetch half-day requests from the server
+    async function fetchHalfDayRequests() {
+        try {
+            const response = await fetch(`${API_URL}/all-halfday-requests`);
+            if (!response.ok) throw new Error('Failed to fetch half-day requests');
+            halfDayRequests = await response.json();
+            renderHalfDayRequests();
+        } catch (error) {
+            console.error('Error fetching half-day requests:', error);
+            document.getElementById('halfDayRequestsList').innerHTML = 
+                '<tr><td colspan="7" class="text-center">Error loading half-day requests</td></tr>';
+        }
+    }
+
+    function renderHalfDayRequests() {
+        const list = filteredHalfDayRequests || halfDayRequests;
+        const halfDayRequestsList = document.getElementById('halfDayRequestsList');
+        halfDayRequestsList.innerHTML = '';
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = currentPage * itemsPerPage;
+        const currentHalfDayRequests = list.slice(start, end);
+
+        if (currentHalfDayRequests.length === 0) {
+            halfDayRequestsList.innerHTML = '<tr><td colspan="7" class="text-center">No half-day requests found</td></tr>';
+            renderPagination();
+            updateEntriesMessage();
+            return;
+        }
+
+        currentHalfDayRequests.forEach(request => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${request.remarks || 'N/A'}</td>
+                <td>${request.employee_name || 'N/A'}</td>
+                <td>${formatDate(request.date) || 'N/A'}</td>
+                <td>${request.from_time || 'N/A'}</td>
+                <td>${request.to_time || 'N/A'}</td>
+                <td><span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status || 'pending'}</span></td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="viewHalfDayRequest(${request.id})">View</button>
+                </td>
+            `;
+            halfDayRequestsList.appendChild(row);
+        });
+
+        renderPagination();
+        updateEntriesMessage();
+    }
+
+    function getStatusBadgeColor(status) {
+        switch((status || '').toLowerCase()) {
+            case 'approved': return 'success';
+            case 'rejected': return 'danger';
+            case 'pending': return 'warning';
+            default: return 'warning';
+        }
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+
+    function renderPagination() {
+        const list = filteredHalfDayRequests || halfDayRequests;
+        const paginationControls = document.getElementById('paginationControls');
+        const totalPages = Math.ceil(list.length / itemsPerPage);
+        paginationControls.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('li');
+            pageButton.classList.add('page-item');
+            if (i === currentPage) pageButton.classList.add('active');
+            pageButton.innerHTML = `
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            `;
+            paginationControls.appendChild(pageButton);
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderHalfDayRequests();
+    }
+
+    function updateEntriesMessage() {
+        const list = filteredHalfDayRequests || halfDayRequests;
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, list.length);
+        const message = `Showing ${start} to ${end} of ${list.length} entries`;
+        document.getElementById('showingEntries').textContent = message;
+    }
+
+    function viewHalfDayRequest(id) {
+        const request = halfDayRequests.find(req => req.id === id);
+        if (request) {
+            const halfDayDetails = `
+                <p><strong>Remarks:</strong> ${request.remarks || 'N/A'}</p>
+                <p><strong>Employee Name:</strong> ${request.employee_name || 'N/A'}</p>
+                <p><strong>Date:</strong> ${formatDate(request.date)}</p>
+                <p><strong>From:</strong> ${request.from_time || 'N/A'}</p>
+                <p><strong>To:</strong> ${request.to_time || 'N/A'}</p>
+                <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(request.status)}">${request.status || 'pending'}</span></p>
+            `;
+            document.getElementById('halfDayDetails').innerHTML = halfDayDetails;
+
+            // Enable or disable buttons based on leave status
+            const approveBtn = document.getElementById('approveBtn');
+            const rejectBtn = document.getElementById('rejectBtn');
+            
+            if (request.status === 'pending' || !request.status) {
+                approveBtn.disabled = false;
+                rejectBtn.disabled = false;
+            } else {
+                approveBtn.disabled = true;
+                rejectBtn.disabled = true;
+            }
+
+            $('#viewHalfDayModal').modal('show');
+
+            // Handle the approval or rejection
+            approveBtn.onclick = function () {
+                updateHalfDayStatus(id, 'approved');
+            };
+
+            rejectBtn.onclick = function () {
+                updateHalfDayStatus(id, 'rejected');
+            };
+        }
+    }
+
+    async function updateHalfDayStatus(id, status) {
+        try {
+            const response = await fetch(`${API_URL}/halfday-requests/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status })
+            });
+
+            if (!response.ok) throw new Error('Failed to update half-day request');
+
+            $('#viewHalfDayModal').modal('hide');
+            await fetchHalfDayRequests();
+            alert(`Half-day request ${status} successfully!`);
+        } catch (error) {
+            console.error('Error updating half-day request:', error);
+            alert('Failed to update half-day request. Please try again.');
+        }
+    }
+
+    function setEntriesPerPage() {
+        itemsPerPage = parseInt(document.getElementById('entriesPerPage').value);
+        currentPage = 1;
+        renderHalfDayRequests();
+    }
+
+    function filterHalfDayRequests() {
+        const searchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+
+        if (searchTerm) {
+            filteredHalfDayRequests = halfDayRequests.filter(request =>
+                (request.employee_name && request.employee_name.toLowerCase().includes(searchTerm)) ||
+                (request.remarks && request.remarks.toLowerCase().includes(searchTerm)) ||
+                (request.status && request.status.toLowerCase().includes(searchTerm))
+            );
+        } else {
+            filteredHalfDayRequests = null;
+        }
+
+        currentPage = 1;
+        renderHalfDayRequests();
+    }
+
+    function sortTable(columnIndex) {
+        const list = filteredHalfDayRequests || halfDayRequests;
+        const columnNames = ['remarks', 'employee_name', 'date', 'from_time', 'to_time', 'status'];
+        const columnName = columnNames[columnIndex];
+
+        list.sort((a, b) => {
+            let valueA = a[columnName] || '';
+            let valueB = b[columnName] || '';
+
+            // Handle date sorting
+            if (columnName === 'date') {
+                valueA = new Date(valueA);
+                valueB = new Date(valueB);
+            }
+
+            if (valueA < valueB) return -1;
+            if (valueA > valueB) return 1;
+            return 0;
+        });
+
+        renderHalfDayRequests();
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchHalfDayRequests();
+    });
+</script>
+<!-- Bootstrap JS and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/public/js/side_top.js"></script>
+<script src="/public/js/scm_role_visibility.js"></script>
+</body>
+</html>

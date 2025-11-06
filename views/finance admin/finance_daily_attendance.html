@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance</title>
+    <title>Finance Dashboard</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <!-- Chart.js for charts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add side_top.css early to prevent flickering -->
     <link rel="stylesheet" href="/public/css/side_top.css">
     <style>
         /* Main content styles */
@@ -133,74 +131,41 @@
         .modal-footer .btn-secondary:hover {
             background-color: #0056b3;
         }
-
     </style>
 </head>
-
 <body>
-    <div id="wrapper">
-       <!-- Topbar -->
-       <div class="topbar">
-        <div class="topbar-left">
-            <div class="menu-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+   <!-- Topbar -->
+   <div class="topbar">
+    <div class="topbar-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="notification-icon" onclick="toggleNotifications()">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge"></span>
+        </div>
+        <div class="profile-section" onclick="window.location.href='/finance/finance_profile'">
+            <div class="profile-info">
+                <div class="profile-name"></div>
+                <div class="profile-position"></div>
+            </div>
+            <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                <img src="/finance/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
             </div>
         </div>
-        <div class="topbar-right">
-            <div class="notification-icon" onclick="toggleNotifications()">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge"></span>
-            </div>
-            <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
-                <div class="profile-info">
-                    <div class="profile-name"></div>
-                    <div class="profile-position"></div>
-                </div>
-                <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
-                    <img src="/images/default-profile.png" alt="Profile" class="profile-picture" id="topbarProfilePicture">
-                </div>
-            </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <span>Notifications</span>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
         </div>
-        
-        <!-- Notification Dropdown -->
-        <div class="notification-dropdown" id="notificationDropdown">
-            <div class="notification-header">
-                <span>Notifications</span>
-                <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-            </div>
-            <div class="notification-item">
-                <div class="notification-title">New Leave Request</div>
-                <div class="notification-time">5 minutes ago</div>
-            </div>
-            <div class="notification-item">
-                <div class="notification-title">Payroll Processed</div>
-                <div class="notification-time">1 hour ago</div>
-            </div>
-            <div class="notification-item">
-                    <span class="profile-name">John Doe</span>
-                    <span class="profile-position">HR Manager</span>
-                </div>
-            </div>
-            
-            <!-- Notification Dropdown -->
-            <div class="notification-dropdown" id="notificationDropdown">
-                <div class="notification-header">
-                    <span>Notifications</span>
-                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
-                </div>
-                <div class="notification-item">
-                    <div class="notification-title">New Leave Request</div>
-                    <div class="notification-time">5 minutes ago</div>
-                </div>
-                <div class="notification-item">
-                    <div class="notification-title">Payroll Processed</div>
-                    <div class="notification-time">1 hour ago</div>
-                </div>
-                <div class="notification-item">
-                    <div class="notification-title">New Employee Added</div>
-                    <div class="notification-time">2 hours ago</div>
-                </div>
-            </div>
+        <div id="notificationList">
+            <!-- Notifications will be loaded here -->
+        </div>
         </div>
     </div>
 
@@ -212,103 +177,120 @@
         </div>
         <ul class="list-unstyled">
             <li class="nav-item">
-                <a class="nav-item" href="/driver/driver_attendance">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Attendance</span>
-                </a>
+                <a class="nav-item active" href="/finance/finance_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
             </li>
             <li class="nav-item">
-                <a class="nav-item" href="/driver/driver_material_release">
-                    <i class="fas fa-box"></i>
-                    <span>Material Releases</span>
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                    <i class="fas fa-calendar-check"></i> Attendance
                 </a>
+                <ul class="collapse" id="Attendance">
+                    <li class="nav-item"><a href="/finance/finance_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_leave_request"><i class="fas fa-file-invoice"></i> <span>Request Leave</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_halfday"><i class="fas fa-clock"></i> <span>Request Halfday</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_overtime"><i class="fas fa-business-time"></i> <span>Request Overtime</span></a></li>
+                </ul>
             </li>
-        </ul>
-        <!-- Move Logout outside the main ul -->
-        <div class="logout-container">
-            <a href="/logout" class="logout-link">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="logout-text">Logout</span>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Payroll" aria-expanded="false">
+                    <i class="fas fa-money-bill-wave"></i> Payroll
                 </a>
-        </div>
+                <ul class="collapse" id="Payroll">
+                    <li class="nav-item"><a href="/finance/finance_payroll"><i class="fas fa-money-bill-wave"></i> <span>Payroll</span></a></li>
+                </ul>
+            </li>
+            <li class="nav-item accountant-restricted" style="display: none;">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Cash" aria-expanded="false">
+                    <i class="fas fa-cash-register"></i> Cash Management
+                </a>
+                <ul class="collapse" id="Cash">
+                    <li class="nav-item accountant-restricted" style="display: none;"><a href="/finance/cash_monitoring"><i class="fas fa-chart-line"></i> <span>Cash Monitoring</span></a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" data-bs-toggle="collapse" data-bs-target="#Purchase" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i> Purchase
+                </a>
+                <ul class="collapse" id="Purchase">
+                    <li class="nav-item"><a href="/finance/finance_purchase_request"><i class="fas fa-file-invoice"></i> <span>Purchase Request</span></a></li>
+                    <li class="nav-item"><a href="/finance/finance_purchase_order"><i class="fas fa-file-invoice-dollar"></i> <span>Purchase Order</span></a></li>
+                </ul>
+            </li>
+            <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
     </div>
-        <!-- Sidebar end -->
 
-        <!-- Main content area -->
-        <div id="content">
-        <!-- ========== Attendance Section ========== -->
-        <h2>Attendance</h2>
-
-
-       <!-- Entries per page aligned to the right -->
-        <div class="d-flex justify-content-end mb-3">
-            <label for="entriesPerPage" class="form-label mr-2">Entries per page:</label>
-            <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-            </select>
-        </div>
-
-
-        <!-- Attendance Buttons -->
-        <div class="attendance-buttons">
-            <button class="btn btn-primary mx-3" id="checkIn">Check-in</button>
-            <button class="btn btn-danger mx-3" id="checkOut">Check-out</button>
-        </div>
-
-        <!-- Modal for Check-in/Check-out Status -->
-        <div class="modal fade" id="attendanceModal" tabindex="-1" role="dialog" aria-labelledby="attendanceModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="attendanceModalLabel">Attendance Status</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center" id="attendanceModalBody">
-                        <div class="spinner-border text-primary mb-3" id="attendanceSpinner" role="status" style="display: none;">
-                            <span class="visually-hidden">Loading...</span>
+    <div id="content">
+       
+       
+            <h2>Attendance</h2>
+    
+    
+           <!-- Entries per page aligned to the right -->
+            <div class="d-flex justify-content-end mb-3">
+                <label for="entriesPerPage" class="form-label mr-2">Entries per page:</label>
+                <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+    
+    
+            <!-- Attendance Buttons -->
+            <div class="attendance-buttons">
+                <button class="btn btn-primary mx-3" id="checkIn">Check-in</button>
+                <button class="btn btn-danger mx-3" id="checkOut">Check-out</button>
+            </div>
+    
+            <!-- Modal for Check-in/Check-out Status -->
+            <div class="modal fade" id="attendanceModal" tabindex="-1" role="dialog" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="attendanceModalLabel">Attendance Status</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div id="attendanceStatus">
-                            <!-- Status message will be displayed here -->
+                        <div class="modal-body text-center" id="attendanceModalBody">
+                            <div class="spinner-border text-primary mb-3" id="attendanceSpinner" role="status" style="display: none;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div id="attendanceStatus">
+                                <!-- Status message will be displayed here -->
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+    
+            <!-- Attendance Table -->
+            <table class="table attendance-table">
+             <thead>
+                <tr>
+                <th onclick="sortTable(0)">Date<i class="fas fa-sort sort-icon" id="sortDate"></i></th>
+                <th onclick="sortTable(1)">Check-in <i class="fas fa-sort sort-icon" id="sortCheck-in"></i></th>
+                <th onclick="sortTable(2)">Check-out <i class="fas fa-sort sort-icon" id="sortCheck-out"></i></th>
+                <th onclick="sortTable(3)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+                </tr>
+             </thead>
+             <tbody id="attendanceBody">
+    
+            </tbody>
+        </table>
+    </div>
 
-        <!-- Attendance Table -->
-        <table class="table attendance-table">
-         <thead>
-            <tr>
-            <th onclick="sortTable(0)">Date<i class="fas fa-sort sort-icon" id="sortDate"></i></th>
-            <th onclick="sortTable(1)">Check-in <i class="fas fa-sort sort-icon" id="sortCheck-in"></i></th>
-            <th onclick="sortTable(2)">Check-out <i class="fas fa-sort sort-icon" id="sortCheck-out"></i></th>
-            <th onclick="sortTable(3)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
-            </tr>
-         </thead>
-         <tbody id="attendanceBody">
-
-        </tbody>
-    </table>
-        </div>
-    </div>    
-</body>
-    <!-- Bootstrap JS and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Move all scripts to the end of body -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js for purchase expenses chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="/public/js/side_top.js"></script>
+    <script src="/public/js/finance_role_visibility.js"></script>
     <script>
-        // Dynamically set API_URL based on current origin
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:4000/hr' 
-            : `${window.location.origin}/hr`;
 
-        document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
             const propertiesToggle = document.getElementById('properties-toggle');
             if (propertiesToggle) {
                 propertiesToggle.addEventListener('click', function () {
@@ -359,7 +341,7 @@
         // Function to fetch HR ID from session
         async function getEmployeeIdFromSession() {
             try {
-                const response = await fetch(`${API_URL}/check-session`, {
+                const response = await fetch('http://localhost:4000/hr/check-session', {
                     credentials: 'include',
                 });
 
@@ -478,7 +460,7 @@
                     formData.append('image', capturedImage, 'checkin.jpg');
                 }
 
-                const response = await fetch(`${API_URL}/check-in/${userId}`, {
+                const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -558,7 +540,7 @@
                 const date = new Date().toISOString().slice(0, 10);
                 const checkOutTime = new Date().toISOString();
 
-                const response = await fetch(`${API_URL}/check-out/${userId}`, {
+                const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, checkOutTime, date }),
@@ -580,7 +562,7 @@
         // Load today's attendance from the database
         async function loadEmployeeAttendanceData(employeeId) {
             try {
-                const response = await fetch(`${API_URL}/today/${employeeId}`);
+                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
                 const data = await response.json();
 
                 const tbody = document.getElementById("attendanceBody");
@@ -630,7 +612,7 @@
                 loadEmployeeAttendanceData(employeeId); // Load the attendance data for the employee
             }
         };
+       
     </script>
 </body>
-
 </html>

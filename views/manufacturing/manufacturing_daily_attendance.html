@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Add side_top.css early to prevent flickering -->
+    <link rel="stylesheet" href="/public/css/side_top.css">
+    
+    <style>
+        /* Main content styles */
+        #content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        /* Table and form styles */
+        .attendance-table {
+            margin-top: 20px;
+        }
+
+        .attendance-table th, .attendance-table td {
+            text-align: center;
+        }
+        /* Button Customization */
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+
+        .btn-secondary{
+            background-color: #0ed370;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* Flexbox container to align buttons */
+        .attendance-buttons {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        /* Pagination Controls */
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Sort icons */
+        .sort-icon {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .sort-icon.active {
+            color: #007bff;
+        }
+
+        .sort-icon:hover {
+            color: #0056b3;
+        }
+
+        /* Align the entries per page to the right */
+        #entriesPerPage {
+            width: auto;
+            max-width: 150px;
+            margin-bottom: 5px; 
+        }
+
+        /* Add margin to the label for spacing between label and dropdown */
+        .form-label {
+            margin-right: 10px;
+        }
+
+        /* Message for showing entries */
+        #entriesMessage {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Modal Custom Styles to match previous project style */
+        .modal-content {
+            background-color: #f5f7fa;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .modal-header {
+            background-color: #0052a5;
+            color: white;
+            border-bottom: 2px solid #004b8d;
+            padding: 15px 20px;
+        }
+
+        .modal-body {
+            font-size: 1.1rem;
+            color: #333;
+            padding: 20px;
+        }
+
+        .modal-footer {
+            background-color: #f5f7fa;
+            text-align: right;
+            border-top: 2px solid #e1e1e1;
+            padding: 15px 20px;
+        }
+
+        .modal-footer .btn-secondary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .modal-footer .btn-secondary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+         <!-- Topbar -->
+         <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="notification-icon" onclick="toggleNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </div>
+                <div class="profile-section" onclick="window.location.href='/hr/hr_profile'">
+                    <div class="profile-info">
+                        <div class="profile-name"></div>
+                        <div class="profile-position"></div>
+                    </div>
+                    <div class="profile-picture-container" style="width: 40px; height: 40px; margin: 0;">
+                        <img src="/hr/default-profile-picture" alt="Profile" class="profile-picture" id="topbarProfilePicture">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">
+                    <span>Notifications</span>
+                    <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+                </div>
+                <div id="notificationList">
+                    <!-- Dynamic notifications will be loaded here -->
+                </div>
+            </div>
+            </div>
+        </div>
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="/image/mdb-removebg-preview.png" alt="MDB Logo">
+                <span class="company-title">MDB Construction</span>
+            </div>
+            <ul class="list-unstyled">
+                <li class="nav-item active">
+                    <a class="nav-item" href="/manufacturing/manufacturing_dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Attendance" aria-expanded="false">
+                        <i class="fas fa-calendar-check"></i> <span>Attendance</span> 
+                    </a>
+                    <ul class="collapse" id="Attendance">
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_daily_attendance"><i class="fas fa-calendar-check"></i> <span>Daily Attendance</span></a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_leave_request"><i class="fas fa-file-invoice"></i> <span>Request Leave</span></a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_halfday_request"><i class="fas fa-business-time"></i> <span>Halfday Request</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Projects" aria-expanded="false">
+                        <i class="fas fa-project-diagram"></i> <span>Projects</span>
+                    </a>
+                    <ul class="collapse" id="Projects">
+                        <li class="nav-item foreman-restricted" style="display: none;"><a href="/manufacturing/manufacturing_projects"><i class="fas fa-code-branch"></i> <span>Developer Projects</span></a></li>
+                        <li class="nav-item foreman-restricted" style="display: none;"><a href="/manufacturing/manufacturing_approved_project"><i class="fas fa-check-circle"></i> <span>Approved Projects</span></a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_progress"><i class="fas fa-tasks"></i> <span>Project Progress</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" data-bs-toggle="collapse" data-bs-target="#Construction" aria-expanded="false">
+                        <i class="fas fa-plus-circle"></i> <span>Construction Management</span>
+                    </a>
+                    <ul class="collapse" id="Construction">
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_add_construction"><i class="fas fa-plus-circle"></i> <span>Add Construction</span></a></li>
+                        <li class="nav-item"><a href="/manufacturing/manufacturing_construction_attendance"><i class="fas fa-calendar-check"></i> <span>Construction Attendance</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="/manufacturing/manufacturing_request_materials"><i class="fas fa-box"></i> <span>Request Materials</span></a>
+                </li>
+                <li class="nav-item foreman-restricted" style="display: none;">
+                    <a href="/manufacturing/manufacturing_ratings"><i class="fas fa-star"></i> <span>Ratings & Feedback</span></a>
+                </li>
+                <li class="nav-item foreman-restricted" style="display: none;">
+                    <a href="/manufacturing/manufacturing_foremen"><i class="fas fa-hard-hat"></i> <span>Foremen List</span></a>
+                </li>
+                <li class="logout nav-item"><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+            </ul>
+        </div>
+
+        <!-- Main content area -->
+        <div id="content">
+        <!-- ========== Attendance Section ========== -->
+        <h2>Attendance</h2>
+
+       <!-- Entries per page aligned to the right -->
+        <div class="d-flex justify-content-end mb-3">
+            <label for="entriesPerPage" class="form-label mr-2">Entries per page:</label>
+            <select id="entriesPerPage" class="form-select" onchange="setEntriesPerPage()">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+        </div>
+
+        <!-- Attendance Buttons -->
+        <div class="attendance-buttons">
+            <button class="btn btn-primary mx-3" id="checkIn">Check-in</button>
+            <button class="btn btn-danger mx-3" id="checkOut">Check-out</button>
+        </div>
+
+        <!-- Modal for Check-in/Check-out Status -->
+        <div class="modal fade" id="attendanceModal" tabindex="-1" role="dialog" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="attendanceModalLabel">Attendance Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center" id="attendanceModalBody">
+                        <div class="spinner-border text-primary mb-3" id="attendanceSpinner" role="status" style="display: none;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div id="attendanceStatus">
+                            <!-- Status message will be displayed here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <table class="table attendance-table">
+         <thead>
+            <tr>
+            <th onclick="sortTable(0)">Date<i class="fas fa-sort sort-icon" id="sortDate"></i></th>
+            <th onclick="sortTable(1)">Check-in <i class="fas fa-sort sort-icon" id="sortCheck-in"></i></th>
+            <th onclick="sortTable(2)">Check-out <i class="fas fa-sort sort-icon" id="sortCheck-out"></i></th>
+            <th onclick="sortTable(3)">Status <i class="fas fa-sort sort-icon" id="sortStatus"></i></th>
+            </tr>
+         </thead>
+         <tbody id="attendanceBody">
+
+        </tbody>
+    </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS, Chart.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/public/js/side_top.js"></script>
+    <script src="/public/js/manufacturing_role_visibility.js"></script>
+    <script>
+        // Dynamically set API_URL based on current origin
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000/manufacturing' 
+            : `${window.location.origin}/manufacturing`;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const propertiesToggle = document.getElementById('properties-toggle');
+            if (propertiesToggle) {
+                propertiesToggle.addEventListener('click', function () {
+                    var chevronIcon = document.getElementById('chevron-icon');
+                    if (chevronIcon) {
+                        chevronIcon.classList.toggle('rotate');
+                    }
+                });
+            }
+        });
+
+        // Function to get user location (latitude and longitude)
+        function getUserLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            resolve({
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude,
+                            });
+                        },
+                        (error) => {
+                            reject(new Error("Unable to retrieve your location. Please ensure location services are enabled."));
+                        }
+                    );
+                } else {
+                    reject(new Error("Geolocation is not supported by this browser."));
+                }
+            });
+        }
+
+        // Function to get the user ID from session (via API)
+        async function getUserId() {
+            try {
+                const employeeId = await getEmployeeIdFromSession();
+                if (!employeeId) {
+                    alert("User ID is missing.");
+                    return;
+                }
+                return employeeId;
+            } catch (error) {
+                console.error('Error fetching User ID:', error);
+                return null;
+            }
+        }
+
+        // Function to fetch User ID from session
+        async function getEmployeeIdFromSession() {
+            try {
+                const response = await fetch(`${API_URL}/check-session`, {
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch User ID');
+                }
+
+                const data = await response.json();
+                return data.user.id;
+            } catch (error) {
+                console.error('Error fetching User ID:', error);
+                return null;
+            }
+        }
+
+        // Function to show modal with message
+        function showAttendanceModal(message, isError = false, showSpinner = false) {
+            const modalBody = document.getElementById('attendanceModalBody');
+            const spinner = document.getElementById('attendanceSpinner');
+            const status = document.getElementById('attendanceStatus');
+            const modalElement = document.getElementById('attendanceModal');
+            
+            spinner.style.display = showSpinner ? 'inline-block' : 'none';
+            
+            if (!showSpinner) {
+                status.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas ${isError ? 'fa-exclamation-circle text-danger' : 'fa-check-circle text-success'} fa-3x mb-3"></i>
+                        <p class="mb-0">${message}</p>
+                    </div>
+                `;
+            } else {
+                status.innerHTML = `<p class="mb-0">${message}</p>`;
+            }
+            
+            // Remove any existing modal instances
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                existingModal.dispose();
+            }
+            
+            // Create and show new modal
+            const modal = new bootstrap.Modal(modalElement);
+            
+            // Add event listener for when modal is hidden
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                // Remove the backdrop
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                // Remove modal-open class from body
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, { once: true });
+            
+            modal.show();
+        }
+
+        // Add event listener for modal close button
+        document.querySelector('#attendanceModal .btn-close').addEventListener('click', function() {
+            const modalElement = document.getElementById('attendanceModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        });
+
+        // Add event listener for modal close button in footer
+        document.querySelector('#attendanceModal .btn-secondary').addEventListener('click', function() {
+            const modalElement = document.getElementById('attendanceModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        });
+
+        // Hidden video element for camera capture
+        let hiddenVideo = null;
+        let hiddenStream = null;
+
+        // Update the check-in button click handler
+        const checkInButton = document.getElementById("checkIn");
+        checkInButton.addEventListener('click', async () => {
+            const userId = await getUserId();
+            if (!userId) {
+                showAttendanceModal("Error: User ID not found", true);
+                return;
+            }
+
+            showAttendanceModal("Processing check-in...", false, true);
+
+            try {
+                const userLocation = await getUserLocation();
+                const date = new Date().toISOString().slice(0, 10);
+                const checkInTime = new Date().toISOString();
+
+                // Capture image from camera automatically (hidden)
+                let capturedImage = null;
+                try {
+                    capturedImage = await captureImageSilently();
+                } catch (captureError) {
+                    console.warn('Failed to capture image silently:', captureError);
+                }
+
+                // Send to backend with captured image
+                const formData = new FormData();
+                formData.append('userId', userId);
+                formData.append('date', date);
+                formData.append('checkInTime', checkInTime);
+                formData.append('userLat', userLocation.lat);
+                formData.append('userLng', userLocation.lng);
+                
+                if (capturedImage) {
+                    formData.append('image', capturedImage, 'checkin.jpg');
+                }
+
+                const response = await fetch(`${API_URL}/check-in/${userId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    showAttendanceModal(result.error, true);
+                } else {
+                    showAttendanceModal(result.message || "Check-in successful");
+                    loadEmployeeAttendanceData(userId);
+                }
+            } catch (error) {
+                showAttendanceModal(error.message || "Error checking in", true);
+            }
+        });
+
+        // Function to silently capture image from camera
+        async function captureImageSilently() {
+            return new Promise((resolve, reject) => {
+                // Check if we already have camera access
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            hiddenStream = stream;
+                            
+                            // Create hidden video element
+                            hiddenVideo = document.createElement('video');
+                            hiddenVideo.srcObject = stream;
+                            hiddenVideo.play();
+                            
+                            hiddenVideo.addEventListener('loadedmetadata', () => {
+                                // Create hidden canvas
+                                const canvas = document.createElement('canvas');
+                                canvas.width = hiddenVideo.videoWidth;
+                                canvas.height = hiddenVideo.videoHeight;
+                                
+                                const ctx = canvas.getContext('2d');
+                                
+                                // Wait a moment for the video to be ready, then capture
+                                setTimeout(() => {
+                                    ctx.drawImage(hiddenVideo, 0, 0);
+                                    
+                                    // Convert to blob
+                                    canvas.toBlob(blob => {
+                                        // Stop the stream
+                                        hiddenStream.getTracks().forEach(track => track.stop());
+                                        
+                                        resolve(blob);
+                                    }, 'image/jpeg', 0.8);
+                                }, 1000); // Capture after 1 second
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error accessing camera:', error);
+                            reject(error);
+                        });
+                } else {
+                    reject(new Error('Camera not available'));
+                }
+            });
+        }
+
+        // Update the check-out button click handler
+        const checkOutButton = document.getElementById("checkOut");
+        checkOutButton.addEventListener('click', async () => {
+            const userId = await getUserId();
+            if (!userId) {
+                showAttendanceModal("Error: User ID not found", true);
+                return;
+            }
+
+            showAttendanceModal("Processing...", false, true);
+
+            try {
+                const userLocation = await getUserLocation();
+                const date = new Date().toISOString().slice(0, 10);
+                const checkOutTime = new Date().toISOString();
+
+                const response = await fetch(`${API_URL}/check-out/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, checkOutTime, date }),
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    showAttendanceModal(result.error, true);
+                } else {
+                    showAttendanceModal(result.message);
+                    loadEmployeeAttendanceData(userId);
+                }
+            } catch (error) {
+                showAttendanceModal(error.message || "Error checking out", true);
+            }
+        });
+
+        // Load today's attendance from the database
+        async function loadEmployeeAttendanceData(employeeId) {
+            try {
+                const response = await fetch(`${API_URL}/today/${employeeId}`);
+                const data = await response.json();
+
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '';
+
+                // Check if there are any records to display for today
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No records found for today</td></tr>';
+                } else {
+                    // Populate table with employee attendance data
+                    data.forEach(record => {
+                        const formattedDate = new Date(record.date).toISOString().split('T')[0];
+                        const statusClass = record.status === 'Missed Check-Out' ? 'text-danger fw-bold' : '';
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td>${formatTimeTo12Hour(record.check_in) || '-'}</td>
+                            <td>${formatTimeTo12Hour(record.check_out) || '-'}</td>
+                            <td class="${statusClass}">${record.status || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading attendance data:', error);
+                const tbody = document.getElementById("attendanceBody");
+                tbody.innerHTML = '<tr><td colspan="4">Error loading data</td></tr>';
+            }
+        }
+
+        function formatTimeTo12Hour(timeString) {
+            if (!timeString || timeString === '-') return '-';
+            const [hour, minute] = timeString.split(':');
+            const date = new Date();
+            date.setHours(parseInt(hour), parseInt(minute));
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function setEntriesPerPage() {
+            // Placeholder function - can be implemented if needed
+        }
+
+        function sortTable(columnIndex) {
+            // Placeholder function - can be implemented if needed
+        }
+
+        // On page load, fetch the employee ID and load attendance data
+        window.onload = async () => {
+            const employeeId = await getUserId();
+            if (employeeId) {
+                loadEmployeeAttendanceData(employeeId);
+            }
+        };
+    </script>
+</body>
+</html>

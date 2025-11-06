@@ -552,6 +552,19 @@
             color: white;
         }
 
+        .btn-tour-modal:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-tour-modal:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         /* CTA Section */
         .cta-section {
             background: url('/public/image/properties_bg2.jpg') center center/cover no-repeat;
@@ -1444,22 +1457,8 @@
                         <div class="col-lg-7">
                             <div class="property-image-container" style="height:480px;">
                                 <img id="detailsImage" class="property-modal-image" src="" alt="Property">
-                                <div id="detailsRating" style="position:absolute; top:16px; left:50%; transform:translateX(-50%); font-size:1.6rem; color:#ddd; display:flex; gap:6px; flex-direction:column; align-items:center;" aria-label="Rate this property">
-                                    <div style="font-size:0.8rem; color:#eee; margin-bottom:4px;">Your Rating</div>
-                                    <div style="display:flex; gap:6px;">
-                                        <i class="far fa-star rating-star" data-value="1" role="button" aria-label="1 star" tabindex="0"></i>
-                                        <i class="far fa-star rating-star" data-value="2" role="button" aria-label="2 stars" tabindex="0"></i>
-                                        <i class="far fa-star rating-star" data-value="3" role="button" aria-label="3 stars" tabindex="0"></i>
-                                        <i class="far fa-star rating-star" data-value="4" role="button" aria-label="4 stars" tabindex="0"></i>
-                                        <i class="far fa-star rating-star" data-value="5" role="button" aria-label="5 stars" tabindex="0"></i>
-                                    </div>
-                                </div>
                                 <input type="hidden" id="detailsRatingValue" value="0">
                                 <input type="hidden" id="detailsPropertyId" value="">
-                            </div>
-                            <div class="mt-3">
-                                <label for="detailsFeedback" class="form-label"><strong>Comment:</strong> (Optional feedback for your rating)</label>
-                                <textarea id="detailsFeedback" class="form-control" rows="4" placeholder="Share your thoughts about this property..."></textarea>
                             </div>
                         </div>
                         <div class="col-lg-5">
@@ -1510,12 +1509,25 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Star Rating Section -->
+                            <div class="mt-4 text-center">
+                                <div id="detailsRating" style="font-size:1.8rem; color:#ddd; display:flex; gap:8px; flex-direction:column; align-items:center; justify-content:center;" aria-label="Rate this property">
+                                    <div style="font-size:1rem; color:#333; margin-bottom:10px; font-weight:600;">Rate this Property</div>
+                                    <div style="display:flex; gap:8px;">
+                                        <i class="far fa-star rating-star" data-value="1" role="button" aria-label="1 star" tabindex="0" style="cursor:pointer; transition:all 0.2s ease;"></i>
+                                        <i class="far fa-star rating-star" data-value="2" role="button" aria-label="2 stars" tabindex="0" style="cursor:pointer; transition:all 0.2s ease;"></i>
+                                        <i class="far fa-star rating-star" data-value="3" role="button" aria-label="3 stars" tabindex="0" style="cursor:pointer; transition:all 0.2s ease;"></i>
+                                        <i class="far fa-star rating-star" data-value="4" role="button" aria-label="4 stars" tabindex="0" style="cursor:pointer; transition:all 0.2s ease;"></i>
+                                        <i class="far fa-star rating-star" data-value="5" role="button" aria-label="5 stars" tabindex="0" style="cursor:pointer; transition:all 0.2s ease;"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="detailsSubmit" type="button" class="btn-tour-modal">Submit</button>
+                <button id="detailsSubmit" type="button" class="btn-tour-modal" disabled>Submit</button>
             </div>
         </div>
     </div>
@@ -1935,8 +1947,8 @@ propertyList.addEventListener('click', function(event) {
         const bedroomsEl = document.getElementById('detailsBedrooms');
         const bathroomsEl = document.getElementById('detailsBathrooms');
         const floorsEl = document.getElementById('detailsFloors');
-        const feedbackEl = document.getElementById('detailsFeedback');
         const propertyIdEl = document.getElementById('detailsPropertyId');
+        const submitBtn = document.getElementById('detailsSubmit');
 
         if (imgEl) imgEl.src = image;
         if (nameEl) nameEl.innerHTML = `<i class="fas fa-home"></i> ${name}`;
@@ -1946,10 +1958,10 @@ propertyList.addEventListener('click', function(event) {
         if (bedroomsEl) bedroomsEl.textContent = bedrooms;
         if (bathroomsEl) bathroomsEl.textContent = bathrooms;
         if (floorsEl) floorsEl.textContent = floors;
-        if (feedbackEl) feedbackEl.value = '';
         if (propertyIdEl) propertyIdEl.value = propertyId;
         const rateHidden = document.getElementById('detailsRatingValue');
         if (rateHidden) rateHidden.value = '0';
+        if (submitBtn) submitBtn.disabled = true;
         if (typeof paintStars === 'function') paintStars(0);
         return;
     }
@@ -1961,7 +1973,6 @@ document.addEventListener('click', async function(e) {
     if (submitBtn) {
         const propertyId = document.getElementById('detailsPropertyId')?.value;
         const rating = document.getElementById('detailsRatingValue')?.value || '0';
-        const comment = document.getElementById('detailsFeedback')?.value?.trim() || null;
 
         if (!propertyId) {
             alert('Property ID is missing. Please reopen the details and try again.');
@@ -1985,8 +1996,7 @@ document.addEventListener('click', async function(e) {
                 },
                 body: JSON.stringify({
                     property_id: parseInt(propertyId),
-                    rating: parseInt(rating),
-                    comment
+                    rating: parseInt(rating)
                 })
             });
             const data = await res.json();
@@ -2067,8 +2077,13 @@ if (ratingContainer) {
         if (!star) return;
         const value = Number(star.getAttribute('data-value'));
         const hidden = document.getElementById('detailsRatingValue');
+        const submitBtn = document.getElementById('detailsSubmit');
         if (hidden) hidden.value = String(value);
         paintStars(value);
+        // Enable submit button when a star is clicked
+        if (submitBtn && value > 0) {
+            submitBtn.disabled = false;
+        }
     });
     // Keyboard support
     ratingContainer.addEventListener('keydown', function(e) {
@@ -2078,8 +2093,13 @@ if (ratingContainer) {
             e.preventDefault();
             const value = Number(star.getAttribute('data-value'));
             const hidden = document.getElementById('detailsRatingValue');
+            const submitBtn = document.getElementById('detailsSubmit');
             if (hidden) hidden.value = String(value);
             paintStars(value);
+            // Enable submit button when a star is selected via keyboard
+            if (submitBtn && value > 0) {
+                submitBtn.disabled = false;
+            }
         }
     });
 }

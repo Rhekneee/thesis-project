@@ -234,6 +234,16 @@ const htmlRoutes = (app) => {
     res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'supplier.html')); // Adjusted path
   });
 
+  app.get('/scm/scm_daily_attendance', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm_daily_attendance.html')); // Adjusted path
+  });
+  app.get('/scm/scm_leave_request', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm_leave_request.html')); // Adjusted path
+  });
+  app.get('/scm/scm_halfday_request', (req, res) => {    
+    res.sendFile(path.join(__dirname, '..', 'views', 'scm admin', 'scm_halfday_request.html')); // Adjusted path
+  });
+  
 
 // ====================
   // HR admin Routes
@@ -478,6 +488,22 @@ const htmlRoutes = (app) => {
   app.get('/finance/cash_monitoring', (req, res) => {  
     res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'cash_monitoring.html')); // Adjusted path
   }); 
+
+  app.get('/finance/finance_daily_attendance', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_daily_attendance.html')); // Adjusted path
+  }); 
+
+  app.get('/finance/finance_leave_request', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_leave_request.html')); // Adjusted path
+  }); 
+
+  app.get('/finance/finance_halfday', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_halfday.html')); // Adjusted path
+  }); 
+
+  app.get('/finance/finance_overtime', (req, res) => {  
+    res.sendFile(path.join(__dirname, '..', 'views', 'finance admin', 'finance_overtime.html')); // Adjusted path
+  });    
 
 // ====================
 //   Developer Routes

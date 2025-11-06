@@ -368,6 +368,11 @@
     <script src="/public/js/side_top.js"></script>
     <script src="/public/js/hr_role_visibility.js"></script>
     <script>
+        // Dynamically set API_URL based on current origin
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:4000/hr' 
+            : `${window.location.origin}/hr`;
+
         document.addEventListener('DOMContentLoaded', function () {
             const propertiesToggle = document.getElementById('properties-toggle');
             if (propertiesToggle) {
@@ -419,7 +424,7 @@
         // Function to fetch HR ID from session
         async function getEmployeeIdFromSession() {
             try {
-                const response = await fetch('http://localhost:4000/hr/check-session', {
+                const response = await fetch(`${API_URL}/check-session`, {
                     credentials: 'include',
                 });
 
@@ -538,7 +543,7 @@
                     formData.append('image', capturedImage, 'checkin.jpg');
                 }
 
-                const response = await fetch(`http://localhost:4000/hr/check-in/${userId}`, {
+                const response = await fetch(`${API_URL}/check-in/${userId}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -618,7 +623,7 @@
                 const date = new Date().toISOString().slice(0, 10);
                 const checkOutTime = new Date().toISOString();
 
-                const response = await fetch(`http://localhost:4000/hr/check-out/${userId}`, {
+                const response = await fetch(`${API_URL}/check-out/${userId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, checkOutTime, date }),
@@ -640,7 +645,7 @@
         // Load today's attendance from the database
         async function loadEmployeeAttendanceData(employeeId) {
             try {
-                const response = await fetch(`http://localhost:4000/hr/today/${employeeId}`);
+                const response = await fetch(`${API_URL}/today/${employeeId}`);
                 const data = await response.json();
 
                 const tbody = document.getElementById("attendanceBody");
