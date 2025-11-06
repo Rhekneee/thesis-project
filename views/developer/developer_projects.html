@@ -1380,7 +1380,7 @@
                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-label">Quantity</label>
-                                                <input type="number" class="form-control" id="supplyQtyInput" min="1" placeholder="0">
+                                                <input type="number" class="form-control" id="supplyQtyInput" min="0.01" step="any" placeholder="0" oninput="if(this.value < 0) this.value = '';">
                                             </div>
                                             <div class="col-md-2 d-grid">
                                                 <button type="button" class="btn btn-success" onclick="addSupplyRowView()">
@@ -2024,6 +2024,74 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchAndDisplayProjects();
             initPhilippineLocationControls();
+            
+            // Add validation to quantity inputs to prevent negative numbers and invalid characters
+            const qtyInputs = [
+                document.getElementById('inlineSupplyQtyInput'),
+                document.getElementById('supplyQtyInput')
+            ];
+            
+            qtyInputs.forEach(input => {
+                if (input) {
+                    // Prevent typing negative signs, letters, and other invalid characters
+                    input.addEventListener('keydown', function(e) {
+                        // Allow: backspace, delete, tab, escape, enter, decimal point, and arrow keys
+                        if ([8, 9, 27, 13, 46, 110, 190].indexOf(e.keyCode) !== -1 ||
+                            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                            (e.keyCode === 65 && e.ctrlKey === true) ||
+                            (e.keyCode === 67 && e.ctrlKey === true) ||
+                            (e.keyCode === 86 && e.ctrlKey === true) ||
+                            (e.keyCode === 88 && e.ctrlKey === true) ||
+                            // Allow: home, end, left, right arrow keys
+                            (e.keyCode >= 35 && e.keyCode <= 40)) {
+                            return;
+                        }
+                        // Ensure that it is a number and stop the keypress if not
+                        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                            e.preventDefault();
+                        }
+                        // Prevent negative sign
+                        if (e.keyCode === 189 || e.keyCode === 109) {
+                            e.preventDefault();
+                        }
+                    });
+                    
+                    // For number inputs, also prevent paste of invalid values
+                    input.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        const paste = (e.clipboardData || window.clipboardData).getData('text');
+                        // Remove all non-numeric characters except decimal point
+                        const cleaned = paste.replace(/[^0-9.]/g, '');
+                        // Prevent multiple decimal points
+                        const parts = cleaned.split('.');
+                        const validValue = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+                        if (validValue && /^\d+(\.\d*)?$/.test(validValue)) {
+                            input.value = validValue;
+                            if (input.id === 'inlineSupplyQtyInput') {
+                                handleQtyInput(input);
+                            }
+                        }
+                    });
+                    
+                    // For text inputs, use the handleQtyInput function
+                    if (input.id === 'inlineSupplyQtyInput') {
+                        input.addEventListener('input', function() {
+                            handleQtyInput(this);
+                        });
+                    }
+                    
+                    // For number inputs, validate on input
+                    if (input.type === 'number') {
+                        input.addEventListener('input', function() {
+                            if (this.value < 0) {
+                                this.value = '';
+                            }
+                            // Remove any non-numeric characters
+                            this.value = this.value.replace(/[^0-9.]/g, '');
+                        });
+                    }
+                }
+            });
         });
 
         // Add another blueprint input block
@@ -2210,15 +2278,51 @@
             const unit = unitInput ? unitInput.value.trim() : '';
             const qtyRaw = qtyInput ? qtyInput.value.trim() : '';
             
-            // Normalize quantity - remove all non-digit characters except decimal point
-            const qtyStr = qtyRaw.replace(/[^0-9.]/g, '');
+            // More detailed validation
+            if (!name) { 
+                alert('Please enter a material name'); 
+                return; 
+            }
+            if (!qtyRaw) { 
+                alert('Please enter a quantity'); 
+                return; 
+            }
+            
+            // Normalize quantity - remove spaces and commas, keep only digits and decimal point
+            let qtyStr = qtyRaw.replace(/\s/g, '').replace(/,/g, '');
+            
+            // Remove any non-numeric characters except decimal point
+            qtyStr = qtyStr.replace(/[^0-9.]/g, '');
+            
+            // Prevent negative numbers (remove minus signs)
+            qtyStr = qtyStr.replace(/-/g, '');
+            
+            // Validate format: must be a valid positive number
+            if (!/^\d+(\.\d*)?$/.test(qtyStr)) {
+                alert('Please enter a valid positive number for quantity (no negative numbers, letters, or symbols)');
+                if (qtyInput) qtyInput.value = '';
+                return;
+            }
+            
             const qty = parseFloat(qtyStr);
             
-            // More detailed validation
-            if (!name) { alert('Please enter a material name'); return; }
-            if (!qtyRaw) { alert('Please enter a quantity'); return; }
-            if (isNaN(qty)) { alert('Please enter a valid number for quantity'); return; }
-            if (qty <= 0) { alert('Quantity must be greater than 0'); return; }
+            // Validate numeric value
+            if (isNaN(qty)) { 
+                alert('Please enter a valid number for quantity'); 
+                if (qtyInput) qtyInput.value = '';
+                return; 
+            }
+            if (qty <= 0) { 
+                alert('Quantity must be greater than 0'); 
+                if (qtyInput) qtyInput.value = '';
+                return; 
+            }
+            if (qty < 0) {
+                alert('Quantity cannot be negative');
+                if (qtyInput) qtyInput.value = '';
+                return;
+            }
+            
             // Resolve correct Owners Supply table body depending on visible context (inline or modal)
             const tbody = document.querySelector('#projectDetailsInline #ownersSupplyTbody') 
                 || document.querySelector('#viewProjectModal #ownersSupplyTbody') 
@@ -2245,18 +2349,49 @@
         }
 
         // Format quantity input with spaces as thousand separators while typing
+        // Validates: only positive numbers (no negative, no letters, no symbols except decimal point)
         function handleQtyInput(inputEl) {
             const cursorPos = inputEl.selectionStart;
-            const raw = inputEl.value.replace(/\s/g, '').replace(/,/g, '');
-            if (raw === '') { inputEl.value = ''; return; }
-            if (!/^\d*(\.\d*)?$/.test(raw)) { return; }
+            // Remove spaces and commas, but keep only digits and one decimal point
+            let raw = inputEl.value.replace(/\s/g, '').replace(/,/g, '');
+            
+            // Remove any non-numeric characters except decimal point
+            raw = raw.replace(/[^0-9.]/g, '');
+            
+            // Prevent multiple decimal points
             const parts = raw.split('.');
+            if (parts.length > 2) {
+                raw = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Prevent negative numbers (remove minus signs)
+            raw = raw.replace(/-/g, '');
+            
+            if (raw === '' || raw === '.') { 
+                inputEl.value = ''; 
+                return; 
+            }
+            
+            // Validate: only digits and at most one decimal point
+            if (!/^\d+(\.\d*)?$/.test(raw)) {
+                // If invalid, restore previous valid value
+                const prevValue = inputEl.getAttribute('data-prev-value') || '';
+                inputEl.value = prevValue;
+                return;
+            }
+            
+            // Store current valid value
+            inputEl.setAttribute('data-prev-value', raw);
+            
+            // Format with spaces as thousand separators
             const intPart = parts[0];
             const decPart = parts[1] !== undefined ? '.' + parts[1] : '';
             const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
             inputEl.value = withSpaces + decPart;
-            // Best effort to keep cursor near end
-            inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+            
+            // Restore cursor position as best as possible
+            const newCursorPos = Math.min(cursorPos, inputEl.value.length);
+            inputEl.setSelectionRange(newCursorPos, newCursorPos);
         }
 
         // Edit an owners supply temp row: prefill inputs and remove row
