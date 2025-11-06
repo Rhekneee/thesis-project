@@ -304,10 +304,17 @@
     }
 
     .materials-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.25rem;
-      padding-right: 8px;
+      width: 100%;
+      display: block;
+    }
+    
+    .materials-grid .materials-table {
+      width: 100%;
+    }
+    
+    .materials-grid .table-responsive {
+      width: 100%;
+      overflow-x: auto;
     }
 
     .materials-grid::-webkit-scrollbar {
@@ -491,6 +498,92 @@
     .hidden-input {
       display: none !important;
     }
+    
+    /* Invoice Upload Section */
+    .invoice-upload-section {
+      text-align: right;
+    }
+    
+    .invoice-preview-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+      text-align: center;
+    }
+    
+    .invoice-preview-card img {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    /* Action Button Styles */
+    .table td .btn[data-action="view"] {
+      border-radius: 0.375rem !important;
+      padding: 0.375rem 0.5rem !important;
+      min-width: 32px !important;
+      width: 32px !important;
+      height: 32px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
+    
+    .table td .btn[data-action="view"] i {
+      font-size: 0.875rem;
+      margin: 0;
+      line-height: 1;
+    }
+    
+    .table td.text-center {
+      white-space: nowrap;
+      width: 1%;
+    }
+    
+    /* Status Badge Styles */
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+    }
+    
+    .status-badge.status-delivered {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status-badge.status-in-transit {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .status-badge.status-approved {
+      background-color: #cfe2ff;
+      color: #084298;
+      border: 1px solid #9ec5fe;
+    }
+    
+    .status-badge.status-pending {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c2c7;
+    }
+    
+    .status-badge.status-rejected {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c2c7;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -614,7 +707,6 @@
           <table class="table table-striped">
             <thead>
               <tr>
-                <th class="hidden-text">Order ID</th>
                 <th>Order Date</th>
                 <th>Material Type</th>
                 <th>Unit</th>
@@ -1276,8 +1368,22 @@
     }
 
     function renderTable(rows) {
-      const tbody = document.getElementById('supplierDashboardBody');
+      const tbody = document.getElementById('supplierdashboardBody');
+      if (!tbody) {
+        console.error('Table body element not found');
+        return;
+      }
       tbody.innerHTML = '';
+
+      // If no rows provided, use state data
+      if (!rows) {
+        rows = state.filtered.length ? state.filtered : state.records;
+      }
+
+      // Ensure rows is an array
+      if (!Array.isArray(rows)) {
+        rows = [];
+      }
 
       if (!rows.length) {
         const tr = document.createElement('tr');
@@ -1294,42 +1400,40 @@
         // Get material info
         const material = invoice.materials && invoice.materials.length > 0 ? invoice.materials[0] : null;
         const materialName = material ? material.name : 'N/A';
-        const quantity = material ? `${material.quantity} ${material.unit}` : 'N/A';
+        const unit = material ? material.unit : 'N/A';
+        const quantity = material ? material.quantity : 'N/A';
+        
+        // Calculate estimated cost
+        const estimatedCost = (() => {
+          // When Out for Delivery, show the approved invoice_amount if available
+          if (String(invoice.status) === 'Out for Delivery' && invoice.invoice_amount != null && !isNaN(Number(invoice.invoice_amount))) {
+            return Number(invoice.invoice_amount).toLocaleString();
+          }
+          // Otherwise compute from materials subtotal + delivery - discount%
+          const mat = (invoice.materials && invoice.materials[0]) || {};
+          const unitPrice = Number(mat.pricePerUnit || 0);
+          const qty = Number(mat.quantity || 0);
+          const subtotal = unitPrice * qty;
+          const discPct = Number(invoice.discountPercent || 0);
+          const delivery = Number(invoice.deliveryCost || 0);
+          const discountAmount = subtotal * (isNaN(discPct) ? 0 : discPct / 100);
+          const finalTotal = subtotal - discountAmount + delivery;
+          return Number(finalTotal).toLocaleString();
+        })();
         
         tr.innerHTML = `
-          <td>${invoice.orderId}</td>
           <td>${invoice.orderApproveDate}</td>
+          <td>${materialName}</td>
+          <td>${unit}</td>
+          <td>${quantity}</td>
+          <td class="text-end">₱${estimatedCost}</td>
           <td>
             <span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>
           </td>
-          <td>${materialName}</td>
-          <td>${quantity}</td>
-          <td>
-            <input type="text" class="form-control form-control-sm text-end" value="₱${Number(invoice.deliveryCost || 0).toLocaleString()}" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control form-control-sm text-end" value="${Number(invoice.discountPercent || 0).toFixed(2)}%" readonly>
-          </td>
-          <td>₱${(() => {
-            // When Out for Delivery, show the approved invoice_amount if available
-            if (String(invoice.status) === 'Out for Delivery' && invoice.invoice_amount != null && !isNaN(Number(invoice.invoice_amount))) {
-              return Number(invoice.invoice_amount).toLocaleString();
-            }
-            // Otherwise compute from materials subtotal + delivery - discount%
-            const mat = (invoice.materials && invoice.materials[0]) || {};
-            const unitPrice = Number(mat.pricePerUnit || 0);
-            const qty = Number(mat.quantity || 0);
-            const subtotal = unitPrice * qty;
-            const discPct = Number(invoice.discountPercent || 0);
-            const delivery = Number(invoice.deliveryCost || 0);
-            const discountAmount = subtotal * (isNaN(discPct) ? 0 : discPct / 100);
-            const finalTotal = subtotal - discountAmount + delivery;
-            return Number(finalTotal).toLocaleString();
-          })()}</td>
           <td class="text-center">
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${invoice.id}"><i class="fa-regular fa-eye"></i></button>
-            </div>
+            <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${invoice.id}" title="View Details">
+              <i class="fas fa-info-circle"></i>
+            </button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1349,6 +1453,7 @@
 
     function renderPagination(currentPage, totalPages) {
       const ul = document.getElementById('pagination');
+      if (!ul) return;
       ul.innerHTML = '';
       if (totalPages <= 1) return;
       const addItem = (label, page, disabled = false, active = false) => {
@@ -1373,13 +1478,15 @@
 
     function updateEntriesMessage(start, end, total) {
       const msg = document.getElementById('entriesMessage');
+      if (!msg) return;
       msg.textContent = total ? `Showing ${start} to ${end} of ${total} entries` : 'No entries to show';
     }
 
 
 
     function applyFilters() {
-      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const searchInput = document.getElementById('searchInput');
+      const q = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
       state.currentPage = 1;
       let rows = [...state.records];
       if (q) {
@@ -1414,8 +1521,8 @@
         });
       }
       const total = rows.length;
-      const sizeSel = document.getElementById('entriesSelect');
-      state.pageSize = sizeSel ? sizeSel.value : 10;
+      const sizeSel = document.getElementById('entriesPerPage');
+      state.pageSize = sizeSel ? parseInt(sizeSel.value) || 5 : state.pageSize || 5;
       const { pagedRows, start, end, pages } = paginate(rows, state.pageSize, state.currentPage);
       renderTable(pagedRows);
       renderPagination(state.currentPage, pages);
@@ -1514,13 +1621,23 @@
       if (!invoice) return;
 
       // Update order information
-      document.getElementById('modalOrderId').textContent = invoice.orderId || '-';
-      document.getElementById('modalOrderDate').textContent = invoice.orderApproveDate || '-';
-      document.getElementById('modalGrandTotal').innerHTML = `₱ ${Number(invoice.amount || 0).toLocaleString()}`;
+      const modalOrderId = document.getElementById('modalOrderId');
+      if (modalOrderId) modalOrderId.textContent = invoice.orderId || '-';
+      
+      const modalApproveDate = document.getElementById('modalApproveDate');
+      if (modalApproveDate) modalApproveDate.textContent = invoice.orderApproveDate || '-';
+      
+      const modalDeliverDate = document.getElementById('modalDeliverDate');
+      if (modalDeliverDate) modalDeliverDate.textContent = invoice.deliverDate || '-';
+      
+      const modalFinanceApproveDate = document.getElementById('modalFinanceApproveDate');
+      if (modalFinanceApproveDate) modalFinanceApproveDate.textContent = invoice.financeApproveDate || '-';
       
       // Update status with badge
       const statusElement = document.getElementById('modalStatus');
-      statusElement.innerHTML = `<span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>`;
+      if (statusElement) {
+        statusElement.innerHTML = `<span class="status-badge ${getStatusClass(invoice.status)}">${invoice.status}</span>`;
+      }
       
       // Show/hide buttons based on status
       const confirmBtn = document.getElementById('confirmOrderBtn');
@@ -1639,7 +1756,7 @@
         summaryDiv.className = 'row mt-3';
         const editableSubtotal = (typeof invoice.subtotal === 'number' ? invoice.subtotal : subtotal);
         const uploadSection = ((invoice.status === 'Processed') || (invoice.status === 'Out for Delivery') || invoice.confirmed === true) ? `
-          <div class="col-md-6 d-flex justify-content-end align-items-end">
+          <div class="col-md-4 d-flex justify-content-end align-items-start">
             <div class="invoice-upload-section">
               <label for="invoiceUpload_${invoice.id}" class="btn btn-outline-success btn-sm">
                 <i class="fas fa-upload me-1"></i>Upload Invoice Image
@@ -1662,40 +1779,44 @@
           </div>
         ` : '';
         summaryDiv.innerHTML = `
-          <div class="col-md-6">
-            <div class="cost-breakdown">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span>Subtotal:</span>
-                <div class="fw-bold text-dark">₱${editableSubtotal.toFixed(2)}</div>
-              </div>
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span>Delivery Cost:</span>
-                <div class="input-group" style="width: 150px;">
-                  <span class="input-group-text">₱</span>
-                  <input type="number" id="deliveryCostInput" class="form-control form-control-sm" value="${Number(invoice.deliveryCost || 0).toFixed(2)}" step="0.01" min="0" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''}>
+          <div class="col-md-${uploadSection ? '8' : '12'}">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="cost-breakdown">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Subtotal:</span>
+                    <div class="fw-bold text-dark">₱${editableSubtotal.toFixed(2)}</div>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Delivery Cost:</span>
+                    <div class="input-group" style="width: 150px;">
+                      <span class="input-group-text">₱</span>
+                      <input type="number" id="deliveryCostInput" class="form-control form-control-sm" value="${Number(invoice.deliveryCost || 0).toFixed(2)}" step="0.01" min="0" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''}>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Discount (%):</span>
+                    <div class="input-group" style="width: 150px;">
+                      <span class="input-group-text">%</span>
+                      <input type="number" id="discountInput" class="form-control form-control-sm" value="${Number(invoice.discountPercent || 0).toFixed(2)}" step="0.01" min="0" max="100" inputmode="decimal" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''} onkeydown="return window.preventNegativeAndInvalid(event)" onpaste="return window.preventNegativePaste(event)">
+                    </div>
+                  </div>
+                  <hr class="my-2">
+                  <div class="d-flex justify-content-between">
+                    <strong>Total:</strong>
+                    <strong id="summaryTotal">₱${(editableSubtotal + Number(invoice.deliveryCost || 0) - Number(invoice.discount || 0)).toFixed(2)}</strong>
+                  </div>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span>Discount (%):</span>
-                <div class="input-group" style="width: 150px;">
-                  <span class="input-group-text">%</span>
-                  <input type="number" id="discountInput" class="form-control form-control-sm" value="${Number(invoice.discountPercent || 0).toFixed(2)}" step="0.01" min="0" max="100" inputmode="decimal" placeholder="0.00" ${(invoice.status !== 'Pending' || invoice.confirmed === true) ? 'disabled' : ''} onkeydown="return window.preventNegativeAndInvalid(event)" onpaste="return window.preventNegativePaste(event)">
+              ${((invoice.remarks || '').trim()) ? `
+              <div class="col-md-6">
+                <div class="p-3" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px; height:100%;">
+                  <div class="d-flex align-items-center mb-2"><i class="fas fa-comment-dots text-muted me-2"></i><strong>Remarks</strong></div>
+                  <div style="white-space: pre-wrap; color:#495057;">${invoice.remarks}</div>
                 </div>
-              </div>
-              <hr class="my-2">
-              <div class="d-flex justify-content-between">
-                <strong>Total:</strong>
-                <strong id="summaryTotal">₱${(editableSubtotal + Number(invoice.deliveryCost || 0) - Number(invoice.discount || 0)).toFixed(2)}</strong>
-              </div>
+              </div>` : ''}
             </div>
           </div>
-          ${((invoice.remarks || '').trim()) ? `
-          <div class="col-md-6">
-            <div class="p-3" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px; height:100%;">
-              <div class="d-flex align-items-center mb-2"><i class="fas fa-comment-dots text-muted me-2"></i><strong>Remarks</strong></div>
-              <div style="white-space: pre-wrap; color:#495057;">${invoice.remarks}</div>
-            </div>
-          </div>` : ''}
           ${uploadSection}
         `;
         materialsContainer.appendChild(summaryDiv);
@@ -1923,12 +2044,12 @@
         `;
       }
 
-      const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+      const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
       modal.show();
     }
 
     function closeViewDetailsModal() {
-      const modal = bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal'));
+      const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
       if (modal) modal.hide();
     }
 
@@ -2034,7 +2155,7 @@
           }
           
           // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal'));
+          const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
           if (modal) modal.hide();
           
           alert('Order marked for redelivery successfully!');
@@ -2166,7 +2287,7 @@
         showSuccessMessage('Invoice created successfully! Invoice number: ' + invoiceNumber);
 
         // Update table
-        renderTable();
+        applyFilters();
 
         // Show invoice details after a short delay
         setTimeout(() => {
@@ -2332,8 +2453,6 @@
     });
   }
 
-  renderTable();
-
   // Sidebar toggle functionality
   document.getElementById('sidebar-toggle').onclick = function() {
     const sidebar = document.getElementById('sidebar');
@@ -2350,8 +2469,26 @@
   // Initialize
   function initializePage() {
     const select = document.getElementById('entriesPerPage');
-    itemsPerPage = parseInt(select.value);
-    renderTable();
+    if (select) {
+      state.pageSize = parseInt(select.value) || 5;
+    }
+    
+    // Set up event delegation for action buttons
+    document.addEventListener('click', function(e) {
+      const button = e.target.closest('button[data-action]');
+      if (!button) return;
+      
+      const action = button.getAttribute('data-action');
+      const id = button.getAttribute('data-id');
+      
+      if (action === 'view' && id) {
+        openViewDetailsModal(id);
+      }
+    });
+    
+    // Fetch data on page load
+    fetchPurchaseOrders();
+    fetchMyMaterials();
   }
 
   // Call initialize when the page loads
