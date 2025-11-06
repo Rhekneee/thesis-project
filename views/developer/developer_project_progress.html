@@ -590,12 +590,83 @@
                             <div class="chart-container">
                                 <canvas id="progressChart"></canvas>
                             </div>
+                            <!-- Daily logs section (gather daily) -->
+                            <div class="mt-3" id="dailyLogsSection">
+                                <h5 class="mb-2"><i class="fas fa-calendar-day me-2"></i>Daily Logs</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 140px;">Date</th>
+                                                <th style="width: 160px;">Division</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="devDailyLogsBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Detailed progress (hidden by default) -->
+                            <div class="mt-3" id="dailyLogDetailSection" style="display: none;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <button type="button" class="btn btn-link p-0 me-2" id="backToDailyLogsBtn"><i class="fas fa-arrow-left"></i></button>
+                                    <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Daily Log Detail</h5>
+                                </div>
+                                <div id="dailyLogDetailMeta" class="small text-muted mb-2"></div>
+                                <div class="card mb-3">
+                                    <div class="card-header py-2"><strong><i class="fas fa-box me-2"></i>Materials Used</strong></div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Material</th>
+                                                        <th class="text-end">Quantity</th>
+                                                        <th class="text-end">Unit Price</th>
+                                                        <th class="text-end">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="devDailyLogMaterialsBody"></tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="3" class="text-end">Total Material Cost</th>
+                                                        <th class="text-end" id="devDailyLogMaterialsTotal">₱0.00</th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-header py-2"><strong><i class="fas fa-users me-2"></i>Labor</strong></div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Role</th>
+                                                        <th class="text-center">Count</th>
+                                                        <th class="text-end">Basic Salary (Daily Rate)</th>
+                                                        <th class="text-end">Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="devDailyLogLaborBody"></tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="3" class="text-end">Total Labor Cost</th>
+                                                        <th class="text-end" id="devDailyLogLaborTotal">₱0.00</th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Division Image Modal -->
     <div class="modal fade" id="divisionImageModal" tabindex="-1" aria-labelledby="divisionImageModalLabel" aria-hidden="true">
@@ -750,6 +821,23 @@
             renderProjects();
             initializeEventListeners();
             getUserInfo();
+
+            // Cleanup lingering modal backdrops to avoid blur
+            function cleanupModalArtifacts() {
+                try {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('padding-right');
+                } catch(_) {}
+            }
+            const pdm = document.getElementById('projectDetailsModal');
+            const dim = document.getElementById('divisionImageModal');
+            const sm = document.getElementById('successModal');
+            const wm = document.getElementById('warningModal');
+            [pdm, dim, sm, wm].forEach(m => {
+                if (!m) return;
+                m.addEventListener('hidden.bs.modal', cleanupModalArtifacts);
+            });
         });
 
         // Load projects dynamically from backend
@@ -824,6 +912,17 @@
             content.style.marginLeft = sidebar.style.display === 'block' ? '300px' : '0';
         }
 
+        // Simple HTML escaper to avoid rendering issues
+        function escapeHtml(value) {
+            const str = String(value == null ? '' : value);
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('content');
@@ -888,70 +987,206 @@
 
         // Show project details
         async function showProjectDetails(projectId) {
-            // Fetch aggregated tracking detail from backend
-            const resp = await fetch(`/manufacturing/project-tracking/${projectId}`);
-            const data = await resp.json();
-            if (!data || !data.success) return;
-            const { project, divisions, dailyLogs, requestedMaterials, materialReleases } = data.detail || {};
-            if (!project) return;
+            try {
+                // Fetch aggregated tracking detail from backend
+                const resp = await fetch(`/manufacturing/project-tracking/${projectId}`, { credentials: 'include' });
+                if (!resp.ok) { showWarningMessage('Failed to load project details.'); return; }
+                const data = await resp.json();
+                if (!data || !data.success) { showWarningMessage('No project details found.'); return; }
+                const { project, divisions, dailyLogs, requestedMaterials, materialReleases } = data.detail || {};
+                if (!project) { showWarningMessage('Project not found.'); return; }
 
-            // Update modal content
-            document.getElementById('modalProjectImage').src = '/image/project-2.jpg';
-            document.getElementById('modalProjectName').textContent = project.project_name || '';
-            document.getElementById('modalProjectLocation').textContent = project.location || '';
-            document.getElementById('modalStartDate').textContent = project.start_date ? formatDate(project.start_date) : '';
-            document.getElementById('modalDeadline').textContent = project.end_date ? formatDate(project.end_date) : '';
-            document.getElementById('modalStatus').textContent = project.status || '';
+                // Update modal content
+                document.getElementById('modalProjectImage').src = '/image/project-2.jpg';
+                document.getElementById('modalProjectName').textContent = project.project_name || '';
+                document.getElementById('modalProjectLocation').textContent = project.location || '';
+                document.getElementById('modalStartDate').textContent = project.start_date ? formatDate(project.start_date) : '';
+                document.getElementById('modalDeadline').textContent = project.end_date ? formatDate(project.end_date) : '';
+                document.getElementById('modalStatus').textContent = project.status || '';
 
-            // Aggregate division progress by division name (cumulative)
-            const divMap = new Map();
-            (divisions || []).slice().reverse().forEach(d => {
-                const name = d.division_name; 
-                const val = Math.max(0, Math.min(100, Number(d.progress_percentage||0)));
-                const current = divMap.get(name) || 0; 
-                const next = Math.min(100, current + val); 
-                divMap.set(name, next);
-            });
+                // Aggregate division progress by division name (cumulative)
+                const divMap = new Map();
+                (divisions || []).slice().reverse().forEach(d => {
+                    const name = d.division_name; 
+                    const val = Math.max(0, Math.min(100, Number(d.progress_percentage||0)));
+                    const current = divMap.get(name) || 0; 
+                    const next = Math.min(100, current + val); 
+                    divMap.set(name, next);
+                });
 
-            // Define division order
-            const divisionOrder = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
-            
-            // Create division progress HTML with aggregated values
-            const divisionProgressHtml = divisionOrder.map(divisionName => {
-                const cumulativeProgress = Math.min(100, Math.round(divMap.get(divisionName) || 0));
-                return `
-                    <div class="division-item">
-                        <div class="division-name">${divisionName}</div>
-                        <div class="division-bar">
-                            <div class="progress-bar">
-                                <div class="progress-bar-fill" style="width: ${cumulativeProgress}%"></div>
+                // Define division order
+                const divisionOrder = ['Foundation', 'Structural', 'Mechanical', 'Electrical', 'Finishing'];
+                
+                // Create division progress HTML with aggregated values
+                const divisionProgressHtml = divisionOrder.map(divisionName => {
+                    const cumulativeProgress = Math.min(100, Math.round(divMap.get(divisionName) || 0));
+                    return `
+                        <div class="division-item">
+                            <div class="division-name">${divisionName}</div>
+                            <div class="division-bar">
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: ${cumulativeProgress}%"></div>
+                                </div>
                             </div>
+                            <div class="division-percentage">${cumulativeProgress}%</div>
                         </div>
-                        <div class="division-percentage">${cumulativeProgress}%</div>
-                    </div>
-                `;
-            }).join('');
-            
-            document.getElementById('modalDivisionProgress').innerHTML = divisionProgressHtml;
+                    `;
+                }).join('');
+                
+                document.getElementById('modalDivisionProgress').innerHTML = divisionProgressHtml;
 
-            // Chart: use aggregated division values in correct order (show all divisions)
-            const labels = divisionOrder;
-            const values = labels.map(name => Math.min(100, Math.round(divMap.get(name) || 0)));
-            const overall = labels.length ? Math.round(values.reduce((a,b)=>a+b,0) / labels.length) : 0;
+                // Chart: use aggregated division values in correct order (show all divisions)
+                const labels = divisionOrder;
+                const values = labels.map(name => Math.min(100, Math.round(divMap.get(name) || 0)));
+                const overall = labels.length ? Math.round(values.reduce((a,b)=>a+b,0) / labels.length) : 0;
 
-            if (progressChart) { progressChart.destroy(); }
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            progressChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: [...labels, 'Total'], datasets: [{ label: 'Progress (%)', data: [...values, overall], backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#2e59d9'], borderRadius: 5, borderWidth: 2, borderColor: '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.y}%` } } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 10 } }, x: { grid: { display: false } } } }
-            });
+                if (progressChart) { progressChart.destroy(); }
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                progressChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: [...labels, 'Total'], datasets: [{ label: 'Progress (%)', data: [...values, overall], backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#2e59d9'], borderRadius: 5, borderWidth: 2, borderColor: '#fff' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.y}%` } } }, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 10 } }, x: { grid: { display: false } } } }
+                });
 
-            // Below chart: combine Daily Logs table, Division Progress table, Materials (requested + releases)
-            // For brevity, reuse existing modalDivisionProgress for divisions; daily logs/materials can be appended if desired.
+                // After rendering chart, load daily logs for project
+                await loadDeveloperDailyLogs(project.id || project.project_id || projectId);
 
-            const modal = new bootstrap.Modal(document.getElementById('projectDetailsModal'));
-            modal.show();
+                document.getElementById('backToDailyLogsBtn')?.addEventListener('click', () => {
+                    document.getElementById('dailyLogDetailSection').style.display = 'none';
+                    document.getElementById('dailyLogsSection').style.display = 'block';
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('projectDetailsModal'));
+                modal.show();
+            } catch (e) {
+                showWarningMessage('Failed to open project details.');
+            }
+        }
+        // Ensure global access for inline onclick
+        window.showProjectDetails = showProjectDetails;
+
+        // INTENDED: Load developer daily logs
+        async function loadDeveloperDailyLogs(projectId) {
+            const tbody = document.getElementById('devDailyLogsBody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Loading...</td></tr>';
+            try {
+                console.debug('Loading developer daily logs for projectId=', projectId);
+                const resp = await fetch(`/manufacturing/dev-progress/daily/${encodeURIComponent(projectId)}`, { credentials: 'include' });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    console.error('Daily logs response not OK:', resp.status, text);
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Failed to load daily logs (${resp.status}).</td></tr>`;
+                    return;
+                }
+                let data;
+                try { data = await resp.json(); } catch (e) {
+                    console.error('Daily logs invalid JSON:', e);
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Invalid server response.</td></tr>';
+                    return;
+                }
+                if (!data || !data.success || !Array.isArray(data.logs) || data.logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No daily logs found.</td></tr>';
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                data.logs.forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.style.cursor = 'pointer';
+                    tr.addEventListener('click', () => showDailyLogDetail(l.id, l));
+                    tr.innerHTML = `
+                        <td>${escapeHtml(l.log_date)}</td>
+                        <td>${escapeHtml(l.division_name)}</td>
+                        <td>${escapeHtml(l.description || '')}</td>
+                    `;
+                    frag.appendChild(tr);
+                });
+                tbody.innerHTML = '';
+                tbody.appendChild(frag);
+            } catch (e) {
+                console.error('Daily logs fetch error:', e);
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Failed to load daily logs.</td></tr>';
+            }
+        }
+
+        // INTENDED: Show daily log detail
+        async function showDailyLogDetail(logId, row) {
+            // Swap sections
+            document.getElementById('dailyLogsSection').style.display = 'none';
+            document.getElementById('dailyLogDetailSection').style.display = 'block';
+
+            // Meta header
+            const meta = document.getElementById('dailyLogDetailMeta');
+            if (meta) {
+                meta.textContent = `${row?.log_date || ''} • ${row?.division_name || ''}`;
+            }
+
+            // Clear tables
+            const matBody = document.getElementById('devDailyLogMaterialsBody');
+            const matTotalEl = document.getElementById('devDailyLogMaterialsTotal');
+            const labBody = document.getElementById('devDailyLogLaborBody');
+            const labTotalEl = document.getElementById('devDailyLogLaborTotal');
+            if (matBody) matBody.innerHTML = '';
+            if (labBody) labBody.innerHTML = '';
+            if (matTotalEl) matTotalEl.textContent = '₱0.00';
+            if (labTotalEl) labTotalEl.textContent = '₱0.00';
+
+            try {
+                const resp = await fetch(`/manufacturing/dev-progress/daily/detail/${encodeURIComponent(logId)}`);
+                const data = await resp.json();
+                if (!data || !data.success || !data.detail) return;
+                const { materials = [], materials_total = 0, labor_breakdown = [], labor_total = 0 } = data.detail;
+                const fmt = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+                // Materials
+                const mf = document.createDocumentFragment();
+                if (materials.length) {
+                    materials.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${escapeHtml(m.name || '')}</td>
+                            <td class="text-end">${Number(m.quantity || 0).toLocaleString()}</td>
+                            <td class="text-end">${fmt.format(Number(m.unit_price || 0))}</td>
+                            <td class="text-end">${fmt.format(Number(m.subtotal || 0))}</td>`;
+                        mf.appendChild(tr);
+                    });
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="4" class="text-center text-muted">No materials recorded.</td>`;
+                    mf.appendChild(tr);
+                }
+                matBody && matBody.appendChild(mf);
+                matTotalEl && (matTotalEl.textContent = fmt.format(Number(materials_total || 0)));
+
+                // Labor breakdown (like stage billing)
+                const lf = document.createDocumentFragment();
+                if (labor_breakdown.length) {
+                    labor_breakdown.forEach(item => {
+                        const roleTotal = Number(item.total || (Number(item.count || 0) * Number(item.basic_salary || 0)));
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${escapeHtml(item.role_name || '')}</td>
+                            <td class="text-center">${Number(item.count || 0)}</td>
+                            <td class="text-end">${fmt.format(Number(item.basic_salary || 0))}</td>
+                            <td class="text-end">${fmt.format(roleTotal)}</td>`;
+                        lf.appendChild(tr);
+                    });
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="4" class="text-center text-muted">No labor records found.</td>`;
+                    lf.appendChild(tr);
+                }
+                labBody && labBody.appendChild(lf);
+                labTotalEl && (labTotalEl.textContent = fmt.format(Number(labor_total || 0)));
+            } catch (e) {
+                // Show error message within sections
+                const tr1 = document.createElement('tr');
+                tr1.innerHTML = `<td colspan="4" class="text-center text-danger">Failed to load details.</td>`;
+                matBody && matBody.appendChild(tr1);
+                const tr2 = document.createElement('tr');
+                tr2.innerHTML = `<td colspan="4" class="text-center text-danger">Failed to load details.</td>`;
+                labBody && labBody.appendChild(tr2);
+            }
         }
 
         // Calculate overall progress

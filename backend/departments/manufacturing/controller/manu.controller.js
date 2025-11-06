@@ -2709,6 +2709,33 @@ const ManufacturingController = {
       });
     }
   }
+  ,
+  // INTENDED: Developer view - list daily logs for a project
+  getDeveloperDailyLogs: async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      if (!projectId) return res.status(400).json({ success: false, error: 'projectId is required' });
+      const logs = await ManufacturingModel.getDeveloperDailyLogs(Number(projectId));
+      return res.json({ success: true, logs });
+    } catch (error) {
+      console.error('INTENDED: Error getting developer daily logs:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get developer daily logs' });
+    }
+  }
+  ,
+  // INTENDED: Developer view - daily log detail (materials + labor breakdown)
+  getDeveloperDailyLogDetail: async (req, res) => {
+    try {
+      const { logId } = req.params;
+      if (!logId) return res.status(400).json({ success: false, error: 'logId is required' });
+      const detail = await ManufacturingModel.getDeveloperDailyLogDetail(Number(logId));
+      if (!detail) return res.status(404).json({ success: false, error: 'Daily log not found' });
+      return res.json({ success: true, detail });
+    } catch (error) {
+      console.error('INTENDED: Error getting developer daily log detail:', error);
+      return res.status(500).json({ success: false, error: 'Failed to get developer daily log detail' });
+    }
+  }
 };
 
 module.exports = { 

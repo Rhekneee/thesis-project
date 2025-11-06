@@ -3203,6 +3203,88 @@ const ManufacturingModel = {
       throw error;
     }
   }
+  ,
+  // INTENDED: Developer view - list daily logs (date, division, description)
+  getDeveloperDailyLogs: async (projectId) => {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          dl.id,
+          DATE_FORMAT(dl.log_date, '%Y-%m-%d') as log_date,
+          dm.division_name,
+          dl.description,
+          COALESCE(dl.total_material_cost, 0) as total_material_cost
+        FROM daily_logs dl
+        JOIN division_master dm ON dl.division_id = dm.id
+        WHERE dl.project_id = ?
+        ORDER BY dl.log_date DESC, dl.id DESC
+      `, [projectId]);
+      return rows;
+    } catch (error) {
+      console.error('INTENDED: Error getting developer daily logs:', error);
+      throw error;
+    }
+  }
+  ,
+  // INTENDED: Developer view - daily log detail (materials used + labor breakdown by role)
+  getDeveloperDailyLogDetail: async (logId) => {
+    try {
+      // Get base daily log
+      const [baseRows] = await db.query(`
+        SELECT dl.*, dm.division_name
+        FROM daily_logs dl
+        JOIN division_master dm ON dl.division_id = dm.id
+        WHERE dl.id = ?
+      `, [logId]);
+      if (!baseRows || !baseRows.length) return null;
+      const base = baseRows[0];
+
+      // Parse materials
+      let materials = [];
+      try {
+        const items = JSON.parse(base.material_used || '[]');
+        materials = (items || []).map(it => {
+          const qty = Number(it.quantity || it.qty || 0);
+          const up = Number(it.unitPrice || it.price || 0);
+          return {
+            name: it.name || '',
+            quantity: qty,
+            unit_price: up,
+            subtotal: qty * up
+          };
+        });
+      } catch (_) { materials = []; }
+      const materials_total = materials.reduce((s, m) => s + Number(m.subtotal || 0), 0);
+
+      // Labor breakdown by role for this daily log (from daily_log_workers + construction_roles)
+      const [laborRows] = await db.query(`
+        SELECT 
+          COALESCE(cr.role_name, 'Unassigned') AS role_name,
+          COUNT(DISTINCT dlw.worker_id) AS worker_count,
+          COALESCE(cr.daily_rate, 0) AS basic_salary,
+          COALESCE(SUM(COALESCE(dlw.labor_cost, 0)), 0) AS role_total
+        FROM daily_log_workers dlw
+        LEFT JOIN construction_workers cw ON dlw.worker_id = cw.id
+        LEFT JOIN construction_roles cr ON cw.role_id = cr.id
+        WHERE dlw.daily_log_id = ?
+        GROUP BY cr.role_name, cr.daily_rate
+        ORDER BY cr.role_name ASC
+      `, [logId]);
+
+      const labor_breakdown = laborRows.map(r => ({
+        role_name: r.role_name,
+        count: Number(r.worker_count || 0),
+        basic_salary: Number(r.basic_salary || 0),
+        total: Number(r.role_total || (Number(r.worker_count||0) * Number(r.basic_salary||0)))
+      }));
+      const labor_total = labor_breakdown.reduce((s, r) => s + Number(r.total || 0), 0);
+
+      return { base, materials, materials_total, labor_breakdown, labor_total };
+    } catch (error) {
+      console.error('INTENDED: Error getting developer daily log detail:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = ManufacturingModel;

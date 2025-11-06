@@ -104,6 +104,9 @@ router.put('/division-progress/:entryId', divisionProgressUpload.single('picture
 router.get('/owners-supply/project/:proposalId', ManufacturingController.getOwnerSupplyMaterialsByProposal);
 // Aggregated project tracking (developer view)
 router.get('/project-tracking/:projectId', ManufacturingController.getProjectTrackingDetail);
+// INTENDED: Developer view daily logs and details
+router.get('/dev-progress/daily/:projectId', ManufacturingController.getDeveloperDailyLogs);
+router.get('/dev-progress/daily/detail/:logId', ManufacturingController.getDeveloperDailyLogDetail);
 // Stage billing summary
 router.post('/stage-billing', ManufacturingController.createStageBilling);
 router.get('/stage-billing/labor-cost/:projectId', ManufacturingController.getLaborCostForRange);

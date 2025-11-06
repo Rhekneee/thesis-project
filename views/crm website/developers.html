@@ -1178,11 +1178,20 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label required-field">Email</label>
-                                <input type="email" class="form-control" name="email" required>
+                                <input type="email" class="form-control" name="email" id="email" required placeholder="yourname@gmail.com">
+                                <small id="emailHelp" class="text-muted">Use a Gmail address (example@gmail.com).</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label required-field">Contact Number</label>
-                                <input type="tel" class="form-control" name="contact_number" required>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="phPrefix" style="min-width: 88px; display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size:16px">🇵🇭</span>
+                                        <strong>+63</strong>
+                                    </span>
+                                    <input type="text" class="form-control" id="contact_number_national" inputmode="numeric" autocomplete="tel" placeholder="9xx xxx xxxx" aria-describedby="phPrefix" maxlength="13" required>
+                                </div>
+                                <small class="text-muted">Format: +63 9xx xxx xxxx</small>
+                                <input type="hidden" name="contact_number" id="contact_number">
                             </div>
                         </div>
                         <div class="row">
@@ -1243,7 +1252,36 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label required-field">Company Address</label>
-                            <textarea class="form-control" name="company_address" rows="3" required></textarea>
+                            <textarea class="form-control" name="company_address" id="company_address" rows="3" style="display:none;"></textarea>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <input type="text" class="form-control" id="address_line1" placeholder="Address Line 1 (e.g., Unit, Building, Street)" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Country</label>
+                                    <select class="form-select" id="countrySelect" required>
+                                        <option value="Philippines" selected>Philippines</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Province</label>
+                                    <select class="form-select" id="provinceSelect" required>
+                                        <option value="" disabled selected>Loading provinces...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">City / Municipality</label>
+                                    <select class="form-select" id="citySelect" required>
+                                        <option value="" disabled selected>Select province first</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Barangay</label>
+                                    <select class="form-select" id="barangaySelect" required>
+                                        <option value="" disabled selected>Select city first</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -1518,6 +1556,218 @@
             showAlert('An error occurred during registration. Please try again.', true);
         }
     });
+
+    // Email (Gmail) validation
+    function isValidGmail(email) {
+        return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(String(email || '').trim());
+    }
+
+    // Phone formatting: +63 9xx xxx xxxx (store as +639XXXXXXXXX)
+    (function initPhoneMask(){
+        const nat = document.getElementById('contact_number_national');
+        const hidden = document.getElementById('contact_number');
+        if (!nat || !hidden) return;
+        function digitsOnly(s){ return (s || '').replace(/\D+/g, ''); }
+        function formatDisplay(d){
+            // expect up to 10 digits starting with 9
+            const v = d.slice(0,10);
+            const p1 = v.slice(0,1); // 9
+            const p2 = v.slice(1,3);
+            const p3 = v.slice(3,6);
+            const p4 = v.slice(6,10);
+            let out = '';
+            if (p1) out += p1;
+            if (p2) out += (out? '': '') + p2;
+            if (p3) out += (out? ' ': '') + p3;
+            if (p4) out += (p3? ' ': (out? ' ': '')) + p4;
+            return out;
+        }
+        function update(e){
+            let d = digitsOnly(nat.value);
+            if (d && d[0] !== '9') d = '9' + d.replace(/^9*/, '');
+            d = d.slice(0,10);
+            nat.value = formatDisplay(d);
+            hidden.value = d.length === 10 ? ('+63' + d) : '';
+        }
+        nat.addEventListener('input', update);
+        nat.addEventListener('blur', update);
+        nat.addEventListener('keydown', (e)=>{
+            // block non digits except backspace/delete/arrow/space
+            const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End',' '];
+            if (allowed.includes(e.key)) return;
+            if (!/\d/.test(e.key)) e.preventDefault();
+        });
+    })();
+
+    // PH Locations (Provinces/Cities) via PSGC official API (dropdowns only)
+    (function initPhAddresses(){
+        const provSel = document.getElementById('provinceSelect');
+        const citySel = document.getElementById('citySelect');
+        const brgySel = document.getElementById('barangaySelect');
+        if (!provSel || !citySel || !brgySel) return;
+        const API = 'https://psgc.gitlab.io/api';
+        let provinceCodeMap = new Map(); // name -> code
+        let cityListByProvince = new Map(); // provinceCode -> [{code,name}]
+        let brgyListByCity = new Map(); // cityCode -> [{code,name}]
+
+        async function loadProvinces(){
+            try{
+                provSel.innerHTML = '<option disabled selected>Loading provinces...</option>';
+                const r = await fetch(`${API}/provinces`);
+                if (!r.ok) throw new Error('Provinces HTTP '+r.status);
+                const rows = await r.json();
+                provinceCodeMap.clear();
+                const opts = ['<option disabled selected>Select province</option>'];
+                rows
+                    .sort((a,b)=>a.name.localeCompare(b.name))
+                    .forEach(p=>{ provinceCodeMap.set(p.name, p.code); opts.push(`<option value="${p.name}" data-code="${p.code}">${p.name}</option>`); });
+                provSel.innerHTML = opts.join('');
+                citySel.innerHTML = '<option disabled selected>Select province first</option>';
+                brgySel.innerHTML = '<option disabled selected>Select city first</option>';
+            }catch(e){
+                provSel.innerHTML = '<option disabled selected>Failed to load provinces. Please reload.</option>';
+                citySel.innerHTML = '<option disabled selected>Unavailable</option>';
+                brgySel.innerHTML = '<option disabled selected>Unavailable</option>';
+                console.error('PSGC provinces error:', e);
+            }
+        }
+
+        async function loadCitiesByProvinceCode(provinceCode){
+            try{
+                citySel.innerHTML = '<option disabled selected>Loading cities...</option>';
+                brgySel.innerHTML = '<option disabled selected>Select city first</option>';
+                if (cityListByProvince.has(provinceCode)){
+                    const list = cityListByProvince.get(provinceCode);
+                    renderCities(list);
+                    return;
+                }
+                const r = await fetch(`${API}/provinces/${encodeURIComponent(provinceCode)}/cities-municipalities`);
+                if (!r.ok) throw new Error('Cities HTTP '+r.status);
+                const rows = await r.json();
+                const arr = Array.isArray(rows) ? rows : [];
+                const list = arr
+                    .map(c=>({ code: c.code, name: c.name }))
+                    .filter(c=>c.code && c.name)
+                    .sort((a,b)=>a.name.localeCompare(b.name));
+                cityListByProvince.set(provinceCode, list);
+                if (!list.length){
+                    citySel.innerHTML = '<option disabled selected>No cities/municipalities found for this province</option>';
+                    return;
+                }
+                renderCities(list);
+            }catch(e){
+                citySel.innerHTML = '<option disabled selected>Failed to load cities</option>';
+                console.error('PSGC cities error:', e);
+            }
+        }
+
+        function renderCities(list){
+            const opts = ['<option disabled selected>Select city / municipality</option>'];
+            list.forEach(c=> opts.push(`<option value="${c.name}" data-code="${c.code}">${c.name}</option>`));
+            citySel.innerHTML = opts.join('');
+        }
+
+        async function loadBarangaysByCityCode(cityCode){
+            try{
+                brgySel.innerHTML = '<option disabled selected>Loading barangays...</option>';
+                if (brgyListByCity.has(cityCode)){
+                    renderBarangays(brgyListByCity.get(cityCode));
+                    return;
+                }
+                const r = await fetch(`${API}/cities-municipalities/${encodeURIComponent(cityCode)}/barangays`);
+                if (!r.ok) throw new Error('Barangays HTTP '+r.status);
+                const rows = await r.json();
+                const list = (Array.isArray(rows) ? rows : [])
+                    .map(b=>({ code: b.code, name: b.name }))
+                    .filter(b=>b.code && b.name)
+                    .sort((a,b)=>a.name.localeCompare(b.name));
+                brgyListByCity.set(cityCode, list);
+                if (!list.length){
+                    brgySel.innerHTML = '<option disabled selected>No barangays found for this city</option>';
+                    return;
+                }
+                renderBarangays(list);
+            }catch(e){
+                brgySel.innerHTML = '<option disabled selected>Failed to load barangays</option>';
+                console.error('PSGC barangays error:', e);
+            }
+        }
+
+        function renderBarangays(list){
+            const opts = ['<option disabled selected>Select barangay</option>'];
+            list.forEach(b=> opts.push(`<option value="${b.name}" data-code="${b.code}">${b.name}</option>`));
+            brgySel.innerHTML = opts.join('');
+        }
+
+        provSel.addEventListener('change', (e)=>{
+            const opt = e.target.selectedOptions && e.target.selectedOptions[0];
+            const code = opt ? (opt.getAttribute('data-code') || provinceCodeMap.get(e.target.value)) : null;
+            if (code) loadCitiesByProvinceCode(code);
+        });
+        citySel.addEventListener('change', (e)=>{
+            const opt = e.target.selectedOptions && e.target.selectedOptions[0];
+            const cityCode = opt ? opt.getAttribute('data-code') : null;
+            if (cityCode) loadBarangaysByCityCode(cityCode);
+        });
+
+        loadProvinces();
+
+        // Compile address before submit (with barangay)
+        const form = document.getElementById('developerRegistrationForm');
+        if (form){
+            form.addEventListener('submit', function(e){
+                const addr1 = (document.getElementById('address_line1')?.value || '').trim();
+                const province = (provSel.value || '').trim();
+                const city = (citySel.value || '').trim();
+                const barangay = (brgySel.value || '').trim();
+                const country = (document.getElementById('countrySelect')?.value || 'Philippines').trim();
+                if (!addr1 || !province || !city || !barangay){
+                    e.preventDefault();
+                    showAlert('Please complete the address fields (including Barangay).', true);
+                    return false;
+                }
+                const full = [addr1, barangay, city, province, country].filter(Boolean).join(', ');
+                const hiddenAddr = document.getElementById('company_address');
+                if (hiddenAddr) hiddenAddr.value = full;
+            }, { capture: true });
+        }
+    })();
+
+    // Compile address and validate fields before submit (developerRegistrationForm)
+    (function enhanceRegistrationSubmit(){
+        const form = document.getElementById('developerRegistrationForm');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+            // Gmail check
+            const emailEl = document.getElementById('email');
+            if (emailEl && !isValidGmail(emailEl.value)){
+                e.preventDefault();
+                showAlert('Please use a valid Gmail address (example@gmail.com).', true);
+                return false;
+            }
+            // Phone check (+639XXXXXXXXX)
+            const hiddenPhone = document.getElementById('contact_number');
+            if (!hiddenPhone || !/^\+639\d{9}$/.test(hiddenPhone.value || '')){
+                e.preventDefault();
+                showAlert('Enter a valid PH mobile number: +63 9xx xxx xxxx', true);
+                return false;
+            }
+            // Compile address to single line
+            const addr1 = (document.getElementById('address_line1')?.value || '').trim();
+            const province = (document.getElementById('provinceSelect')?.value || '').trim();
+            const city = (document.getElementById('citySelect')?.value || '').trim();
+            const country = (document.getElementById('countrySelect')?.value || 'Philippines').trim();
+            const zip = (document.getElementById('postalCode')?.value || '').trim();
+            if (!addr1 || !province || !city){
+                e.preventDefault();
+                showAlert('Please complete the address fields.', true);
+                return false;
+            }
+            const full = [addr1, city, province, country].filter(Boolean).join(', ') + (zip ? ` ${zip}` : '');
+            const hiddenAddr = document.getElementById('company_address');
+            if (hiddenAddr) hiddenAddr.value = full;
+        }, { capture: true });
+    })();
 </script>
 
 <!-- Enhanced Footer -->
@@ -1862,7 +2112,7 @@ document.getElementById('developerRegistrationForm').addEventListener('submit', 
         }
     } catch (error) {
         console.error('Registration error:', error);
-        showAlert('An error occurred during registration. Please try again.', true);
+        showAlert('❌ An error occurred during registration. Please try again.', true);
     }
 });
 
