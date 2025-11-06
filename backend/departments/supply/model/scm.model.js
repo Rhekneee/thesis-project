@@ -1284,17 +1284,30 @@ const SCMModel = {
             // Build dynamic update for purchases (status + optional delivery_cost/discount)
             const updates = ['status = ?'];
             const vals = [newStatus];
-            if (Object.prototype.hasOwnProperty.call(options, 'delivery_cost')) {
-                updates.push('delivery_cost = ?');
-                vals.push(Number(options.delivery_cost) || 0);
+            // Only update delivery_cost if it's provided and is a valid number (including 0)
+            if (Object.prototype.hasOwnProperty.call(options, 'delivery_cost') && options.delivery_cost !== undefined && options.delivery_cost !== null) {
+                const deliveryCost = Number(options.delivery_cost);
+                if (!isNaN(deliveryCost)) {
+                    updates.push('delivery_cost = ?');
+                    vals.push(deliveryCost);
+                    console.log('📝 Adding delivery_cost to update:', deliveryCost);
+                }
             }
-            if (Object.prototype.hasOwnProperty.call(options, 'discount')) {
-                updates.push('discount = ?');
-                vals.push(Number(options.discount) || 0);
+            // Only update discount if it's provided and is a valid number (including 0)
+            if (Object.prototype.hasOwnProperty.call(options, 'discount') && options.discount !== undefined && options.discount !== null) {
+                const discount = Number(options.discount);
+                if (!isNaN(discount)) {
+                    updates.push('discount = ?');
+                    vals.push(discount);
+                    console.log('📝 Adding discount to update:', discount);
+                }
             }
             vals.push(purchaseId);
             const sql = `UPDATE purchases SET ${updates.join(', ')} WHERE purchase_id = ?`;
+            console.log('🔍 Executing SQL:', sql);
+            console.log('📋 Values:', vals);
             const [upd] = await connection.query(sql, vals);
+            console.log('✅ Update result - affectedRows:', upd.affectedRows);
             if (upd.affectedRows === 0) {
                 await connection.rollback();
                 return { success: false, error: 'Purchase not found' };
@@ -2378,12 +2391,24 @@ const SCMModel = {
             const updates = [
                 'status = ?',
                 'delivery_cost = ?',
-                'discount = ?'
+                'discount = ?',
+                'delivery_type = ?',
+                'external_driver_name = ?',
+                'external_vehicle_details = ?',
+                'courier_service = ?',
+                'expected_delivery_date = ?',
+                'delivery_notes = ?'
             ];
             const values = [
                 deliveryData.status,
                 deliveryData.delivery_cost,
                 deliveryData.discount,
+                deliveryData.delivery_type,
+                deliveryData.external_driver_name || null,
+                deliveryData.external_vehicle_details || null,
+                deliveryData.courier_service || null,
+                deliveryData.expected_delivery_date,
+                deliveryData.delivery_notes || null,
                 purchaseId
             ];
 

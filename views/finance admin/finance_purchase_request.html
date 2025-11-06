@@ -969,12 +969,25 @@
                 bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
                 bootstrap.Modal.getInstance(document.getElementById('viewPRModal')).hide();
 
-                // Show success message with purchase order info
+                // Show success modal with purchase order info
+                let successTitle = pendingAction === 'Finance Approved' ? 'Purchase Request Approved!' : 'Purchase Request Rejected!';
                 let successMessage = `Purchase request ${pendingAction.toLowerCase()} successfully!`;
                 if (pendingAction === 'Finance Approved' && responseData.purchase_id) {
                     successMessage += ` Purchase Order #${responseData.purchase_id} has been created for the supplier.`;
                 }
-                alert(successMessage);
+                
+                // Update success modal content
+                document.getElementById('successTitle').textContent = successTitle;
+                document.getElementById('successMessage').textContent = successMessage;
+                
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+
+                // Auto-close success modal after 3 seconds
+                setTimeout(() => {
+                    successModal.hide();
+                }, 3000);
 
                 // Reset state
                 currentPRIdx = null;

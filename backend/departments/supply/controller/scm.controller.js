@@ -1349,6 +1349,8 @@ const SCMController = {
             const { purchaseId } = req.params;
             const { status, delivery_cost, discount } = req.body;
 
+            console.log('🔍 setPurchaseStatus called:', { purchaseId, status, delivery_cost, discount });
+
             const allowed = ['Pending', 'Processed', 'Out for Delivery', 'Partially Delivered', 'Received', 'Returned', 'Backordered', 'Cancelled'];
             if (!allowed.includes(status)) {
                 return res.status(400).json({ error: 'Invalid status' });
@@ -1359,6 +1361,7 @@ const SCMController = {
                 discount
             });
             if (!result.success) return res.status(404).json({ error: result.error || 'Update failed' });
+            console.log('✅ setPurchaseStatus success:', result);
             res.json({ success: true });
         } catch (e) {
             console.error('Error in setPurchaseStatus:', e);
@@ -2050,9 +2053,20 @@ const SCMController = {
                 return res.status(403).json({ error: 'Forbidden: Supplier access required' });
             }
 
-            // Validate required fields
-            if (!status || !delivery_type || !external_driver_name || !external_vehicle_details || !expected_delivery_date) {
-                return res.status(400).json({ error: 'Missing required delivery information' });
+            // Validate required fields based on delivery type
+            if (!status || !delivery_type || !expected_delivery_date) {
+                return res.status(400).json({ error: 'Missing required delivery information (status, delivery_type, expected_delivery_date)' });
+            }
+            
+            // Validate fields based on delivery type
+            if (delivery_type === 'external') {
+                if (!external_driver_name || !external_vehicle_details) {
+                    return res.status(400).json({ error: 'Missing required fields for external driver: driver name and vehicle details are required' });
+                }
+            } else if (delivery_type === 'courier') {
+                if (!courier_service) {
+                    return res.status(400).json({ error: 'Missing required field for courier service: courier service name is required' });
+                }
             }
 
             // Update purchase with delivery information and status

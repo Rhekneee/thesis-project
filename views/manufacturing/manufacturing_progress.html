@@ -2405,21 +2405,12 @@
             const data = await response.json();
             
             if (data.success && data.materials) {
-                // Filter materials to only include those with quantity_requested > 0
+                // Filter materials to only include those with requested_qty > 0
                 // This ensures only materials that have been requested/supplied are shown
                 const filteredMaterials = data.materials.filter(m => {
-                    // For owner supply, must have quantity_requested > 0
-                    if (m.source_type === 'owner_supply') {
-                        return Number(m.requested_qty || 0) > 0;
-                    }
-                    // For company supply, include if quantity_supplied > 0 (from project_company_supplies)
-                    if (m.source_type === 'company_supply') {
-                        const requestedQty = Number(m.requested_qty || m.remaining_qty || 0);
-                        // Include if quantity_supplied > 0 (this is what we get from project_company_supplies)
-                        return requestedQty > 0;
-                    }
-                    // For other materials, include them if they have a name
-                    return m.name && m.name.trim() !== '';
+                    // For both owner_supply and company_supply, check requested_qty > 0
+                    const requestedQty = Number(m.requested_qty || 0);
+                    return requestedQty > 0;
                 });
                 
                 console.log(`📦 Raw materials received:`, data.materials.length);
@@ -3039,12 +3030,10 @@
                 .filter(m => {
                     const sourceType = m.source_type || 'company_supply';
                     const requested = Number(m.requested_qty || 0);
-                    const remaining = Number(m.remaining_qty ?? 0);
                     
-                    // Filter by availability
-                    if (sourceType === 'owner_supply') {
-                        if (!(requested > 0 && remaining > 0)) return false;
-                    }
+                    // Filter by availability - only check requested_qty > 0
+                    // remaining_qty check is only for quantity validation, not dropdown filtering
+                    if (requested <= 0) return false;
                     
                     // Exclude already selected materials (except current row's selection)
                     if (selectedIds.has(m.id) && m.id !== currentValue) {
@@ -3113,19 +3102,15 @@
         const selectedIds = getSelectedMaterialIds();
         
         // Build options from project materials (owner supply + company supply)
-        // - Owner supply: require requested_qty > 0 and remaining > 0
-        // - Company supply: include when requested_qty > 0 (remaining may be 0/undefined)
+        // - Show materials if requested_qty > 0 (for both owner_supply and company_supply)
+        // - remaining_qty check is only for quantity validation, not dropdown filtering
         // - Exclude materials that are already selected in other rows
         const options = (project?.requestedMaterials || [])
             .filter(m => {
-                const sourceType = m.source_type || 'company_supply';
                 const requested = Number(m.requested_qty || 0);
-                const remaining = Number(m.remaining_qty ?? 0);
                 
-                // Filter by availability
-                if (sourceType === 'owner_supply') {
-                    if (!(requested > 0 && remaining > 0)) return false;
-                }
+                // Filter by availability - only check requested_qty > 0
+                if (requested <= 0) return false;
                 
                 // Exclude already selected materials
                 if (selectedIds.has(m.id)) {

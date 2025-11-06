@@ -1270,20 +1270,41 @@ class FinanceModel {
                 return { success: false, message: 'Purchase not found or not in Pending status' };
             }
             const r = rows[0];
-            const subtotal = Number(r.quantity) * Number(r.unit_price);
-            const discountAmount = subtotal * (Number(r.discount) / 100);
-            const finalTotal = subtotal - discountAmount + Number(r.delivery_cost);
+            
+            // Calculate invoice amount
+            const quantity = Number(r.quantity) || 0;
+            const unitPrice = Number(r.unit_price) || 0;
+            const deliveryCost = Number(r.delivery_cost) || 0;
+            const discountPercent = Number(r.discount) || 0;
+            
+            const subtotal = quantity * unitPrice;
+            const discountAmount = subtotal * (discountPercent / 100);
+            const finalTotal = subtotal - discountAmount + deliveryCost;
+            
+            console.log('💰 [Finance] Calculating invoice amount for purchase_id:', purchaseId);
+            console.log('📊 [Finance] Calculation details:', {
+                quantity,
+                unitPrice,
+                subtotal,
+                deliveryCost,
+                discountPercent,
+                discountAmount,
+                finalTotal
+            });
 
             const [res] = await db.query(
                 `UPDATE purchases SET status = 'Processed', invoice_amount = ? WHERE purchase_id = ? AND status = 'Pending'`,
                 [finalTotal, purchaseId]
             );
+            
             if (res.affectedRows === 0) {
                 return { success: false, message: 'Purchase not found or not in Pending status' };
             }
-            return { success: true };
+            
+            console.log('✅ [Finance] Invoice amount inserted successfully:', finalTotal);
+            return { success: true, invoice_amount: finalTotal };
         } catch (err) {
-            console.error('Error in approvePurchaseEstimation:', err);
+            console.error('❌ [Finance] Error in approvePurchaseEstimation:', err);
             throw new Error('Failed to approve purchase estimation');
         }
     }

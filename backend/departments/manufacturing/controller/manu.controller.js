@@ -1621,10 +1621,20 @@ const ManufacturingController = {
       
       console.log('✅ Daily log saved with ID:', logId);
       
+      // Check if project status should be updated to completed
+      const overallProgress = await ManufacturingModel.checkAndUpdateProjectStatus(projectId);
+      
+      // Check if project status is now 'completed'
+      const [projectRows] = await db.query('SELECT status FROM projects WHERE id = ?', [projectId]);
+      const currentStatus = projectRows && projectRows[0] ? projectRows[0].status : null;
+      const isCompleted = currentStatus === 'completed';
+      
       res.json({
         success: true,
         logId,
-        message: 'Daily log saved successfully'
+        overallProgress: overallProgress || 0,
+        isCompleted,
+        message: isCompleted ? 'Daily log saved successfully! 🎉 Project completed (100% overall progress)!' : 'Daily log saved successfully'
       });
     } catch (error) {
       console.error('❌ Error saving daily log:', error);

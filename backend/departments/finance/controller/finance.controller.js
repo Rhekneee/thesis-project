@@ -431,11 +431,22 @@ exports.approvePurchaseEstimation = async (req, res) => {
         }
         const { purchaseId } = req.params;
         if (!purchaseId) return res.status(400).json({ success: false, error: 'purchaseId required' });
+        
+        console.log('🔍 [Finance Controller] Approving purchase estimation:', purchaseId);
         const result = await FinanceModel.approvePurchaseEstimation(Number(purchaseId));
-        if (!result.success) return res.status(404).json({ success: false, error: result.message });
-        return res.json({ success: true });
+        
+        if (!result.success) {
+            return res.status(404).json({ success: false, error: result.message });
+        }
+        
+        console.log('✅ [Finance Controller] Purchase estimation approved successfully');
+        return res.json({ 
+            success: true, 
+            invoice_amount: result.invoice_amount,
+            message: 'Purchase estimation approved and invoice amount calculated'
+        });
     } catch (error) {
-        console.error('Error in approvePurchaseEstimation:', error);
+        console.error('❌ [Finance Controller] Error in approvePurchaseEstimation:', error);
         return res.status(500).json({ success: false, error: 'Failed to approve estimation' });
     }
 };
